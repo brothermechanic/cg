@@ -1,0 +1,10 @@
+<layman>
+    <overlay type="git" src="https://github.com/brothermechanic/cg.git" contact="https://github.com/brothermechanic" status="unofficial" name="cg">
+	<link>
+	https://github.com/brothermechanic/cg
+	</link>
+	<description>
+	hz
+	</description>
+    </overlay>
+</layman>
