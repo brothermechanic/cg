@@ -1,2 +1,2 @@
 # cg
-CG ebuilds for cg production
+CG ebuilds for gentoo
