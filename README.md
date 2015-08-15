@@ -1,2 +1,2 @@
 # cg
-CG ebuilds for gentoo
+CG ebuilds for media packages
