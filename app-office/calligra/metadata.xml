@@ -13,9 +13,7 @@
 		<flag name="kdcraw">Enable support for KDE image manipulating interface via <pkg>kde-base/libkdcraw</pkg></flag>
 		<flag name="kdepim">Enable support for KDEPIM resources integration</flag>
 		<flag name="marble">Enable displaying of maps using Marble</flag>
-		<flag name="nepomuk">Enable Nepomuk based semantic desktop support (deprecated)</flag>
 		<flag name="okular">Enable bindings for <pkg>kde-base/okular</pkg></flag>
-		<flag name="colorio">Enables <pkg>media-libs/opencolorio</pkg> which is a complete color management solution.</flag>
 		<flag name="spacenav">Enable support for the 3Dconnexion spacenav input device via <pkg>dev-libs/libspnav</pkg></flag>
 		<flag name="vc">Enable support for <pkg>dev-libs/vc</pkg>, could be a significant speed boost on krita</flag>
 		<flag name="xbase">Enable support for xbase compatible database formats</flag>

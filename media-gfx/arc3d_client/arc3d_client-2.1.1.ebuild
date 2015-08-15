@@ -1,6 +1,6 @@
 # Copyright 1999-2014 Gentoo Foundation
 # Distributed under the terms of the GNU General Public License v2
-# $Header: /var/cvsroot/gentoo-x86/media-gfx/arc3d_client/arc3d_client-2.1.1.ebuild,v 0.1 2013/11/04 13:38:00 brothermechanic Exp $
+# $Header: $
 
 EAPI=5
 
@@ -15,9 +15,9 @@ SLOT="0"
 KEYWORDS="~amd64 ~x86"
 IUSE=""
 DEPEND="media-gfx/exiv2
-	dev-qt/qtcore
+	dev-qt/qtcore:4
 	sys-libs/zlib
-	virtual/jpeg"
+	virtual/jpeg:*"
 RDEPEND="${DEPEND}"
 
 S="${WORKDIR}/arc3d_client"

@@ -5,6 +5,6 @@
 		<email>brothermechanic@gmail.com</email>
 	</maintainer>
 	<use>
-		<flag name='ceres'>Add support for <pkg>ceres</pkg>nonlinear least-squares minimizer</flag>
+		<flag name='ispc'>Adds support for Intel SPMD Program Compiler</flag>
 	</use>
 </pkgmetadata>

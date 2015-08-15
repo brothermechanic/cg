@@ -17,8 +17,8 @@ KEYWORDS="~amd64 ~x86"
 IUSE=""
 
 DEPEND="media-libs/glew
-	dev-qt/qtcore
-	dev-qt/qtopengl"
+	dev-qt/qtcore:4
+	dev-qt/qtopengl:4"
 
 RDEPEND="${DEPEND}"
 

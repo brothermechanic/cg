@@ -8,7 +8,7 @@ inherit cmake-utils eutils git-2
 
 MY_P=${PN}-${PV}
 
-DESCRIPTION="Professional movie playback and image processing software for the film and computer animation industries."
+DESCRIPTION="Professional movie playback and image processing software."
 HOMEPAGE="http://djv.sf.net"
 EGIT_REPO_URI="git://git.code.sf.net/p/djv/git"
 #EGIT_BRANCH=""

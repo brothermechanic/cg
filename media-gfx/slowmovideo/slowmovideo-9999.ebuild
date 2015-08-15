@@ -22,11 +22,11 @@ DEPEND="virtual/ffmpeg
 	media-libs/glew
 	media-libs/libsdl
 	media-libs/opencv
-	dev-qt/qtopengl
-	dev-qt/qtscript
-	dev-qt/qttest
-	dev-qt/qtxmlpatterns
-	virtual/jpeg"
+	dev-qt/qtopengl:4
+	dev-qt/qtscript:4
+	dev-qt/qttest:4
+	dev-qt/qtxmlpatterns:4
+	virtual/jpeg:*"
 
 RDEPEND="${DEPEND}"
 PDEPEND="video_cards_nvidia? ( media-gfx/v3d )"

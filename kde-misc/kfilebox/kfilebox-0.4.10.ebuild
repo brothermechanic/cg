@@ -1,17 +1,15 @@
 # Copyright 1999-2014 Gentoo Foundation
 # Distributed under the terms of the GNU General Public License v2
-# $Header: /var/cvsroot/gentoo-x86/kde-misc/kfilebox/kfilebox-0.4.9.ebuild,v 1.2 2014/04/23 22:41:43 creffett Exp $
+# $Id$
 
 EAPI=5
 
 LANGS="ar br cs de el es fr gl it lt nl pl pt ru si tr zh"
-inherit qt4-r2 git-2
-
-MY_P="${PN}_${PV}"
+inherit qt4-r2
 
 DESCRIPTION="KDE dropbox client"
 HOMEPAGE="http://kdropbox.deuteros.es/"
-EGIT_REPO_URI="https://github.com/gtgt/kfilebox.git"
+SRC_URI="https://github.com/gtgt/kfilebox/archive/${PV}.tar.gz -> ${P}.tar.gz"
 LICENSE="GPL-2"
 
 SLOT="4"

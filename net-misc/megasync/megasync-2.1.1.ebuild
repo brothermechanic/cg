@@ -16,7 +16,7 @@ SRC_URI="
 	x86? ( ${URL_32} )
 "
 
-LICENSE="MEGA"
+LICENSE="TheClarifiedArtisticLicense"
 SLOT="0"
 KEYWORDS="~amd64 ~x86"
 

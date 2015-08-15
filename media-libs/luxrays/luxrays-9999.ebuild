@@ -21,6 +21,7 @@ DEPEND=">=dev-libs/boost-1.43
 	media-gfx/embree
 	virtual/opencl
 	virtual/opengl"
+RDEPEND="${DEPEND}"
 
 src_prepare() {
 	python-single-r1_pkg_setup

@@ -1,6 +1,6 @@
 # Copyright 1999-2015 Gentoo Foundation
 # Distributed under the terms of the GNU General Public License v2
-# $Header: /var/cvsroot/gentoo-x86/dev-util/nvidia-cuda-toolkit/nvidia-cuda-toolkit-7.0.28.ebuild,v 1.1 2015/05/12 11:06:19 jlec Exp $
+# $Header: $
 
 EAPI=5
 
@@ -15,19 +15,27 @@ SRC_URI="cuda_${PV}_rc_linux.run"
 
 SLOT="0/${PV}"
 LICENSE="NVIDIA-CUDA"
-KEYWORDS=""
+KEYWORDS="-* ~amd64 ~amd64-linux"
 IUSE="debugger doc eclipse profiler"
 
 DEPEND=""
 RDEPEND="${DEPEND}
 	>=sys-devel/gcc-5.1.0[cxx]
-	>=x11-drivers/nvidia-drivers-349.16[uvm]
+	>=x11-drivers/nvidia-drivers-355.06
 	debugger? (
 		sys-libs/libtermcap-compat
 		sys-libs/ncurses[tinfo]
 		)
 	eclipse? ( >=virtual/jre-1.6 )
 	profiler? ( >=virtual/jre-1.6 )"
+
+RESTRICT="fetch"
+
+pkg_nofetch() {
+	einfo "Please download the RHEL 7 \"runfile (local)\" installer"
+	einfo "  - cuda_${P}_rc_linux.run"
+	einfo "from ${CURI} and place it in ${DISTDIR}"
+}
 
 S="${WORKDIR}"
 
@@ -46,10 +54,10 @@ src_unpack() {
 }
 
 src_prepare() {
-	epatch "${FILESDIR}"/${PN}-7.0-gcc51.patch
+	epatch "${FILESDIR}"/${PN}-7.5-gcc52.patch
 	local cuda_supported_gcc
 
-	cuda_supported_gcc="4.7 4.8 4.9 5.1"
+	cuda_supported_gcc="4.7 4.8 4.9 5.1 5.2"
 
 	sed \
 		-e "s:CUDA_SUPPORTED_GCC:${cuda_supported_gcc}:g" \

@@ -21,7 +21,7 @@ DEPEND="
 	dev-libs/boost
 	sci-libs/gsl
 	virtual/blas
-	virtual/jpeg"
+	virtual/jpeg:*"
 RDEPEND="${DEPEND}"
 
 S="${WORKDIR}/pmvs-2/program/main/"

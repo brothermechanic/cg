@@ -16,7 +16,7 @@ SRC_URI="http://download.savannah.gnu.org/releases/openexr/${P}.tar.gz"
 
 LICENSE="BSD"
 SLOT="0"
-KEYWORDS="~amd64 ~ppc64 ~x86"
+KEYWORDS="~amd64"
 IUSE=""
 
 RDEPEND="dev-lang/python
