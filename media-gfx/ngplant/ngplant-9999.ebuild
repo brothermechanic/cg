@@ -4,7 +4,7 @@
 
 EAPI="5"
 
-WX_GTK_VER="2.8"
+WX_GTK_VER="3.0"
 
 inherit eutils multilib toolchain-funcs wxwidgets mercurial
 

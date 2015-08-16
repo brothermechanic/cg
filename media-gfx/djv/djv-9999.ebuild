@@ -11,7 +11,7 @@ MY_P=${PN}-${PV}
 DESCRIPTION="Professional movie playback and image processing software."
 HOMEPAGE="http://djv.sf.net"
 EGIT_REPO_URI="git://git.code.sf.net/p/djv/git"
-#EGIT_BRANCH=""
+EGIT_COMMIT="1.0.5"
 
 LICENSE="GPL-2"
 SLOT="1"
@@ -22,6 +22,7 @@ RDEPEND="
 		>=dev-qt/qtopengl-5.3.2
 		>=dev-qt/qtconcurrent-5.3.2
 		>=dev-qt/linguist-tools-5.3.2
+		>=dev-qt/qtsvg-5.3.2
 		>=media-libs/openexr-2.2.0
 		>=media-libs/glew-1.11.0
 		>=media-video/ffmpeg-2.4.1
@@ -37,6 +38,9 @@ DEPEND="${RDEPEND}
 S=${WORKDIR}/${MY_P}
 
 src_prepare() {
+	epatch "${FILESDIR}"/libjpeg-boolean.patch
+	epatch "${FILESDIR}"/djv_openexr_201.patch
+	epatch_user
 	sed -i -e "s:djvPackageThirdParty true:djvPackageThirdParty false:" CMakeLists.txt || die
 }
 
