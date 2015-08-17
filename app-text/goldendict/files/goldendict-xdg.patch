@@ -1,0 +1,12 @@
+diff -ur goldendict.orig/config.cc goldendict/config.cc
+--- goldendict.orig/config.cc	2013-03-21 18:16:03.000000000 +0200
++++ goldendict/config.cc	2013-03-21 18:17:02.033458098 +0200
+@@ -37,7 +37,7 @@
+       char const * pathInHome = "GoldenDict";
+       result = QDir::fromNativeSeparators( QString::fromWCharArray( _wgetenv( L"APPDATA" ) ) );
+     #else
+-      char const * pathInHome = ".goldendict";
++      char const * pathInHome = ".config/goldendict";
+     #endif
+ 
+     result.mkpath( pathInHome );
