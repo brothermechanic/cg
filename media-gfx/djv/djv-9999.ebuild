@@ -39,7 +39,7 @@ S=${WORKDIR}/${MY_P}
 
 src_prepare() {
 	epatch "${FILESDIR}"/libjpeg-boolean.patch
-	epatch "${FILESDIR}"/djv_openexr_201.patch
+	#epatch "${FILESDIR}"/djv_openexr_201.patch
 	epatch_user
 	sed -i -e "s:djvPackageThirdParty true:djvPackageThirdParty false:" CMakeLists.txt || die
 }
