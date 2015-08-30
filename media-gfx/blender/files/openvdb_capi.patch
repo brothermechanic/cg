@@ -1,0 +1,13 @@
+--- source/blender/blenkernel/intern/smoke.c	2015-08-29 12:56:22.880362291 +0300
++++ source/blender/blenkernel/intern/smoke.c	2015-08-30 15:03:38.974283279 +0300
+@@ -91,10 +91,6 @@
+ 
+ #include "smoke_API.h"
+ 
+-#ifdef WITH_OPENVDB
+-#  include "openvdb_capi.h"
+-#endif
+-
+ #ifdef WITH_SMOKE
+ 
+ #ifdef _WIN32
