@@ -47,9 +47,6 @@ src_compile() {
 		CC=$(tc-getCC) \
 		CXX=$(tc-getCXX)\
 		LINKFLAGS="${LDFLAGS}" \
-		GLEW_INC="/usr/include/" \
-		GLEW_LIBPATH="/usr/$(get_libdir)/" \
-		GLEW_LIBS="GLEW GL GLU glut" \
 		LUA_INC="/usr/include/" \
 		LUA_LIBPATH="/usr/$(get_libdir)/" \
 		LUA_LIBS="$(pkg-config lua --libs)" \
