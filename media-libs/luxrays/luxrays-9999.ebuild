@@ -9,7 +9,7 @@ inherit cmake-utils flag-o-matic mercurial python-single-r1
 
 DESCRIPTION="Library to accelerate the ray intersection process by using GPUs."
 HOMEPAGE="http://www.luxrender.net"
-EHG_REPO_URI="http://src.luxrender.net/luxrays"
+EHG_REPO_URI="https://bitbucket.org/luxrender/luxrays"
 
 LICENSE="GPL-3"
 SLOT="0"

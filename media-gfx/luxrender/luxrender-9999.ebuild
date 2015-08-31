@@ -9,7 +9,7 @@ inherit cmake-utils flag-o-matic mercurial python-single-r1
 
 DESCRIPTION="A GPL unbiased renderer."
 HOMEPAGE="http://www.luxrender.net"
-EHG_REPO_URI="http://src.luxrender.net/lux"
+EHG_REPO_URI="https://bitbucket.org/luxrender/lux"
 
 LICENSE="GPL-3"
 SLOT="0"

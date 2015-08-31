@@ -8,7 +8,7 @@ inherit mercurial
 
 DESCRIPTION="Blender 2.5 exporter for luxrender"
 HOMEPAGE="http://www.luxrender.net"
-EHG_REPO_URI="http://src.luxrender.net/luxblend25"
+EHG_REPO_URI="https://bitbucket.org/luxrender/luxblend25"
 
 LICENSE="GPL-3"
 SLOT="0"
