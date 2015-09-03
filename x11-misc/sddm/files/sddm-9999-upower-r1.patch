@@ -1,0 +1,11 @@
+--- a/src/daemon/PowerManager.cpp	2015-09-03 09:16:27.631466672 +0300
++++ b/src/daemon/PowerManager.cpp.fix	2015-09-03 09:17:39.351469818 +0300
+@@ -205,7 +205,7 @@
+             m_backends << new SeatManagerBackend(CK2_SERVICE, CK2_PATH, CK2_OBJECT);
+ 
+         // check if upower interface exists
+-        if (interface->isServiceRegistered(UPOWER_SERVICE))
++//        if (interface->isServiceRegistered(UPOWER_SERVICE))
+             m_backends << new UPowerBackend(UPOWER_SERVICE, UPOWER_PATH, UPOWER_OBJECT);
+     }
+ 
