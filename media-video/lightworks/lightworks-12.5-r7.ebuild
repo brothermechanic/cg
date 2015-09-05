@@ -7,7 +7,7 @@ EAPI="5"
 
 inherit eutils
 
-MY_PV="12.5.E"
+MY_PV="12.5.RC7"
 
 DESCRIPTION="Lightworks is the fastest, most accessible and focused NLE in the industry"
 HOMEPAGE="http://www.lwks.com/"
