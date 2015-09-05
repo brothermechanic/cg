@@ -6,15 +6,13 @@ EAPI="5"
 
 inherit cmake-utils eutils git-2
 
-MY_P=${PN}-${PV}
-
 DESCRIPTION="Professional movie playback and image processing software."
 HOMEPAGE="http://djv.sf.net"
 EGIT_REPO_URI="git://git.code.sf.net/p/djv/git"
-EGIT_COMMIT="1.0.5"
+EGIT_COMMIT="44a063755e627c70498d948478e29ffc1d3f105d"
 
 LICENSE="GPL-2"
-SLOT="1"
+SLOT="0"
 KEYWORDS="~amd64 ~x86"
 # IUSE="ffmpeg jpeg png quicktime tiff qt"
 
@@ -38,8 +36,8 @@ DEPEND="${RDEPEND}
 S=${WORKDIR}/${MY_P}
 
 src_prepare() {
-	epatch "${FILESDIR}"/libjpeg-boolean.patch
-	#epatch "${FILESDIR}"/djv_openexr_201.patch
+	#epatch "${FILESDIR}"/libjpeg-boolean.patch
+        #epatch "${FILESDIR}"/djv_openexr_201.patch
 	epatch_user
 	sed -i -e "s:djvPackageThirdParty true:djvPackageThirdParty false:" CMakeLists.txt || die
 }
