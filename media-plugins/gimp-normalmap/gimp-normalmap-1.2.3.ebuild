@@ -39,6 +39,6 @@ src_install() {
 }
 
 pkg_postinst() {
-	elog "The GIMP normalmap plugin is accessible from the menu:"
+	elog "The GIMP normalmap addon is accessible from the menu:"
 	elog "Filters -> Map -> Normalmap"
 }

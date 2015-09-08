@@ -29,7 +29,7 @@ src_install() {
 	done
 	emake -C po install LOCALEDIR="${D}/usr/share/locale" || die "Install failed"
 
-	exeinto "$( gimptool-2.0 --gimpplugindir )/plug-ins"
+	exeinto "$( gimptool-2.0 --gimpaddondir )/plug-ins"
 	doexe "src/${MY_PN}"
 
 	dodoc AUTHORS ChangeLog INSTALL README THANKS TRANSLATIONS

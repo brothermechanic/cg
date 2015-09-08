@@ -6,8 +6,8 @@ diff -Naur wavelet-denoise-0.3.1/src/Makefile wavelet-denoise-0.3.1/src/Makefile
 -LIBS = $(shell gimptool-2.0 --libs)
 +LIBS = -lm $(shell gimptool-2.0 --libs)
  PLUGIN = wavelet-denoise
- SOURCES = plugin.c colorspace.c denoise.c wavelet.c events.c interface.c
- HEADERS = plugin.h interface.h messages.h
+ SOURCES = addon.c colorspace.c denoise.c wavelet.c events.c interface.c
+ HEADERS = addon.h interface.h messages.h
 
 diff -Naur wavelet-denoise-0.3.1/po/Makefile wavelet-denoise-0.3.1/po/Makefile
 --- wavelet-denoise-0.3.1/po/Makefile	2008-12-20 11:23:05.000000000 +0000

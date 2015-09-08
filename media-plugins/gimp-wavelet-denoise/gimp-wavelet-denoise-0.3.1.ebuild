@@ -1,6 +1,6 @@
 # Copyright 1999-2014 Gentoo Foundation
 # Distributed under the terms of the GNU General Public License v2
-# $Header: /var/cvsroot/gentoo-x86/media-plugins/gimp-wavelet-denoise/gimp-wavelet-denoise-0.3.1.ebuild,v 0.1 2013/11/25 20:30:12 brothermechanic Exp $
+# $Header: /var/cvsroot/gentoo-x86/media-addons/gimp-wavelet-denoise/gimp-wavelet-denoise-0.3.1.ebuild,v 0.1 2013/11/25 20:30:12 brothermechanic Exp $
 
 EAPI="5"
 
@@ -36,7 +36,7 @@ src_install() {
 	done
 	emake -C po install LOCALEDIR="${D}/usr/share/locale" || die "Install failed"
 
-	exeinto "$( gimptool-2.0 --gimpplugindir )/plug-ins"
+	exeinto "$( gimptool-2.0 --gimpaddondir )/plug-ins"
 	doexe "src/${MY_PN}"
 
 	dodoc AUTHORS ChangeLog INSTALL README THANKS TRANSLATIONS
