@@ -4,8 +4,6 @@
 
 EAPI=5
 
-inherit git-2
-
 DESCRIPTION="Blender addons meta package"
 
 LICENSE="metapackage"
@@ -15,6 +13,7 @@ IUSE=""
 
 DEPEND=""
 RDEPEND="
+	=media-gfx/blender-9999
 	media-plugins/blender-blam
 	media-plugins/blender-booltron
 	media-plugins/blender-export-selected

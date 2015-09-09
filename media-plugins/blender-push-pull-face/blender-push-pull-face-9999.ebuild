@@ -16,7 +16,7 @@ KEYWORDS="~amd64 ~x86"
 IUSE=""
 
 DEPEND=""
-RDEPEND=">=media-gfx/blender-2.75"
+RDEPEND="=media-gfx/blender-9999"
 
 src_install() {
 	if VER="/usr/share/blender/*";then
