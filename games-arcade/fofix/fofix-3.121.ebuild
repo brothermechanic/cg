@@ -4,12 +4,12 @@
 
 EAPI=5
  
-EGIT_REPO_URI="https://github.com/fofix/fofix.git"
 PYTHON_COMPAT=( python2_7 )
-inherit distutils-r1 git-r3
+inherit distutils-r1
  
 DESCRIPTION="A game of musical skill and fast fingers"
 HOMEPAGE="http://code.google.com/p/fofix/"
+SRC_URI="https://github.com/fofix/fofix/archive/Release_${PV}.tar.gz"
 LICENSE="GPL-2"
 
 SLOT="0"
@@ -35,20 +35,17 @@ DEPEND="
 	"
 RDEPEND="${DEPEND}"
 
-scr_prepare() {
-	esetup.py --inplace --force
-}
+S="${WORKDIR}/${PN}-Release_${PV}/src"
 
-src_install() {
-	insinto /opt/fofix
-	doins -r ${S}/*
-	exeinto /opt/fofix/
-	doexe FoFiX.py
-	insinto /opt/fofix/fofix/lib/
-	doins -r ${WORKDIR}/fofix-9999-python2_7/lib/fofix/lib/*
-	echo "#/bin/sh" > fofix.sh
-	echo "${EPYTHON} /opt/fofix/FoFiX.py" >> fofix.sh
-	dobin fofix.sh
-	newicon "${S}"/data/fofix_icon.png "${PN}".png
-	make_desktop_entry fofix.sh "FOFIX"
+python_install() {
+        insinto /opt/fofix
+        doins -r ${WORKDIR}/${PN}-Release_${PV}/{data,src}
+        exeinto /opt/fofix/
+        doexe FoFiX.py
+        echo "#/bin/sh" > fofix.sh
+        echo "cd /opt/fofix/src" >> fofix.sh
+        echo "${EPYTHON} ./FoFiX.py" >> fofix.sh
+        dobin fofix.sh
+        newicon ${WORKDIR}/${PN}-Release_${PV}/data/fofix_icon.png "${PN}".png
+        make_desktop_entry fofix.sh "FOFIX"
 }
