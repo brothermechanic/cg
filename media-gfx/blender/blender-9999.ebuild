@@ -18,7 +18,7 @@ DESCRIPTION="3D Creation/Animation/Publishing System"
 HOMEPAGE="http://www.blender.org/"
 
 LICENSE="|| ( GPL-2 BL )"
-SLOT=«0»
+SLOT="0"
 KEYWORDS=""
 IUSE_BUILD="+blender game-engine -player +bullet collada +nls -ndof +cycles freestyle +opencolorio"
 IUSE_COMPILER="buildinfo +openmp +sse +sse2"
