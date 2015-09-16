@@ -2,7 +2,7 @@
 # Distributed under the terms of the GNU General Public License v2
 # $Header: $
 
-EAPI=4
+EAPI=5
 
 EGIT_REPO_URI="https://github.com/kayosiii/kde-thumbnailer-blender.git"
 
@@ -10,6 +10,7 @@ inherit cmake-utils eutils git-2
 
 DESCRIPTION="to create thumbnails for blend files in KDE"
 HOMEPAGE="https://github.com/kayosiii/kde-thumbnailer-blender"
+EGIT_COMMIT="9f36bc3" #for kde4 support
 
 LICENSE="GPL-3"
 
@@ -22,11 +23,3 @@ IUSE=""
 DEPEND=""
 
 RDEPEND="${DEPEND}"
-
-src_configure() {
-	cmake-utils_src_configure
-}
-
-src_install() {
-	cmake-utils_src_install
-}
