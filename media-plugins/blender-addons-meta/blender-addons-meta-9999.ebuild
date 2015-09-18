@@ -14,6 +14,7 @@ IUSE=""
 DEPEND=""
 RDEPEND="
 	=media-gfx/blender-9999
+	media-plugins/blender-animation-nodes
 	media-plugins/blender-blam
 	media-plugins/blender-booltron
 	media-plugins/blender-export-selected
