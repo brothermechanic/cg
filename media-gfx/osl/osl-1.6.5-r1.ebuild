@@ -40,6 +40,15 @@ src_prepare() {
 	epatch "${FILESDIR}"/src_testrender_CMakeLists_txt.patch
 }
 
+src_prepare() {
+	epatch "${FILESDIR}"/shadingsys.cpp.patch
+	epatch "${FILESDIR}"/llvm_util.h.patch
+	epatch "${FILESDIR}"/llvm_util.cpp.patch
+	epatch "${FILESDIR}"/src_liboslexec_CMakeLists_txt.patch
+	epatch "${FILESDIR}"/src_testshade_CMakeLists_txt.patch
+	epatch "${FILESDIR}"/src_testrender_CMakeLists_txt.patch
+}
+
 src_configure() {
 	append-cxxflags -std=gnu++11
 #	sed 's|-Werror|-Wno-error|' -i CMakeLists.txt || die
@@ -49,6 +58,7 @@ src_configure() {
 		$(cmake-utils_use_use tbb TBB)
 		$(cmake-utils_use_build test TESTING)
 		-DLLVM_LIB_DIR=/usr/lib64
+		-DLLVM_LIBRARY=/usr/lib/libLLVMCore.so
 #		-DUSE_CPP11=1
 		-DUSE_EXTERNAL_PUGIXML=ON
 		-DVERBOSE=1
