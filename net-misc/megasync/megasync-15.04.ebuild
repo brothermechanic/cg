@@ -8,8 +8,8 @@ inherit eutils multilib
 DESCRIPTION="The official QT-Based mega.co.nz client for sync your MEGA account"
 HOMEPAGE="http://mega.co.nz"
 
-URL_64="https://mega.co.nz/linux/MEGAsync/Debian_8.0/amd64/${PN/-bin/}_${PV}_amd64.deb"
-URL_32="https://mega.co.nz/linux/MEGAsync/Debian_8.0/i386/${PN/-bin/}_${PV}_i386.deb"
+URL_64="https://mega.nz/linux/MEGAsync/xUbuntu_15.04/amd64/${PN}-xUbuntu_${PV}_amd64.deb"
+URL_32="https://mega.nz/linux/MEGAsync/xUbuntu_15.04/i386/${PN}-xUbuntu_${PV}_i386.deb"
 
 SRC_URI="
 	amd64? ( ${URL_64} )
