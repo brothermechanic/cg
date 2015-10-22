@@ -37,6 +37,7 @@ RDEPEND="
 	gnome-extra/libgsf
 	media-libs/libpng:0
 	media-libs/tiff:3
+	media-libs/jpeg:8
 	>=media-libs/freetype-2
 	media-libs/fontconfig
 	media-libs/glu
@@ -125,15 +126,4 @@ src_install() {
 	mkfontdir "${D}/usr/share/fonts/truetype"
 
 	dodoc usr/share/doc/${PN}/*
-}
-pkg_postinst() {
-	echo
-	elog "Finaly I had some time to play around. First of all yes libjpeg-turbo is the new default jpeg library in gentoo for quite some time now."
-	elog "The lazy way:"
-	elog "grap the ftp.uni-erlangen.de/debian/pool/main/libj/libjpeg8/libjpeg8_8b-1_amd64.deb"
-	elog "extract the libjpeg.so.8.0.2"
-	elog "run: LD_PRELOAD=/some/path/libjpeg.so.8.0.2 lightworks"
-	elog "Thanks open-overlay 2015 by Alex"
-	elog "Please report bugs in ebuilds for me on email:a.xarlanov29@gmail.com"
-	echo
 }
