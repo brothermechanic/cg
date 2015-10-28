@@ -4,7 +4,9 @@
 
 EAPI="5"
 
-inherit eutils mercurial
+inherit mercurial
+
+PYTHON_COMPAT=( python2_7 )
 
 DESCRIPTION="Software for the modelling of 3D humanoid characters."
 HOMEPAGE="http://www.makehuman.org/"
@@ -13,23 +15,35 @@ EHG_REVISION="stable"
 
 LICENSE="GPL-3"
 SLOT="0"
-KEYWORDS="~x86 ~amd64"
-IUSE="aqsis blender"
+KEYWORDS=""
+IUSE="aqsis blender python_targets_python2_7"
 
 RDEPEND="
-dev-lang/python:2.7
-dev-python/pyopengl
-media-libs/sdl-image
-media-libs/mesa
-media-libs/glew
-blender? ( media-gfx/blender )
-aqsis? ( media-gfx/aqsis )
-"
+	dev-python/pyopengl[python_targets_python2_7]
+	dev-python/numpy[python_targets_python2_7]
+	dev-python/PyQt4[python_targets_python2_7]
+	media-libs/sdl-image
+	media-libs/mesa
+	media-libs/glew
+	blender? ( media-gfx/blender )
+	aqsis? ( media-gfx/aqsis )
+	"
 
 DEPEND="${RDEPEND}"
 
 src_prepare() {
 	sed "s|^python makehuman.py "$@"|python2 makehuman.py "$@"|" -i makehuman/makehuman
+	sed -i 's|python"|python2"|' buildscripts/build_prepare.py
+}
+
+src_compile() {
+	cd ${S}/makehuman/buildscripts
+	python2 build_prepare.py ${S}/makehuman ${S}/build
+	cd ${S}/build/makehuman
+	find . -type f -name "*.py" -exec sed -i 's/^#!.*python$/&2/' '{}' ';'
+	python2 -m compileall .
+	python2 -OO -m compileall .
+
 }
 
 src_install() {
@@ -44,8 +58,8 @@ src_install() {
 	cp -a "${FILESDIR}/makehuman.desktop" "${D}usr/share/applications"
 	install -d -m755 "${D}usr/share/pixmaps"
 	cp -a "${FILESDIR}/makehuman.png" "${D}usr/share/pixmaps/"
-	if v="/usr/share/blender/*";then
-	dodir $v/scripts/addons/
-	cp -r "${S}"/blendertools/* "${D}"$v/scripts/addons/ || die
+	if VER="/usr/share/blender/*";then
+	insinto ${VER}/scripts/addons/
+	doins -r "${S}"/blendertools/*
 	fi
 }
