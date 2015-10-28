@@ -37,11 +37,18 @@ src_unpack() {
 	unpack ./data.tar.bz2
 }
 
+src_prepare() {
+	sed "s|^python makehuman.py|python2 makehuman.py|" -i "${S}"/usr/bin/makehuman
+}
+
 src_install() {
-	insinto /
-	doins -r "${S}"/usr
 	if VER="/usr/share/blender/*";then
 	    insinto ${VER}/scripts/addons/
 	    doins -r "${S}"/usr/share/makehuman/blendertools/
 	fi
+	rm -r "${S}"/usr/share/makehuman/blendertools
+	dobin "${S}"/usr/bin/makehuman
+	insinto /usr/
+	doins -r "${S}"/usr/share
+	
 }	
