@@ -4,15 +4,13 @@
 
 EAPI="5"
 
-inherit mercurial
+inherit eutils
 
 PYTHON_COMPAT=( python2_7 )
 
 DESCRIPTION="Software for the modelling of 3D humanoid characters."
 HOMEPAGE="http://www.makehuman.org/"
-EHG_REPO_URI="https://bitbucket.org/MakeHuman/makehuman"
-EHG_REVISION="stable"
-SRC_URI="http://download.tuxfamily.org/${PN}/releases/1.0.2/${PN}-1.0.2_all.deb"
+SRC_URI="http://http.debian.net/debian/pool/main/m/makehuman/makehuman_1.1.0~git20150707.orig.tar.gz"
 
 LICENSE="AGPL"
 SLOT="0"
@@ -32,14 +30,10 @@ RDEPEND="
 
 DEPEND="${RDEPEND}"
 
-src_unpack() {
-	unpack $A
-	unpack ./data.tar.bz2
-	mercurial_src_unpack
-}
+S="${WORKDIR}"/makehuman-1.1.0~git20150707
 
 src_prepare() {
-	sed "s|^python makehuman.py "$@"|python2 makehuman.py "$@"|" -i makehuman/makehuman
+	sed "s|^python makehuman.py "$@"|python2 makehuman.py "$@"|" -i "${S}"/makehuman/makehuman
 	sed -i 's|python"|python2"|' "${S}"/buildscripts/build_prepare.py
 }
 
@@ -69,5 +63,4 @@ src_install() {
 	    insinto ${VER}/scripts/addons/
 	    doins -r "${S}"/blendertools/*
 	fi
-	cp -r "${WORKDIR}"/usr/share/makehuman/data/* ${INST_DIR}/data/ || die
-}
+}	

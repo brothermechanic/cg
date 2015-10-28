@@ -12,7 +12,7 @@ DESCRIPTION="Software for the modelling of 3D humanoid characters."
 HOMEPAGE="http://www.makehuman.org/"
 SRC_URI="http://download.tuxfamily.org/${PN}/releases/${PV}/${P}_all.deb"
 
-LICENSE="GPL-3"
+LICENSE="AGPL"
 SLOT="0"
 KEYWORDS="~x86 ~amd64"
 IUSE="aqsis blender python_targets_python2_7"
