@@ -4,7 +4,7 @@
 
 EAPI=5
 
-PYTHON_COMPAT=( python3_4 )
+PYTHON_COMPAT=( python3_5 )
 inherit eutils cmake-utils python-single-r1
 
 DESCRIPTION="Boost.Python interface for NumPy"

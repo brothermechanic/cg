@@ -3,7 +3,7 @@
 # $Header: /var/cvsroot/gentoo-x86/media-libs/openimageio/openimageio-1.3.5.ebuild,v 1.3 2014/02/17 06:41:48 brothermechanic Exp $
 
 EAPI=5
-PYTHON_COMPAT=( python3_4 )
+PYTHON_COMPAT=( python3_5 )
 
 inherit cmake-utils eutils multilib python-single-r1 vcs-snapshot git-2
 

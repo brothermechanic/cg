@@ -4,7 +4,7 @@
 
 EAPI="5"
 
-PYTHON_COMPAT=( python3_4 )
+PYTHON_COMPAT=( python3_5 )
 
 inherit eutils versionator python-r1
 
@@ -37,7 +37,7 @@ RDEPEND="${RDEPEND}"
 
 S="${WORKDIR}"/openvdb
 
-PYTHON_VERSION="3.4"
+PYTHON_VERSION="3.5"
 
 src_prepare() {
 #	epatch "${FILESDIR}"/fixnumpy.patch

@@ -3,7 +3,7 @@
 # $Header: /var/cvsroot/gentoo-x86/media-libs/pyilmbase/pyilmbase-2.2.0.ebuild,v 0.1 2014/12/05 16:41:48 brothermechanic Exp $
 
 EAPI=5
-PYTHON_COMPAT=( python3_4 )
+PYTHON_COMPAT=( python3_5 )
 
 inherit eutils python-single-r1 autotools flag-o-matic
 

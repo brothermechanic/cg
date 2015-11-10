@@ -3,7 +3,7 @@
 # $Header: $
 
 EAPI="5"
-PYTHON_COMPAT=( python3_4 )
+PYTHON_COMPAT=( python3_5 )
 
 inherit cmake-utils flag-o-matic mercurial python-single-r1
 

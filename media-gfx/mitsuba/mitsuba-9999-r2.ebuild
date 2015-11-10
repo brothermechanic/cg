@@ -3,7 +3,7 @@
 # $Header: $
 
 EAPI=5
-PYTHON_COMPAT=( python3_4 )
+PYTHON_COMPAT=( python3_5 )
 inherit cmake-utils eutils toolchain-funcs multilib python-single-r1 git-2 
 
 EGIT_REPO_URI="https://github.com/fjuhec/mitsuba.git"
@@ -45,8 +45,8 @@ src_configure() {
 	mycmakeargs="${mycmakeargs}
 	-DCMAKE_INSTALL_PREFIX="/usr"
 	-DBUILD_PYTHON=ON
-	-DPYTHON_INCLUDE_PATH="/usr/include/python3.4"
-	-DPYTHON_LIBRARY="/usr/lib64/libpython3.4.so"
+	-DPYTHON_INCLUDE_PATH="/usr/include/python3.5"
+	-DPYTHON_LIBRARY="/usr/lib64/libpython3.5.so"
 	-DMTS_USE_PCH=OFF"
 	cmake-utils_src_configure
 }
@@ -64,7 +64,7 @@ src_install() {
 	exeinto "/usr/share/${PN}/plugins"
 	doexe plugins/*.so  || die
 
-	exeinto "/usr/lib/python3.4/lib-dynload"
+	exeinto "/usr/lib/python3.5/lib-dynload"
 	doexe python/*.so  || die
 	
 	insinto "/usr/include"

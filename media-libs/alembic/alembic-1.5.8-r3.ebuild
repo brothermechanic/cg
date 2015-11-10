@@ -3,7 +3,7 @@
 # $Header: /var/cvsroot/gentoo-x86/media-libs/alembic/alembic-1.5.8-r2.ebuild,v 10 2015/05/15 00:00:00 perestoronin Exp $
 
 EAPI=5
-PYTHON_COMPAT=( python3_4 )
+PYTHON_COMPAT=( python3_5 )
 
 inherit cmake-utils eutils python-single-r1
 
@@ -40,14 +40,14 @@ src_prepare() {
 
 src_configure() {
 	local mycmakeargs=(
-		-DLIBPYTHON_VERSION=3.4
-		-DBoost_PYTHON_LIBRARY=boost_python-3.4
+		-DLIBPYTHON_VERSION=3.5
+		-DBoost_PYTHON_LIBRARY=boost_python-3.5
 		-DBoost_INCLUDE_DIRS=/usr/include/boost/
 		-DBoost_FOUND=TRUE
 		-DBOOST_LIBRARY_DIR=/usr/lib64
 		-DALEMBIC_BOOST_FOUND=TRUE
 		-DALEMBIC_BOOST_INCLUDE_PATH=/usr/include/boost/
-		-DALEMBIC_BOOST_LIBRARIES=boost_python-3.4
+		-DALEMBIC_BOOST_LIBRARIES=boost_python-3.5
 		-DALEMBIC_PYTHON_ROOT=/usr/lib64
 		-DALEMBIC_HDF5_LIBS="-lhdf5_hl -lhdf5_cpp -lhdf5_fortran -lhdf5"
 		-DILMBASE_LIBRARY_DIR=/usr/lib64
