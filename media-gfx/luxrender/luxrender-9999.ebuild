@@ -41,7 +41,10 @@ src_configure() {
 	mycmakeargs="${mycmakeargs}
 		  -DLUX_DOCUMENTATION=OFF
 		  -DLUXRAYS_DISABLE_OPENCL=OFF
-		  -DCMAKE_INSTALL_PREFIX=/usr"
+		  -DCMAKE_INSTALL_PREFIX=/usr
+		  -DPYTHON_VERSION="${EPYTHON/python/}"
+		  -DPYTHON_LIBRARY="$(python_get_library_path)"
+		  -DPYTHON_INCLUDE_DIR="$(python_get_includedir)""
 	cmake-utils_src_configure
 }
 

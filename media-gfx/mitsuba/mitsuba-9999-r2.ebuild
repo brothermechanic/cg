@@ -45,8 +45,9 @@ src_configure() {
 	mycmakeargs="${mycmakeargs}
 	-DCMAKE_INSTALL_PREFIX="/usr"
 	-DBUILD_PYTHON=ON
-	-DPYTHON_INCLUDE_PATH="/usr/include/python3.5"
-	-DPYTHON_LIBRARY="/usr/lib64/libpython3.5.so"
+	-DPYTHON_VERSION="${EPYTHON/python/}"
+	-DPYTHON_LIBRARY="$(python_get_library_path)"
+	-DPYTHON_INCLUDE_DIR="$(python_get_includedir)""
 	-DMTS_USE_PCH=OFF"
 	cmake-utils_src_configure
 }
