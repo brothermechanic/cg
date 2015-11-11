@@ -44,7 +44,7 @@ src_configure() {
 		  -DCMAKE_INSTALL_PREFIX=/usr
 		  -DPYTHON_VERSION="${EPYTHON/python/}"
 		  -DPYTHON_LIBRARY="$(python_get_library_path)"
-		  -DPYTHON_INCLUDE_DIR="$(python_get_includedir)""
+		  -DPYTHON_INCLUDE_PATH="$(python_get_includedir)""
 	cmake-utils_src_configure
 }
 

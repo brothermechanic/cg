@@ -47,7 +47,7 @@ src_configure() {
 	-DBUILD_PYTHON=ON
 	-DPYTHON_VERSION="${EPYTHON/python/}"
 	-DPYTHON_LIBRARY="$(python_get_library_path)"
-	-DPYTHON_INCLUDE_DIR="$(python_get_includedir)""
+	-DPYTHON_INCLUDE_PATH="$(python_get_includedir)"
 	-DMTS_USE_PCH=OFF"
 	cmake-utils_src_configure
 }
