@@ -8,7 +8,7 @@ inherit cmake-utils
 
 DESCRIPTION="Embree ray tracing kernels by intel"
 HOMEPAGE="https://embree.github.io"
-SRC_URI="https://github.com/embree/embree/archive/v2.7.1.tar.gz -> ${P}.tar.gz"
+SRC_URI="https://github.com/embree/embree/archive/v${PV}.tar.gz -> ${P}.tar.gz"
 
 LICENSE="Apache-2.0"
 SLOT="0"
