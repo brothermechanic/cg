@@ -4,15 +4,15 @@
 
 EAPI="5"
 
-inherit cmake-utils git-2
+inherit cmake-utils
 
 DESCRIPTION="Embree ray tracing kernels by intel"
 HOMEPAGE="https://embree.github.io"
-EGIT_REPO_URI="https://github.com/embree/embree.git"
+SRC_URI="https://github.com/embree/embree/archive/v2.7.1.tar.gz -> ${P}.tar.gz"
 
 LICENSE="Apache-2.0"
 SLOT="0"
-KEYWORDS=""
+KEYWORDS="~amd64 ~x86"
 IUSE="ispc"
 
 RDEPEND="
