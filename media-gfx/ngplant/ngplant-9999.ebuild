@@ -5,24 +5,25 @@
 EAPI="5"
 
 WX_GTK_VER="3.0"
+PYTHON_COMPAT=( python2_7 )
 
-inherit eutils multilib toolchain-funcs wxwidgets mercurial
+inherit scons-utils multilib toolchain-funcs wxwidgets mercurial python-single-r1
 
 DESCRIPTION="plant modeling software package"
 HOMEPAGE="http://ngplant.sourceforge.net"
 EHG_REPO_URI="http://hg.code.sf.net/p/ngplant/code"
-EHG_REVISION="v0.9.11"
-#To Do - need patch to update to v0.9.13
+#EHG_REVISION="v0.9.11"
+
 
 SLOT="0"
-KEYWORDS=""
+KEYWORDS="~amd64 ~x86"
 LICENSE="GPL-3 BSD"
 IUSE="doc +examples"
 
 RDEPEND="
 	media-libs/glew
 	media-libs/freeglut
-	x11-libs/wxGTK:2.8[X]
+	x11-libs/wxGTK:3.0
 	dev-lang/lua"
 DEPEND="${RDEPEND}
 	dev-util/scons
@@ -30,8 +31,11 @@ DEPEND="${RDEPEND}
 	virtual/pkgconfig
 	dev-libs/libxslt"
 
+pkg_setup() {
+	python-single-r1_pkg_setup
+}
+	
 src_prepare() {
-	#epatch "${FILESDIR}"/scons.patch
 	rm -rf extern
 
 	sed \
@@ -45,19 +49,19 @@ src_prepare() {
 		|| die "failed to correct LDFLAGS"
 }
 
+src_configure() {
+        myesconsargs=(
+                CC="$(tc-getCC)"
+                CXX=$(tc-getCXX)
+		LINKFLAGS="${LDFLAGS}"
+                LUA_INC="/usr/include/"
+		LUA_LIBPATH="/usr/$(get_libdir)/"
+		LUA_LIBS="$(pkg-config lua --libs)"
+        )
+}
+
 src_compile() {
-	scons \
-		CC=$(tc-getCC) \
-		CXX=$(tc-getCXX)\
-		LINKFLAGS="${LDFLAGS}" \
-		GLEW_INC="/usr/include/" \
-		GLEW_LIBPATH="/usr/$(get_libdir)/" \
-		GLEW_LIBS="GLEW GL GLU glut X11" \
-		GLU_LIBS="GL GLU" \
-		LUA_INC="/usr/include/" \
-		LUA_LIBPATH="/usr/$(get_libdir)/" \
-		LUA_LIBS="$(pkg-config lua --libs)" \
-		|| die
+        escons
 }
 
 src_install() {
