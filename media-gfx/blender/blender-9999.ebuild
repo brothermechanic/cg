@@ -271,8 +271,8 @@ src_configure() {
 		$(cmake-utils_use_with nls INTERNATIONAL)
 		$(cmake-utils_use_with ndof INPUT_NDOF)
 		$(cmake-utils_use_with cycles CYCLES)
-		-DWITH_CPP11=ON
-		-DWITH_LEGACY_DEPSGRAPH=OFF
+		-DWITH_CPP11=OFF
+		-DWITH_LEGACY_DEPSGRAPH=ON
 		-DWITH_BOOST=ON
 		-DWITH_BULLET=ON
 		-DWITH_HDF5=ON
