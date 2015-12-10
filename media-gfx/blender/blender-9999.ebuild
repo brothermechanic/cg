@@ -169,7 +169,7 @@ src_prepare() {
 
 	epatch "${FILESDIR}"/01-${PN}-2.68-doxyfile.patch \
 		"${FILESDIR}"/06-${PN}-2.68-fix-install-rules.patch \
-		"${FILESDIR}"/07-${PN}-2.70-sse2.patch \
+#		"${FILESDIR}"/07-${PN}-2.70-sse2.patch \
 		"${FILESDIR}"/sequencer_extra_actions-3.8.patch.bz2 \
 		"${FILESDIR}"/01_include_addon_contrib_in_release \
 		"${FILESDIR}"/050_thumbnailer_use_python3
