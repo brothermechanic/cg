@@ -27,15 +27,14 @@ IUSE_IMAGE="+openimageio -dpx -dds +openexr -jpeg2k -redcode tiff"
 IUSE_CODEC="+openal sdl jack avi +ffmpeg -sndfile +quicktime"
 IUSE_COMPRESSION="-lzma +lzo"
 IUSE_MODIFIERS="+fluid +smoke +boolean +remesh oceansim +decimate"
-IUSE_MODULES="osl +openvdb +addons contrib -alembic opensubdiv"
+IUSE_MODULES="osl openvdb +addons contrib -alembic opensubdiv"
 IUSE_GPU="+opengl +cuda -sm_21 -sm_30 -sm_35 -sm_50"
 IUSE="${IUSE_BUILD} ${IUSE_COMPILER} ${IUSE_SYSTEM} ${IUSE_IMAGE} ${IUSE_CODEC} ${IUSE_COMPRESSION} ${IUSE_MODIFIERS} ${IUSE_MODULES} ${IUSE_GPU}"
 
 REQUIRED_USE="${PYTHON_REQUIRED_USE}
 	            redcode? ( ffmpeg jpeg2k )
 			player? ( game-engine opengl )
-			  game-engine? ( bullet opengl )
-			    openvdb ( !osl )"
+			  game-engine? ( bullet opengl )"
 
 LANGS="en ar bg ca cs de el es es_ES fa fi fr he hr hu id it ja ky ne nl pl pt pt_BR ru sr sr@latin sv tr uk zh_CN zh_TW"
 for X in ${LANGS} ; do
