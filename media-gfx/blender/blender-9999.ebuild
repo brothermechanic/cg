@@ -256,6 +256,7 @@ src_configure() {
 	fi
 
 	#make DESTDIR="${D}" install didn't work
+	#some problems -DWITH_CPP11=OFF -DWITH_LEGACY_DEPSGRAPH=ON
 	mycmakeargs="${mycmakeargs}
 		-DCMAKE_INSTALL_PREFIX="/usr"
 		-DPYTHON_VERSION="${EPYTHON/python/}"
@@ -270,8 +271,6 @@ src_configure() {
 		$(cmake-utils_use_with nls INTERNATIONAL)
 		$(cmake-utils_use_with ndof INPUT_NDOF)
 		$(cmake-utils_use_with cycles CYCLES)
-		-DWITH_CPP11=OFF
-		-DWITH_LEGACY_DEPSGRAPH=ON
 		-DWITH_BOOST=ON
 		-DWITH_BULLET=ON
 		-DWITH_HDF5=ON
