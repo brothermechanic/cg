@@ -82,11 +82,12 @@ src_configure() {
 		$(use python && echo -DPYLIB_INSTALL_DIR="$(python_get_sitedir)")
 		-DUSE_EXTERNAL_PUGIXML=ON
 		-DUSE_FIELD3D=OFF # missing in Portage
+		-DUSE_OPENCV=OFF #problem with ver 3
 		-DOIIO_BUILD_TESTS=OFF # as they are RESTRICTed
 		-DSTOP_ON_WARNING=OFF
 		$(cmake-utils_use_use truetype freetype)
 		$(cmake-utils_use_use colorio OCIO)
-		$(cmake-utils_use_use opencv)
+		#$(cmake-utils_use_use opencv)
 		$(cmake-utils_use_use opengl)
 		$(cmake-utils_use_use jpeg2k OPENJPEG)
 		$(cmake-utils_use_use python)
