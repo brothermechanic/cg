@@ -17,7 +17,7 @@ EGIT_REPO_URI="git://github.com/OpenImageIO/oiio.git"
 LICENSE="BSD"
 SLOT="0"
 KEYWORDS="~amd64 ~ppc64 ~x86"
-IUSE="gif jpeg2k colorio opengl python qt4 ssl tbb +truetype ffmpeg X"
+IUSE="gif jpeg2k colorio opencv opengl python qt4 ssl tbb +truetype ffmpeg X"
 
 RESTRICT="test" #431412
 
@@ -35,6 +35,10 @@ RDEPEND="dev-libs/boost[python?]
 	gif? ( media-libs/giflib )
 	jpeg2k? ( media-libs/openjpeg:= )
 	colorio? ( >=media-libs/opencolorio-1.0.7:= )
+	opencv? (
+		>=media-libs/opencv-2.3:=
+		python? ( || ( <media-libs/opencv-2.9.8 >=media-libs/opencv-2.9.8[python,${PYTHON_USEDEP}] ) )
+	)
 	opengl? (
 		virtual/glu
 		virtual/opengl
@@ -78,11 +82,11 @@ src_configure() {
 		$(use python && echo -DPYLIB_INSTALL_DIR="$(python_get_sitedir)")
 		-DUSE_EXTERNAL_PUGIXML=ON
 		-DUSE_FIELD3D=OFF # missing in Portage
-		-DUSE_OPENCV=OFF #problem with ver 3
 		-DOIIO_BUILD_TESTS=OFF # as they are RESTRICTed
 		-DSTOP_ON_WARNING=OFF
 		$(cmake-utils_use_use truetype freetype)
 		$(cmake-utils_use_use colorio OCIO)
+		$(cmake-utils_use_use opencv)
 		$(cmake-utils_use_use opengl)
 		$(cmake-utils_use_use jpeg2k OPENJPEG)
 		$(cmake-utils_use_use python)
