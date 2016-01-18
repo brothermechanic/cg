@@ -20,7 +20,7 @@ HOMEPAGE="http://www.blender.org/"
 LICENSE="|| ( GPL-2 BL )"
 SLOT="0"
 KEYWORDS=""
-IUSE_BUILD="+blender game-engine -player +bullet collada +nls -ndof +cycles freestyle +opencolorio"
+IUSE_BUILD="+blender game-engine -player collada +nls -ndof +cycles freestyle +opencolorio"
 IUSE_COMPILER="buildinfo +openmp +sse +sse2"
 IUSE_SYSTEM="X -portable -valgrind -debug -doc"
 IUSE_IMAGE="+openimageio -dpx -dds +openexr -jpeg2k -redcode tiff"
@@ -33,8 +33,7 @@ IUSE="${IUSE_BUILD} ${IUSE_COMPILER} ${IUSE_SYSTEM} ${IUSE_IMAGE} ${IUSE_CODEC} 
 
 REQUIRED_USE="${PYTHON_REQUIRED_USE}
 	            redcode? ( ffmpeg jpeg2k )
-			player? ( game-engine opengl )
-			  game-engine? ( bullet opengl )"
+			player? ( game-engine opengl )"
 
 LANGS="en ar bg ca cs de el es es_ES fa fi fr he hr hu id it ja ky ne nl pl pt pt_BR ru sr sr@latin sv tr uk zh_CN zh_TW"
 for X in ${LANGS} ; do
@@ -256,7 +255,6 @@ src_configure() {
 	fi
 
 	#make DESTDIR="${D}" install didn't work
-	#some problems -DWITH_CPP11=OFF -DWITH_LEGACY_DEPSGRAPH=ON
 	mycmakeargs="${mycmakeargs}
 		-DCMAKE_INSTALL_PREFIX="/usr"
 		-DPYTHON_VERSION="${EPYTHON/python/}"
@@ -265,7 +263,6 @@ src_configure() {
 		$(cmake-utils_use_with blender BLENDER)
 		$(cmake-utils_use_with game-engine GAMEENGINE)
 		$(cmake-utils_use_with player PLAYER)
-		$(cmake-utils_use_with bullet BULLET)
 		$(cmake-utils_use_with collada OPENCOLLADA)
 		-DWITH_FFTW3=ON
 		$(cmake-utils_use_with nls INTERNATIONAL)
@@ -280,6 +277,7 @@ src_configure() {
 		$(cmake-utils_use_with buildinfo BUILDINFO)
 		$(cmake-utils_use_with openmp OPENMP)
 		$(cmake-utils_use_with sse RAYOPTIMIZATION)
+		$(cmake-utils_use_with sse CPU_SSE)
 		$(cmake-utils_use_with sse2 SSE2)
 		
 		$(cmake-utils_use_with X X11)
@@ -346,7 +344,10 @@ src_configure() {
 		$(cmake-utils_use_with opengl GL_PROFILE_COMPAT)
 		$(cmake-utils_use_with jpeg2k SYSTEM_OPENJPEG)
 		
-		-DWITH_OPENNL=ON"
+		-DWITH_OPENNL=ON
+		
+		-DWITH_CPP11=OFF
+		-DWITH_LEGACY_DEPSGRAPH=ON"
 
 	cmake-utils_src_configure
 }
