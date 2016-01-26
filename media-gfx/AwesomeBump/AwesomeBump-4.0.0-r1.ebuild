@@ -11,12 +11,13 @@ inherit git-2 eutils
 DESCRIPTION="A free, open source, cross-platform video editor"
 HOMEPAGE="http://awesomebump.besaba.com/"
 EGIT_REPO_URI="https://github.com/kmkolasinski/AwesomeBump.git"
+EGIT_COMMIT="f6ac321"
 
 LICENSE="GPL-3"
 
 SLOT="0"
 
-KEYWORDS=""
+KEYWORDS="~x86 ~amd64"
 
 IUSE=""
 
@@ -30,18 +31,8 @@ RDEPEND="${DEPEND}"
 
 #S="${WORKDIR}/Sources"
 
-src_unpack(){
-	git-2_src_unpack
-	unset EGIT_BRANCH EGIT_COMMIT
-	EGIT_SOURCEDIR="${S}/Sources/utils/QtnProperty" \
-	EGIT_REPO_URI="https://github.com/lexxmark/QtnProperty.git" \
-	git-2_src_unpack
-}
-
-src_prepare() {
+src_configure() {
 	/usr/lib64/qt5/bin/qmake Sources/AwesomeBump.pro
-	cd Sources/utils/QtnProperty/
-	/usr/lib64/qt5/bin/qmake -r
 }
 
 src_compile() {

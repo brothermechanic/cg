@@ -6,17 +6,17 @@
 
 EAPI=5
 
-inherit git-2 eutils
+inherit eutils
 
 DESCRIPTION="A free, open source, cross-platform video editor"
 HOMEPAGE="http://awesomebump.besaba.com/"
-EGIT_REPO_URI="https://github.com/kmkolasinski/AwesomeBump.git"
+SRC_URI="https://github.com/kmkolasinski/AwesomeBump/archive/Linuxv4.0.tar.gz -> ${P}.tar.gz"
 
 LICENSE="GPL-3"
 
 SLOT="0"
 
-KEYWORDS=""
+KEYWORDS="~x86 ~amd64"
 
 IUSE=""
 
@@ -28,20 +28,10 @@ DEPEND="
 
 RDEPEND="${DEPEND}"
 
-#S="${WORKDIR}/Sources"
+S="${WORKDIR}/AwesomeBump-Linuxv4.0"
 
-src_unpack(){
-	git-2_src_unpack
-	unset EGIT_BRANCH EGIT_COMMIT
-	EGIT_SOURCEDIR="${S}/Sources/utils/QtnProperty" \
-	EGIT_REPO_URI="https://github.com/lexxmark/QtnProperty.git" \
-	git-2_src_unpack
-}
-
-src_prepare() {
+src_configure() {
 	/usr/lib64/qt5/bin/qmake Sources/AwesomeBump.pro
-	cd Sources/utils/QtnProperty/
-	/usr/lib64/qt5/bin/qmake -r
 }
 
 src_compile() {
@@ -53,7 +43,7 @@ src_install() {
 	insinto $INST_DIR
 	doins -r Bin/*
 	exeinto $INST_DIR
-	doexe Build/Bin/AwesomeBump
+	doexe AwesomeBump
 	dobin "${FILESDIR}/AwesomeBump.sh"
 	newicon Sources/resources/logo.png "${PN}".png || die
 	make_desktop_entry AwesomeBump.sh
