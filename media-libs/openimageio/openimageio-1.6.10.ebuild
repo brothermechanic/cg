@@ -5,16 +5,18 @@
 EAPI=5
 PYTHON_COMPAT=( python3_5 )
 
-inherit cmake-utils eutils multilib python-single-r1 vcs-snapshot git-2
+inherit cmake-utils eutils multilib python-single-r1 vcs-snapshot
 
+MY_P="oiio"
+MY_PV="Release-${PV}"
 
 DESCRIPTION="A library for reading and writing images"
 HOMEPAGE="https://github.com/OpenImageIO"
-EGIT_REPO_URI="git://github.com/OpenImageIO/oiio.git"
+SRC_URI="https://github.com/OpenImageIO/${MY_P}/archive/${MY_PV}.tar.gz -> ${P}.tar.gz"
 
 LICENSE="BSD"
 SLOT="0"
-KEYWORDS=""
+KEYWORDS="~amd64 ~x86"
 IUSE="gif jpeg2k colorio opengl python qt4 ssl tbb +truetype ffmpeg X"
 
 RESTRICT="test" #431412
@@ -54,9 +56,6 @@ pkg_setup() {
 }
 
 src_prepare() {
-	epatch "${FILESDIR}"/${PN}-1.3.5-openexr-2.x.patch
-	
-
 	# remove bundled code to make it build
 	# https://github.com/OpenImageIO/oiio/issues/403
 #	rm */pugixml* || die
@@ -78,7 +77,6 @@ src_configure() {
 		-DUSE_FIELD3D=OFF # missing in Portage
 		-DOIIO_BUILD_TESTS=OFF # as they are RESTRICTed
 		-DSTOP_ON_WARNING=OFF
-		-DUSE_OPENCV=OFF
 		$(cmake-utils_use_use truetype freetype)
 		$(cmake-utils_use_use colorio OCIO)
 		$(cmake-utils_use_use opengl)
