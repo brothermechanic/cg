@@ -19,8 +19,9 @@ DEPEND=""
 RDEPEND="=media-gfx/blender-9999"
 
 src_install() {
+	mv "${S}"/src "${S}"/${PN}
 	if VER="/usr/share/blender/*";then
 	    insinto ${VER}/scripts/addons/
-	    doins -r "${S}"/src
+	    doins -r "${S}"/${PN}
 	fi
 }
