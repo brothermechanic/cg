@@ -6,7 +6,7 @@ EAPI=5
 
 inherit git-2
 
-DESCRIPTION="Blender addon. Advansed face extrude"
+DESCRIPTION="Blender addon. Extrude and Reshape"
 HOMEPAGE="http://blenderartists.org/forum/showthread.php?376618-Addon-Push-Pull-Face"
 EGIT_REPO_URI="https://github.com/Mano-Wii/Addon-Push-Pull-Face.git"
 
@@ -21,6 +21,6 @@ RDEPEND="=media-gfx/blender-9999"
 src_install() {
 	if VER="/usr/share/blender/*";then
 	    insinto ${VER}/scripts/addons/
-	    doins -r "${S}"/mesh_push_pull_face.py
+	    doins -r "${S}"/mesh_extrude_and_reshape.py
 	fi
 }

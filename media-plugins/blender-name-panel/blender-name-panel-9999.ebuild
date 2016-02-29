@@ -6,9 +6,9 @@ EAPI=5
 
 inherit git-2
 
-DESCRIPTION="Blender addon. A batch naming"
+DESCRIPTION="Blender addon. Name Panel"
 HOMEPAGE="http://blenderartists.org/forum/showthread.php?272086-Addon-Item-Panel-amp-Batch-Naming-1-4"
-EGIT_REPO_URI="https://github.com/trentinfrederick/item-panel.git"
+EGIT_REPO_URI="https://github.com/trentinfrederick/name-panel.git"
 
 LICENSE="GPL-2"
 SLOT="0"
@@ -21,6 +21,6 @@ RDEPEND="=media-gfx/blender-9999"
 src_install() {
 	if VER="/usr/share/blender/*";then
 	    insinto ${VER}/scripts/addons/
-	    doins -r "${S}"/item_panel
+	    doins -r "${S}"
 	fi
 }
