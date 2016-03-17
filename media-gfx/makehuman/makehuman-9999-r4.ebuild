@@ -15,7 +15,7 @@ EHG_REVISION="default"
 
 LICENSE="AGPL"
 SLOT="0"
-KEYWORDS="~x86 ~amd64"
+KEYWORDS=""
 IUSE="aqsis blender python_targets_python2_7"
 
 RDEPEND="
@@ -48,10 +48,10 @@ src_compile() {
 	cd ${S}
 	python2 buildscripts/build_prepare.py ${S}/makehuman ${S}/build
 	cd ${S}/makehuman
-	find . -type f -name "*.py" -exec sed -i 's/^#!.*python$/&2/' '{}' ';'
-	python2 -m compileall .
-	python2 -OO -m compileall .
-	python2 download_assets.py
+	find . -type f -name "*.py" -exec sed -i 's/^#!.*python$/&2/' '{}' ';' 
+	python2 -m compileall . 
+	python2 -OO -m compileall . 
+	python2 download_assets.py 
 
 }
 
