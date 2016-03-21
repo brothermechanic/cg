@@ -30,7 +30,7 @@ RDEPEND="
 
 DEPEND="${RDEPEND}"
 
-S="${WORKDIR}"/makehuman-1.1.0~git20150707
+S="${WORKDIR}"/makehuman
 
 src_prepare() {
 	sed "s|^python makehuman.py "$@"|python2 makehuman.py "$@"|" -i "${S}"/makehuman/makehuman
