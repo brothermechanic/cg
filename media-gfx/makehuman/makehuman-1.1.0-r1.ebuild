@@ -4,7 +4,7 @@
 
 EAPI="5"
 
-inherit eutils
+inherit
 
 PYTHON_COMPAT=( python2_7 )
 
@@ -32,33 +32,13 @@ DEPEND="${RDEPEND}"
 
 S="${WORKDIR}"/makehuman
 
-src_prepare() {
-	sed "s|^python makehuman.py "$@"|python2 makehuman.py "$@"|" -i "${S}"/makehuman/makehuman
-	sed -i 's|python"|python2"|' "${S}"/buildscripts/build_prepare.py
-}
-
-src_compile() {
-	cd ${S}/makehuman/buildscripts
-	python2 build_prepare.py ${S}/makehuman ${S}/build
-	cd ${S}/build/makehuman
-	find . -type f -name "*.py" -exec sed -i 's/^#!.*python$/&2/' '{}' ';'
-	python2 -m compileall .
-	python2 -OO -m compileall .
-
-}
 
 src_install() {
-	INST_DIR="${D}opt/makehuman"
-	install -d -m755 $INST_DIR
-	cp -r "${S}"/makehuman/* $INST_DIR
-	install -d -m755 "${D}usr/bin/"
-	cp -a "${FILESDIR}/makehuman_launcher.sh" "${D}usr/bin/makehuman"
-	install -d -m755 "${D}usr/share/doc/makehuman"
-	cp -a docs/* "${D}usr/share/doc/makehuman/"
-	install -d -m755 "${D}usr/share/applications"
-	cp -a "${FILESDIR}/makehuman.desktop" "${D}usr/share/applications"
-	install -d -m755 "${D}usr/share/pixmaps"
-	cp -a "${FILESDIR}/makehuman.png" "${D}usr/share/pixmaps/"
+	dobin ${WORKDIR}/extras/makehuman || die
+	insinto /usr/share/applications
+	doins ${WORKDIR}/extras/MakeHuman.desktop
+	insinto /usr/share
+	doins -r "${WORKDIR}"/makehuman
 	if VER="/usr/share/blender/*";then
 	    insinto ${VER}/scripts/addons/
 	    doins -r "${S}"/blendertools/*
