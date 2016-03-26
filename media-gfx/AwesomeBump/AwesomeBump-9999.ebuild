@@ -23,6 +23,7 @@ IUSE=""
 DEPEND="
 	dev-qt/qtcore:5
 	dev-qt/qtopengl:5
+	dev-qt/qtscript:5[scripttools]
 	virtual/opengl
 	"
 
@@ -39,12 +40,16 @@ src_unpack(){
 }
 
 src_prepare() {
-	/usr/lib64/qt5/bin/qmake Sources/AwesomeBump.pro
-	cd Sources/utils/QtnProperty/
+	cd Sources/utils/QtnProperty
 	/usr/lib64/qt5/bin/qmake -r
+	cd $S
+	/usr/lib64/qt5/bin/qmake
 }
 
 src_compile() {
+	cd Sources/utils/QtnProperty
+	emake || die
+	cd $S
 	emake || die
 }
 
@@ -53,7 +58,8 @@ src_install() {
 	insinto $INST_DIR
 	doins -r Bin/*
 	exeinto $INST_DIR
-	doexe Build/Bin/AwesomeBump
+	find "${S}/workdir" -name 'AwesomeBump' -exec doexe '{}' +
+	#doexe workdir/linux-*/AwesomeBump
 	dobin "${FILESDIR}/AwesomeBump.sh"
 	newicon Sources/resources/logo.png "${PN}".png || die
 	make_desktop_entry AwesomeBump.sh
