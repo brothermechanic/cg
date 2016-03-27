@@ -1,0 +1,74 @@
+diff -Naur include/ceres/cubic_interpolation.h include/ceres/cubic_interpolation.h
+--- include/ceres/cubic_interpolation.h	2015-10-11 23:57:44.000000000 +0300
++++ include/ceres/cubic_interpolation.h	2016-03-27 21:24:15.983730541 +0300
+@@ -32,7 +32,7 @@
+ #define CERES_PUBLIC_CUBIC_INTERPOLATION_H_
+ 
+ #include "ceres/internal/port.h"
+-#include "Eigen/Core"
++#include "eigen3/Eigen/Core"
+ #include "glog/logging.h"
+ 
+ namespace ceres {
+diff -Naur include/ceres/internal/eigen.h include/ceres/internal/eigen.h
+--- include/ceres/internal/eigen.h	2015-10-11 23:57:44.000000000 +0300
++++ include/ceres/internal/eigen.h	2016-03-27 21:24:23.088730062 +0300
+@@ -31,7 +31,7 @@
+ #ifndef CERES_INTERNAL_EIGEN_H_
+ #define CERES_INTERNAL_EIGEN_H_
+ 
+-#include "Eigen/Core"
++#include "eigen3/Eigen/Core"
+ 
+ namespace ceres {
+ 
+diff -Naur include/ceres/internal/fixed_array.h include/ceres/internal/fixed_array.h
+--- include/ceres/internal/fixed_array.h	2015-10-11 23:57:44.000000000 +0300
++++ include/ceres/internal/fixed_array.h	2016-03-27 21:24:34.717729277 +0300
+@@ -33,7 +33,7 @@
+ #define CERES_PUBLIC_INTERNAL_FIXED_ARRAY_H_
+ 
+ #include <cstddef>
+-#include "Eigen/Core"
++#include "eigen3/Eigen/Core"
+ #include "ceres/internal/macros.h"
+ #include "ceres/internal/manual_constructor.h"
+ #include "glog/logging.h"
+diff -Naur include/ceres/internal/numeric_diff.h include/ceres/internal/numeric_diff.h
+--- include/ceres/internal/numeric_diff.h	2015-10-11 23:57:44.000000000 +0300
++++ include/ceres/internal/numeric_diff.h	2016-03-27 21:25:02.249727419 +0300
+@@ -37,8 +37,8 @@
+ 
+ #include <cstring>
+ 
+-#include "Eigen/Dense"
+-#include "Eigen/StdVector"
++#include "eigen3/Eigen/Dense"
++#include "eigen3/Eigen/StdVector"
+ #include "ceres/cost_function.h"
+ #include "ceres/internal/fixed_array.h"
+ #include "ceres/internal/scoped_ptr.h"
+diff -Naur include/ceres/jet.h include/ceres/jet.h
+--- include/ceres/jet.h	2015-10-11 23:57:44.000000000 +0300
++++ include/ceres/jet.h	2016-03-27 21:24:49.350728289 +0300
+@@ -162,7 +162,7 @@
+ #include <limits>
+ #include <string>
+ 
+-#include "Eigen/Core"
++#include "eigen3/Eigen/Core"
+ #include "ceres/fpclassify.h"
+ 
+ namespace ceres {
+diff -Naur include/ceres/numeric_diff_cost_function.h include/ceres/numeric_diff_cost_function.h
+--- include/ceres/numeric_diff_cost_function.h	2015-10-11 23:57:44.000000000 +0300
++++ include/ceres/numeric_diff_cost_function.h	2016-03-27 21:25:19.089726283 +0300
+@@ -161,7 +161,7 @@
+ #ifndef CERES_PUBLIC_NUMERIC_DIFF_COST_FUNCTION_H_
+ #define CERES_PUBLIC_NUMERIC_DIFF_COST_FUNCTION_H_
+ 
+-#include "Eigen/Dense"
++#include "eigen3/Eigen/Dense"
+ #include "ceres/cost_function.h"
+ #include "ceres/internal/numeric_diff.h"
+ #include "ceres/internal/scoped_ptr.h"
