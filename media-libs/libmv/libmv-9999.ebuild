@@ -45,7 +45,7 @@ src_prepare() {
 src_configure() {
 	local mycmakeargs=""
 	mycmakeargs="${mycmakeargs}
-		-DCMAKE_INSTALL_PREFIX="/usr/local"
+		-DCMAKE_INSTALL_PREFIX="/usr"
 		-DCMAKE_BUILD_TYPE=Release
 		-DWITH_SYSTEM_CERES=ON
 		-DBUILD_GUI=OFF
