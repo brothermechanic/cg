@@ -4,7 +4,7 @@
 
 EAPI=5
 
-inherit cmake-utils git-r3
+inherit cmake-utils eutils git-r3
 
 DESCRIPTION="Open Multiple View Geometry library"
 HOMEPAGE="http://imagine.enpc.fr/~moulonp/openMVG/"
@@ -18,11 +18,11 @@ IUSE="openmp +build-shared-libs -doc"
 
 RDEPEND=">=sci-libs/ceres-solver-1.11
 	media-libs/libpng:0/16
-	dev-cpp/eigen
+	dev-cpp/eigen:3
 	sci-libs/cxsparse
 	sci-libs/flann[-cuda,static-libs]
 	media-libs/jpeg
-	sci-libs/lemon
+	sci-libs/lemon[coin]
 	media-libs/tiff
 	sys-libs/zlib
 	"
@@ -30,13 +30,8 @@ RDEPEND=">=sci-libs/ceres-solver-1.11
 DEPEND="${RDEPEND}"
 
 CMAKE_USE_DIR="${S}/src"
+PREFIX="/usr"
 
-src_prepare() {
-	epatch "${FILESDIR}"/remove_third_party.patch || die
-	rm -r ${S}/src/third_party/{ceres-solver,eigen,cxsparse,flan,jpeg,lemon,png,tiff,zlib}
-}
-
-	
 src_configure() {
 	local mycmakeargs=""
 	mycmakeargs="${mycmakeargs}
@@ -48,9 +43,14 @@ src_configure() {
 		-DOpenMVG_BUILD_EXAMPLES=OFF
 		-DOpenMVG_BUILD_OPENGL_EXAMPLES=OFF
 		-DOpenMVG_BUILD_TESTS=OFF
-		-DCMAKE_INSTALL_PREFIX="/usr"
-		-DCMAKE_BUILD_TYPE=Release
-		-DWITH_SYSTEM_CERES=ON
+		-DEIGEN_INCLUDE_DIR_HINTS="/usr/include/eigen3"
+		-DFLANN_INCLUDE_DIR_HINTS="/usr/include" 
+		-DCOINUTILS_INCLUDE_DIR_HINTS="/usr/include/coin" 
+		-DCLP_INCLUDE_DIR_HINTS="/usr/include/coin" 
+		-DCLPSOLVER_LIBRARY="/usr/lib/libOsiClp.so" 
+		-DOSI_INCLUDE_DIR_HINTS="/usr/include/coin" 
+		-DLEMON_INCLUDE_DIR_HINTS="/usr/include" 
+		-DLEMON_LIBRARY="/usr/lib/libemon.so"
 		"
 	cmake-utils_src_configure
 }
