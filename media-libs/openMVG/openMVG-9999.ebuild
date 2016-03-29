@@ -4,7 +4,7 @@
 
 EAPI=5
 
-inherit cmake-utils eutils git-r3
+inherit cmake-utils eutils git-r3 flag-o-matic
 
 DESCRIPTION="Open Multiple View Geometry library"
 HOMEPAGE="http://imagine.enpc.fr/~moulonp/openMVG/"
@@ -14,13 +14,13 @@ LICENSE="GPL-2"
 SLOT="0"
 KEYWORDS=""
 
-IUSE="openmp +build-shared-libs -doc"
+IUSE="openmp opencv -shared-libs -doc"
 
 RDEPEND=">=sci-libs/ceres-solver-1.11
 	media-libs/libpng:0/16
+	opencv? ( media-libs/opencv:0/3.1[contrib] )
 	dev-cpp/eigen:3
 	sci-libs/cxsparse
-	sci-libs/flann[-cuda,static-libs]
 	media-libs/jpeg
 	sci-libs/lemon[coin]
 	media-libs/tiff
@@ -32,19 +32,25 @@ DEPEND="${RDEPEND}"
 CMAKE_USE_DIR="${S}/src"
 PREFIX="/usr"
 
+src_prepare() {
+	#cleanup third_party dir
+	rm -r ${S}/src/dependencies/osi_clp
+}
+
 src_configure() {
 	local mycmakeargs=""
 	mycmakeargs="${mycmakeargs}
 		$(cmake-utils_use openmp OpenMVG_USE_OPENMP)
 		$(cmake-utils_use doc OpenMVG_BUILD_DOC)
-		$(cmake-utils_use build-shared-libs OpenMVG_BUILD_SHARED)
-		-DOpenMVG_USE_OPENCV=OFF
+		$(cmake-utils_use shared-libs OpenMVG_BUILD_SHARED)
+		$(cmake-utils_use opencv OpenMVG_USE_OPENCV)
+		$(cmake-utils_use opencv OpenMVG_USE_OCVSIFT)
 		-DOpenMVG_BUILD_TESTS=OFF
 		-DOpenMVG_BUILD_EXAMPLES=OFF
 		-DOpenMVG_BUILD_OPENGL_EXAMPLES=OFF
 		-DOpenMVG_BUILD_TESTS=OFF
+		-DOpenMVG_USE_INTERNAL_FLANN=ON
 		-DEIGEN_INCLUDE_DIR_HINTS="/usr/include/eigen3"
-		-DFLANN_INCLUDE_DIR_HINTS="/usr/include" 
 		-DCOINUTILS_INCLUDE_DIR_HINTS="/usr/include/coin" 
 		-DCLP_INCLUDE_DIR_HINTS="/usr/include/coin" 
 		-DCLPSOLVER_LIBRARY="/usr/lib/libOsiClp.so" 

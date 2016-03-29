@@ -14,7 +14,7 @@ LICENSE="GPL-2"
 SLOT="0"
 KEYWORDS=""
 
-IUSE="+fast +build-shared-libs -X -test"
+IUSE="+fast +shared-libs -X -test"
 
 RDEPEND=">=sci-libs/ceres-solver-1.11
 	media-libs/libpng:1.2
@@ -50,7 +50,7 @@ src_configure() {
 		-DWITH_SYSTEM_CERES=ON
 		-DBUILD_GUI=OFF
 		$(cmake-utils_use_with fast FAST_DETECTOR)
-		$(cmake-utils_use_build build-shared-libs SHARED)
+		$(cmake-utils_use_build shared-libs SHARED)
 		$(cmake-utils_use_build test TESTS)
 		"
 	cmake-utils_src_configure
