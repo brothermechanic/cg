@@ -55,3 +55,7 @@ src_configure() {
 		"
 	cmake-utils_src_configure
 }
+src_install() {
+	mv ${S}/src1 ${S}/src2 || die
+	cmake-utils_src_install
+}
