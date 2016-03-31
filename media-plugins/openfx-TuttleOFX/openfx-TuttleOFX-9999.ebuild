@@ -44,11 +44,11 @@ CMAKE_BUILD_TYPE="Release"
 
 src_prepare() {
 	sed -e "s|COMPONENTS|COMPONENTS thread|" -i ${S}/libraries/tuttle/tests/CMakeLists.txt
-	sed -e "s|WRITE |WRITE \${D}\/|" -i ${S}/libraries/sequenceParser/src/CMakeLists.txt
 }
-
 src_configure() {
         local mycmakeargs=(
+		-DROOT_PREFIX=${D}
+		-DCMAKE_INSTALL_PREFIX=/usr
 		-DJAVA_HOME="/opt/icedtea-bin-3.0.0_pre09"
 		-DTUTTLE_PYTHON_VERSION=3.5
 		-DTUTTLE_EXPERIMENTAL=OFF
@@ -57,6 +57,4 @@ src_configure() {
 
         cmake-utils_src_configure
 }
-src_install() {
-	cmake-utils_src_install
-}
+
