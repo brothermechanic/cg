@@ -14,7 +14,7 @@ LICENSE="GPL-2"
 SLOT="0"
 KEYWORDS=""
 
-IUSE=""
+IUSE="+openfx-io +openfx-misc +openfx-opencv +openfx-arena +openfx-TuttleOFX"
 
 RDEPEND="dev-qt/qtcore:4
 	dev-libs/boost
@@ -23,14 +23,22 @@ RDEPEND="dev-qt/qtcore:4
 	x11-libs/cairo[static-libs]
 	dev-python/pyside
 	dev-python/shiboken
+	dev-cpp/eigen:3
 	"
 DEPEND="${RDEPEND}"
-PDEPEND="media-libs/opencolorio-configs"
+PDEPEND="media-libs/opencolorio-configs
+	openfx-io? ( media-plugins/openfx-io )
+	openfx-misc? ( media-plugins/openfx-misc )
+	openfx-opencv? ( media-plugins/openfx-opencv )
+	openfx-arena? ( media-plugins/openfx-arena )
+	openfx-TuttleOFX? ( media-plugins/openfx-TuttleOFX )
+	"
 src_prepare() {
 	cp ${FILESDIR}/config.pri ${S}/
 }
 
 src_configure() {
+	rm -r ${S}/libs/Eigen3 && sed -e '/Eigen3/d' -i ${S}/libs.pri
 	myconf=(
 		PREFIX=/usr \
 		CONFIG+=custombuild \

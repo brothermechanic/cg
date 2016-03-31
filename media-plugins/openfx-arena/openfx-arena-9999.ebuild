@@ -7,8 +7,8 @@ EAPI=5
 inherit eutils git-r3
 
 DESCRIPTION="OpenFX. A set of visual effect plugins for OpenFX"
-HOMEPAGE="https://github.com/devernay/openfx-arena"
-EGIT_REPO_URI="https://github.com/devernay/openfx-arena.git"
+HOMEPAGE="https://github.com/MrKepzie/openfx-arena"
+EGIT_REPO_URI="https://github.com/MrKepzie/openfx-arena.git"
 
 LICENSE="GPL-2"
 SLOT="0"

@@ -6,7 +6,7 @@ INCLUDEPATH += $$PWD/libs/OpenFX/include
 INCLUDEPATH += $$PWD/libs/OpenFX_extensions
 INCLUDEPATH += $$PWD/libs/OpenFX/HostSupport/include
 INCLUDEPATH += $$PWD/libs/SequenceParsing
-INSTALL_DIR += /usr/local
+INCLUDEPATH += /usr/include/eigen3
 shiboken {
         PKGCONFIG -= shiboken
         INCLUDEPATH += /usr/include/shiboken
