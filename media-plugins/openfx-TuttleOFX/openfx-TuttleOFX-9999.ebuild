@@ -6,7 +6,7 @@ EAPI=5
 
 inherit git-r3 cmake-utils
 
-DESCRIPTION="OpenFX. Image processing using OpenCV"
+DESCRIPTION="OpenFX. A library to connect and batch operations"
 HOMEPAGE="http://www.tuttleofx.org/"
 EGIT_REPO_URI="https://github.com/tuttleofx/TuttleOFX.git"
 
