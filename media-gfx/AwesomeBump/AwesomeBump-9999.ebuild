@@ -6,7 +6,7 @@
 
 EAPI=5
 
-inherit git-2 eutils
+inherit git-r3 eutils
 
 DESCRIPTION="A free, open source, cross-platform video editor"
 HOMEPAGE="http://awesomebump.besaba.com/"
@@ -29,14 +29,6 @@ DEPEND="
 RDEPEND="${DEPEND}"
 
 #S="${WORKDIR}/Sources"
-
-src_unpack(){
-	git-2_src_unpack
-	unset EGIT_BRANCH EGIT_COMMIT
-	EGIT_SOURCEDIR="${S}/Sources/utils/QtnProperty" \
-	EGIT_REPO_URI="https://github.com/lexxmark/QtnProperty.git" \
-	git-2_src_unpack
-}
 
 src_prepare() {
 	/usr/lib64/qt5/bin/qmake Sources/AwesomeBump.pro

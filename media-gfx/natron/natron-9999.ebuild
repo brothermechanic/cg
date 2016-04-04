@@ -76,5 +76,5 @@ src_install() {
 	insinto /usr/share/mime
 	doins ${FILESDIR}/x-natron.xml
 	insinto /usr/share/applications
-	doins ${FILESDIR}/Natron2.desktop
+	doins ${FILESDIR}/Natron.desktop
 }

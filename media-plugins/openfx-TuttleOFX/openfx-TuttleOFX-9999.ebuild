@@ -36,6 +36,7 @@ DEPEND="dev-lang/python:3.5/3.5m
 	media-gfx/graphviz
 	virtual/jre
 	virtual/jdk
+	dev-java/icedtea-bin
 	dev-libs/boost	
 	"
 RDEPEND="${DEPEND}"
@@ -46,15 +47,31 @@ src_prepare() {
 	sed -e "s|COMPONENTS|COMPONENTS thread|" -i ${S}/libraries/tuttle/tests/CMakeLists.txt
 }
 src_configure() {
-        local mycmakeargs=(
-		-DROOT_PREFIX=${D}
-		-DCMAKE_INSTALL_PREFIX=/usr
-		-DJAVA_HOME="/opt/icedtea-bin-3.0.0_pre09"
+        local mycmakeargs=""
+		if JDKV="/opt/icedtea-bin-*";then
+		      mycmakeargs="${mycmakeargs} -DJAVA_HOME="${JDKV}""
+		fi
+	mycmakeargs="${mycmakeargs}
+		-DCMAKE_INSTALL_PREFIX=./usr 
 		-DTUTTLE_PYTHON_VERSION=3.5
 		-DTUTTLE_EXPERIMENTAL=OFF
 		-DTUTTLE_PRODUCTION=ON
-        )
+        "
 
         cmake-utils_src_configure
 }
-
+src_install() {
+	cd ${BUILD_DIR}
+	make install
+	
+	cd ${BUILD_DIR}/usr
+	mkdir Plugins
+	mv OFX/* Plugins/
+	mv Plugins OFX/ || die
+	
+	cd ${BUILD_DIR}/usr/bin
+	mv python sam-python
+	rm sam*
+	for f in sam-python/sam/*.py ; do ln -s "$f" ${f%.py} ; mv ${f%.py} . ; done
+	cp -dpR ${BUILD_DIR}/usr ${D}/ || die
+}
