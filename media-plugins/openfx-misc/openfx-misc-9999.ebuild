@@ -7,7 +7,7 @@ EAPI=5
 inherit eutils git-r3
 
 DESCRIPTION="OpenFX. Miscellaneous plugins"
-HOMEPAGE="https://github.com/MrKepzie/openfx-io"
+HOMEPAGE="https://github.com/devernay/openfx-misc"
 EGIT_REPO_URI="https://github.com/devernay/openfx-misc.git"
 
 LICENSE="GPL-2"
