@@ -22,7 +22,7 @@ DEPEND="
 	sys-devel/flex
 	>=media-libs/ilmbase-2.0
 	tbb? ( dev-cpp/tbb )
-	>=sys-devel/llvm-3.6.0[clang]"
+	<=sys-devel/llvm-3.6.0[clang]"
 
 RDEPEND=""
 
@@ -37,8 +37,6 @@ src_configure() {
 		$(cmake-utils_use_use tbb TBB)
 		$(cmake-utils_use_build test TESTING)
 		-DCMAKE_INSTALL_PREFIX=/usr
-		-DLLVM_LIB_DIR=/usr/lib
-		-DLLVM_LIBRARY=/usr/lib/libLLVMCore.so
 		-DPUGIXML_HOME=/usr/lib
 		-DILMBASE_VERSION=2
 		-DOSL_BUILD_CPP11=ON

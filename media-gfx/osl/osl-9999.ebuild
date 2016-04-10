@@ -12,7 +12,7 @@ EGIT_REPO_URI="https://github.com/imageworks/OpenShadingLanguage.git"
 
 LICENSE="BSD"
 SLOT="0"
-KEYWORDS="~x86 ~amd64"
+KEYWORDS=""
 IUSE="test tbb"
 
 DEPEND="
@@ -36,8 +36,6 @@ src_configure() {
 		$(cmake-utils_use_use tbb TBB)
 		$(cmake-utils_use_build test TESTING)
 		-DCMAKE_INSTALL_PREFIX=/usr
-		-DLLVM_LIB_DIR=/usr/lib
-		-DLLVM_LIBRARY=/usr/lib/libLLVMCore.so
 		-DPUGIXML_HOME=/usr/lib
 		-DILMBASE_VERSION=2
 		-DOSL_BUILD_CPP11=ON
