@@ -22,7 +22,7 @@ DEPEND="
 	sys-devel/flex
 	>=media-libs/ilmbase-2.0
 	tbb? ( dev-cpp/tbb )
-	>=sys-devel/llvm-3.6.0[clang]"
+	<sys-devel/llvm-3.6[clang]"
 
 RDEPEND=""
 
