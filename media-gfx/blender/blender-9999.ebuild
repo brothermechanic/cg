@@ -6,33 +6,27 @@
 EAPI=5
 PYTHON_COMPAT=( python3_5 )
 
-BLENDGIT_URI="http://git.blender.org"
-EGIT_REPO_URI="${BLENDGIT_URI}/blender.git"
-BLENDER_ADDONS_URI="${BLENDGIT_URI}/blender-addons.git"
-BLENDER_ADDONS_CONTRIB_URI="${BLENDGIT_URI}/blender-addons-contrib.git"
-BLENDER_TRANSLATIONS_URI="${BLENDGIT_URI}/blender-translations.git"
-
-inherit cmake-utils eutils python-single-r1 gnome2-utils fdo-mime pax-utils git-2 versionator toolchain-funcs flag-o-matic
+inherit cmake-utils eutils python-single-r1 gnome2-utils fdo-mime pax-utils git-r3 versionator toolchain-funcs flag-o-matic
 
 DESCRIPTION="3D Creation/Animation/Publishing System"
 HOMEPAGE="http://www.blender.org/"
+EGIT_REPO_URI="https://git.blender.org/blender.git"
 
 LICENSE="|| ( GPL-2 BL )"
 SLOT="0"
 KEYWORDS=""
-IUSE_BUILD="+blender game-engine -player collada +nls -ndof +cycles freestyle +opencolorio"
-IUSE_COMPILER="buildinfo +openmp +sse +sse2"
+IUSE_BUILD="+blender game-engine -player +nls -ndof +cycles freestyle"
+IUSE_COMPILER="+openmp +sse +sse2"
 IUSE_SYSTEM="X -portable -valgrind -debug -doc"
-IUSE_IMAGE="+openimageio -dpx -dds +openexr -jpeg2k -redcode tiff"
-IUSE_CODEC="+openal sdl jack avi +ffmpeg -sndfile +quicktime"
+IUSE_IMAGE="-dpx -dds +openexr -jpeg2k tiff"
+IUSE_CODEC="+openal sdl jack avi +ffmpeg sndfile +quicktime"
 IUSE_COMPRESSION="-lzma +lzo"
 IUSE_MODIFIERS="+fluid +smoke +boolean +remesh oceansim +decimate"
-IUSE_MODULES="osl openvdb +addons contrib -alembic opensubdiv"
-IUSE_GPU="+opengl +cuda -sm_21 -sm_30 -sm_35 -sm_50"
-IUSE="${IUSE_BUILD} ${IUSE_COMPILER} ${IUSE_SYSTEM} ${IUSE_IMAGE} ${IUSE_CODEC} ${IUSE_COMPRESSION} ${IUSE_MODIFIERS} ${IUSE_MODULES} ${IUSE_GPU}"
+IUSE_LIBS="osl +openvdb +opensubdiv +opencolorio +openimageio collada -alembic"
+IUSE_GPU="+opengl -opengl3 +cuda -sm_21 -sm_30 -sm_35 -sm_50"
+IUSE="${IUSE_BUILD} ${IUSE_COMPILER} ${IUSE_SYSTEM} ${IUSE_IMAGE} ${IUSE_CODEC} ${IUSE_COMPRESSION} ${IUSE_MODIFIERS} ${IUSE_LIBS} ${IUSE_GPU}"
 
 REQUIRED_USE="${PYTHON_REQUIRED_USE}
-	            redcode? ( ffmpeg jpeg2k )
 			player? ( game-engine opengl )"
 
 LANGS="en ar bg ca cs de el es es_ES fa fi fr he hr hu id it ja ky ne nl pl pt pt_BR ru sr sr@latin sv tr uk zh_CN zh_TW"
@@ -106,33 +100,8 @@ DEPEND="${RDEPEND}
 		app-doc/doxygen[-nodot(-),dot(+)]
 	)"
 
-src_unpack(){
-if [ "${PV}" = "9999" ];then
-	git-2_src_unpack
-	unset EGIT_BRANCH EGIT_COMMIT
-	if use addons; then
-		unset EGIT_BRANCH EGIT_COMMIT
-		EGIT_SOURCEDIR="${WORKDIR}/${P}/release/scripts/addons" \
-		EGIT_REPO_URI="${BLENDER_ADDONS_URI}" \
-		git-2_src_unpack
-	fi
-		if use contrib; then
-			unset EGIT_BRANCH EGIT_COMMIT
-			EGIT_SOURCEDIR="${WORKDIR}/${P}/release/scripts/addons_contrib" \
-			EGIT_REPO_URI="${BLENDER_ADDONS_CONTRIB_URI}" \
-			git-2_src_unpack
-		fi
-		if use nls; then
-			unset EGIT_BRANCH EGIT_COMMIT
-			EGIT_SOURCEDIR="${WORKDIR}/${P}/release/datafiles/locale" \
-			EGIT_REPO_URI="${BLENDER_TRANSLATIONS_URI}" \
-			git-2_src_unpack
-		fi
-else
-	unpack ${A}
-fi
-}
-
+CMAKE_BUILD_TYPE="Release"
+	
 pkg_setup() {
 	python-single-r1_pkg_setup
 	enable_openmp="OFF"
@@ -162,12 +131,9 @@ pkg_setup() {
 }
 
 src_prepare() {
-#	rm -r "${WORKDIR}/${P}"/release/scripts/addons_contrib/sequencer_extra_actions/* \
-#	|| die
-
 	epatch "${FILESDIR}"/01-${PN}-2.68-doxyfile.patch \
 		"${FILESDIR}"/06-${PN}-2.68-fix-install-rules.patch \
-#		"${FILESDIR}"/07-${PN}-2.70-sse2.patch \
+		"${FILESDIR}"/07-${PN}-2.77-sse2.patch \
 		"${FILESDIR}"/sequencer_extra_actions-3.8.patch.bz2 \
 		"${FILESDIR}"/01_include_addon_contrib_in_release \
 		"${FILESDIR}"/050_thumbnailer_use_python3
@@ -179,6 +145,7 @@ src_prepare() {
 		extern/libopenjpeg \
 		extern/glew \
 		extern/glew-es \
+		extern/Eigen3 \
 		|| die
 
 	# we don't want static glew, but it's scattered across
@@ -261,93 +228,81 @@ src_configure() {
 		-DPYTHON_LIBRARY="$(python_get_library_path)"
 		-DPYTHON_INCLUDE_DIR="$(python_get_includedir)"
 		$(cmake-utils_use_with blender BLENDER)
-		$(cmake-utils_use_with game-engine GAMEENGINE)
-		$(cmake-utils_use_with player PLAYER)
-		$(cmake-utils_use_with collada OPENCOLLADA)
-		-DWITH_FFTW3=ON
-		$(cmake-utils_use_with nls INTERNATIONAL)
-		$(cmake-utils_use_with ndof INPUT_NDOF)
-		$(cmake-utils_use_with cycles CYCLES)
 		-DWITH_BOOST=ON
+		-DWITH_BUILDINFO=ON
 		-DWITH_BULLET=ON
+		$(cmake-utils_use_with avi CODEC_AVI)
+		$(cmake-utils_use_with ffmpeg CODEC_FFMPEG)
+		$(cmake-utils_use_with sndfile CODEC_SNDFILE)
+		$(cmake-utils_use_with quicktime QUICKTIME)
+		-DWITH_FFTW3=ON
+		$(cmake-utils_use_with sse CPU_SSE)
+		$(cmake-utils_use_with sse RAYOPTIMIZATION)
+		$(cmake-utils_use_with sse2 SSE2)
+		$(cmake-utils_use_with cycles CYCLES)
 		-DWITH_HDF5=ON
 		$(cmake-utils_use_with freestyle FREESTYLE)
-		$(cmake-utils_use_with opencolorio OPENCOLORIO)
-		
-		$(cmake-utils_use_with buildinfo BUILDINFO)
-		$(cmake-utils_use_with openmp OPENMP)
-		$(cmake-utils_use_with sse RAYOPTIMIZATION)
-		$(cmake-utils_use_with sse CPU_SSE)
-		$(cmake-utils_use_with sse2 SSE2)
-		
+		$(cmake-utils_use_with game-engine GAMEENGINE)
 		$(cmake-utils_use_with X X11)
 		$(cmake-utils_use_with !X HEADLESS)
 		$(cmake-utils_use_with X X11_XF86VMODE)
 		$(cmake-utils_use_with X X11_XINPUT)
 		$(cmake-utils_use_with X GHOST_XDND)
-		$(cmake-utils_use_with valgrind VALGRIND)
-		$(cmake-utils_use_with debug DEBUG)
-		$(cmake-utils_use_with debug GPU_DEBUG)
-		$(cmake-utils_use_with debug WITH_CYCLES_DEBUG)
-		$(cmake-utils_use_with doc DOCS)
-		$(cmake-utils_use_with doc DOC_MANPAGE)
-		
-		$(cmake-utils_use_with openimageio OPENIMAGEIO)
-		$(cmake-utils_use_with dpx IMAGE_CINEON)
-		$(cmake-utils_use_with dds IMAGE_DDS)
-		-DWITH_IMAGE_HDR=ON
-		$(cmake-utils_use_with openexr IMAGE_OPENEXR)
-		$(cmake-utils_use_with jpeg2k IMAGE_OPENJPEG)
-		$(cmake-utils_use_with redcode IMAGE_REDCODE)
-		$(cmake-utils_use_with tiff IMAGE_TIFF)
-		
-		$(cmake-utils_use_with openal OPENAL)
-		$(cmake-utils_use_with sdl SDL)
-		$(cmake-utils_use_with sdl SDL_DYNLOAD)
-		$(cmake-utils_use_with jack JACK)
-		$(cmake-utils_use_with jack JACK_DYNLOAD)
-		$(cmake-utils_use_with avi CODEC_AVI)
-		$(cmake-utils_use_with ffmpeg CODEC_FFMPEG)
-		$(cmake-utils_use_with sndfile CODEC_SNDFILE)
-		$(cmake-utils_use_with quicktime QUICKTIME)
-		
+		$(cmake-utils_use_with nls INTERNATIONAL)
+		-DWITH_LEGACY_DEPSGRAPH=OFF
+		$(cmake-utils_use_with osl LLVM)
+		-DLLVM_STATIC=OFF
+		-DLLVM_LIBRARY="/usr/lib"
+		$(cmake-utils_use_with osl CYCLES_OSL)
 		$(cmake-utils_use_with lzma LZMA)
 		$(cmake-utils_use_with lzo LZO)
-		$(cmake-utils_use_with lzo SYSTEM_LZO)
-		
+		$(cmake-utils_use_with valgrind VALGRIND)
 		$(cmake-utils_use_with boolean MOD_BOOLEAN)
 		$(cmake-utils_use_with remesh MOD_REMESH)
 		$(cmake-utils_use_with fluid MOD_FLUID)
 		$(cmake-utils_use_with oceansim MOD_OCEANSIM)
 		$(cmake-utils_use_with decimate MOD_DECIMATE)
 		$(cmake-utils_use_with smoke MOD_SMOKE)
-		
-		$(cmake-utils_use_with osl LLVM)
-		-DLLVM_STATIC=OFF
-		-DLLVM_LIBRARY="/usr/lib"
-		$(cmake-utils_use_with osl CYCLES_OSL)
+		$(cmake-utils_use_with collada OPENCOLLADA)
+		$(cmake-utils_use_with opencolorio OPENCOLORIO)
+		$(cmake-utils_use_with openimageio OPENIMAGEIO)
+		$(cmake-utils_use_with openmp OPENMP)
+		$(cmake-utils_use_with opensubdiv OPENSUBDIV)
 		$(cmake-utils_use_with openvdb OPENVDB)
 		$(cmake-utils_use_with openvdb OPENVDB_BLOSC)
 		$(cmake-utils_use_with alembic ALEMBIC)
-		$(cmake-utils_use_with alembic STATICALEMBIC)
-		$(cmake-utils_use_with opensubdiv OPENSUBDIV)
-		
+		$(cmake-utils_use_with player PLAYER)
+		$(cmake-utils_use_with dpx IMAGE_CINEON)
+		$(cmake-utils_use_with dds IMAGE_DDS)
+		-DWITH_IMAGE_HDR=ON
+		$(cmake-utils_use_with openexr IMAGE_OPENEXR)
+		$(cmake-utils_use_with jpeg2k IMAGE_OPENJPEG)
+		$(cmake-utils_use_with tiff IMAGE_TIFF)
+		$(cmake-utils_use_with ndof INPUT_NDOF)
+		$(cmake-utils_use_with openal OPENAL)
+		$(cmake-utils_use_with sdl SDL)
+		$(cmake-utils_use_with sdl SDL_DYNLOAD)
+		$(cmake-utils_use_with jack JACK)
+		$(cmake-utils_use_with jack JACK_DYNLOAD)
 		$(cmake-utils_use_with !portable SYSTEM_EIGEN3)
+		$(cmake-utils_use_with !portable SYSTEM_LZO)
+		$(cmake-utils_use_with !portable SYSTEM_OPENJPEG)
+		$(cmake-utils_use_with portable STATICALEMBIC)
 		$(cmake-utils_use_with portable INSTALL_PORTABLE)
 		$(cmake-utils_use_with portable STATIC_LIBS)
 		$(cmake-utils_use_with portable PYTHON_INSTALL)
 		$(cmake-utils_use_with portable PYTHON_INSTALL_NUMPY)
 		$(cmake-utils_use_with portable PYTHON_INSTALL_REQUESTS)
-		
 		$(cmake-utils_use_with opengl SYSTEM_GLEW)
 		$(cmake-utils_use_with opengl SYSTEM_GLES)
 		$(cmake-utils_use_with opengl GL_PROFILE_COMPAT)
-		$(cmake-utils_use_with jpeg2k SYSTEM_OPENJPEG)
-		
-		-DWITH_OPENNL=ON
-		
-		-DWITH_CPP11=OFF
-		-DWITH_LEGACY_DEPSGRAPH=ON"
+		$(cmake-utils_use_with opengl3 GL_PROFILE_CORE)
+		$(cmake-utils_use_with debug DEBUG)
+		$(cmake-utils_use_with debug GPU_DEBUG)
+		$(cmake-utils_use_with debug WITH_CYCLES_DEBUG)
+		$(cmake-utils_use_with doc DOCS)
+		$(cmake-utils_use_with doc DOC_MANPAGE)
+		-DWITH_OPENNL=ON"
 
 	cmake-utils_src_configure
 }
@@ -399,7 +354,7 @@ pkg_preinst() {
 
 pkg_postinst() {
 	elog
-	elog "Blender compiles from master think by default"
+	elog "Blender compiles from master thunk by default"
 	elog "You may change a branch and a rev, for ex, in /etc/portage/env/blender"
 	elog "EGIT_COMMIT="v2.74""
 	elog "EGIT_BRANCH="master""
