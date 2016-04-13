@@ -249,7 +249,6 @@ src_configure() {
 		$(cmake-utils_use_with X X11_XINPUT)
 		$(cmake-utils_use_with X GHOST_XDND)
 		$(cmake-utils_use_with nls INTERNATIONAL)
-		-DWITH_LEGACY_DEPSGRAPH=OFF
 		$(cmake-utils_use_with osl LLVM)
 		-DLLVM_STATIC=OFF
 		-DLLVM_LIBRARY="/usr/lib"
