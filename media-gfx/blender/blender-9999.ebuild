@@ -6,16 +6,30 @@
 EAPI=5
 PYTHON_COMPAT=( python3_5 )
 
-inherit cmake-utils eutils python-single-r1 gnome2-utils fdo-mime pax-utils git-r3 versionator toolchain-funcs flag-o-matic
+BLENDGIT_URI="http://git.blender.org"
+BLENDER_REPO_URI="${BLENDGIT_URI}/blender.git"
+BLENDER_ADDONS_URI="${BLENDGIT_URI}/blender-addons.git"
+BLENDER_ADDONS_CONTRIB_URI="${BLENDGIT_URI}/blender-addons-contrib.git"
+BLENDER_TRANSLATIONS_URI="${BLENDGIT_URI}/blender-translations.git"
+BLENDER_PBR_URI="https://github.com/Hypersomniac/blender-shader.git"
+
+inherit cmake-utils eutils python-single-r1 gnome2-utils fdo-mime pax-utils git-2 versionator toolchain-funcs flag-o-matic
 
 DESCRIPTION="3D Creation/Animation/Publishing System"
 HOMEPAGE="http://www.blender.org/"
-EGIT_REPO_URI="https://git.blender.org/blender.git"
+
+if use pbr; then
+		EGIT_REPO_URI="${BLENDER_PBR_URI}"
+	else	
+		EGIT_REPO_URI="${BLENDER_REPO_URI}"
+fi
+
+
 
 LICENSE="|| ( GPL-2 BL )"
 SLOT="0"
 KEYWORDS=""
-IUSE_BUILD="+blender game-engine -player +nls -ndof +cycles freestyle"
+IUSE_BUILD="+blender pbr game-engine +addons contrib +nls -ndof +cycles freestyle -player"
 IUSE_COMPILER="+openmp +sse +sse2"
 IUSE_SYSTEM="X -portable -valgrind -debug -doc"
 IUSE_IMAGE="-dpx -dds +openexr -jpeg2k tiff"
@@ -27,7 +41,8 @@ IUSE_GPU="+opengl -opengl3 +cuda -sm_21 -sm_30 -sm_35 -sm_50"
 IUSE="${IUSE_BUILD} ${IUSE_COMPILER} ${IUSE_SYSTEM} ${IUSE_IMAGE} ${IUSE_CODEC} ${IUSE_COMPRESSION} ${IUSE_MODIFIERS} ${IUSE_LIBS} ${IUSE_GPU}"
 
 REQUIRED_USE="${PYTHON_REQUIRED_USE}
-			player? ( game-engine opengl )"
+			player? ( game-engine opengl )
+			  contrib? ( addons )"
 
 LANGS="en ar bg ca cs de el es es_ES fa fi fr he hr hu id it ja ky ne nl pl pt pt_BR ru sr sr@latin sv tr uk zh_CN zh_TW"
 for X in ${LANGS} ; do
@@ -101,7 +116,30 @@ DEPEND="${RDEPEND}
 	)"
 
 CMAKE_BUILD_TYPE="Release"
-	
+
+src_unpack(){
+	git-2_src_unpack
+	unset EGIT_BRANCH EGIT_COMMIT
+	if use addons; then
+		unset EGIT_BRANCH EGIT_COMMIT
+		EGIT_SOURCEDIR="${WORKDIR}/${P}/release/scripts/addons" \
+		EGIT_REPO_URI="${BLENDER_ADDONS_URI}" \
+		git-2_src_unpack
+		if use contrib; then
+			unset EGIT_BRANCH EGIT_COMMIT
+			EGIT_SOURCEDIR="${WORKDIR}/${P}/release/scripts/addons_contrib" \
+			EGIT_REPO_URI="${BLENDER_ADDONS_CONTRIB_URI}" \
+			git-2_src_unpack
+		fi
+	fi
+	if use nls; then
+		unset EGIT_BRANCH EGIT_COMMIT
+		EGIT_SOURCEDIR="${WORKDIR}/${P}/release/datafiles/locale" \
+		EGIT_REPO_URI="${BLENDER_TRANSLATIONS_URI}" \
+		git-2_src_unpack
+	fi
+}
+
 pkg_setup() {
 	python-single-r1_pkg_setup
 	enable_openmp="OFF"
