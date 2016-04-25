@@ -16,6 +16,7 @@ KEYWORDS="~amd64"
 IUSE=""
 
 DEPEND="media-libs/openimageio
+        media-libs/opencv:0/3.1
 	"
 RDEPEND="${DEPEND}"
 
