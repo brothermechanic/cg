@@ -10,7 +10,7 @@ inherit cmake-utils eutils git-2
 
 DESCRIPTION="to create thumbnails for blend files in KDE"
 HOMEPAGE="https://github.com/kayosiii/kde-thumbnailer-blender"
-#EGIT_COMMIT="9f36bc3" #for kde4 support
+EGIT_COMMIT="9f36bc3" #for kde4 support
 
 LICENSE="GPL-3"
 
