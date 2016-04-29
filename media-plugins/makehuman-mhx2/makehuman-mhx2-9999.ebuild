@@ -21,7 +21,7 @@ RDEPEND="${RDEPEND}
 	 "
 
 src_install() {
-	insinto /opt/makehuman/plugins/
+	insinto /usr/share/makehuman/plugins/
 	doins -r "${S}"/9_export_mhx2
 	if use blender; then
 	      if VER="/usr/share/blender/*";then
