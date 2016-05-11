@@ -33,7 +33,7 @@ src_prepare() {
 	cd Sources/utils/QtnProperty
 	eqmake5 -r
 	cd $S
-	eqmake5
+	eqmake5 
 }
 
 src_compile() {
