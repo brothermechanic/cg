@@ -61,6 +61,6 @@ src_install() {
 	find "${S}/workdir" -name 'AwesomeBump' -exec doexe '{}' +
 	#doexe workdir/linux-*/AwesomeBump
 	dobin "${FILESDIR}/AwesomeBump.sh"
-	newicon Sources/resources/logo.png "${PN}".png || die
+	newicon Sources/resources/icons/icon.png "${PN}".png || die
 	make_desktop_entry AwesomeBump.sh
 }
