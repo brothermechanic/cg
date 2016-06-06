@@ -5,7 +5,7 @@
 EAPI=5
 PYTHON_COMPAT=( python3_5 )
 
-inherit eutils autotools flag-o-matic
+inherit eutils autotools flag-o-matic python-single-r1
 
 DESCRIPTION="Python bindings for the IlmBase"
 HOMEPAGE="http://openexr.com/"
@@ -29,13 +29,14 @@ src_prepare() {
 	epatch "${FILESDIR}"/PyImath_python3.patch
 	epatch "${FILESDIR}"/configure_ac_python3.patch
 	epatch "${FILESDIR}"/imathnumpymodule_cpp.patch
+	epatch "${FILESDIR}"/python-pyilmbase-link.patch
 	eautoreconf
 }
 
 src_configure() {
 	econf \
 		--prefix=/usr \
-		--with-boost-python-libname=boost_python-3.5
+		--with-boost-python-libname=boost_python-${EPYTHON#python}
 }
 
 src_install() {
