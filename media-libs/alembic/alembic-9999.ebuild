@@ -5,13 +5,13 @@
 EAPI=5
 PYTHON_COMPAT=( python3_5 )
 
-inherit cmake-utils eutils python-single-r1
+inherit cmake-utils eutils python-single-r1 git-r3
 
 DESCRIPTION="An open framework for storing and sharing 3D geometry data."
 HOMEPAGE="http://alembic.io"
-SRC_URI="https://github.com/alembic/alembic/archive/${PV}.tar.gz -> ${P}.tar.gz"
+EGIT_REPO_URI="https://github.com/alembic/alembic.git"
 
-LICENSE="MIT"
+LICENSE="ALEMBIC"
 SLOT="0"
 KEYWORDS="~amd64"
 IUSE="doc"
@@ -42,21 +42,17 @@ src_configure() {
 		-DBoost_INCLUDE_DIRS=/usr/include/boost/
 		-DBoost_FOUND=ON
 		-DBOOST_LIBRARY_DIR=/usr/lib64
+		-DALEMBIC_LIB_USES_BOOST=ON
 		-DALEMBIC_BOOST_FOUND=ON
 		-DALEMBIC_BOOST_INCLUDE_PATH=/usr/include/boost/
 		-DALEMBIC_BOOST_LIBRARIES=boost_python-${EPYTHON#python}
 		-DALEMBIC_PYTHON_ROOT=/usr/lib64
 		-DALEMBIC_HDF5_LIBS="-lhdf5_hl -lhdf5_cpp -lhdf5_fortran -lhdf5"
+		-DILMBASE_ROOT=/usr
+		-DILMBASE_VERSION=2.2
 		-DILMBASE_LIBRARY_DIR=/usr/lib64
 		-DALEMBIC_ILMBASE_INCLUDE_DIRECTORY=/usr/include/OpenEXR
-		-DALEMBIC_ILMBASE_LIBS="-lIex -lIexMath -lIlmThread -lImath -lHalf"
-		-DALEMBIC_ILMBASE_IMATH_LIB=Imath
-		-DALEMBIC_ILMBASE_ILMTHREAD_LIB=IlmThread
-		-DALEMBIC_ILMBASE_IEX_LIB=Iex
-		-DALEMBIC_ILMBASE_IEXMATH_LIB=IexMath
-		-DALEMBIC_ILMBASE_HALF_LIB=Half
 		-DOPENEXR_INCLUDE_PATHS=/usr/include/OpenEXR
-		-DALEMBIC_OPENEXR_LIBRARIES="-lIlmImfUtil -lIlmImf"
 		-DALEMBIC_PYILMBASE_INCLUDE_DIRECTORY=/usr/include/OpenEXR
 		-DALEMBIC_PYILMBASE_LIBRARIES="-lPyIex -lPyImath"
 		-DUSE_PRMAN=OFF
