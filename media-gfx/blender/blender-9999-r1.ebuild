@@ -269,6 +269,7 @@ src_configure() {
 		-DALEMBIC_ABCUTIL_LIBRARY=/usr/lib/static/libAlembicUtil.a
 		-DALEMBIC_ABC_LIBRARY=/usr/lib/static/libAlembicAbc.a
 		-DALEMBIC_OGAWA_LIBRARY=
+	fi
 
 	#make DESTDIR="${D}" install didn't work
 	mycmakeargs="${mycmakeargs}
