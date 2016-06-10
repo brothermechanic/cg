@@ -1,4 +1,4 @@
- 
+
 # Copyright 1999-2014 Gentoo Foundation
 # Distributed under the terms of the GNU General Public License v2
 # $Header: /var/cvsroot/gentoo-x86/media-gfx/blender/blender-9999.ebuild,v 1.6 2014/11/30 23:00:00 brothermechanic Exp $
@@ -20,7 +20,7 @@ HOMEPAGE="http://www.blender.org/"
 
 if use pbr; then
 		EGIT_REPO_URI="${BLENDER_PBR_URI}"
-	else	
+	else
 		EGIT_REPO_URI="${BLENDER_REPO_URI}"
 fi
 
@@ -64,7 +64,7 @@ RDEPEND="${PYTHON_DEPS}
 	virtual/jpeg
 	dev-libs/boost[threads(+)]
 	sci-libs/colamd
-	opengl? ( 
+	opengl? (
 		virtual/opengl
 		media-libs/glew
 		virtual/glu
@@ -165,7 +165,7 @@ pkg_setup() {
 			ewarn "'cuda' USE. CUDA will not be compiled until you do so."
 		fi
 	fi
-	
+
 }
 
 src_prepare() {
@@ -175,7 +175,7 @@ src_prepare() {
 		"${FILESDIR}"/sequencer_extra_actions-3.8.patch.bz2 \
 		"${FILESDIR}"/01_include_addon_contrib_in_release \
 		"${FILESDIR}"/050_thumbnailer_use_python3
-		
+
 	epatch_user
 
 	# remove some bundled deps
@@ -258,6 +258,7 @@ src_configure() {
 		-DCUDA_NVCC=/opt/cuda/bin/nvcc"
 	fi
 	if use alembic; then
+		mycmakeargs="${mycmakeargs}
 		-DWITH_ALEMBIC=ON
 		-DALEMBIC_INCLUDE_DIR=/usr/include/Alembic
 		-DALEMBIC_ABCCOREFACTORY=/usr/lib/static/libAlembicAbcCoreFactory.a
@@ -268,7 +269,8 @@ src_configure() {
 		-DALEMBIC_ABCOGAWA_LIBRARY=/usr/lib/static/libAlembicAbcCoreOgawa.a
 		-DALEMBIC_ABCUTIL_LIBRARY=/usr/lib/static/libAlembicUtil.a
 		-DALEMBIC_ABC_LIBRARY=/usr/lib/static/libAlembicAbc.a
-		-DALEMBIC_OGAWA_LIBRARY=
+		-DALEMBIC_OGAWA_LIBRARY="
+	fi
 
 	#make DESTDIR="${D}" install didn't work
 	mycmakeargs="${mycmakeargs}
