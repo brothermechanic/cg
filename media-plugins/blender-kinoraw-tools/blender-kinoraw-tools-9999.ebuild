@@ -16,7 +16,7 @@ KEYWORDS="~amd64 ~x86"
 IUSE=""
 
 DEPEND=""
-RDEPEND="=media-gfx/blender-9999"
+RDEPEND=">=media-gfx/blender-9999"
 
 src_install() {
 	rm -r {*zip,archive,doc,imgs}
