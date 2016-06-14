@@ -20,7 +20,7 @@ IUSE="doc +openvdb-compression X"
 
 DEPEND="
 	sys-libs/zlib
-	>=dev-libs/boost-1.61.0
+	>=dev-libs/boost-1.61.0[python]
 	media-libs/openexr
 	>=dev-cpp/tbb-3.0
 	>=dev-util/cppunit-1.10

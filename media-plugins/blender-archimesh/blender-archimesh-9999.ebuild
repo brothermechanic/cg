@@ -16,7 +16,7 @@ KEYWORDS="~amd64 ~x86"
 IUSE=""
 
 DEPEND=""
-RDEPEND="=media-gfx/blender-9999"
+RDEPEND="media-gfx/blender[addons]"
 
 src_install() {
 	mv "${S}"/archimesh/src "${S}"/archimesh/archimesh

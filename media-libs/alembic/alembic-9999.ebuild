@@ -13,7 +13,7 @@ EGIT_REPO_URI="https://github.com/alembic/alembic.git"
 
 LICENSE="ALEMBIC"
 SLOT="0"
-KEYWORDS="~amd64"
+KEYWORDS=""
 IUSE="doc"
 RDEPEND=""
 DEPEND="${PYTHON_DEPS}

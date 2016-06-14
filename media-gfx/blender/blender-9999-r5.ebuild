@@ -1,4 +1,3 @@
- 
 # Copyright 1999-2014 Gentoo Foundation
 # Distributed under the terms of the GNU General Public License v2
 # $Header: /var/cvsroot/gentoo-x86/media-gfx/blender/blender-9999.ebuild,v 1.6 2014/11/30 23:00:00 brothermechanic Exp $
@@ -27,16 +26,16 @@ fi
 
 
 LICENSE="|| ( GPL-2 BL )"
-SLOT="0"
+SLOT="9999"
 KEYWORDS=""
 IUSE_BUILD="+blender pbr game-engine +addons contrib +nls -ndof +cycles freestyle -player"
-IUSE_COMPILER="+openmp +sse +sse2"
+IUSE_COMPILER="openmp sse sse2"
 IUSE_SYSTEM="X -portable -valgrind -debug -doc"
-IUSE_IMAGE="-dpx -dds +openexr -jpeg2k tiff"
+IUSE_IMAGE="-dpx -dds +openexr jpeg2k tiff"
 IUSE_CODEC="+openal sdl jack avi +ffmpeg sndfile +quicktime"
 IUSE_COMPRESSION="-lzma +lzo"
 IUSE_MODIFIERS="+fluid +smoke +boolean +remesh oceansim +decimate"
-IUSE_LIBS="osl +openvdb +opensubdiv +opencolorio +openimageio collada -alembic"
+IUSE_LIBS="osl +openvdb +opensubdiv +opencolorio +openimageio collada +alembic"
 IUSE_GPU="+opengl -opengl3 +cuda -sm_21 -sm_30 -sm_35 -sm_50"
 IUSE="${IUSE_BUILD} ${IUSE_COMPILER} ${IUSE_SYSTEM} ${IUSE_IMAGE} ${IUSE_CODEC} ${IUSE_COMPRESSION} ${IUSE_MODIFIERS} ${IUSE_LIBS} ${IUSE_GPU}"
 
@@ -175,7 +174,9 @@ src_prepare() {
 		"${FILESDIR}"/sequencer_extra_actions-3.8.patch.bz2 \
 		"${FILESDIR}"/01_include_addon_contrib_in_release \
 		"${FILESDIR}"/050_thumbnailer_use_python3
-		
+
+	cp -f "${FILESDIR}"/FindALEMBIC.cmake build_files/cmake/Modules || die
+
 	epatch_user
 
 	# remove some bundled deps
@@ -248,34 +249,43 @@ src_configure() {
 
 		#If a kernel isn't selected then all of them are built by default
 		if [ -n "${CUDA_ARCH}" ] ; then
-			mycmakeargs="${mycmakeargs} -DCYCLES_CUDA_BINARIES_ARCH=${CUDA_ARCH}"
+			mycmakeargs+=(
+				
+				-DCYCLES_CUDA_BINARIES_ARCH=${CUDA_ARCH}
+			)
 		fi
-		mycmakeargs="${mycmakeargs}
-		-DWITH_CYCLES_CUDA=ON
-		-DWITH_CYCLES_CUDA_BINARIES=ON
-		-DCUDA_INCLUDES=/opt/cuda/include
-		-DCUDA_LIBRARIES=/opt/cuda/lib64
-		-DCUDA_NVCC=/opt/cuda/bin/nvcc"
+		mycmakeargs+=(
+			-DWITH_CYCLES_CUDA=ON
+			-DWITH_CYCLES_CUDA_BINARIES=ON
+			-DCUDA_INCLUDES=/opt/cuda/include
+			-DCUDA_LIBRARIES=/opt/cuda/lib64
+			-DCUDA_NVCC=/opt/cuda/bin/nvcc
+		)
 	fi
 	if use alembic; then
-		-DWITH_ALEMBIC=ON
-		-DALEMBIC_INCLUDE_DIR=/usr/include/Alembic
-		-DALEMBIC_ABCCOREFACTORY=/usr/lib/static/libAlembicAbcCoreFactory.a
-		-DALEMBIC_ABCCORE_ABC_LIBRARY=/usr/lib/static/libAlembicAbcCoreAbstract.a
-		-DALEMBIC_ABCCORE_HDF5_LIBRARY=/usr/lib/static/libAlembicAbcCoreHDF5.a
-		-DALEMBIC_ABCGEOM_LIBRARY=/usr/lib/static/libAlembicAbcGeom.a
-		-DALEMBIC_ABCMATERIAL=/usr/lib/static/libAlembicAbcMaterial.a
-		-DALEMBIC_ABCOGAWA_LIBRARY=/usr/lib/static/libAlembicAbcCoreOgawa.a
-		-DALEMBIC_ABCUTIL_LIBRARY=/usr/lib/static/libAlembicUtil.a
-		-DALEMBIC_ABC_LIBRARY=/usr/lib/static/libAlembicAbc.a
-		-DALEMBIC_OGAWA_LIBRARY=
+		mycmakeargs+=(
+			-DWITH_ALEMBIC=ON
+			-DALEMBIC_ROOT_DIR=/usr
+			-DALEMBIC_LIBPATH=/usr/lib
+			-DALEMBIC_INCLUDE_DIRS=/usr/include/Alembic
+			-DALEMBIC_ABC_LIBRARY=libAlembic.so
+			-DALEMBIC_ABCCOREFACTORY=libAlembic.so
+			-DALEMBIC_ABCCORE_ABC_LIBRARY=libAlembic.so
+			-DALEMBIC_ABCCORE_HDF5_LIBRARY=libAlembic.so
+			-DALEMBIC_ABCGEOM_LIBRARY=libAlembic.so
+			-DALEMBIC_ABCMATERIAL=libAlembic.so
+			-DALEMBIC_ABCOGAWA_LIBRARY=libAlembic.so
+			-DALEMBIC_ABCUTIL_LIBRARY=libAlembic.so
+			-DALEMBIC_OGAWA_LIBRARY=libAlembic.so
+		)
+	fi
 
-	#make DESTDIR="${D}" install didn't work
-	mycmakeargs="${mycmakeargs}
-		-DCMAKE_INSTALL_PREFIX="/usr"
-		-DPYTHON_VERSION="${EPYTHON/python/}"
-		-DPYTHON_LIBRARY="$(python_get_library_path)"
-		-DPYTHON_INCLUDE_DIR="$(python_get_includedir)"
+
+	mycmakeargs+=(
+		-DCMAKE_INSTALL_PREFIX=/usr
+		-DPYTHON_VERSION=${EPYTHON/python/}
+		-DPYTHON_LIBRARY=$(python_get_library_path)
+		-DPYTHON_INCLUDE_DIR=$(python_get_includedir)
 		$(cmake-utils_use_with blender BLENDER)
 		-DWITH_BOOST=ON
 		-DWITH_BUILDINFO=ON
@@ -290,6 +300,9 @@ src_configure() {
 		$(cmake-utils_use_with sse2 SSE2)
 		$(cmake-utils_use_with cycles CYCLES)
 		-DWITH_HDF5=ON
+		-DHDF5_INCLUDE_DIR=/usr/include
+		-DHDF5_ROOT_DIR=/usr
+		-DHDF5_LIBPATH=/usr/lib
 		$(cmake-utils_use_with freestyle FREESTYLE)
 		$(cmake-utils_use_with game-engine GAMEENGINE)
 		$(cmake-utils_use_with X X11)
@@ -300,7 +313,7 @@ src_configure() {
 		$(cmake-utils_use_with nls INTERNATIONAL)
 		$(cmake-utils_use_with osl LLVM)
 		-DLLVM_STATIC=OFF
-		-DLLVM_LIBRARY="/usr/lib"
+		-DLLVM_LIBRARY=/usr/lib
 		$(cmake-utils_use_with osl CYCLES_OSL)
 		$(cmake-utils_use_with lzma LZMA)
 		$(cmake-utils_use_with lzo LZO)
@@ -318,7 +331,6 @@ src_configure() {
 		$(cmake-utils_use_with opensubdiv OPENSUBDIV)
 		$(cmake-utils_use_with openvdb OPENVDB)
 		$(cmake-utils_use_with openvdb OPENVDB_BLOSC)
-		$(cmake-utils_use_with alembic ALEMBIC)
 		$(cmake-utils_use_with player PLAYER)
 		$(cmake-utils_use_with dpx IMAGE_CINEON)
 		$(cmake-utils_use_with dds IMAGE_DDS)
@@ -350,7 +362,8 @@ src_configure() {
 		$(cmake-utils_use_with debug WITH_CYCLES_DEBUG)
 		$(cmake-utils_use_with doc DOCS)
 		$(cmake-utils_use_with doc DOC_MANPAGE)
-		-DWITH_OPENNL=ON"
+		-DWITH_OPENNL=ON
+	)
 
 	cmake-utils_src_configure
 }
@@ -404,7 +417,7 @@ pkg_postinst() {
 	elog
 	elog "Blender compiles from master thunk by default"
 	elog "You may change a branch and a rev, for ex, in /etc/portage/env/blender"
-	elog "EGIT_COMMIT="v2.74""
+	elog "EGIT_COMMIT="v2.77a""
 	elog "EGIT_BRANCH="master""
 	elog "and don't forget add to /etc/portage/package.env"
 	elog "media-gfx/blender blender"
