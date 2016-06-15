@@ -14,7 +14,7 @@ LICENSE="GPL-2"
 SLOT="0"
 KEYWORDS=""
 
-IUSE="+openfx-io +openfx-misc +openfx-opencv +openfx-arena +openfx-TuttleOFX"
+IUSE="+openfx-io +openfx-misc +openfx-opencv +openfx-arena openfx-TuttleOFX"
 
 RDEPEND="dev-qt/qtcore:4
 	dev-libs/boost
@@ -53,7 +53,6 @@ src_install() {
 	doexe App/Natron
 	doexe Renderer/NatronRenderer
 	doexe Tests/Tests
-	doexe CrashReporter/NatronCrashReporter
 	dosym /opt/Natron/bin/Natron /usr/bin/Natron
 	dosym /opt/Natron/bin/NatronRenderer /usr/bin/NatronRenderer
 	dosym /opt/Natron/bin/Tests /usr/bin/Tests
