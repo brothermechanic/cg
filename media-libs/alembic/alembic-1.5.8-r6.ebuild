@@ -20,7 +20,7 @@ DEPEND="${PYTHON_DEPS}
 	>=dev-util/cmake-2.8
 	>=dev-libs/boost-1.44[${PYTHON_USEDEP}]
 	>=media-libs/ilmbase-1.0.1
-	>=sci-libs/hdf5-1.8.7
+	>=sci-libs/hdf5-1.8.17
 	media-libs/pyilmbase[${PYTHON_USEDEP}]
 	doc? ( >=app-doc/doxygen-1.7.3 )"
 
@@ -46,26 +46,20 @@ src_configure() {
 		-DALEMBIC_BOOST_INCLUDE_PATH=/usr/include/boost/
 		-DALEMBIC_BOOST_LIBRARIES=boost_python-${EPYTHON#python}
 		-DALEMBIC_PYTHON_ROOT=/usr/lib64
-		-DALEMBIC_HDF5_LIBS="-lhdf5_hl -lhdf5_cpp -lhdf5_fortran -lhdf5"
 		-DILMBASE_LIBRARY_DIR=/usr/lib64
 		-DALEMBIC_ILMBASE_INCLUDE_DIRECTORY=/usr/include/OpenEXR
-		-DALEMBIC_ILMBASE_LIBS="-lIex -lIexMath -lIlmThread -lImath -lHalf"
-		-DALEMBIC_ILMBASE_IMATH_LIB=Imath
-		-DALEMBIC_ILMBASE_ILMTHREAD_LIB=IlmThread
 		-DALEMBIC_ILMBASE_IEX_LIB=Iex
 		-DALEMBIC_ILMBASE_IEXMATH_LIB=IexMath
 		-DALEMBIC_ILMBASE_HALF_LIB=Half
 		-DOPENEXR_INCLUDE_PATHS=/usr/include/OpenEXR
-		-DALEMBIC_OPENEXR_LIBRARIES="-lIlmImfUtil -lIlmImf"
 		-DALEMBIC_PYILMBASE_INCLUDE_DIRECTORY=/usr/include/OpenEXR
-		-DALEMBIC_PYILMBASE_LIBRARIES="-lPyIex -lPyImath"
 		-DUSE_PRMAN=OFF
 		-DUSE_ARNOLD=OFF
 		-DUSE_MAYA=OFF
-		-DALEMBIC_SHARED_LIBS=ON
+		-DALEMBIC_SHARED_LIBS=OFF
 		-DUSE_TESTS=OFF
-		-DUSE_STATIC_BOOST=OFF
-		-DUSE_STATIC_HDF5=OFF
+		-DUSE_STATIC_BOOST=ON
+		-DUSE_STATIC_HDF5=ON
 		-DUSE_PYALEMBIC=OFF
 	)
 	cmake-utils_src_configure
