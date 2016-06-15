@@ -9,7 +9,7 @@ inherit eutils git-r3
 DESCRIPTION="OpenFX. The Readers/Writers plugins"
 HOMEPAGE="https://github.com/MrKepzie/openfx-io"
 EGIT_REPO_URI="https://github.com/MrKepzie/openfx-io.git"
-EGIT_COMMIT="fef4437"
+EGIT_COMMIT="4ddf4a5"
 
 LICENSE="GPL-2"
 SLOT="0"
