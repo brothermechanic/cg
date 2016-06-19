@@ -6,27 +6,15 @@ EAPI=5
 PYTHON_COMPAT=( python3_5 )
 PYTHON_REQ_USE="sqlite"
 
-if [[ $PV = *9999* ]]; then
-	scm_eclass=git-r3
-	EGIT_REPO_URI="
-		git://github.com/LiuLang/bcloud.git
-		https://github.com/LiuLang/bcloud.git"
-	SRC_URI=""
-	KEYWORDS=""
-else
-	SRC_URI="https://github.com/LiuLang/bcloud/archive/v${PV}.tar.gz -> ${P}.tar.gz"
-	KEYWORDS="~amd64 ~x86"
-fi
-
 inherit python-r1 ${scm_eclass}
 
 DESCRIPTION="Baidu Pan client for Linux Desktop users"
 HOMEPAGE="https://github.com/LiuLang/bcloud"
-
+SRC_URI="https://www.dropbox.com/s/bkbihy3gp5vseau/bcloud-3.8.2.2.rus.tar.gz"
 LICENSE="GPL-3"
 SLOT="0"
 REQUIRED_USE="${PYTHON_REQUIRED_USE}"
-
+KEYWORDS="~amd64 ~x86"
 IUSE+="gnome-keyring"
 
 DEPEND="${PYTHON_DEPS}"
@@ -42,7 +30,7 @@ RDEPEND="${DEPEND}
 	x11-libs/libnotify
 	gnome-keyring? ( gnome-base/libgnome-keyring  )
 	"
-
+S="${WORKDIR}/bcloud-3.8.2.1"
 src_install() {
 	python_foreach_impl python_domodule ${PN}
 	dobin bcloud-gui
