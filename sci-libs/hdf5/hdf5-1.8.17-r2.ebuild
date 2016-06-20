@@ -9,10 +9,11 @@ AUTOTOOLS_AUTORECONF=1
 
 inherit autotools-utils eutils fortran-2 flag-o-matic toolchain-funcs multilib
 
+MY_P=${PN}-${PV/_p/-patch}
+
 DESCRIPTION="General purpose library and file format for storing scientific data"
 HOMEPAGE="http://www.hdfgroup.org/HDF5/"
-SRC_URI="http://www.hdfgroup.org/ftp/HDF5/current/src/${P}.tar.bz2"
-
+SRC_URI="http://www.hdfgroup.org/ftp/HDF5/releases/${MY_P}/src/${MY_P}.tar.bz2"
 
 LICENSE="NCSA-HDF"
 SLOT="0/${PV%%_p*}"
@@ -33,6 +34,7 @@ DEPEND="${RDEPEND}
 	sys-devel/libtool:2
 	>=sys-devel/autoconf-2.69"
 
+S="${WORKDIR}/${MY_P}"
 
 PATCHES=(
 	"${FILESDIR}"/${PN}-1.8.9-static_libgfortran.patch
@@ -90,6 +92,7 @@ src_configure() {
 		--with-pic
 		--disable-shared
 		--enable-unsupported
+		--disable-shared
 		$(use_enable prefix sharedlib-rpath)
 		$(use_enable debug debug all)
 		$(use_enable debug codestack)

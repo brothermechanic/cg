@@ -27,10 +27,15 @@ DEPEND="${PYTHON_DEPS}
 CMAKE_BUILD_TYPE=Release
 	
 src_prepare() {
+	append-cxxflags -std=c++11
 	sed -e "s:/usr/lib64/.*/config:/usr/lib64:g;s:/usr/lib/.*/config:/usr/lib:g" \
 		-i python/{PyAlembic,PyAbcOpenGL}/CMakeLists.txt || die
 	sed -e "/build.*.cmake/d;s/ALEMBIC_NO_BOOTSTRAP FALSE/ALEMBIC_NO_BOOTSTRAP TRUE/;s:/alembic-\${VERSION}::g" \
 		-i CMakeLists.txt || die
+	sed -e "s:ALEMBIC_SHARED_LIBS AND DARWIN:ALEMBIC_SHARED_LIBS:g" \
+		-i lib/Alembic/CMakeLists.txt || die
+
+	epatch "${FILESDIR}"/hdf5_v110.patch
 
 	rm -Rf build || die
 }
@@ -52,6 +57,7 @@ src_configure() {
 		-DILMBASE_VERSION=2.2
 		-DILMBASE_LIBRARY_DIR=/usr/lib64
 		-DALEMBIC_ILMBASE_INCLUDE_DIRECTORY=/usr/include/OpenEXR
+		-DALEMBIC_ILMBASE_LIBRARIES="-lhdf5_hl -lhdf5_cpp -lhdf5_fortran -lhdf5"
 		-DOPENEXR_INCLUDE_PATHS=/usr/include/OpenEXR
 		-DALEMBIC_PYILMBASE_INCLUDE_DIRECTORY=/usr/include/OpenEXR
 		-DALEMBIC_PYILMBASE_LIBRARIES="-lPyIex -lPyImath"
@@ -63,6 +69,7 @@ src_configure() {
 		-DUSE_STATIC_BOOST=OFF
 		-DUSE_STATIC_HDF5=OFF
 		-DUSE_PYALEMBIC=ON
+		-DUSE_HDF5=ON
 	)
 	cmake-utils_src_configure
 }

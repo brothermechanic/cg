@@ -5,15 +5,15 @@
 EAPI=5
 PYTHON_COMPAT=( python3_5 )
 
-inherit cmake-utils eutils python-single-r1
+inherit cmake-utils eutils python-single-r1 git-r3
 
 DESCRIPTION="An open framework for storing and sharing 3D geometry data."
 HOMEPAGE="http://alembic.io"
-SRC_URI="https://github.com/alembic/alembic/archive/${PV}.tar.gz -> ${P}.tar.gz"
+EGIT_REPO_URI="https://github.com/alembic/alembic.git"
 
-LICENSE="MIT"
+LICENSE="ALEMBIC"
 SLOT="0"
-KEYWORDS="~amd64"
+KEYWORDS=""
 IUSE="doc"
 RDEPEND=""
 DEPEND="${PYTHON_DEPS}
@@ -27,10 +27,15 @@ DEPEND="${PYTHON_DEPS}
 CMAKE_BUILD_TYPE=Release
 	
 src_prepare() {
+	append-cxxflags -std=c++11
 	sed -e "s:/usr/lib64/.*/config:/usr/lib64:g;s:/usr/lib/.*/config:/usr/lib:g" \
 		-i python/{PyAlembic,PyAbcOpenGL}/CMakeLists.txt || die
 	sed -e "/build.*.cmake/d;s/ALEMBIC_NO_BOOTSTRAP FALSE/ALEMBIC_NO_BOOTSTRAP TRUE/;s:/alembic-\${VERSION}::g" \
 		-i CMakeLists.txt || die
+	sed -e "s:ALEMBIC_SHARED_LIBS AND DARWIN:ALEMBIC_SHARED_LIBS:g" \
+		-i lib/Alembic/CMakeLists.txt || die
+
+	epatch "${FILESDIR}"/hdf5_v110.patch
 
 	rm -Rf build || die
 }
@@ -39,34 +44,25 @@ src_configure() {
 	local mycmakeargs=(
 		-DLIBPYTHON_VERSION=${EPYTHON#python}m
 		-DBoost_PYTHON_LIBRARY=boost_python-${EPYTHON#python}
-		-DBoost_INCLUDE_DIRS=/usr/include/boost/
-		-DBoost_FOUND=ON
 		-DBOOST_LIBRARY_DIR=/usr/lib64
-		-DALEMBIC_BOOST_FOUND=ON
 		-DALEMBIC_BOOST_INCLUDE_PATH=/usr/include/boost/
-		-DALEMBIC_BOOST_LIBRARIES=boost_python-${EPYTHON#python}
+		-DALEMBIC_BOOST_LIBRARIES=boost_python-${EPYTHON#python} boost_program_options boost_thread
 		-DALEMBIC_PYTHON_ROOT=/usr/lib64
-		-DALEMBIC_HDF5_LIBS="-lhdf5_hl -lhdf5_cpp -lhdf5_fortran -lhdf5"
+		-DILMBASE_ROOT=/usr
+		-DILMBASE_VERSION=2.2
 		-DILMBASE_LIBRARY_DIR=/usr/lib64
 		-DALEMBIC_ILMBASE_INCLUDE_DIRECTORY=/usr/include/OpenEXR
-		-DALEMBIC_ILMBASE_LIBS="-lIex -lIexMath -lIlmThread -lImath -lHalf"
-		-DALEMBIC_ILMBASE_IMATH_LIB=Imath
-		-DALEMBIC_ILMBASE_ILMTHREAD_LIB=IlmThread
-		-DALEMBIC_ILMBASE_IEX_LIB=Iex
-		-DALEMBIC_ILMBASE_IEXMATH_LIB=IexMath
-		-DALEMBIC_ILMBASE_HALF_LIB=Half
 		-DOPENEXR_INCLUDE_PATHS=/usr/include/OpenEXR
-		-DALEMBIC_OPENEXR_LIBRARIES="-lIlmImfUtil -lIlmImf"
 		-DALEMBIC_PYILMBASE_INCLUDE_DIRECTORY=/usr/include/OpenEXR
-		-DALEMBIC_PYILMBASE_LIBRARIES="-lPyIex -lPyImath"
 		-DUSE_PRMAN=OFF
 		-DUSE_ARNOLD=OFF
 		-DUSE_MAYA=OFF
-		-DALEMBIC_SHARED_LIBS=ON
+		-DALEMBIC_SHARED_LIBS=OFF
 		-DUSE_TESTS=OFF
-		-DUSE_STATIC_BOOST=OFF
-		-DUSE_STATIC_HDF5=OFF
+		-DUSE_STATIC_BOOST=ON
+		-DUSE_STATIC_HDF5=ON
 		-DUSE_PYALEMBIC=OFF
+		-DUSE_HDF5=ON
 	)
 	cmake-utils_src_configure
 }

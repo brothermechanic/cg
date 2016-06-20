@@ -1,4 +1,4 @@
-# Copyright 1999-2016 Gentoo Foundation
+# Copyright 1999-2015 Gentoo Foundation
 # Distributed under the terms of the GNU General Public License v2
 # $Id$
 
@@ -9,14 +9,15 @@ AUTOTOOLS_AUTORECONF=1
 
 inherit autotools-utils eutils fortran-2 flag-o-matic toolchain-funcs multilib
 
+MY_P=${PN}-${PV/_p/-patch}
+
 DESCRIPTION="General purpose library and file format for storing scientific data"
 HOMEPAGE="http://www.hdfgroup.org/HDF5/"
-SRC_URI="http://www.hdfgroup.org/ftp/HDF5/releases/${PN}-1.10/${P}/src/${P}.tar.bz2"
-# http://www.hdfgroup.org/ftp/HDF5/releases/hdf5-1.10/hdf5-1.10.0/src/hdf5-1.10.0.tar.bz2
+SRC_URI="http://www.hdfgroup.org/ftp/HDF5/releases/${MY_P}/src/${MY_P}.tar.bz2"
 
 LICENSE="NCSA-HDF"
 SLOT="0/${PV%%_p*}"
-KEYWORDS="~amd64"
+KEYWORDS="~alpha ~amd64 ~arm ~ia64 ~ppc ~ppc64 ~sparc ~x86 ~x86-fbsd ~amd64-linux ~x86-linux"
 IUSE="cxx debug examples fortran fortran2003 mpi static-libs szip threads zlib"
 
 REQUIRED_USE="
@@ -33,6 +34,8 @@ DEPEND="${RDEPEND}
 	sys-devel/libtool:2
 	>=sys-devel/autoconf-2.69"
 
+S="${WORKDIR}/${MY_P}"
+
 PATCHES=(
 	"${FILESDIR}"/${PN}-1.8.9-static_libgfortran.patch
 	"${FILESDIR}"/${PN}-1.8.9-mpicxx.patch
@@ -41,7 +44,6 @@ PATCHES=(
 )
 
 pkg_setup() {
-	append-cflags -std=c99
 	tc-export CXX CC AR # workaround for bug 285148
 	if use fortran; then
 		use fortran2003 && FORTRAN_STANDARD=2003
@@ -83,30 +85,20 @@ src_prepare() {
 
 src_configure() {
 	local myeconfargs=(
+		--enable-production
 		--docdir="${EPREFIX}"/usr/share/doc/${PF}
 		--enable-deprecated-symbols
-		-with-default-api-version=v18
-		--with-pic
-		--disable-shared
-		--enable-unsupported
 		$(use_enable prefix sharedlib-rpath)
+		$(use_enable debug debug all)
+		$(use_enable debug codestack)
 		$(use_enable cxx)
 		$(use_enable fortran)
+		$(use_enable fortran2003)
 		$(use_enable mpi parallel)
 		$(use_enable threads threadsafe)
 		$(use_with szip szlib)
 		$(use_with threads pthread)
 		$(use_with zlib)
 	)
-	if use debug; then
-		myeconfargs+=(
-			--enable-build-mode=debug
-			--enable-codestack=yes
-		)
-	else
-		myeconfargs+=(
-			--enable-build-mode=production
-		)
-	fi
 	autotools-utils_src_configure
 }
