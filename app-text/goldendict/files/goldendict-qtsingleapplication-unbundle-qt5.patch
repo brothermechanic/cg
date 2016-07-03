@@ -1,0 +1,18 @@
+--- goldendict.pro.orig	2016-02-12 21:25:15.994382213 +0600
++++ goldendict.pro	2016-02-12 21:31:03.782075358 +0600
+@@ -36,7 +36,8 @@
+ QT += sql
+ CONFIG += exceptions \
+     rtti \
+-    stl
++    stl \
++    qtsingleapplication
+ OBJECTS_DIR = build
+ UI_DIR = build
+ MOC_DIR = build
+@@ -610,5 +611,3 @@
+ TS_OUT ~= s/.ts/.qm/g
+ PRE_TARGETDEPS += $$TS_OUT
+ 
+-include( qtsingleapplication/src/qtsingleapplication.pri )
+-
