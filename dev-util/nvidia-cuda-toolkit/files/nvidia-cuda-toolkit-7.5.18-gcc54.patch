@@ -5,13 +5,13 @@
  #if defined(__GNUC__)
  
 -#if __GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ > 9)
-+#if __GNUC__ > 5 || (__GNUC__ == 5 && __GNUC_MINOR__ > 2)
++#if __GNUC__ > 5 || (__GNUC__ == 5 && __GNUC_MINOR__ > 4)
  
 -#error -- unsupported GNU version! gcc versions later than 4.9 are not supported!
-+#error -- unsupported GNU version! gcc versions later than 5.2 are not supported!
++#error -- unsupported GNU version! gcc versions later than 5.4 are not supported!
  
 -#endif /* __GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ > 9) */
-+#endif /* __GNUC__ > 5 || (__GNUC__ == 5 && __GNUC_MINOR__ > 2) */
++#endif /* __GNUC__ > 5 || (__GNUC__ == 5 && __GNUC_MINOR__ > 4) */
  
  #if defined(__APPLE__) && defined(__MACH__) && !defined(__clang__)
  #error -- clang and clang++ are the only supported host compilers on Mac OS X!
