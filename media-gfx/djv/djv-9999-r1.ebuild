@@ -40,6 +40,7 @@ src_prepare() {
 	epatch_user
 	sed -i -e "s:djvPackageThirdParty true:djvPackageThirdParty false:" CMakeLists.txt || die
 	sed -e "s|^Exec.*|Exec=djv_view %U|" -i etc/Linux/djv_view.desktop.in
+	sed -e "s|^Categories.*|Categories=AudioVideo;|" -i etc/Linux/djv_view.desktop.in
 }
 
 src_install() {
