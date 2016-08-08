@@ -13,7 +13,7 @@ EHG_REPO_URI="https://culture3d:culture3d@geoportail.forge.ign.fr/hg/culture3d"
 LICENSE="CeCILL-B"
 SLOT="0"
 KEYWORDS="~amd64"
-IUSE="qt5 -openmp opencl"
+IUSE="qt5 -openmp opencl doc" #dont compiled with openmp
 #TODO failed build with openmp
 RDEPEND="
 	media-gfx/imagemagick
@@ -31,16 +31,13 @@ CMAKE_BUILD_TYPE=Release
 
 src_prepare() {
     rm -r {bin,lib}
-
+}
 
 src_configure() {
 	local mycmakeargs=""
 	mycmakeargs=(
 		${mycmakeargs}
-		-DBUILD_PATH_BIN="/usr/bin"
-		-DBUILD_PATH_LIB="/usr/lib"
-		-DCMAKE_INSTALL_PREFIX="/usr"
-		-DBUILD_POISSON=OFF
+		-DBUILD_POISSON=ON
 		-DBUILD_RNX2RTKP=ON
 		-DCUDA_ENABLED=OFF
 		-DNO_X11=OFF
@@ -53,7 +50,15 @@ src_configure() {
 }
 
 src_install() {
-	dobin -r bin/*
-	dobin -r binaire-aux/linux/*
-	dolib -r lib/*
+    #i can't find more elegant install way
+    cd  ${BUILD_DIR}
+	make install
+	insinto /opt/micmac
+	doins -r ${S}/{lib,data,include}
+	if use doc; then
+        doins -r ${S}/Documentation
+    fi
+	exeinto /opt/micmac/bin
+	doexe ${S}/bin/*
+	doexe ${S}/binaire-aux/linux/* #for POISSON and RNX2RTKP)
 }
