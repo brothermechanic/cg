@@ -31,14 +31,17 @@ CMAKE_BUILD_TYPE=Release
 
 src_prepare() {
     rm -r {bin,lib}
+    epatch "${FILESDIR}"/Apero2Meshlab.patch
+    cp "${FILESDIR}"/Apero2Meshlab.c ${S}/src/CBinaires/
 }
 
 src_configure() {
 	local mycmakeargs=""
 	mycmakeargs=(
 		${mycmakeargs}
+		-DCMAKE_INSTALL_PREFIX="/usr"
 		-DBUILD_POISSON=ON
-		-DBUILD_RNX2RTKP=ON
+		-DBUILD_RNX2RTKP=OFF
 		-DCUDA_ENABLED=OFF
 		-DNO_X11=OFF
 		-DWITH_DOXYGEN=OFF
@@ -53,12 +56,12 @@ src_install() {
     #i can't find more elegant install way
     cd  ${BUILD_DIR}
 	make install
-	insinto /opt/micmac
+	insinto /usr
 	doins -r ${S}/{lib,data,include}
 	if use doc; then
         doins -r ${S}/Documentation
     fi
-	exeinto /opt/micmac/bin
+	exeinto /usr/bin
 	doexe ${S}/bin/*
 	doexe ${S}/binaire-aux/linux/* #for POISSON and RNX2RTKP)
 }
