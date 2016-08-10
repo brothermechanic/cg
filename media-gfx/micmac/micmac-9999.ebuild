@@ -40,7 +40,7 @@ src_configure() {
 	mycmakeargs=(
 		${mycmakeargs}
 		-DCMAKE_INSTALL_PREFIX="/usr"
-		-DBUILD_POISSON=ON
+		-DBUILD_POISSON=OFF
 		-DBUILD_RNX2RTKP=OFF
 		-DCUDA_ENABLED=OFF
 		-DWITH_CPP11=ON
@@ -65,5 +65,5 @@ src_install() {
     fi
 	exeinto /usr/bin
 	doexe ${S}/bin/*
-	doexe ${S}/binaire-aux/linux/* #for POISSON and RNX2RTKP)
+	#doexe ${S}/binaire-aux/linux/* #for POISSON and RNX2RTKP)
 }
