@@ -18,6 +18,7 @@ IUSE=""
 
 DEPEND="media-libs/glew
 	sci-mathematics/cgal
+	sci-libs/pcl
 	dev-qt/qtcore:5
 	dev-qt/qtopengl:5"
 
