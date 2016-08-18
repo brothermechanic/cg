@@ -15,8 +15,16 @@ IUSE=""
 
 S="${WORKDIR}"/blender-${PV}-testbuild1-linux-glibc219-x86_64
 
+src_prepare() {
+	sed "s|^Exec=blender %f"$@"|Exec=blender-bin %f "$@"|" -i ${S}/blender.desktop
+	mv ${S}/blender.desktop > ${S}/blender-bin.desktop
+}
+
 src_install() {
+	insinto /usr/share/applications
+	doins ${S}/blender-bin.desktop
 	insinto /opt/blender
-	doins -r ${S}
-	dosym ${PV} /usr/share/blender/${PV}-bin
+	doins -r ${S}/*
+	dosym /opt/blender/${PV} /usr/share/blender/${PV}-bin
+	dobin "${FILESDIR}/blender-bin.sh"
 }
