@@ -26,5 +26,5 @@ src_install() {
 	insinto /opt/blender
 	doins -r ${S}/*
 	dosym /opt/blender/${PV} /usr/share/blender/${PV}-bin
-	dobin "${FILESDIR}/blender-bin.sh"
+	dobin "${FILESDIR}/blender-bin"
 }
