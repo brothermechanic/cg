@@ -29,7 +29,7 @@ RDEPEND="${DEPEND}
 	x11-themes/gnome-icon-theme-symbolic
 	x11-libs/libnotify
 	gnome-keyring? ( gnome-base/libgnome-keyring  )
-	x11-libs/gtk+-3.20.8:3[introspection]
+	x11-libs/gtk+[introspection]
 	"
 S="${WORKDIR}/bcloud-3.8.2.1"
 src_install() {
