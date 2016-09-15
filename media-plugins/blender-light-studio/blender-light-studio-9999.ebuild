@@ -10,7 +10,7 @@ DESCRIPTION="Blender addon. Lighting system"
 HOMEPAGE="https://github.com/leomoon-studios/blender-light-studio"
 EGIT_REPO_URI="https://github.com/leomoon-studios/blender-light-studio.git"
 
-LICENSE="GPL-2"
+LICENSE="GPL-3"
 SLOT="0"
 KEYWORDS="~amd64 ~x86"
 IUSE=""
