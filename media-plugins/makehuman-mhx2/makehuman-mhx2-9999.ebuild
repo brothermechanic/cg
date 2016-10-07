@@ -7,8 +7,8 @@ EAPI=5
 inherit mercurial
 
 DESCRIPTION="MakeHuman eXchange format 2"
-HOMEPAGE="https://bitbucket.org/ThomasMakeHuman/mhx2-makehuman-exchange"
-EHG_REPO_URI="https://bitbucket.org/ThomasMakeHuman/mhx2-makehuman-exchange"
+HOMEPAGE="https://bitbucket.org/Diffeomorphic/mhx2-makehuman-exchange"
+EHG_REPO_URI="https://bitbucket.org/Diffeomorphic/mhx2-makehuman-exchange"
 
 LICENSE="GPL-3"
 SLOT="0"
