@@ -1,0 +1,11 @@
+--- openvdb/python/pyOpenVDBModule.cc
++++ openvdb/python/pyOpenVDBModule.cc
+@@ -592,7 +592,7 @@
+ 
+ #ifdef PY_OPENVDB_USE_NUMPY
+     // Initialize NumPy.
+-    import_array();
++    if (_import_array()) { };
+ #endif
+ 
+     using namespace openvdb::OPENVDB_VERSION_NAME;
