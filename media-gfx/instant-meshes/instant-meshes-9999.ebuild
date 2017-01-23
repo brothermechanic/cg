@@ -13,7 +13,7 @@ EGIT_REPO_URI="https://github.com/wjakob/instant-meshes.git"
 LICENSE="InstantMeshes"
 SLOT="0"
 KEYWORDS="~amd64 ~x86"
-IUSE="test tbb"
+IUSE=""
 
 DEPEND="
 	dev-cpp/tbb
