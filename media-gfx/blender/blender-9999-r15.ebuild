@@ -168,6 +168,7 @@ src_prepare() {
 
 	epatch_user
 	
+	#add custom matcap
 	rm ${S}/release/datafiles/matcaps/mc10.jpg
 	cp ${FILESDIR}/mc10.jpg ${S}/release/datafiles/matcaps/
 
