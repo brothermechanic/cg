@@ -4,8 +4,8 @@
 
 EAPI=5
 
-CMAKE_IN_SOURCE_BUILD="1"
-EGIT_REPO_URI="https://github.com/Granjow/slowmoVideo.git"
+MY_PN="slowmoVideo"
+EGIT_REPO_URI="https://github.com/${MY_PN}/${MY_PN}.git"
 
 inherit cmake-utils eutils git-2
 
@@ -15,28 +15,47 @@ SRC_URI=""
 LICENSE="GPL-3"
 SLOT="0"
 KEYWORDS=""
-IUSE="video_cards_nvidia"
+IUSE="video_cards_nvidia qt4 qt5"
 
+REQUIRED_USE="^^ ( qt4 qt5 )"
+
+# Regarding conditionally disabling qt versions on opencv:
+# https://github.com/slowmoVideo/slowmoVideo/issues/41
 DEPEND="virtual/ffmpeg
 	media-libs/freeglut
 	media-libs/glew
 	media-libs/libsdl
-	media-libs/opencv
-	dev-qt/qtopengl:4
-	dev-qt/qtscript:4
-	dev-qt/qttest:4
-	dev-qt/qtxmlpatterns:4
+	qt4? (
+		dev-qt/qtopengl:4
+		dev-qt/qtscript:4
+		dev-qt/qttest:4
+		dev-qt/qtxmlpatterns:4
+		media-libs/opencv[-qt5]
+		)
+	qt5? (
+		dev-qt/qtopengl:5
+		dev-qt/qtscript:5
+		dev-qt/qttest:5
+		dev-qt/qtxmlpatterns:5
+		media-libs/opencv[-qt4]
+		)
 	virtual/jpeg:*"
 
 RDEPEND="${DEPEND}"
 PDEPEND="video_cards_nvidia? ( media-gfx/v3d )"
 
-S="${S}/slowmoVideo"
-CMAKE_USE_DIR="${S}/slowmoVideo"
+CMAKE_USE_DIR="${S}/src"
+
+src_configure() {
+	if use qt4; then
+		mycmakeargs="${mycmakeargs} -DFORCE_QT4=ON"
+	fi
+	cmake-utils_src_configure
+}
 
 src_install() {
 	cmake-utils_src_install
-	newicon slowmoVideo/slowmoUI/res/AppIcon.png "${PN}".png
-	make_desktop_entry slowmoUI "slowmoVideo"
+	newicon "${CMAKE_USE_DIR}/${MY_PN}/slowmoUI/res/AppIcon.png" "${PN}.png"
+	make_desktop_entry slowmoUI "${MY_PN}"
 	make_desktop_entry slowmoFlowEdit "slowmoFlowEditor"
 }
