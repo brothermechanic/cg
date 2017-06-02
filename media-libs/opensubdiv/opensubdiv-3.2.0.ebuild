@@ -1,6 +1,6 @@
-# Copyright 1999-2016 Gentoo Foundation
+ 
+# Copyright 1999-2017 Gentoo Foundation
 # Distributed under the terms of the GNU General Public License v2
-# $Id$
 
 EAPI=6
 inherit cmake-utils toolchain-funcs versionator
@@ -14,12 +14,12 @@ SRC_URI="https://github.com/PixarAnimationStudios/OpenSubdiv/archive/v${MY_PV}.t
 
 LICENSE="ZLIB"
 SLOT="0"
-IUSE="cuda doc examples opencl openmp ptex tbb test tutorials"
+IUSE="cuda doc examples opencl openmp ptex tbb tutorials"
 
-# OpenCL does not work with Open Source drivers.
+# OpenCL does not work with Open Source drivers or nVidia binaries.
 RDEPEND="media-libs/glew:=
 	media-libs/glfw:=
-	opencl? ( =app-eselect/eselect-opencl-1.1.0-r9 )
+	opencl? ( x11-drivers/ati-drivers:* )
 	cuda? ( dev-util/nvidia-cuda-toolkit:* )
 	ptex? ( media-libs/ptex )"
 
@@ -30,8 +30,6 @@ DEPEND="${RDEPEND}
 KEYWORDS="~amd64 ~x86"
 
 S="${WORKDIR}"/OpenSubdiv-${MY_PV}
-
-PATCHES=( "${FILESDIR}"/${P}-skip-osd-regression.patch )
 
 pkg_pretend() {
 	[[ ${MERGE_TYPE} != binary ]] && use openmp && tc-check-openmp
@@ -51,7 +49,7 @@ src_configure() {
 		-DNO_OMP=$(usex !openmp)
 		-DNO_OPENCL=$(usex !opencl)
 		-DNO_CUDA=$(usex !cuda)
-		-DNO_REGRESSION=$(usex !test)
+		-DNO_REGRESSION=1 # The don't work with certain settings
 		-DNO_EXAMPLES=$(usex !examples)
 		-DNO_TUTORIALS=$(usex !tutorials)
 		-DGLEW_LOCATION="${EPREFIX}/usr/$(get_libdir)"

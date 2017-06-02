@@ -1,0 +1,17 @@
+--- a/include/math_functions.h
++++ b/include/math_functions.h
+@@ -8895,12 +8895,12 @@
+ #undef isnan
+ __DEVICE_FUNCTIONS_DECL__ __cudart_builtin__ constexpr bool isnan(float x);
+ /* GCC 6.1 uses ::isnan(double x) for isnan(double x) */
+-__DEVICE_FUNCTIONS_DECL__ __cudart_builtin__ int isnan(double x) throw();
++// __DEVICE_FUNCTIONS_DECL__ __cudart_builtin__ int isnan(double x) throw();
+ __DEVICE_FUNCTIONS_DECL__ __cudart_builtin__ constexpr bool isnan(long double x);
+ # undef isinf
+ __DEVICE_FUNCTIONS_DECL__ __cudart_builtin__ constexpr bool isinf(float x);
+ /* GCC 6.1 uses ::isinf(double x) for isinf(double x) */
+-__DEVICE_FUNCTIONS_DECL__ __cudart_builtin__ int isinf(double x) throw();
++// __DEVICE_FUNCTIONS_DECL__ __cudart_builtin__ int isinf(double x) throw();
+ __DEVICE_FUNCTIONS_DECL__ __cudart_builtin__ constexpr bool isinf(long double x);
+ }
+ 
