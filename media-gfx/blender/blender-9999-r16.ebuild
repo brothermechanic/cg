@@ -1,6 +1,6 @@
-# Copyright 1999-2014 Gentoo Foundation
+# Copyright 1999-2016 Gentoo Foundation
 # Distributed under the terms of the GNU General Public License v2
-# $Header: /var/cvsroot/gentoo-x86/media-gfx/blender/blender-9999.ebuild,v 1.6 2014/11/30 23:00:00 brothermechanic Exp $
+# $Id$
 
 EAPI=5
 PYTHON_COMPAT=( python3_5 )
@@ -21,20 +21,20 @@ EGIT_REPO_URI="${BLENDER_REPO_URI}"
 LICENSE="|| ( GPL-2 BL )"
 SLOT="9999"
 KEYWORDS=""
-IUSE_BUILD="+blender game-engine +addons contrib +nls -ndof +cycles freestyle -player"
-IUSE_COMPILER="openmp sse sse2"
+IUSE_BUILD="+blender -game-engine +addons contrib +nls -ndof +cycles freestyle -player"
+IUSE_COMPILER="openmp +sse sse2"
 IUSE_SYSTEM="X -portable -valgrind -debug -doc"
 IUSE_IMAGE="-dpx -dds +openexr jpeg2k tiff"
-IUSE_CODEC="+openal sdl jack avi +ffmpeg sndfile +quicktime"
+IUSE_CODEC="+openal -sdl jack avi +ffmpeg -sndfile -quicktime"
 IUSE_COMPRESSION="-lzma +lzo"
 IUSE_MODIFIERS="+fluid +smoke +boolean +remesh oceansim +decimate"
-IUSE_LIBS="osl +openvdb +opensubdiv +opencolorio +openimageio collada +alembic"
-IUSE_GPU="+opengl -opengl3 +cuda -sm_21 -sm_30 -sm_35 -sm_50"
+IUSE_LIBS="osl +openvdb +opensubdiv +opencolorio +openimageio collada -alembic opencl"
+IUSE_GPU="+opengl -opengl3 +cuda -sm_20 -sm_21 -sm_30 -sm_35 -sm_50"
 IUSE="${IUSE_BUILD} ${IUSE_COMPILER} ${IUSE_SYSTEM} ${IUSE_IMAGE} ${IUSE_CODEC} ${IUSE_COMPRESSION} ${IUSE_MODIFIERS} ${IUSE_LIBS} ${IUSE_GPU}"
 
 REQUIRED_USE="${PYTHON_REQUIRED_USE}
-			player? ( game-engine opengl )
-			  contrib? ( addons )"
+            cycles? ( openexr openimageio )
+            contrib? ( addons )"
 
 LANGS="en ar bg ca cs de el es es_ES fa fi fr he hr hu id it ja ky ne nl pl pt pt_BR ru sr sr@latin sv tr uk zh_CN zh_TW"
 for X in ${LANGS} ; do
@@ -48,17 +48,17 @@ RDEPEND="${PYTHON_DEPS}
 	dev-python/requests[${PYTHON_USEDEP}]
 	dev-libs/jemalloc
 	sys-libs/zlib
-	sci-libs/fftw:3.0
+	smoke? ( sci-libs/fftw:3.0 )
 	media-libs/freetype
-	media-libs/libpng
+	media-libs/libpng:0=
 	sci-libs/ldl
 	virtual/libintl
-	virtual/jpeg
-	dev-libs/boost[threads(+)]
+	virtual/jpeg:0=
+	dev-libs/boost[nls?,threads(+)]
 	sci-libs/colamd
 	opengl? ( 
 		virtual/opengl
-		media-libs/glew
+		media-libs/glew:*
 		virtual/glu
 	)
 	X? (
@@ -74,15 +74,14 @@ RDEPEND="${PYTHON_DEPS}
 		      >=sys-devel/llvm-3.1
 		      media-gfx/osl
 		      )
-		openvdb? ( media-gfx/openvdb[openvdb-compression] )
+		openvdb? ( media-gfx/openvdb
+		dev-cpp/tbb )
 	)
 	sdl? ( media-libs/libsdl[sound,joystick] )
-	tiff? ( media-libs/tiff )
+	tiff? ( media-libs/tiff:0 )
 	openexr? ( media-libs/openexr )
-	ffmpeg? (
-		>=media-video/ffmpeg-2.2[x264,xvid,mp3,encode]
-		jpeg2k? ( >=media-video/ffmpeg-2.2[x264,xvid,mp3,encode,jpeg2k] )
-	)
+	ffmpeg? ( >=media-video/ffmpeg-2.2[x264,xvid,mp3,encode,jpeg2k?] )
+	jpeg2k? ( media-libs/openjpeg:0 )
 	openal? ( >=media-libs/openal-1.6.372 )
 	jack? ( media-sound/jack-audio-connection-kit )
 	sndfile? ( media-libs/libsndfile )
@@ -92,12 +91,13 @@ RDEPEND="${PYTHON_DEPS}
 		dev-libs/libspnav
 	)
 	quicktime? ( media-libs/libquicktime )
-	app-arch/lzma
 	valgrind? ( dev-util/valgrind )
 	lzma? ( app-arch/lzma )
 	lzo? ( dev-libs/lzo )
 	alembic? ( media-libs/alembic )
-	opensubdiv? ( media-libs/opensubdiv )"
+	opensubdiv? ( media-libs/opensubdiv )
+	opencl? ( =app-eselect/eselect-opencl-1.1.0-r9 )
+	nls? ( virtual/libiconv )"
 
 DEPEND="${RDEPEND}
 	dev-cpp/eigen:3
@@ -145,7 +145,7 @@ pkg_setup() {
 		fi
 	fi
 
-	if ! use sm_30 && ! use sm_35 && ! use sm_50; then
+	if ! use sm_20 && ! use sm_21 && ! use sm_30 && ! use sm_35 && ! use sm_50; then
 		if use cuda; then
 			ewarn "You have not chosen a CUDA kernel. It takes an extreamly long time"
 			ewarn "to compile all the CUDA kernels. Check http://www.nvidia.com/object/cuda_gpus.htm"
@@ -163,14 +163,13 @@ pkg_setup() {
 src_prepare() {
 	epatch "${FILESDIR}"/01-${PN}-2.68-doxyfile.patch \
 		"${FILESDIR}"/06-${PN}-2.68-fix-install-rules.patch \
-		"${FILESDIR}"/07-${PN}-2.77-sse2.patch \
-		"${FILESDIR}"/sequencer_extra_actions-3.8.patch.bz2 \
-		"${FILESDIR}"/01_include_addon_contrib_in_release \
-		"${FILESDIR}"/050_thumbnailer_use_python3
-
-	cp -f "${FILESDIR}"/FindALEMBIC.cmake build_files/cmake/Modules || die
+		"${FILESDIR}"/sequencer_extra_actions-3.8.patch.bz2
 
 	epatch_user
+	
+	#add custom matcap
+	rm ${S}/release/datafiles/matcaps/mc10.jpg
+	cp ${FILESDIR}/mc10.jpg ${S}/release/datafiles/matcaps/
 
 	# remove some bundled deps
 	rm -r \
@@ -211,6 +210,13 @@ src_configure() {
 	#CUDA Kernal Selection
 	local CUDA_ARCH=""
 	if use cuda; then
+        if use sm_20; then
+			if [[ -n "${CUDA_ARCH}" ]] ; then
+				CUDA_ARCH="${CUDA_ARCH};sm_20"
+			else
+				CUDA_ARCH="sm_20"
+			fi
+		fi
 		if use sm_21; then
 			if [[ -n "${CUDA_ARCH}" ]] ; then
 				CUDA_ARCH="${CUDA_ARCH};sm_21"
@@ -255,24 +261,6 @@ src_configure() {
 			-DCUDA_NVCC=/opt/cuda/bin/nvcc
 		)
 	fi
-	if use alembic; then
-		mycmakeargs+=(
-			-DWITH_ALEMBIC=ON
-			-DALEMBIC_ROOT_DIR=/usr
-			-DALEMBIC_LIBPATH=/usr/lib
-			-DALEMBIC_INCLUDE_DIRS=/usr/include/Alembic
-			-DALEMBICABCCOREABSTRACT_LIBRARY=/usr/lib/libAlembic.so
-			-DALEMBICABCCOREFACTORY_LIBRARY=/usr/lib/libAlembic.so
-			-DALEMBICABCCOREHDF5_LIBRARY=/usr/lib/libAlembic.so
-			-DALEMBICABCCOREOGAWA_LIBRARY=/usr/lib/libAlembic.so
-			-DALEMBICABCGEOM_LIBRARY=/usr/lib/libAlembic.so
-			-DALEMBICABCMATERIAL_LIBRARY=/usr/lib/libAlembic.so
-			-DALEMBICABC_LIBRARY=/usr/lib/libAlembic.so
-			-DALEMBICOGAWA_LIBRARY=/usr/lib/libAlembic.so
-			-DALEMBICUTIL_LIBRARY=/usr/lib/libAlembic.so
-		)
-	fi
-
 
 	mycmakeargs+=(
 		-DCMAKE_INSTALL_PREFIX=/usr
@@ -282,26 +270,21 @@ src_configure() {
 		$(cmake-utils_use_with blender BLENDER)
 		-DWITH_BOOST=ON
 		-DWITH_BUILDINFO=ON
-		-DWITH_BULLET=ON
 		$(cmake-utils_use_with avi CODEC_AVI)
 		$(cmake-utils_use_with ffmpeg CODEC_FFMPEG)
 		$(cmake-utils_use_with sndfile CODEC_SNDFILE)
+		$(cmake-utils_use_with alembic ALEMBIC)
 		$(cmake-utils_use_with quicktime QUICKTIME)
-		-DWITH_FFTW3=ON
+		$(cmake-utils_use_with smoke FFTW3)
 		$(cmake-utils_use_with sse CPU_SSE)
 		$(cmake-utils_use_with sse RAYOPTIMIZATION)
 		$(cmake-utils_use_with sse2 SSE2)
 		$(cmake-utils_use_with cycles CYCLES)
-		-DWITH_HDF5=ON
-		-DHDF5_INCLUDE_DIR=/usr/include
-		-DHDF5_ROOT_DIR=/usr
-		-DHDF5_LIBPATH=/usr/lib
+		$(cmake-utils_use_with cycles CYCLES_NATIVE_ONLY)
 		$(cmake-utils_use_with freestyle FREESTYLE)
 		$(cmake-utils_use_with game-engine GAMEENGINE)
-		$(cmake-utils_use_with X X11)
 		$(cmake-utils_use_with !X HEADLESS)
-		$(cmake-utils_use_with X X11_XF86VMODE)
-		$(cmake-utils_use_with X X11_XINPUT)
+		$(cmake-utils_use_with X X11)
 		$(cmake-utils_use_with X GHOST_XDND)
 		$(cmake-utils_use_with nls INTERNATIONAL)
 		$(cmake-utils_use_with osl LLVM)
@@ -327,29 +310,27 @@ src_configure() {
 		$(cmake-utils_use_with player PLAYER)
 		$(cmake-utils_use_with dpx IMAGE_CINEON)
 		$(cmake-utils_use_with dds IMAGE_DDS)
-		-DWITH_IMAGE_HDR=ON
 		$(cmake-utils_use_with openexr IMAGE_OPENEXR)
 		$(cmake-utils_use_with jpeg2k IMAGE_OPENJPEG)
 		$(cmake-utils_use_with tiff IMAGE_TIFF)
 		$(cmake-utils_use_with ndof INPUT_NDOF)
 		$(cmake-utils_use_with openal OPENAL)
 		$(cmake-utils_use_with sdl SDL)
-		$(cmake-utils_use_with sdl SDL_DYNLOAD)
 		$(cmake-utils_use_with jack JACK)
-		$(cmake-utils_use_with jack JACK_DYNLOAD)
 		$(cmake-utils_use_with !portable SYSTEM_EIGEN3)
 		$(cmake-utils_use_with !portable SYSTEM_LZO)
 		$(cmake-utils_use_with !portable SYSTEM_OPENJPEG)
-		$(cmake-utils_use_with portable STATICALEMBIC)
+		$(cmake-utils_use_with !portable SYSTEM_GLEW)
+		$(cmake-utils_use_with !portable SYSTEM_GLES)
 		$(cmake-utils_use_with portable INSTALL_PORTABLE)
 		$(cmake-utils_use_with portable STATIC_LIBS)
 		$(cmake-utils_use_with portable PYTHON_INSTALL)
 		$(cmake-utils_use_with portable PYTHON_INSTALL_NUMPY)
 		$(cmake-utils_use_with portable PYTHON_INSTALL_REQUESTS)
-		$(cmake-utils_use_with opengl SYSTEM_GLEW)
-		$(cmake-utils_use_with opengl SYSTEM_GLES)
 		$(cmake-utils_use_with opengl GL_PROFILE_COMPAT)
 		$(cmake-utils_use_with opengl3 GL_PROFILE_CORE)
+		$(cmake-utils_use_with opencl OPENCL)
+		$(cmake-utils_use_with opencl CYCLES_DEVICE_OPENCL)
 		$(cmake-utils_use_with debug DEBUG)
 		$(cmake-utils_use_with debug GPU_DEBUG)
 		$(cmake-utils_use_with debug WITH_CYCLES_DEBUG)

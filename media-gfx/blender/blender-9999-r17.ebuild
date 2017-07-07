@@ -1,40 +1,35 @@
-# Copyright 1999-2014 Gentoo Foundation
+# Copyright 1999-2016 Gentoo Foundation
 # Distributed under the terms of the GNU General Public License v2
-# $Header: /var/cvsroot/gentoo-x86/media-gfx/blender/blender-9999.ebuild,v 1.6 2014/11/30 23:00:00 brothermechanic Exp $
+# $Id$
 
-EAPI=5
+EAPI=6
 PYTHON_COMPAT=( python3_5 )
 
-BLENDGIT_URI="http://git.blender.org"
-BLENDER_REPO_URI="${BLENDGIT_URI}/blender.git"
-BLENDER_ADDONS_URI="${BLENDGIT_URI}/blender-addons.git"
-BLENDER_ADDONS_CONTRIB_URI="${BLENDGIT_URI}/blender-addons-contrib.git"
-BLENDER_TRANSLATIONS_URI="${BLENDGIT_URI}/blender-translations.git"
-
-inherit cmake-utils eutils python-single-r1 gnome2-utils fdo-mime pax-utils git-2 versionator toolchain-funcs flag-o-matic
+inherit cmake-utils eutils python-single-r1 gnome2-utils fdo-mime pax-utils git-r3 versionator toolchain-funcs flag-o-matic
 
 DESCRIPTION="3D Creation/Animation/Publishing System"
 HOMEPAGE="http://www.blender.org/"
 
-EGIT_REPO_URI="${BLENDER_REPO_URI}"
+EGIT_REPO_URI="http://git.blender.org/blender.git"
 
 LICENSE="|| ( GPL-2 BL )"
 SLOT="9999"
 KEYWORDS=""
-IUSE_BUILD="+blender game-engine +addons contrib +nls -ndof +cycles freestyle -player"
-IUSE_COMPILER="openmp sse sse2"
+IUSE_BUILD="+blender -game-engine +addons contrib +nls -ndof +cycles freestyle -player"
+IUSE_COMPILER="openmp +sse sse2"
 IUSE_SYSTEM="X -portable -valgrind -debug -doc"
 IUSE_IMAGE="-dpx -dds +openexr jpeg2k tiff"
-IUSE_CODEC="+openal sdl jack avi +ffmpeg sndfile +quicktime"
+IUSE_CODEC="+openal -sdl jack avi +ffmpeg -sndfile -quicktime"
 IUSE_COMPRESSION="-lzma +lzo"
 IUSE_MODIFIERS="+fluid +smoke +boolean +remesh oceansim +decimate"
-IUSE_LIBS="osl +openvdb +opensubdiv +opencolorio +openimageio collada +alembic"
-IUSE_GPU="+opengl -opengl3 +cuda -sm_21 -sm_30 -sm_35 -sm_50"
+IUSE_LIBS="osl +openvdb +opensubdiv +opencolorio +openimageio collada -alembic opencl"
+IUSE_GPU="+opengl -opengl3 +cuda -sm_20 -sm_21 -sm_30 -sm_35 -sm_50"
 IUSE="${IUSE_BUILD} ${IUSE_COMPILER} ${IUSE_SYSTEM} ${IUSE_IMAGE} ${IUSE_CODEC} ${IUSE_COMPRESSION} ${IUSE_MODIFIERS} ${IUSE_LIBS} ${IUSE_GPU}"
 
 REQUIRED_USE="${PYTHON_REQUIRED_USE}
-			player? ( game-engine opengl )
-			  contrib? ( addons )"
+            cycles? ( openexr openimageio )
+            smoke? ( openvdb )
+            contrib? ( addons )"
 
 LANGS="en ar bg ca cs de el es es_ES fa fi fr he hr hu id it ja ky ne nl pl pt pt_BR ru sr sr@latin sv tr uk zh_CN zh_TW"
 for X in ${LANGS} ; do
@@ -48,17 +43,17 @@ RDEPEND="${PYTHON_DEPS}
 	dev-python/requests[${PYTHON_USEDEP}]
 	dev-libs/jemalloc
 	sys-libs/zlib
-	sci-libs/fftw:3.0
+	smoke? ( sci-libs/fftw:3.0 )
 	media-libs/freetype
-	media-libs/libpng
+	media-libs/libpng:0=
 	sci-libs/ldl
 	virtual/libintl
-	virtual/jpeg
-	dev-libs/boost[threads(+)]
+	virtual/jpeg:0=
+	dev-libs/boost[nls?,threads(+)]
 	sci-libs/colamd
 	opengl? ( 
 		virtual/opengl
-		media-libs/glew
+		media-libs/glew:*
 		virtual/glu
 	)
 	X? (
@@ -74,15 +69,14 @@ RDEPEND="${PYTHON_DEPS}
 		      >=sys-devel/llvm-3.1
 		      media-gfx/osl
 		      )
-		openvdb? ( media-gfx/openvdb[openvdb-compression] )
+		openvdb? ( media-gfx/openvdb
+		dev-cpp/tbb )
 	)
 	sdl? ( media-libs/libsdl[sound,joystick] )
-	tiff? ( media-libs/tiff )
+	tiff? ( media-libs/tiff:0 )
 	openexr? ( media-libs/openexr )
-	ffmpeg? (
-		>=media-video/ffmpeg-2.2[x264,xvid,mp3,encode]
-		jpeg2k? ( >=media-video/ffmpeg-2.2[x264,xvid,mp3,encode,jpeg2k] )
-	)
+	ffmpeg? ( >=media-video/ffmpeg-2.2[x264,xvid,mp3,encode,jpeg2k?] )
+	jpeg2k? ( media-libs/openjpeg:0 )
 	openal? ( >=media-libs/openal-1.6.372 )
 	jack? ( media-sound/jack-audio-connection-kit )
 	sndfile? ( media-libs/libsndfile )
@@ -92,12 +86,13 @@ RDEPEND="${PYTHON_DEPS}
 		dev-libs/libspnav
 	)
 	quicktime? ( media-libs/libquicktime )
-	app-arch/lzma
 	valgrind? ( dev-util/valgrind )
 	lzma? ( app-arch/lzma )
 	lzo? ( dev-libs/lzo )
 	alembic? ( media-libs/alembic )
-	opensubdiv? ( media-libs/opensubdiv )"
+	opensubdiv? ( media-libs/opensubdiv )
+	opencl? ( =app-eselect/eselect-opencl-1.1.0-r9 )
+	nls? ( virtual/libiconv )"
 
 DEPEND="${RDEPEND}
 	dev-cpp/eigen:3
@@ -109,63 +104,30 @@ DEPEND="${RDEPEND}
 
 CMAKE_BUILD_TYPE="Release"
 
-src_unpack(){
-	git-2_src_unpack
-	unset EGIT_BRANCH EGIT_COMMIT
-	if use addons; then
-		unset EGIT_BRANCH EGIT_COMMIT
-		EGIT_SOURCEDIR="${WORKDIR}/${P}/release/scripts/addons" \
-		EGIT_REPO_URI="${BLENDER_ADDONS_URI}" \
-		git-2_src_unpack
-		if use contrib; then
-			unset EGIT_BRANCH EGIT_COMMIT
-			EGIT_SOURCEDIR="${WORKDIR}/${P}/release/scripts/addons_contrib" \
-			EGIT_REPO_URI="${BLENDER_ADDONS_CONTRIB_URI}" \
-			git-2_src_unpack
-		fi
+PATCHES=( "${FILESDIR}"/01-${PN}-2.68-doxyfile.patch
+        "${FILESDIR}"/06-${PN}-2.68-fix-install-rules.patch )
+
+blender_check_requirements() {
+	[[ ${MERGE_TYPE} != binary ]] && use openmp && tc-check-openmp
+
+	if use doc; then
+		CHECKREQS_DISK_BUILD="4G" check-reqs_pkg_pretend
 	fi
-	if use nls; then
-		unset EGIT_BRANCH EGIT_COMMIT
-		EGIT_SOURCEDIR="${WORKDIR}/${P}/release/datafiles/locale" \
-		EGIT_REPO_URI="${BLENDER_TRANSLATIONS_URI}" \
-		git-2_src_unpack
-	fi
+}
+
+pkg_pretend() {
+	blender_check_requirements
 }
 
 pkg_setup() {
+	blender_check_requirements
 	python-single-r1_pkg_setup
-	enable_openmp="OFF"
-	if use openmp; then
-		if tc-has-openmp; then
-			enable_openmp="ON"
-		else
-			ewarn "You are using gcc built without 'openmp' USE."
-			ewarn "Switch CXX to an OpenMP capable compiler."
-			die "Need openmp"
-		fi
-	fi
-
-	if ! use sm_30 && ! use sm_35 && ! use sm_50; then
-		if use cuda; then
-			ewarn "You have not chosen a CUDA kernel. It takes an extreamly long time"
-			ewarn "to compile all the CUDA kernels. Check http://www.nvidia.com/object/cuda_gpus.htm"
-			ewarn "for your gpu and enable the matching sm_?? use flag to save time."
-		fi
-	else
-		if ! use cuda; then
-			ewarn "You have enabled a CUDA kernel (sm_??),  but you have not set"
-			ewarn "'cuda' USE. CUDA will not be compiled until you do so."
-		fi
-	fi
-	
 }
 
 src_prepare() {
-	epatch "${FILESDIR}"/01-${PN}-2.68-doxyfile.patch \
-		"${FILESDIR}"/06-${PN}-2.68-fix-install-rules.patch \
-		"${FILESDIR}"/sequencer_extra_actions-3.8.patch.bz2
-
-	epatch_user
+	#add custom matcap
+	rm ${S}/release/datafiles/matcaps/mc10.jpg
+	cp ${FILESDIR}/mc10.jpg ${S}/release/datafiles/matcaps/
 
 	# remove some bundled deps
 	rm -r \
@@ -175,13 +137,21 @@ src_prepare() {
 		extern/Eigen3 \
 		|| die
 
-	# we don't want static glew, but it's scattered across
-	# thousand files
-	# !!!CHECK THIS SED ON EVERY VERSION BUMP!!!
-	sed -i \
-		-e '/-DGLEW_STATIC/d' \
-		$(find . -type f -name "CMakeLists.txt") || die
+	default
 
+	# we don't want static glew, but it's scattered across
+	# multiple files that differ from version to version
+	# !!!CHECK THIS SED ON EVERY VERSION BUMP!!!
+	local file
+	while IFS="" read -d $'\0' -r file ; do
+		sed -i -e '/-DGLEW_STATIC/d' "${file}" || die
+	done < <(find . -type f -name "CMakeLists.txt")
+
+	# Disable MS Windows help generation. The variable doesn't do what it
+	# it sounds like.
+	sed -e "s|GENERATE_HTMLHELP      = YES|GENERATE_HTMLHELP      = NO|" \
+	    -i doc/doxygen/Doxyfile || die
+	
 	ewarn "$(echo "Remaining bundled dependencies:";
 			( find extern -mindepth 1 -maxdepth 1 -type d; ) | sed 's|^|- |')"
 	# linguas cleanup
@@ -206,6 +176,13 @@ src_configure() {
 	#CUDA Kernal Selection
 	local CUDA_ARCH=""
 	if use cuda; then
+        if use sm_20; then
+			if [[ -n "${CUDA_ARCH}" ]] ; then
+				CUDA_ARCH="${CUDA_ARCH};sm_20"
+			else
+				CUDA_ARCH="sm_20"
+			fi
+		fi
 		if use sm_21; then
 			if [[ -n "${CUDA_ARCH}" ]] ; then
 				CUDA_ARCH="${CUDA_ARCH};sm_21"
@@ -256,80 +233,77 @@ src_configure() {
 		-DPYTHON_VERSION=${EPYTHON/python/}
 		-DPYTHON_LIBRARY=$(python_get_library_path)
 		-DPYTHON_INCLUDE_DIR=$(python_get_includedir)
-		$(cmake-utils_use_with blender BLENDER)
+		-DWITH_BLENDER=$(usex blender)
 		-DWITH_BOOST=ON
 		-DWITH_BUILDINFO=ON
-		-DWITH_BULLET=ON
-		$(cmake-utils_use_with avi CODEC_AVI)
-		$(cmake-utils_use_with ffmpeg CODEC_FFMPEG)
-		$(cmake-utils_use_with sndfile CODEC_SNDFILE)
-		$(cmake-utils_use_with alembic ALEMBIC)
-		-DWITH_ALEMBIC_HDF5=OFF
-		$(cmake-utils_use_with quicktime QUICKTIME)
-		-DWITH_FFTW3=ON
-		$(cmake-utils_use_with sse CPU_SSE)
-		$(cmake-utils_use_with sse RAYOPTIMIZATION)
-		$(cmake-utils_use_with sse2 SSE2)
-		$(cmake-utils_use_with cycles CYCLES)
-		$(cmake-utils_use_with freestyle FREESTYLE)
-		$(cmake-utils_use_with game-engine GAMEENGINE)
-		$(cmake-utils_use_with X X11)
-		$(cmake-utils_use_with !X HEADLESS)
-		$(cmake-utils_use_with X X11_XF86VMODE)
-		$(cmake-utils_use_with X X11_XINPUT)
-		$(cmake-utils_use_with X GHOST_XDND)
-		$(cmake-utils_use_with nls INTERNATIONAL)
-		$(cmake-utils_use_with osl LLVM)
-		-DLLVM_STATIC=OFF
+		-DWITH_CODEC_AVI=$(usex avi)
+		-DWITH_CODEC_FFMPEG=$(usex ffmpeg)
+		-DWITH_CODEC_SNDFILE=$(usex sndfile)
+		-DWITH_ALEMBIC=$(usex alembic)
+		-DWITH_QUICKTIME=$(usex quicktime)
+		-DWITH_FFTW3=$(usex smoke)
+		-DWITH_CPU_SSE=$(usex sse)
+		-DWITH_RAYOPTIMIZATION=$(usex sse)
+		-DWITH_CYCLES=$(usex cycles)
+		-DWITH_CYCLES_NATIVE_ONLY=$(usex cycles)
+		-DWITH_FREESTYLE=$(usex freestyle)
+		-DWITH_GAMEENGINE=$(usex game-engine)
+		-DWITH_HEADLESS=$(usex !X)
+		-DWITH_X11=$(usex X)
+		-DWITH_GHOST_XDND=$(usex X)
+		-DWITH_INTERNATIONAL=$(usex nls)
+		-DWITH_LLVM=$(usex osl)
+		-DWITH_CYCLES_OSL=$(usex osl)
+        -DLLVM_STATIC=OFF
 		-DLLVM_LIBRARY=/usr/lib
-		$(cmake-utils_use_with osl CYCLES_OSL)
-		$(cmake-utils_use_with lzma LZMA)
-		$(cmake-utils_use_with lzo LZO)
-		$(cmake-utils_use_with valgrind VALGRIND)
-		$(cmake-utils_use_with boolean MOD_BOOLEAN)
-		$(cmake-utils_use_with remesh MOD_REMESH)
-		$(cmake-utils_use_with fluid MOD_FLUID)
-		$(cmake-utils_use_with oceansim MOD_OCEANSIM)
-		$(cmake-utils_use_with decimate MOD_DECIMATE)
-		$(cmake-utils_use_with smoke MOD_SMOKE)
-		$(cmake-utils_use_with collada OPENCOLLADA)
-		$(cmake-utils_use_with opencolorio OPENCOLORIO)
-		$(cmake-utils_use_with openimageio OPENIMAGEIO)
-		$(cmake-utils_use_with openmp OPENMP)
-		$(cmake-utils_use_with opensubdiv OPENSUBDIV)
-		$(cmake-utils_use_with openvdb OPENVDB)
-		$(cmake-utils_use_with openvdb OPENVDB_BLOSC)
-		$(cmake-utils_use_with player PLAYER)
-		$(cmake-utils_use_with dpx IMAGE_CINEON)
-		$(cmake-utils_use_with dds IMAGE_DDS)
-		-DWITH_IMAGE_HDR=ON
-		$(cmake-utils_use_with openexr IMAGE_OPENEXR)
-		$(cmake-utils_use_with jpeg2k IMAGE_OPENJPEG)
-		$(cmake-utils_use_with tiff IMAGE_TIFF)
-		$(cmake-utils_use_with ndof INPUT_NDOF)
-		$(cmake-utils_use_with openal OPENAL)
-		$(cmake-utils_use_with sdl SDL)
-		$(cmake-utils_use_with sdl SDL_DYNLOAD)
-		$(cmake-utils_use_with jack JACK)
-		$(cmake-utils_use_with jack JACK_DYNLOAD)
-		$(cmake-utils_use_with !portable SYSTEM_EIGEN3)
-		$(cmake-utils_use_with !portable SYSTEM_LZO)
-		$(cmake-utils_use_with !portable SYSTEM_OPENJPEG)
-		$(cmake-utils_use_with portable INSTALL_PORTABLE)
-		$(cmake-utils_use_with portable STATIC_LIBS)
-		$(cmake-utils_use_with portable PYTHON_INSTALL)
-		$(cmake-utils_use_with portable PYTHON_INSTALL_NUMPY)
-		$(cmake-utils_use_with portable PYTHON_INSTALL_REQUESTS)
-		$(cmake-utils_use_with opengl SYSTEM_GLEW)
-		$(cmake-utils_use_with opengl SYSTEM_GLES)
-		$(cmake-utils_use_with opengl GL_PROFILE_COMPAT)
-		$(cmake-utils_use_with opengl3 GL_PROFILE_CORE)
-		$(cmake-utils_use_with debug DEBUG)
-		$(cmake-utils_use_with debug GPU_DEBUG)
-		$(cmake-utils_use_with debug WITH_CYCLES_DEBUG)
-		$(cmake-utils_use_with doc DOCS)
-		$(cmake-utils_use_with doc DOC_MANPAGE)
+		-DWITH_LZMA=$(usex lzma)
+		-DWITH_LZO=$(usex lzo)
+		-DWITH_VALGRIND=$(usex valgrind)
+		-DWITH_MOD_BOOLEAN=$(usex boolean)
+		-DWITH_MOD_REMESH=$(usex remesh)
+		-DWITH_MOD_FLUID=$(usex fluid)
+		-DWITH_MOD_OCEANSIM=$(usex oceansim)
+		-DWITH_MOD_DECIMATE=$(usex decimate)
+		-DWITH_MOD_SMOKE=$(usex smoke)
+		-DWITH_OPENCOLLADA=$(usex collada)
+		-DWITH_OPENCOLORIO=$(usex opencolorio)
+		-DWITH_OPENIMAGEIO=$(usex openimageio)
+		-DWITH_OPENMP=$(usex openmp)
+		-DWITH_OPENSUBDIV=$(usex opensubdiv)
+		-DWITH_OPENVDB=$(usex openvdb)
+		-DWITH_OPENVDB_BLOSC=$(usex openvdb)
+		-DWITH_PLAYER=$(usex player)
+		-DWITH_IMAGE_CINEON=$(usex dpx)
+		-DWITH_IMAGE_DDS=$(usex dds)
+		-DWITH_IMAGE_OPENEXR=$(usex openexr)
+		-DWITH_IMAGE_OPENJPEG=$(usex jpeg2k)
+		-DWITH_IMAGE_TIFF=$(usex tiff)
+		-DWITH_INPUT_NDOF=$(usex ndof)
+		-DWITH_OPENAL=$(usex openal)
+		-DWITH_SDL=$(usex sdl)
+		-DWITH_JACK=$(usex jack)
+		-DWITH_SYSTEM_EIGEN3=$(usex !portable)
+		-DWITH_SYSTEM_LZO=$(usex !portable)
+		-DWITH_SYSTEM_OPENJPEG=$(usex !portable)
+		-DWITH_SYSTEM_GLEW=$(usex !portable)
+		-DWITH_SYSTEM_GLES=$(usex !portable)
+		-DWITH_INSTALL_PORTABLE=$(usex portable)
+		-DWITH_STATIC_LIBS=$(usex portable)
+		-DWITH_PYTHON_INSTALL=$(usex portable)
+		-DWITH_PYTHON_INSTALL_NUMPY=$(usex portable)
+		-DWITH_PYTHON_INSTALL_REQUESTS=$(usex portable)
+		-DWITH_GL_PROFILE_COMPAT=$(usex opengl) 
+		-DWITH_GL_PROFILE_CORE=$(usex opengl3)
+		-DWITH_OPENCL=$(usex opencl)
+		-DWITH_CYCLES_DEVICE_OPENCL=$(usex opencl)
+		-DWITH_DEBUG=$(usex debug)
+		-DWITH_GPU_DEBUG=$(usex debug)
+		-DWITH_WITH_CYCLES_DEBUG=$(usex debug)
+		-DWITH_DOCS=$(usex doc)
+		-DWITH_DOC_MANPAGE=$(usex doc)
 		-DWITH_OPENNL=ON
+		-DWITH_C11=ON
+		-DWITH_CXX11=ON
 	)
 
 	cmake-utils_src_configure
