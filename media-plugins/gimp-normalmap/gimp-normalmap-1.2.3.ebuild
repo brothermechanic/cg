@@ -8,8 +8,7 @@ inherit toolchain-funcs
 
 DESCRIPTION="Gimp plug-in for converting images into RGB normal maps"
 HOMEPAGE="http://code.google.com/p/gimp-normalmap/"
-SRC_URI="http://gimp-normalmap.googlecode.com/files/${P}.tar.bz2"
-
+SRC_URI="https://storage.googleapis.com/google-code-archive-downloads/v2/code.google.com/gimp-normalmap/${P}.tar.bz2"
 LICENSE="GPL-2"
 SLOT="0"
 KEYWORDS="~amd64 ~x86"
