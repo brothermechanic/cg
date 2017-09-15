@@ -3,7 +3,7 @@
 # $Id$
 
 EAPI=6
-PYTHON_COMPAT=( python3_5 )
+PYTHON_COMPAT=( python3_6 )
 
 inherit cmake-utils eutils python-single-r1 gnome2-utils fdo-mime pax-utils git-r3 versionator toolchain-funcs flag-o-matic
 
@@ -11,19 +11,20 @@ DESCRIPTION="3D Creation/Animation/Publishing System"
 HOMEPAGE="http://www.blender.org/"
 
 EGIT_REPO_URI="http://git.blender.org/blender.git"
+#EGIT_BRANCH="master"
 
 LICENSE="|| ( GPL-2 BL )"
 SLOT="9999"
 KEYWORDS=""
-IUSE_BUILD="+blender -game-engine +addons contrib +nls -ndof +cycles freestyle -player"
+IUSE_BUILD="+blender -game-engine +addons contrib +nls -ndof +cycles -freestyle -player"
 IUSE_COMPILER="openmp +sse sse2"
 IUSE_SYSTEM="X -portable -valgrind -debug -doc"
 IUSE_IMAGE="-dpx -dds +openexr jpeg2k tiff"
-IUSE_CODEC="+openal -sdl jack avi +ffmpeg -sndfile -quicktime"
+IUSE_CODEC="openal -sdl jack avi +ffmpeg -sndfile +quicktime"
 IUSE_COMPRESSION="-lzma +lzo"
 IUSE_MODIFIERS="+fluid +smoke +boolean +remesh oceansim +decimate"
-IUSE_LIBS="osl +openvdb +opensubdiv +opencolorio +openimageio collada -alembic opencl"
-IUSE_GPU="+opengl -opengl3 +cuda -sm_20 -sm_21 -sm_30 -sm_35 -sm_50"
+IUSE_LIBS="osl +openvdb +opensubdiv +opencolorio +openimageio +collada -alembic opencl"
+IUSE_GPU="+opengl -opengl3 cuda -sm_20 -sm_21 -sm_30 -sm_35 -sm_50"
 IUSE="${IUSE_BUILD} ${IUSE_COMPILER} ${IUSE_SYSTEM} ${IUSE_IMAGE} ${IUSE_CODEC} ${IUSE_COMPRESSION} ${IUSE_MODIFIERS} ${IUSE_LIBS} ${IUSE_GPU}"
 
 REQUIRED_USE="${PYTHON_REQUIRED_USE}
@@ -41,16 +42,13 @@ RDEPEND="${PYTHON_DEPS}
 	dev-vcs/git
 	dev-python/numpy[${PYTHON_USEDEP}]
 	dev-python/requests[${PYTHON_USEDEP}]
-	dev-libs/jemalloc
 	sys-libs/zlib
 	smoke? ( sci-libs/fftw:3.0 )
 	media-libs/freetype
 	media-libs/libpng:0=
-	sci-libs/ldl
 	virtual/libintl
 	virtual/jpeg:0=
 	dev-libs/boost[nls?,threads(+)]
-	sci-libs/colamd
 	opengl? ( 
 		virtual/opengl
 		media-libs/glew:*
@@ -69,7 +67,7 @@ RDEPEND="${PYTHON_DEPS}
 		      >=sys-devel/llvm-3.1
 		      media-gfx/osl
 		      )
-		openvdb? ( media-gfx/openvdb
+		openvdb? ( =media-gfx/openvdb-3.2.0
 		dev-cpp/tbb )
 	)
 	sdl? ( media-libs/libsdl[sound,joystick] )
@@ -77,7 +75,6 @@ RDEPEND="${PYTHON_DEPS}
 	openexr? ( media-libs/openexr )
 	ffmpeg? ( >=media-video/ffmpeg-2.2[x264,xvid,mp3,encode,jpeg2k?] )
 	jpeg2k? ( media-libs/openjpeg:0 )
-	openal? ( >=media-libs/openal-1.6.372 )
 	jack? ( media-sound/jack-audio-connection-kit )
 	sndfile? ( media-libs/libsndfile )
 	collada? ( media-libs/opencollada )
@@ -90,7 +87,6 @@ RDEPEND="${PYTHON_DEPS}
 	lzma? ( app-arch/lzma )
 	lzo? ( dev-libs/lzo )
 	alembic? ( media-libs/alembic )
-	opensubdiv? ( media-libs/opensubdiv )
 	opencl? ( =app-eselect/eselect-opencl-1.1.0-r9 )
 	nls? ( virtual/libiconv )"
 

@@ -4,11 +4,11 @@
 
 EAPI=5
 
-inherit git-r3
+inherit 
 
-DESCRIPTION="Use Deshaker data in Blender to stabilize video!"
-HOMEPAGE="http://blog.sergem.net/video-stabilization-with-deshaker-in-blender/"
-EGIT_REPO_URI="https://github.com/sergem155/blender-deshaker-log-import.git"
+DESCRIPTION="Blender addon. The nodes to create animations."
+HOMEPAGE="http://blenderartists.org/forum/showthread.php?350296-Addon-Animation-Nodes"
+SRC_URI="https://github.com/JacquesLucke/animation_nodes/releases/download/v2.0/animation_nodes_v2_0_linux.zip"
 
 LICENSE="GPL-3"
 SLOT="0"
@@ -18,9 +18,11 @@ IUSE=""
 DEPEND=""
 RDEPEND="media-gfx/blender[addons]"
 
+S="${WORKDIR}"/animation_nodes
+
 src_install() {
 	if VER="/usr/share/blender/*";then
 	    insinto ${VER}/scripts/addons/
-	    doins -r "${S}"/import_deshaker_damper.py
+	    doins -r "${S}"
 	fi
 }

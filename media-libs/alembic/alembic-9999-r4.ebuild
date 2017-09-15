@@ -3,7 +3,7 @@
 # $Header: $
 
 EAPI=5
-PYTHON_COMPAT=( python3_5 )
+PYTHON_COMPAT=( python3_6 )
 
 inherit cmake-utils flag-o-matic python-single-r1 git-r3
 

@@ -4,11 +4,11 @@
 
 EAPI=5
 
-inherit git-2
+inherit git-r3
 
-DESCRIPTION="Blender addon. A various sequencer addons"
-HOMEPAGE="https://github.com/kinoraw/kinoraw_tools"
-EGIT_REPO_URI="https://github.com/kinoraw/kinoraw_tools.git"
+DESCRIPTION="Blender addon for computational design"
+HOMEPAGE="http://www.co-de-it.com/wordpress/code/blender-tissue"
+EGIT_REPO_URI="https://github.com/alessandro-zomparelli/tissue.git"
 
 LICENSE="GPL-3"
 SLOT="0"
@@ -19,7 +19,7 @@ DEPEND=""
 RDEPEND="media-gfx/blender[addons]"
 
 src_install() {
-	rm -r {*zip,archive,doc,imgs}
+    rm -r .git
 	if VER="/usr/share/blender/*";then
 	    insinto ${VER}/scripts/addons/
 	    doins -r "${S}"
