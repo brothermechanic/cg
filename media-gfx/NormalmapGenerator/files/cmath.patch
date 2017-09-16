@@ -1,0 +1,10 @@
+--- a/src_generators/ssaogenerator.cpp	2017-09-16 05:17:47.000000000 +0300
++++ b/src_generators/ssaogenerator.cpp	2017-09-16 05:18:29.264055499 +0300
+@@ -23,6 +23,7 @@
+ #include <QVector3D>
+ #include <QMatrix4x4>
+ #include <QColor>
++#include <cmath>
+ 
+ SsaoGenerator::SsaoGenerator() {
+ }
