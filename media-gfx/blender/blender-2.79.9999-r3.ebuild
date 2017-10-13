@@ -3,7 +3,7 @@
 # $Id$
 
 EAPI=6
-PYTHON_COMPAT=( python3_6 )
+PYTHON_COMPAT=( python{3_5,3_6} )
 
 inherit cmake-utils eutils python-single-r1 gnome2-utils fdo-mime pax-utils git-r3 versionator toolchain-funcs flag-o-matic
 
