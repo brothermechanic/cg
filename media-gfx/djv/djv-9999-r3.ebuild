@@ -39,9 +39,17 @@ S=${WORKDIR}/${P}
 
 src_prepare() {
 	cmake-utils_src_prepare
+	sed -i -e "/CMP0020 OLD/d" CMakeLists.txt || die
+	sed -i -e "/add_subdirectory(doc)/d" CMakeLists.txt
+	sed -i -e "s:throw (djvError):noexcept(false):g" $(find . -type f -name '*.h')
+	sed -i -e "s:throw (djvError):noexcept(false):g" $(find . -type f -name '*.cpp')
+	sed -i -e "s:throw (QString):noexcept(false):g" $(find . -type f -name '*.h')
+	sed -i -e "s:throw (QString):noexcept(false):g" $(find . -type f -name '*.cpp')
+	sed -i -e "s:DESTINATION lib:DESTINATION $(get_libdir):g" $(find . -type f -name 'CMakeLists.txt')
+	sed -i -e "s:DESTINATION lib:DESTINATION $(get_libdir):g" $(find . -type f -name '*.cmake')
 	sed -i -e "s:djvPackageThirdParty true:djvPackageThirdParty false:" CMakeLists.txt || die
-	sed -e "s|^Exec.*|Exec=djv_view %U|" -i etc/Linux/djv_view.desktop.in
-	sed -e "s|^Categories.*|Categories=AudioVideo;|" -i etc/Linux/djv_view.desktop.in
+	sed -i -e "s|^Exec.*|Exec=djv_view %U|" etc/Linux/djv_view.desktop.in || die
+	sed -i -e "s|^Categories.*|Categories=AudioVideo;|" etc/Linux/djv_view.desktop.in || die
 }
 
 src_install() {
