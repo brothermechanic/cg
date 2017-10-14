@@ -2,9 +2,9 @@
 # Distributed under the terms of the GNU General Public License v2
 # $Id$
 
-EAPI=5
+EAPI=6
 
-inherit cmake-utils eutils git-2
+inherit cmake-utils eutils git-r3
 
 DESCRIPTION="Open Shading Language"
 HOMEPAGE="https://github.com/imageworks/OpenShadingLanguage"
@@ -22,11 +22,14 @@ DEPEND="
 	sys-devel/flex
 	>=media-libs/ilmbase-2.0
 	tbb? ( dev-cpp/tbb )
-	<sys-devel/llvm-3.6[clang]"
+	sys-devel/llvm
+	sys-devel/clang"
 
 RDEPEND=""
 
 S="${WORKDIR}/OpenShadingLanguage-Release"
+
+PATCHES=( "${FILESDIR}"/llvm-static-system-libs.patch)
 
 src_configure() {
 	append-cxxflags -std=gnu++11 -Wno-error=array-bounds -Wno-error=sign-compare

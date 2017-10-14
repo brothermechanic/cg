@@ -1,36 +1,36 @@
 # Copyright 1999-2016 Gentoo Foundation
 # Distributed under the terms of the GNU General Public License v2
-# $Id$
 
 EAPI=6
 PYTHON_COMPAT=( python3_6 )
 
-inherit cmake-utils eutils python-single-r1 gnome2-utils fdo-mime pax-utils git-r3 versionator toolchain-funcs flag-o-matic
+inherit cmake-utils eutils python-single-r1 gnome2-utils xdg-utils pax-utils git-r3 versionator toolchain-funcs flag-o-matic
 
 DESCRIPTION="3D Creation/Animation/Publishing System"
 HOMEPAGE="http://www.blender.org/"
 
-EGIT_REPO_URI="http://git.blender.org/blender.git"
+EGIT_REPO_URI="https://git.blender.org/blender.git"
 #EGIT_BRANCH="master"
 
 LICENSE="|| ( GPL-2 BL )"
 SLOT="9999"
 KEYWORDS=""
-IUSE_BUILD="+blender -game-engine +addons contrib +nls -ndof +cycles -freestyle -player"
-IUSE_COMPILER="openmp +sse sse2"
+IUSE_BUILD="+blender +game-engine +addons +nls -ndof +cycles -freestyle -player"
+IUSE_COMPILER="openmp +sse"
 IUSE_SYSTEM="X -portable -valgrind -debug -doc"
 IUSE_IMAGE="-dpx -dds +openexr jpeg2k tiff"
 IUSE_CODEC="openal -sdl jack avi +ffmpeg -sndfile +quicktime"
 IUSE_COMPRESSION="-lzma +lzo"
 IUSE_MODIFIERS="+fluid +smoke +boolean +remesh oceansim +decimate"
-IUSE_LIBS="osl +openvdb +opensubdiv +opencolorio +openimageio +collada -alembic opencl"
-IUSE_GPU="+opengl -opengl3 cuda -sm_20 -sm_21 -sm_30 -sm_35 -sm_50"
+IUSE_LIBS="osl -openvdb +opensubdiv +colorio +openimageio +collada -alembic opencl"
+IUSE_GPU="+opengl cuda -sm_21 -sm_30 -sm_35 -sm_50 -sm_52 -sm_61 -sm_70"
 IUSE="${IUSE_BUILD} ${IUSE_COMPILER} ${IUSE_SYSTEM} ${IUSE_IMAGE} ${IUSE_CODEC} ${IUSE_COMPRESSION} ${IUSE_MODIFIERS} ${IUSE_LIBS} ${IUSE_GPU}"
 
 REQUIRED_USE="${PYTHON_REQUIRED_USE}
-            cycles? ( openexr openimageio )
-            smoke? ( openvdb )
-            contrib? ( addons )"
+	player? ( game-engine X )
+	cuda? ( cycles )
+	cycles? ( openexr tiff openimageio )
+	osl? ( cycles )"
 
 LANGS="en ar bg ca cs de el es es_ES fa fi fr he hr hu id it ja ky ne nl pl pt pt_BR ru sr sr@latin sv tr uk zh_CN zh_TW"
 for X in ${LANGS} ; do
@@ -49,7 +49,7 @@ RDEPEND="${PYTHON_DEPS}
 	virtual/libintl
 	virtual/jpeg:0=
 	dev-libs/boost[nls?,threads(+)]
-	opengl? ( 
+	opengl? (
 		virtual/opengl
 		media-libs/glew:*
 		virtual/glu
@@ -59,13 +59,12 @@ RDEPEND="${PYTHON_DEPS}
 	   x11-libs/libX11
 	   x11-libs/libXxf86vm
 	)
-	opencolorio? ( media-libs/opencolorio )
+	colorio? ( media-libs/opencolorio )
 	cycles? (
 		openimageio? ( >=media-libs/openimageio-1.1.5 )
 		cuda? ( dev-util/nvidia-cuda-toolkit )
 		osl? (
-		      >=sys-devel/llvm-3.1
-		      media-gfx/osl
+		      media-libs/osl
 		      )
 		openvdb? ( =media-gfx/openvdb-3.2.0
 		dev-cpp/tbb )
@@ -87,7 +86,7 @@ RDEPEND="${PYTHON_DEPS}
 	lzma? ( app-arch/lzma )
 	lzo? ( dev-libs/lzo )
 	alembic? ( media-libs/alembic )
-	opencl? ( =app-eselect/eselect-opencl-1.1.0-r9 )
+	opencl? ( app-eselect/eselect-opencl )
 	nls? ( virtual/libiconv )"
 
 DEPEND="${RDEPEND}
@@ -100,8 +99,8 @@ DEPEND="${RDEPEND}
 
 CMAKE_BUILD_TYPE="Release"
 
-PATCHES=( "${FILESDIR}"/01-${PN}-2.68-doxyfile.patch
-        "${FILESDIR}"/06-${PN}-2.68-fix-install-rules.patch )
+PATCHES=(   "${FILESDIR}"/blender-doxyfile.patch
+"${FILESDIR}"/blender-fix-install-rules.patch )
 
 blender_check_requirements() {
 	[[ ${MERGE_TYPE} != binary ]] && use openmp && tc-check-openmp
@@ -122,8 +121,8 @@ pkg_setup() {
 
 src_prepare() {
 	#add custom matcap
-	rm ${S}/release/datafiles/matcaps/mc10.jpg
-	cp ${FILESDIR}/mc10.jpg ${S}/release/datafiles/matcaps/
+	rm "${S}"/release/datafiles/matcaps/mc10.jpg
+	cp "${FILESDIR}"/mc10.jpg "${S}"/release/datafiles/matcaps/
 
 	# remove some bundled deps
 	rm -r \
@@ -132,6 +131,12 @@ src_prepare() {
 		extern/glew-es \
 		extern/Eigen3 \
 		|| die
+	if use addons ; then
+		ewarn "$(echo "Bundled addons")"
+	else
+		rm -r release/scripts/addons/*
+		rm -r release/scripts/addons_contrib/*
+	fi
 
 	default
 
@@ -147,7 +152,6 @@ src_prepare() {
 	# it sounds like.
 	sed -e "s|GENERATE_HTMLHELP      = YES|GENERATE_HTMLHELP      = NO|" \
 	    -i doc/doxygen/Doxyfile || die
-	
 	ewarn "$(echo "Remaining bundled dependencies:";
 			( find extern -mindepth 1 -maxdepth 1 -type d; ) | sed 's|^|- |')"
 	# linguas cleanup
@@ -172,13 +176,6 @@ src_configure() {
 	#CUDA Kernal Selection
 	local CUDA_ARCH=""
 	if use cuda; then
-        if use sm_20; then
-			if [[ -n "${CUDA_ARCH}" ]] ; then
-				CUDA_ARCH="${CUDA_ARCH};sm_20"
-			else
-				CUDA_ARCH="sm_20"
-			fi
-		fi
 		if use sm_21; then
 			if [[ -n "${CUDA_ARCH}" ]] ; then
 				CUDA_ARCH="${CUDA_ARCH};sm_21"
@@ -207,11 +204,31 @@ src_configure() {
 				CUDA_ARCH="sm_50"
 			fi
 		fi
+		if use sm_52; then
+			if [[ -n "${CUDA_ARCH}" ]] ; then
+				CUDA_ARCH="${CUDA_ARCH};sm_52"
+			else
+				CUDA_ARCH="sm_52"
+			fi
+		fi
+		if use sm_61; then
+			if [[ -n "${CUDA_ARCH}" ]] ; then
+				CUDA_ARCH="${CUDA_ARCH};sm_61"
+			else
+				CUDA_ARCH="sm_61"
+			fi
+		fi
+		if use sm_70; then
+			if [[ -n "${CUDA_ARCH}" ]] ; then
+				CUDA_ARCH="${CUDA_ARCH};sm_70"
+			else
+				CUDA_ARCH="sm_70"
+			fi
+		fi
 
 		#If a kernel isn't selected then all of them are built by default
 		if [ -n "${CUDA_ARCH}" ] ; then
 			mycmakeargs+=(
-				
 				-DCYCLES_CUDA_BINARIES_ARCH=${CUDA_ARCH}
 			)
 		fi
@@ -220,7 +237,8 @@ src_configure() {
 			-DWITH_CYCLES_CUDA_BINARIES=ON
 			-DCUDA_INCLUDES=/opt/cuda/include
 			-DCUDA_LIBRARIES=/opt/cuda/lib64
-			-DCUDA_NVCC=/opt/cuda/bin/nvcc
+			-DCUDA_NVCC_EXECUDABLE=/opt/cuda/bin/nvcc
+			-DCUDA_NVCC_FLAGS=-std=c++11
 		)
 	fi
 
@@ -250,7 +268,7 @@ src_configure() {
 		-DWITH_INTERNATIONAL=$(usex nls)
 		-DWITH_LLVM=$(usex osl)
 		-DWITH_CYCLES_OSL=$(usex osl)
-        -DLLVM_STATIC=OFF
+		-DLLVM_STATIC=OFF
 		-DLLVM_LIBRARY=/usr/lib
 		-DWITH_LZMA=$(usex lzma)
 		-DWITH_LZO=$(usex lzo)
@@ -262,7 +280,7 @@ src_configure() {
 		-DWITH_MOD_DECIMATE=$(usex decimate)
 		-DWITH_MOD_SMOKE=$(usex smoke)
 		-DWITH_OPENCOLLADA=$(usex collada)
-		-DWITH_OPENCOLORIO=$(usex opencolorio)
+		-DWITH_OPENCOLORIO=$(usex colorio)
 		-DWITH_OPENIMAGEIO=$(usex openimageio)
 		-DWITH_OPENMP=$(usex openmp)
 		-DWITH_OPENSUBDIV=$(usex opensubdiv)
@@ -288,8 +306,6 @@ src_configure() {
 		-DWITH_PYTHON_INSTALL=$(usex portable)
 		-DWITH_PYTHON_INSTALL_NUMPY=$(usex portable)
 		-DWITH_PYTHON_INSTALL_REQUESTS=$(usex portable)
-		-DWITH_GL_PROFILE_COMPAT=$(usex opengl) 
-		-DWITH_GL_PROFILE_CORE=$(usex opengl3)
 		-DWITH_OPENCL=$(usex opencl)
 		-DWITH_CYCLES_DEVICE_OPENCL=$(usex opencl)
 		-DWITH_DEBUG=$(usex debug)
@@ -365,10 +381,10 @@ pkg_postinst() {
 	elog "dragging the main menu down do display all paths."
 	elog
 	gnome2_icon_cache_update
-	fdo-mime_desktop_database_update
+	fdo-xdg_desktop_database_update
 }
 
 pkg_postrm() {
 	gnome2_icon_cache_update
-	fdo-mime_desktop_database_update
+	fdo-xdg_desktop_database_update
 }
