@@ -10,13 +10,13 @@ inherit cmake-utils eutils python-single-r1 gnome2-utils fdo-mime pax-utils git-
 DESCRIPTION="3D Creation/Animation/Publishing System"
 HOMEPAGE="http://www.blender.org/"
 
-EGIT_REPO_URI="http://git.blender.org/blender.git"
+EGIT_REPO_URI="https://git.blender.org/blender.git"
 #EGIT_BRANCH="master"
 
 LICENSE="|| ( GPL-2 BL )"
 SLOT="9999"
 KEYWORDS=""
-IUSE_BUILD="+blender game-engine +addons contrib +nls -ndof +cycles -freestyle -player"
+IUSE_BUILD="+blender +game-engine +addons +nls -ndof +cycles -freestyle -player"
 IUSE_COMPILER="openmp +sse sse2"
 IUSE_SYSTEM="X -portable -valgrind -debug -doc"
 IUSE_IMAGE="-dpx -dds +openexr jpeg2k tiff"
@@ -101,8 +101,8 @@ DEPEND="${RDEPEND}
 
 CMAKE_BUILD_TYPE="Release"
 
-PATCHES=( "${FILESDIR}"/01-${PN}-2.68-doxyfile.patch
-        "${FILESDIR}"/06-${PN}-2.68-fix-install-rules.patch )
+PATCHES=( "${FILESDIR}"/blender-doxyfile.patch
+        "${FILESDIR}"/blender-fix-install-rules.patch)
 
 blender_check_requirements() {
 	[[ ${MERGE_TYPE} != binary ]] && use openmp && tc-check-openmp
@@ -133,6 +133,13 @@ src_prepare() {
 		extern/glew-es \
 		extern/Eigen3 \
 		|| die
+    
+    if use addons ; then
+		ewarn "$(echo "Bundled addons")"
+    else
+		rm -r release/scripts/addons/*
+		rm -r release/scripts/addons_contrib/*
+	fi
 
 	default
 
