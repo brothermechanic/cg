@@ -18,7 +18,7 @@ IUSE="doc"
 RDEPEND=""
 DEPEND="${PYTHON_DEPS}
 	>=dev-util/cmake-2.8
-	>=dev-libs/boost-1.44[${PYTHON_USEDEP}]
+	>=dev-libs/boost-1.60[${PYTHON_USEDEP}]
 	=media-libs/openexr-2.2*
 	>=media-libs/ilmbase-1.0.1
 	media-libs/pyilmbase[${PYTHON_USEDEP}]

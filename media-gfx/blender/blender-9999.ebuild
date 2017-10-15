@@ -22,7 +22,7 @@ IUSE_IMAGE="-dpx -dds +openexr jpeg2k tiff"
 IUSE_CODEC="openal -sdl jack avi +ffmpeg -sndfile +quicktime"
 IUSE_COMPRESSION="-lzma +lzo"
 IUSE_MODIFIERS="+fluid +smoke +boolean +remesh oceansim +decimate"
-IUSE_LIBS="osl -openvdb +opensubdiv +colorio +openimageio +collada -alembic opencl"
+IUSE_LIBS="-osl -openvdb +opensubdiv +colorio +openimageio +collada -alembic opencl"
 IUSE_GPU="+opengl cuda -sm_21 -sm_30 -sm_35 -sm_50 -sm_52 -sm_61 -sm_70"
 IUSE="${IUSE_BUILD} ${IUSE_COMPILER} ${IUSE_SYSTEM} ${IUSE_IMAGE} ${IUSE_CODEC} ${IUSE_COMPRESSION} ${IUSE_MODIFIERS} ${IUSE_LIBS} ${IUSE_GPU}"
 
@@ -66,7 +66,7 @@ RDEPEND="${PYTHON_DEPS}
 		osl? (
 		      media-libs/osl
 		      )
-		openvdb? ( =media-gfx/openvdb-3.2.0
+		openvdb? ( media-gfx/openvdb
 		dev-cpp/tbb )
 	)
 	sdl? ( media-libs/libsdl[sound,joystick] )
@@ -381,10 +381,10 @@ pkg_postinst() {
 	elog "dragging the main menu down do display all paths."
 	elog
 	gnome2_icon_cache_update
-	fdo-xdg_desktop_database_update
+	xdg_mimeinfo_database_update
 }
 
 pkg_postrm() {
 	gnome2_icon_cache_update
-	fdo-xdg_desktop_database_update
+	xdg_mimeinfo_database_update
 }
