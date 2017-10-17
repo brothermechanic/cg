@@ -21,13 +21,7 @@ src_install() {
 	egit_clean
 	if VER="/usr/share/blender/*";then
 	    insinto ${VER}/scripts/addons/
+	    diropts -g users -m0775
 	    doins -r "${S}"
 	fi
-}
-
-pkg_postinst() {
-	chmod -R 644 /usr/share/blender/2.79/scripts/addons/booltron-9999
-}
-pkg_postrm() {
-	rm -r ${VER}/scripts/addons/"${P}"
 }
