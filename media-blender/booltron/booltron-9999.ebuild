@@ -25,3 +25,9 @@ src_install() {
 	    doins -r "${S}"
 	fi
 }
+
+pkg_preinst(){
+
+pkg_postrm() {
+	rm -r /usr/share/blender/*/scripts/addons/"${P}"
+}
