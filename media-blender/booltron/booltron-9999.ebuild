@@ -26,8 +26,8 @@ src_install() {
 	fi
 }
 
-pkg_preinst(){
-
 pkg_postrm() {
-	rm -r /usr/share/blender/*/scripts/addons/"${P}"
+	if [[ -z "${REPLACED_BY_VERSION}" ]]; then
+		rm -r ${ROOT}usr/share/blender/*/scripts/addons/"${P}"
+    fi
 }
