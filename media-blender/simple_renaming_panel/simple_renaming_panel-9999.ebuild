@@ -5,9 +5,9 @@ EAPI=6
 
 inherit git-r3 eutils
 
-DESCRIPTION="Blender addon. A super fast booleans"
-HOMEPAGE="https://github.com/mrachinskiy/blender-addon-booltron"
-EGIT_REPO_URI="https://github.com/mrachinskiy/blender-addon-booltron.git"
+DESCRIPTION="Blender addon. A simple and fast renaming tool for blender."
+HOMEPAGE="https://blenderartists.org/forum/showthread.php?408115-Addon-Simple-Renaming-Panel&p=3106784#post3106784"
+EGIT_REPO_URI="https://github.com/Weisl/simple_renaming_panel.git"
 
 LICENSE="GPL-3"
 SLOT="0"
@@ -19,6 +19,7 @@ RDEPEND="media-gfx/blender[addons]"
 
 src_install() {
 	egit_clean
+	rm -r .idea img
 	if VER="/usr/share/blender/*";then
 		insinto ${VER}/scripts/addons/
 		diropts -g users -m0775
