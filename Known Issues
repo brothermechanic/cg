@@ -1,2 +1,4 @@
 1 blender don't compile with openvdb
 3 animation-nodes wip
+4 cuda want glibs with this https://paste.pound-python.org/show/3kllLBQ7uNLmkjbHMbYi/ patch
+you can put it in /etc/portage/patches/sys-libs/glibc/floatn_h.patch
