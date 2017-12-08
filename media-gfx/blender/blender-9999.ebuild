@@ -39,6 +39,7 @@ for X in ${LANGS} ; do
 done
 
 RDEPEND="${PYTHON_DEPS}
+    dev-libs/jemalloc
 	dev-vcs/git
 	dev-python/numpy[${PYTHON_USEDEP}]
 	dev-python/requests[${PYTHON_USEDEP}]
