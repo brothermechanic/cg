@@ -3,37 +3,29 @@
 
 EAPI=6
 
-inherit eutils
+inherit eutils mercurial
 
 DESCRIPTION="The software to create realistic 3d humans"
 HOMEPAGE="http://www.makehuman.org"
-SRC_URI="https://launchpad.net/~makehuman-official/+archive/ubuntu/makehuman-11x/+files/makehuman_1.1.1+20170304112533.orig.tar.gz"
+EHG_REPO_URI="https://bitbucket.org/MakeHuman/makehuman"
 
 LICENSE="AGPL3"
 SLOT="0"
 KEYWORDS="~amd64 ~x86"
-IUSE=""
+IUSE="+assets"
 
 DEPEND=""
 RDEPEND="
     dev-python/pyopengl
-    dev-python/PyQt4"
+    dev-python/PyQt4
+    assets? ( media-plugins/makehuman-assets )"
 
-S="${WORKDIR}"
-
-src_unpack() {
-	unpack ${A}
-}
-
-src_prepare() {
-    eapply_user
-    sed -e "s|python.|python2 makehuman.py "$@"|" -i ${S}/extras/${PN}
-}
 
 src_install() {
+    rm -r ${S}/${PN}/data/skins || die
 	exeinto /usr/bin
-	doexe ${S}/extras/${PN}
-	domenu ${S}/extras/MakeHuman.desktop
+	doexe ${FILESDIR}/${PN}
+	domenu ${FILESDIR}/MakeHuman.desktop
 	doicon ${FILESDIR}/${PN}.png
 	insinto /usr/share/${PN}/
 	doins -r ${PN}/* || die "doins share failed"
