@@ -1,12 +1,12 @@
-diff -r 05181c48d7b7 -r ea73cd449ab6 src/CBinaires/CMakeLists.txt
---- src/CBinaires/CMakeLists.txt	Mon May 26 14:13:07 2014 +0200
-+++ src/CBinaires/CMakeLists.txt	Tue May 27 11:58:39 2014 +0200
-@@ -59,6 +59,9 @@
+--- a/src/CBinaires/CMakeLists.txt	2017-12-18 19:57:09.593396802 +0300
++++ b/src/CBinaires/CMakeLists.txt	2017-12-18 18:51:38.436662096 +0300
+@@ -72,9 +72,6 @@
+ 
          add_executable(Apero2PMVS Apero2PMVS.c)
          INSTALL(TARGETS Apero2PMVS RUNTIME DESTINATION ${Install_Dir})
+-        
+-        add_executable(Apero2Meshlab Apero2Meshlab.c)
+-        INSTALL(TARGETS Apero2Meshlab RUNTIME DESTINATION ${Install_Dir})
  
-+        add_executable(Apero2Meshlab Apero2Meshlab.c)
-+        INSTALL(TARGETS Apero2Meshlab RUNTIME DESTINATION ${Install_Dir})
-+
          add_executable(mmxv mmxv.c)
          INSTALL(TARGETS mmxv RUNTIME DESTINATION ${Install_Dir})
