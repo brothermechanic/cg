@@ -36,8 +36,6 @@ src_configure() {
 	mycmakeargs=(
 		${mycmakeargs}
 		-DCMAKE_INSTALL_PREFIX="/usr"
-		-DBUILD_PATH_BIN="/usr"
-		-DBUILD_PATH_LIB="/usr/lib"
 		-DBUILD_POISSON=OFF
 		-DBUILD_RNX2RTKP=ON
 		-DCUDA_ENABLED=OFF
