@@ -26,9 +26,10 @@ DEPEND="${RDEPEND}"
 CMAKE_BUILD_TYPE=Release
 
 src_prepare() {
-    default
-    rm -r binaire-aux
-    cp "${FILESDIR}"/Apero2Meshlab.c src/CBinaires/ || die
+	default
+	rm -r binaire-aux
+	cp "${FILESDIR}"/Apero2Meshlab.c src/CBinaires/ || die
+	epatch "${FILESDIR}"/Apero2Meshlab.patch
 }
 
 src_configure() {
