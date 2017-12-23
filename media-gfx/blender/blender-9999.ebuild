@@ -101,7 +101,8 @@ DEPEND="${RDEPEND}
 CMAKE_BUILD_TYPE="Release"
 
 PATCHES=(   "${FILESDIR}"/blender-doxyfile.patch
-"${FILESDIR}"/blender-fix-install-rules.patch )
+            "${FILESDIR}"/blender-fix-install-rules.patch
+            "${FILESDIR}"/save-last-value.patch)
 
 blender_check_requirements() {
 	[[ ${MERGE_TYPE} != binary ]] && use openmp && tc-check-openmp
