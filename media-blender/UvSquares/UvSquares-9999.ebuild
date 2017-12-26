@@ -3,7 +3,7 @@
 
 EAPI=6
 
-inherit git-r3
+inherit git-r3 eutils
 
 DESCRIPTION="Blender addon. A camera calibration toolkit"
 HOMEPAGE="https://github.com/Radivarig/UvSquares"
