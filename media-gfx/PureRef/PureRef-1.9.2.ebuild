@@ -7,7 +7,7 @@ inherit eutils
 
 DESCRIPTION="PureRef - Reference Image Viewer"
 HOMEPAGE="https://www.pureref.com"
-SRC_URI="PureRef-1.9.2_x64.deb"
+SRC_URI="http://openartisthq.org/debian/xenial64/PureRef-1.9.2_x64.deb"
 
 LICENSE=""
 SLOT="0"
