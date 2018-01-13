@@ -1,5 +1,5 @@
---- PyImathNumpy/imathnumpymodule.cpp
-+++ PyImathNumpy/imathnumpymodule.cpp
+--- a/PyImathNumpy/imathnumpymodule.cpp
++++ b/PyImathNumpy/imathnumpymodule.cpp
 @@ -38,6 +38,7 @@
  #include <PyImathVec.h>
  #include <iostream>

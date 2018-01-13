@@ -2,7 +2,7 @@
 # Distributed under the terms of the GNU General Public License v2
 # $Header: $
 
-EAPI=5
+EAPI=6
 PYTHON_COMPAT=( python3_6 )
 
 inherit cmake-utils flag-o-matic python-single-r1 git-r3
@@ -21,12 +21,13 @@ DEPEND="${PYTHON_DEPS}
 	>=dev-libs/boost-1.60[${PYTHON_USEDEP}]
 	=media-libs/openexr-2.2*
 	>=media-libs/ilmbase-1.0.1
-	media-libs/pyilmbase[${PYTHON_USEDEP}]
+	dev-python/pyilmbase[${PYTHON_USEDEP}]
 	doc? ( >=app-doc/doxygen-1.7.3 )"
 
 CMAKE_BUILD_TYPE=Release
 	
 src_prepare() {
+	default
 	append-cxxflags -std=c++11
 	rm -Rf build || die
 }
@@ -34,11 +35,16 @@ src_prepare() {
 src_configure() {
 	local mycmakeargs=(
 		-DCMAKE_INSTALL_PREFIX=/usr
+		-DUSE_ARNOLD=OFF
+		-DUSE_EXAMPLES=OFF
 		-DUSE_HDF5=OFF
 		-DUSE_MAYA=OFF
+		-DUSE_PRMAN=OFF
+		-DALEMBIC_ILMBASE_LINK_STATIC=OFF
 		-DUSE_BINARIES=OFF
 		-DALEMBIC_SHARED_LIBS=OFF
 		-DALEMBIC_LIB_USES_BOOST=ON
+		-DALEMBIC_LIB_USES_TR1=ON
 		-DILMBASE_ROOT=/usr
 		-DILMBASE_VERSION=2.2
 	)

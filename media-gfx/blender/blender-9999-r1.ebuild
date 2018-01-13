@@ -86,7 +86,7 @@ RDEPEND="${PYTHON_DEPS}
 	valgrind? ( dev-util/valgrind )
 	lzma? ( app-arch/lzma )
 	lzo? ( dev-libs/lzo )
-	alembic? ( media-libs/alembic )
+	alembic? ( media-gfx/alembic )
 	opencl? ( app-eselect/eselect-opencl )
 	nls? ( virtual/libiconv )"
 
@@ -174,7 +174,7 @@ src_prepare() {
 src_configure() {
 	append-flags -funsigned-char -fno-strict-aliasing
 	append-lfs-flags
-	append-cppflags -DOPENVDB_3_ABI_COMPATIBLE
+	append-cppflags -DOPENVDB_4_ABI_COMPATIBLE
 	local mycmakeargs=""
 	#CUDA Kernal Selection
 	local CUDA_ARCH=""

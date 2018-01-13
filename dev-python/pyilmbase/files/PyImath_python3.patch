@@ -1,5 +1,5 @@
---- PyImath/PyImathUtil.cpp
-+++ PyImath/PyImathUtil.cpp
+--- a/PyImath/PyImathUtil.cpp
++++ b/PyImath/PyImathUtil.cpp
 @@ -49,11 +49,7 @@
      PyGILState_Release(_gstate);
  }
@@ -22,8 +22,8 @@
  }
  
  PyReleaseLock::PyReleaseLock()
---- PyImath/PyImathFixedArray.h
-+++ PyImath/PyImathFixedArray.h
+--- a/PyImath/PyImathFixedArray.h
++++ b/PyImath/PyImathFixedArray.h
 @@ -240,9 +240,8 @@
      void extract_slice_indices(PyObject *index, size_t &start, size_t &end, Py_ssize_t &step, size_t &slicelength) const
      {
@@ -46,8 +46,8 @@
              start = i; end = i+1; step = 1; slicelength = 1;
          } else {
              PyErr_SetString(PyExc_TypeError, "Object is not a slice");
---- PyImath/PyImathFixedArray2D.h
-+++ PyImath/PyImathFixedArray2D.h
+--- a/PyImath/PyImathFixedArray2D.h
++++ b/PyImath/PyImathFixedArray2D.h
 @@ -193,9 +193,8 @@
      void extract_slice_indices(PyObject *index, size_t length, size_t &start, size_t &end, Py_ssize_t &step, size_t &slicelength) const
      {
@@ -70,8 +70,8 @@
              start = i; end = i+1; step = 1; slicelength = 1;
          } else {
              PyErr_SetString(PyExc_TypeError, "Object is not a slice");
---- PyImath/PyImathFixedMatrix.h
-+++ PyImath/PyImathFixedMatrix.h
+--- a/PyImath/PyImathFixedMatrix.h
++++ b/PyImath/PyImathFixedMatrix.h
 @@ -131,12 +131,11 @@
      void extract_slice_indices(PyObject *index, Py_ssize_t &start, Py_ssize_t &end, Py_ssize_t &step, Py_ssize_t &slicelength) const
      {
@@ -88,8 +88,8 @@
              start = i; end = i+1; step = 1; slicelength = 1;
          } else {
              PyErr_SetString(PyExc_TypeError, "Object is not a slice");
---- PyImath/PyImathBox.cpp
-+++ PyImath/PyImathBox.cpp
+--- a/PyImath/PyImathBox.cpp
++++ b/PyImath/PyImathBox.cpp
 @@ -191,13 +191,13 @@
  
      PyObject *minObj = converter (box.min);
@@ -122,8 +122,8 @@
      Py_DECREF (maxReprObj);
      Py_DECREF (maxObj);
  
---- PyImath/PyImathFixedVArray.cpp
-+++ PyImath/PyImathFixedVArray.cpp
+--- a/PyImath/PyImathFixedVArray.cpp
++++ b/PyImath/PyImathFixedVArray.cpp
 @@ -243,9 +243,8 @@
  {
      if (PySlice_Check (index))
@@ -147,8 +147,8 @@
          start = i;
          end   = i + 1;
          step  = 1;
---- PyImath/PyImathLine.cpp
-+++ PyImath/PyImathLine.cpp
+--- a/PyImath/PyImathLine.cpp
++++ b/PyImath/PyImathLine.cpp
 @@ -427,13 +427,13 @@
  
      PyObject *v1Obj = V3<T>::wrap (v1);
@@ -165,8 +165,8 @@
      Py_DECREF (v2ReprObj);
      Py_DECREF (v2Obj);
  
---- PyImath/PyImathPlane.cpp
-+++ PyImath/PyImathPlane.cpp
+--- a/PyImath/PyImathPlane.cpp
++++ b/PyImath/PyImathPlane.cpp
 @@ -195,7 +195,7 @@
  
      PyObject *normalObj = V3<T>::wrap (plane.normal);
