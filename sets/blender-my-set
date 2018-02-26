@@ -5,7 +5,6 @@ media-blender/camera-calibration-pvr
 media-blender/EasyLattice
 media-blender/edgeequalize
 media-blender/export-selected
-media-blender/mesh_align_to_gpencil
 media-blender/mira-tools
 media-blender/MultiEdit
 media-blender/offset_edges
