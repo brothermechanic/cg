@@ -20,6 +20,6 @@ RDEPEND="media-gfx/blender[addons]"
 src_install() {
 	if VER="/usr/share/blender/*";then
 		insinto ${VER}/scripts/addons/
-		doins -r "${S}"/MultiEdit_05.py
+		doins -r "${S}"/MultiEdit_1_1.py
 	fi
 }
