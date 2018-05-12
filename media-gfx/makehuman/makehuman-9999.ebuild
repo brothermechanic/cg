@@ -8,6 +8,7 @@ inherit eutils mercurial
 DESCRIPTION="The software to create realistic 3d humans"
 HOMEPAGE="http://www.makehuman.org"
 EHG_REPO_URI="https://bitbucket.org/MakeHuman/makehuman"
+EGIT_BRANCH="stable"
 
 LICENSE="AGPL3"
 SLOT="0"

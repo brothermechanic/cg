@@ -1,0 +1,12 @@
+--- a/source/blender/blenfont/intern/blf_glyph.c
++++ b/source/blender/blenfont/intern/blf_glyph.c
+@@ -219,7 +219,8 @@
+ 	FT_Error err;
+ 	FT_Bitmap bitmap, tempbitmap;
+ 	const bool is_sharp = (U.text_render & USER_TEXT_DISABLE_AA) != 0;
+-	int flags = FT_LOAD_TARGET_NORMAL | FT_LOAD_NO_HINTING | FT_LOAD_NO_BITMAP;
++	//int flags = FT_LOAD_TARGET_NORMAL | FT_LOAD_NO_HINTING | FT_LOAD_NO_BITMAP;
++    int flags = FT_LOAD_TARGET_NORMAL | FT_LOAD_NO_BITMAP;
+ 	FT_BBox bbox;
+ 	unsigned int key;
+ 

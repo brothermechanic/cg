@@ -1,0 +1,10 @@
+--- a/release/scripts/startup/bl_ui/space_info.py
++++ b/release/scripts/startup/bl_ui/space_info.py
+@@ -124,7 +124,6 @@
+         layout.operator("screen.userpref_show", text="User Preferences...", icon='PREFERENCES')
+ 
+         layout.operator_context = 'INVOKE_AREA'
+-        layout.operator("wm.save_homefile", icon='SAVE_PREFS')
+         layout.operator("wm.read_factory_settings", icon='LOAD_FACTORY')
+ 
+         if any(bpy.utils.app_template_paths()):
