@@ -101,7 +101,9 @@ DEPEND="${RDEPEND}
 CMAKE_BUILD_TYPE="Release"
 
 PATCHES=(   "${FILESDIR}"/blender-doxyfile.patch
-            "${FILESDIR}"/blender-fix-install-rules.patch)
+            "${FILESDIR}"/blender-fix-install-rules.patch
+            "${FILESDIR}"/SAVE_PREFS.patch
+            "${FILESDIR}"/hinting2.patch )
 
 blender_check_requirements() {
 	[[ ${MERGE_TYPE} != binary ]] && use openmp && tc-check-openmp
@@ -131,6 +133,7 @@ src_prepare() {
 		extern/glew \
 		extern/glew-es \
 		extern/Eigen3 \
+		release/scripts/addons/uv_magic_uv \
 		|| die
 	if use addons ; then
 		ewarn "$(echo "Bundled addons")"

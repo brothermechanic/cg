@@ -1,6 +1,5 @@
 media-blender/batch-operations
 media-blender/blender-light-studio
-media-blender/booltron
 media-blender/camera-calibration-pvr
 media-blender/EasyLattice
 media-blender/edgeequalize
@@ -12,4 +11,6 @@ media-blender/perfect_shape
 media-blender/simple_renaming_panel
 media-blender/time_tracker
 media-blender/tissue
+media-blender/TubeTool
 media-blender/UvSquares
+
