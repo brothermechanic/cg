@@ -21,17 +21,8 @@ RDEPEND="media-gfx/blender[addons]"
 
 
 
-src_configure() {
-    ECONF_SOURCE=${S} \
-    python_foreach_impl run_in_build_dir default
-}
-
 src_compile() {
-    python_foreach_impl run_in_build_dir default
-}
-
-src_test() {
-    python_foreach_impl run_in_build_dir default
+    python_setup 'python3*'
 }
 
 src_install() {
