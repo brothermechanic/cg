@@ -9,7 +9,7 @@ DESCRIPTION="A advanced, feature packed, multi-platform 2D and 3D game engine."
 HOMEPAGE="http://www.godotengine.org"
 
 EGIT_REPO_URI="https://github.com/godotengine/godot.git"
-KEYWORDS="~amd64 ~x86"
+KEYWORDS=""
 
 LICENSE="MIT"
 SLOT="0"
