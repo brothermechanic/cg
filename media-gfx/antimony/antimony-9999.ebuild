@@ -4,7 +4,10 @@
 
 EAPI=5
 
-inherit git-2 eutils
+PYTHON_COMPAT=( python2_7 python3_6 )
+
+inherit git-r3 cmake-utils python-single-r1
+
 
 DESCRIPTION="CAD from a parallel universe"
 HOMEPAGE="http://www.mattkeeter.com/projects/antimony/3/"
@@ -16,32 +19,19 @@ SLOT="0"
 
 KEYWORDS="~x86 ~amd64"
 
-IUSE=""
+IUSE="python"
 
 DEPEND="
 	>dev-util/lemon-3.8.11
 	sys-devel/flex
-	dev-lang/python:3.5
 	dev-libs/boost[python]
 	media-libs/libpng
 	dev-qt/qtcore:5
+	python? ( ${PYTHON_DEPS} )
 	"
 RDEPEND="${DEPEND}"
 
-src_prepare() {
-	epatch "${FILESDIR}"/gentoo.patch
-	epatch_user
+pkg_setup() {
+	use python && python-single-r1_pkg_setup
 }
 
-
-src_configure() {
-	/usr/lib64/qt5/bin/qmake PREFIX="{D}/usr/" sb.pro
-}
-
-src_install() {
-	dobin app/antimony
-	insinto /usr/bin
-	doins -r app/sb
-	newicon "${FILESDIR}"/antimony.png "${PN}".png
-	make_desktop_entry antimony "Antimony"
-}

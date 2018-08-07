@@ -12,7 +12,8 @@ DESCRIPTION="QT based Computer Aided Design application"
 HOMEPAGE="http://www.freecadweb.org/"
 
 EGIT_REPO_URI="https://github.com/FreeCAD/FreeCAD.git"
-#EGIT_BRANCH="releases/FreeCAD-0-17"
+EGIT_BRANCH="releases/FreeCAD-0-17"
+#EGIT_COMMIT="0258808"
 
 LICENSE="GPL-2"
 SLOT="0"
@@ -66,6 +67,7 @@ IUSE="eigen3 +freetype +qt5 swig ${IUSE_FREECAD_MODULES}"
 #		zipio++ - not in portage yet
 COMMON_DEPEND="
 	${PYTHON_DEPS}
+	sys-cluster/openmpi
 	dev-java/xerces
 	dev-libs/boost:=[python,${PYTHON_USEDEP}]
 	dev-libs/xerces-c[icu]
@@ -78,7 +80,6 @@ COMMON_DEPEND="
 	freecad_modules_plot? ( dev-python/matplotlib[${PYTHON_USEDEP}] )
 	freecad_modules_smesh? (
 		sci-libs/hdf5
-		sci-libs/libmed[${PYTHON_USEDEP}]
 		sys-cluster/openmpi[cxx]
 	)
 	freetype? ( media-libs/freetype )
@@ -111,10 +112,10 @@ DEPEND="${COMMON_DEPEND}
 REQUIRED_USE="${PYTHON_REQUIRED_USE}"
 CMAKE_BUILD_TYPE=Release
 
-#PATCHES=()
-#	"${FILESDIR}"/${P}-disable-shiboken2-missing-header-files.patch
-
 DOCS=( README.md ChangeLog.txt )
+
+PATCHES=(   "${FILESDIR}/qt5.11.patch"
+            "${FILESDIR}/smesh-pthread.patch")
 
 enable_module() {
 	local module=${1}
@@ -130,23 +131,20 @@ enable_module() {
 pkg_setup() {
 	fortran-2_pkg_setup
 	python-single-r1_pkg_setup
-
-	[[ -z ${CASROOT} ]] && die "empty \$CASROOT, run eselect opencascade set or define otherwise"
 }
 
 src_configure() {
-	# TODO
-	# FREECAD_USE_EXTERNAL_ZIPIOS="ON": needs zipois++ which is not in tree yet
-	# FREECAD_USE_EXTERNAL_SMESH="ON": needs salome-smash which is not in tree yet
-	#-DOCC_* defined with cMake/FindOpenCasCade.cmake
-	# VR module not included here as we do not support it
 	local mycmakeargs=(
-		-DOCC_INCLUDE_DIR="${CASROOT}"/inc
-		-DOCC_LIBRARY_DIR="${CASROOT}"/$(get_libdir)
+		-DOCC_INCLUDE_DIR=/usr/lib64/opencascade-7.3.0/ros/include/opencascade
+		-DOCC_LIBRARY_DIR=/usr/lib64/opencascade-7.3.0/ros/lib
+		-DOCC_LIBRARIES=/usr/lib64/opencascade-7.3.0/ros/lib CACHE PATH
+		-DFREECAD_USE_OCC_VARIANT="Official Version"
+		-DOCC_OCAF_LIBRARIES=/usr/lib64/opencascade-7.3.0/ros/lib CACHE PATH
 		-DCMAKE_INSTALL_DATADIR=/usr/share/${P}
 		-DCMAKE_INSTALL_DOCDIR=/usr/share/doc/${PF}
 		-DCMAKE_INSTALL_INCLUDEDIR=/usr/include/${P}
 		-DOPENMPI_INCLUDE_DIRS=/usr/include/
+		-DFREECAD_USE_EXTERNAL_SMESH=0
 		-DFREECAD_USE_EXTERNAL_KDL="ON"
 		-DBUILD_QT5="$(usex qt5)"
 		-DBUILD_GUI="$(usex qt5)"

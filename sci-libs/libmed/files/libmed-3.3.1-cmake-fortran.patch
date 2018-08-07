@@ -1,0 +1,16 @@
+--- a/CMakeLists.txt	2018-08-06 14:16:53.632955237 +0300
++++ b/CMakeLists.txt	2018-08-06 14:18:10.758954943 +0300
+@@ -8,8 +8,12 @@
+ 
+ INCLUDE(CheckLanguage)
+ CHECK_LANGUAGE(Fortran)
+-IF(CMAKE_Fortran_COMPILER)
++OPTION (MEDFILE_BUILD_FORTRAN "Build fortran library" ON)
++IF(MEDFILE_BUILD_FORTRAN)
+   ENABLE_LANGUAGE(Fortran)
++  IF(NOT CMAKE_Fortran_COMPILER)
++      MESSAGE(FATAL_EROOR "Fortran support was requested but not found")
++  ENDIF()
+ ELSE()
+   MESSAGE(STATUS "No Fortran support")
+ ENDIF()
