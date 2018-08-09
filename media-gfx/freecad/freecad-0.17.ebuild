@@ -42,7 +42,7 @@ COMMON_DEPEND="
 	dev-qt/qtwebkit:5
 	media-libs/coin
 	media-libs/freetype
-	|| ( sci-libs/opencascade:7.3.0[vtk] )
+	|| ( sci-libs/opencascade[vtk] )
 	sys-libs/zlib
 	virtual/glu
 	sci-libs/libmed"

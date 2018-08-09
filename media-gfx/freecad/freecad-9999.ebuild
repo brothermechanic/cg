@@ -135,11 +135,8 @@ pkg_setup() {
 
 src_configure() {
 	local mycmakeargs=(
-		-DOCC_INCLUDE_DIR=/usr/lib64/opencascade-7.3.0/ros/include/opencascade
-		-DOCC_LIBRARY_DIR=/usr/lib64/opencascade-7.3.0/ros/lib
-		-DOCC_LIBRARIES=/usr/lib64/opencascade-7.3.0/ros/lib CACHE PATH
-		-DFREECAD_USE_OCC_VARIANT="Official Version"
-		-DOCC_OCAF_LIBRARIES=/usr/lib64/opencascade-7.3.0/ros/lib CACHE PATH
+		-DOCC_INCLUDE_DIR=/usr/lib64/opencascade-6.9.1/ros/lin/inc
+		-DOCC_LIBRARY_DIR=/usr/lib64/opencascade-6.9.1/ros/lin/lib
 		-DCMAKE_INSTALL_DATADIR=/usr/share/${P}
 		-DCMAKE_INSTALL_DOCDIR=/usr/share/doc/${PF}
 		-DCMAKE_INSTALL_INCLUDEDIR=/usr/include/${P}
