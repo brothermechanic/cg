@@ -54,12 +54,12 @@ PATCHES=(
 
 pkg_setup() {
 	check-reqs_pkg_setup
-	java-pkg-opt-2_pkg_setup
+	use java && java-pkg-opt-2_pkg_setup
 }
 
 src_prepare() {
 	cmake-utils_src_prepare
-	java-pkg-opt-2_src_prepare
+	use java && java-pkg-opt-2_src_prepare
 my_install_dir=${EROOT}usr/$(get_libdir)/${P}/ros
 	local my_env_install="#!/bin/sh -f
 if [ -z \"\$PATH\" ]; then
