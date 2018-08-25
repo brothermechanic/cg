@@ -3,11 +3,13 @@
 
 EAPI=6
 
-inherit check-reqs cmake-utils eutils flag-o-matic java-pkg-opt-2 multilib
+inherit check-reqs cmake-utils eutils flag-o-matic java-pkg-opt-2 multilib versionator
 
 DESCRIPTION="Development platform for CAD/CAE, 3D surface/solid modeling and data exchange"
 HOMEPAGE="http://www.opencascade.com/"
-SRC_URI="http://www.${PN}.com/sites/default/files/private/occt/occt-V7_3_0.tar.gz"
+# convert version string x.x.x to x_x_x
+MY_PV="$(replace_all_version_separators '_')"
+SRC_URI="https://git.dev.opencascade.org/gitweb/?p=occt.git;a=snapshot;h=refs/tags/V${MY_PV};sf=tgz -> ${P}.tar.gz"
 
 LICENSE="|| ( Open-CASCADE-LGPL-2.1-Exception-1.0 LGPL-2.1 )"
 SLOT="${PV}"
@@ -42,7 +44,7 @@ CHECKREQS_DISK_BUILD="3584M"
 
 CMAKE_BUILD_TYPE=Release
 
-S=${WORKDIR}/occt-V7_3_0
+S="${WORKDIR}/occt-V${MY_PV}"
 
 PATCHES=(
 	"${FILESDIR}"/ffmpeg4.patch
