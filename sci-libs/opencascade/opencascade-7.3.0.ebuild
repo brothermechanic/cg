@@ -3,12 +3,12 @@
 
 EAPI=6
 
-inherit check-reqs cmake-utils eutils flag-o-matic java-pkg-opt-2 multilib versionator
+inherit check-reqs cmake-utils eapi7-ver eutils flag-o-matic java-pkg-opt-2 multilib
 
 DESCRIPTION="Development platform for CAD/CAE, 3D surface/solid modeling and data exchange"
 HOMEPAGE="http://www.opencascade.com/"
 # convert version string x.x.x to x_x_x
-MY_PV="$(replace_all_version_separators '_')"
+MY_PV="$(ver_rs 1- '_')"
 SRC_URI="https://git.dev.opencascade.org/gitweb/?p=occt.git;a=snapshot;h=refs/tags/V${MY_PV};sf=tgz -> ${P}.tar.gz"
 
 LICENSE="|| ( Open-CASCADE-LGPL-2.1-Exception-1.0 LGPL-2.1 )"
@@ -50,6 +50,7 @@ PATCHES=(
 	"${FILESDIR}"/ffmpeg4.patch
 	"${FILESDIR}"/fix-install-dir-references.patch
 	"${FILESDIR}"/vtk7.patch
+	"${FILESDIR}"/opencascade-fix-install-dir-reference.patch
 	)
 
 pkg_setup() {
@@ -60,7 +61,7 @@ pkg_setup() {
 src_prepare() {
 	cmake-utils_src_prepare
 	use java && java-pkg-opt-2_src_prepare
-my_install_dir=${EROOT}usr/$(get_libdir)/${P}/ros
+	my_install_dir=${EROOT}usr/$(get_libdir)/${P}/ros
 	local my_env_install="#!/bin/sh -f
 if [ -z \"\$PATH\" ]; then
 	export PATH=VAR_CASROOT/Linux/bin
@@ -100,7 +101,7 @@ TIX_LIBRARY=${my_sys_lib}/tix$(grep TIX_VER /usr/include/tix.h | sed 's/^.*"\(.*
 TK_LIBRARY=${my_sys_lib}/tk$(grep TK_VER /usr/include/tk.h | sed 's/^.*"\(.*\)".*/\1/')
 TCL_LIBRARY=${my_sys_lib}/tcl$(grep TCL_VER /usr/include/tcl.h | sed 's/^.*"\(.*\)".*/\1/')"
 
-	( 	echo "${my_env_install}"
+	(	echo "${my_env_install}"
 		echo "${my_env}" | sed -e "s:^:export :" ) \
 	| sed -e "s:VAR_CASROOT:${S}:g" > env.sh || die
 	source env.sh
@@ -121,8 +122,8 @@ src_configure() {
 		-DCMAKE_CONFIGURATION_TYPES="Gentoo"
 		-DBUILD_WITH_DEBUG=$(usex debug)
 		-DCMAKE_INSTALL_PREFIX="${my_install_dir}"
-		-DINSTALL_DIR_DOC="/usr/share/doc/${P}"
-		-DINSTALL_DIR_CMAKE="/usr/$(get_libdir)/cmake"
+		-DINSTALL_DIR_DOC="${EPREFIX}/usr/share/doc/${P}"
+		-DINSTALL_DIR_CMAKE="${EPREFIX}/usr/$(get_libdir)/cmake"
 		-DUSE_D3D=no
 		-DUSE_FREEIMAGE=$(usex freeimage)
 		-DUSE_GL2PS=$(usex gl2ps)
@@ -138,6 +139,9 @@ src_configure() {
 
 src_install() {
 	cmake-utils_src_install
+
+	# make draw.sh non-world-writable
+	chmod go-w "${D}/${my_install_dir}/bin/draw.sh"
 
 	insinto /etc/env.d/${PN}
 	newins "${S}/50${PN}" ${PV}
