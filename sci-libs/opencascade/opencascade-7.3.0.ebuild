@@ -14,7 +14,7 @@ SRC_URI="https://git.dev.opencascade.org/gitweb/?p=occt.git;a=snapshot;h=refs/ta
 LICENSE="|| ( Open-CASCADE-LGPL-2.1-Exception-1.0 LGPL-2.1 )"
 SLOT="${PV}"
 KEYWORDS="~amd64 ~x86"
-IUSE="debug doc examples ffmpeg freeimage gl2ps java tbb test +vtk"
+IUSE="debug doc examples ffmpeg freeimage gl2ps gles2 java tbb test +vtk"
 
 RDEPEND="app-eselect/eselect-opencascade
 	dev-lang/tcl:0=
@@ -70,6 +70,7 @@ src_configure() {
 		-DUSE_FFMPEG=$(usex ffmpeg)
 		-DUSE_FREEIMAGE=$(usex freeimage)
 		-DUSE_GL2PS=$(usex gl2ps)
+		-DUSE_GLES2=$(usex gles2)
 		-DUSE_TBB=$(usex tbb)
 		-DUSE_VTK=$(usex vtk)
 		-DBUILD_WITH_DEBUG=$(usex debug)
