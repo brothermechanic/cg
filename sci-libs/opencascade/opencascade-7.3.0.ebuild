@@ -14,7 +14,7 @@ SRC_URI="https://git.dev.opencascade.org/gitweb/?p=occt.git;a=snapshot;h=refs/ta
 LICENSE="|| ( Open-CASCADE-LGPL-2.1-Exception-1.0 LGPL-2.1 )"
 SLOT="${PV}"
 KEYWORDS="~amd64 ~x86"
-IUSE="debug doc examples freeimage gl2ps java tbb test +vtk"
+IUSE="debug doc examples ffmpeg freeimage gl2ps java tbb test +vtk"
 
 RDEPEND="app-eselect/eselect-opencascade
 	dev-lang/tcl:0=
@@ -27,6 +27,7 @@ RDEPEND="app-eselect/eselect-opencascade
 	virtual/glu
 	virtual/opengl
 	x11-libs/libXmu
+	ffmpeg? ( virtual/ffmpeg )
 	freeimage? ( media-libs/freeimage )
 	gl2ps? ( x11-libs/gl2ps )
 	java? ( >=virtual/jdk-0:= )
@@ -66,6 +67,7 @@ src_configure() {
 	local mycmakeargs=(
 		-DCMAKE_CONFIGURATION_TYPES="Gentoo"
 		-DUSE_D3D=no
+		-DUSE_FFMPEG=$(usex ffmpeg)
 		-DUSE_FREEIMAGE=$(usex freeimage)
 		-DUSE_GL2PS=$(usex gl2ps)
 		-DUSE_TBB=$(usex tbb)
