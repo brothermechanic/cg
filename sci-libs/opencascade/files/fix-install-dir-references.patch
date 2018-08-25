@@ -22,3 +22,16 @@ diff -aur occt-V7_1_0/adm/cmake/occt_macros.cmake occt-V7_1_0.new/adm/cmake/occt
    foreach(TARGET_FILENAME \${ALL_OCCT_TARGET_FILES})
      file (STRINGS \"\${TARGET_FILENAME}\" TARGET_FILE_CONTENT)
      file (REMOVE \"\${TARGET_FILENAME}\")
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 5789fcb..16f3abf 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -885,7 +885,7 @@ if (EXISTS "${INSTALL_DIR}/${INSTALL_DIR_SCRIPT}/custom.${SCRIPT_EXT}")
+ 
+   set (CUSTOM_CONTENT "${CUSTOM_CONTENT} ${ADDITIONAL_CUSTOM_CONTENT}")
+ 
+-  file (WRITE "${INSTALL_DIR}/${INSTALL_DIR_SCRIPT}/custom.${SCRIPT_EXT}" "${CUSTOM_CONTENT}")
++  file (WRITE "\$ENV{DESTDIR}${INSTALL_DIR}/${INSTALL_DIR_SCRIPT}/custom.${SCRIPT_EXT}" "${CUSTOM_CONTENT}")
+ else()
+   OCCT_CONFIGURE_AND_INSTALL ("adm/templates/custom.${SCRIPT_EXT}.main" "custom.${SCRIPT_EXT}" "custom.${SCRIPT_EXT}" "${INSTALL_DIR_SCRIPT}")
+ endif()
