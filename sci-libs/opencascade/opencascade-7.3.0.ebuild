@@ -50,7 +50,6 @@ PATCHES=(
 	"${FILESDIR}"/ffmpeg4.patch
 	"${FILESDIR}"/fix-install-dir-references.patch
 	"${FILESDIR}"/vtk7.patch
-	"${FILESDIR}"/opencascade-fix-install-dir-reference.patch
 	)
 
 pkg_setup() {
