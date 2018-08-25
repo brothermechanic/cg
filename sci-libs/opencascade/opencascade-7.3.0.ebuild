@@ -3,7 +3,7 @@
 
 EAPI=6
 
-inherit cmake-utils eutils check-reqs multilib java-pkg-opt-2 flag-o-matic
+inherit check-reqs cmake-utils eutils flag-o-matic java-pkg-opt-2 multilib
 
 DESCRIPTION="Development platform for CAD/CAE, 3D surface/solid modeling and data exchange"
 HOMEPAGE="http://www.opencascade.com/"
