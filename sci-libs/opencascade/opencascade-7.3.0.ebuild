@@ -60,79 +60,26 @@ pkg_setup() {
 src_prepare() {
 	cmake-utils_src_prepare
 	use java && java-pkg-opt-2_src_prepare
-	my_install_dir=${EROOT}usr/$(get_libdir)/${P}/ros
-	local my_env_install="#!/bin/sh -f
-if [ -z \"\$PATH\" ]; then
-	export PATH=VAR_CASROOT/Linux/bin
-else
-	export PATH=VAR_CASROOT/Linux/bin:\$PATH
-fi
-if [ -z \"\$LD_LIBRARY_PATH\" ]; then
-	export LD_LIBRARY_PATH=VAR_CASROOT/Linux/lib
-else
-	export LD_LIBRARY_PATH=VAR_CASROOT/Linux/lib:\$LD_LIBRARY_PATH
-fi"
-	local my_sys_lib=${EROOT}usr/$(get_libdir)
-	local my_env="CASROOT=VAR_CASROOT
-CSF_MDTVFontDirectory=VAR_CASROOT/src/FontMFT
-CSF_LANGUAGE=us
-MMGT_CLEAR=1
-CSF_EXCEPTION_PROMPT=1
-CSF_SHMessage=VAR_CASROOT/src/SHMessage
-CSF_MDTVTexturesDirectory=VAR_CASROOT/src/Textures
-CSF_XSMessage=VAR_CASROOT/src/XSMessage
-CSF_StandardDefaults=VAR_CASROOT/src/StdResource
-CSF_PluginDefaults=VAR_CASROOT/src/StdResource
-CSF_XCAFDefaults=VAR_CASROOT/src/StdResource
-CSF_StandardLiteDefaults=VAR_CASROOT/src/StdResource
-CSF_GraphicShr=VAR_CASROOT/Linux/lib/libTKOpenGl.so
-CSF_UnitsLexicon=VAR_CASROOT/src/UnitsAPI/Lexi_Expr.dat
-CSF_UnitsDefinition=VAR_CASROOT/src/UnitsAPI/Units.dat
-CSF_IGESDefaults=VAR_CASROOT/src/XSTEPResource
-CSF_STEPDefaults=VAR_CASROOT/src/XSTEPResource
-CSF_XmlOcafResource=VAR_CASROOT/src/XmlOcafResource
-CSF_MIGRATION_TYPES=VAR_CASROOT/src/StdResource/MigrationSheet.txt
-TCLHOME=${EROOT}usr/bin
-TCLLIBPATH=${my_sys_lib}
-ITK_LIBRARY=${my_sys_lib}/itk$(grep ITK_VER /usr/include/itk.h | sed 's/^.*"\(.*\)".*/\1/')
-ITCL_LIBRARY=${my_sys_lib}/itcl$(grep ITCL_VER /usr/include/itcl.h | sed 's/^.*"\(.*\)".*/\1/')
-TIX_LIBRARY=${my_sys_lib}/tix$(grep TIX_VER /usr/include/tix.h | sed 's/^.*"\(.*\)".*/\1/')
-TK_LIBRARY=${my_sys_lib}/tk$(grep TK_VER /usr/include/tk.h | sed 's/^.*"\(.*\)".*/\1/')
-TCL_LIBRARY=${my_sys_lib}/tcl$(grep TCL_VER /usr/include/tcl.h | sed 's/^.*"\(.*\)".*/\1/')"
-
-	(	echo "${my_env_install}"
-		echo "${my_env}" | sed -e "s:^:export :" ) \
-	| sed -e "s:VAR_CASROOT:${S}:g" > env.sh || die
-	source env.sh
-
-	(	echo "PATH=${my_install_dir}/bin"
-		echo "LDPATH=${my_install_dir}/$(get_libdir)"
-		echo "${my_env}" | sed \
-			-e "s:VAR_CASROOT:${my_install_dir}:g" \
-			-e "s:/Linux/lib/:/$(get_libdir)/:g" || die
-	) > "${S}/50${PN}"
-
 }
 
 src_configure() {
-
-	# from dox/dev_guides/building/cmake/cmake.md
 	local mycmakeargs=(
 		-DCMAKE_CONFIGURATION_TYPES="Gentoo"
-		-DBUILD_WITH_DEBUG=$(usex debug)
-		-DCMAKE_INSTALL_PREFIX="${my_install_dir}"
-		-DINSTALL_DIR_DOC="${EPREFIX}/usr/share/doc/${P}"
-		-DINSTALL_DIR_CMAKE="${EPREFIX}/usr/$(get_libdir)/cmake"
 		-DUSE_D3D=no
 		-DUSE_FREEIMAGE=$(usex freeimage)
 		-DUSE_GL2PS=$(usex gl2ps)
 		-DUSE_TBB=$(usex tbb)
 		-DUSE_VTK=$(usex vtk)
+		-DBUILD_WITH_DEBUG=$(usex debug)
 		-DBUILD_DOC_Overview=$(usex doc)
 		-DINSTALL_DOC_Overview=$(usex doc)
 		-DINSTALL_SAMPLES=$(usex examples)
 		-DINSTALL_TEST_CASES=$(usex test)
+		-DCMAKE_INSTALL_PREFIX="/usr/$(get_libdir)/${P}/ros"
+		-DINSTALL_DIR_DOC="/usr/share/doc/${P}"
+		-DINSTALL_DIR_CMAKE="/usr/$(get_libdir)/cmake"
 	)
+
 	cmake-utils_src_configure
 }
 
@@ -140,13 +87,19 @@ src_install() {
 	cmake-utils_src_install
 
 	# make draw.sh non-world-writable
-	chmod go-w "${D}/${my_install_dir}/bin/draw.sh"
+	chmod go-w "${D}/${EROOT}/usr/$(get_libdir)/${P}/ros/bin/draw.sh"
 
-	insinto /etc/env.d/${PN}
-	newins "${S}/50${PN}" ${PV}
+	# /etc/env.d
+	sed -e "s|VAR_CASROOT|${EROOT}usr/$(get_libdir)/${P}/ros|g" < "${FILESDIR}/50${PN}" > "${S}/50${PN}"
+	doenvd "${S}/50${PN}"
 
+	# /etc/ld.so.conf.d
+	dodir /etc/ld.so.conf.d/
+	echo "${EROOT}usr/$(get_libdir)/${P}/ros/lib" > ${ED}/etc/ld.so.conf.d/50${PN}.conf || die
+
+	# remove examples
 	if ! use examples; then
-		rm -rf "${my_install_dir}"/share/${P}/samples || die
+		rm -rf "${EROOT}/usr/$(get_libdir)/${P}/ros/share/${P}/samples" || die
 	fi
 }
 
