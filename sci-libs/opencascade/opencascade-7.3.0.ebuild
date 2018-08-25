@@ -93,8 +93,8 @@ src_install() {
 	chmod go-w "${D}/${EROOT}/usr/$(get_libdir)/${P}/ros/bin/draw.sh"
 
 	# /etc/env.d
-	sed -e "s|VAR_CASROOT|${EROOT}usr/$(get_libdir)/${P}/ros|g" < "${FILESDIR}/50${PN}" > "${S}/50${PN}"
-	doenvd "${S}/50${PN}"
+	sed -e "s|VAR_CASROOT|${EROOT}usr/$(get_libdir)/${P}/ros|g" < "${FILESDIR}/51${PN}" > "${S}/51${PN}"
+	doenvd "${S}/51${PN}"
 
 	# /etc/ld.so.conf.d
 	dodir /etc/ld.so.conf.d/
