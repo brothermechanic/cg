@@ -1,45 +1,46 @@
---- qt/python.pri	2015-09-07 12:57:03.000000000 +0300
-+++ qt/python.pri	2015-09-07 16:00:05.542693570 +0300
-@@ -1,25 +1,25 @@
- # Platform-specific configuration common to Antimony and supporting libraries
- cygwin {
--    QMAKE_CXXFLAGS += $$system(python3-config --includes)
--    QMAKE_CFLAGS += $$system(python3-config --includes)
--    LIBS += $$system(python3-config --libs)
-+    QMAKE_CXXFLAGS += $$system(python-config-3.5 --includes)
-+    QMAKE_CFLAGS += $$system(python-config-3.5 --includes)
-+    LIBS += $$system(python-config-3.5 --libs)
-     LIBS += -lboost_python3
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index a325f281..2d8c5665 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -16,20 +16,13 @@ endif()
+ 
+ if (WIN32)
+     find_package(Boost REQUIRED COMPONENTS python3)
+-elseif (APPLE)
++else ()
+     foreach (PYTHON_NAME python3 python36 python37)
+         find_package(Boost QUIET COMPONENTS ${PYTHON_NAME})
+         if (${Boost_FOUND})
+             break()
+         endif()
+     endforeach()
+-elseif (UNIX)
+-    foreach (PYTHON_NAME python3 python-py36 python-py35 python-py34)
+-        find_package(Boost QUIET COMPONENTS ${PYTHON_NAME})
+-        if (${Boost_FOUND})
+-            break()
+-        endif()
+-    endforeach()
+ endif()
+ 
+ if (NOT ${Boost_FOUND})
+diff --git a/lib/fab/src/tree/v2syntax.y b/lib/fab/src/tree/v2syntax.y
+index d5d4f3b3..61f37fb1 100644
+--- a/lib/fab/src/tree/v2syntax.y
++++ b/lib/fab/src/tree/v2syntax.y
+@@ -37,15 +37,6 @@
+ %syntax_error
+ {
+ 	environment->valid = false;
+-#ifndef NDEBUG
+-	int n = sizeof(yyTokenName) / sizeof(yyTokenName[0]);
+-	for (int i = 0; i < n; ++i) {
+-		int a = yy_find_shift_action(yypParser, (YYCODETYPE)i);
+-		if (a < YYNSTATE + YYNRULE) {
+-		printf("possible token: %s\n", yyTokenName[i]);
+-		}
+-	}
+-#endif
  }
  
- macx {
--    QMAKE_CXXFLAGS += $$system(/usr/local/bin/python3-config --includes)
--    QMAKE_LFLAGS   += $$system(/usr/local/bin/python3-config --ldflags)
-+    QMAKE_CXXFLAGS += $$system(/usr/local/bin/python-config-3.5 --includes)
-+    QMAKE_LFLAGS   += $$system(/usr/local/bin/python-config-3.5 --ldflags)
-     LIBS += -L/usr/local/lib -lboost_python3
-     QMAKE_CXXFLAGS += -isystem/usr/local/include
- }
  
- linux {
--    QMAKE_CXXFLAGS += $$system(/usr/bin/python3-config --includes)
--    QMAKE_LFLAGS   += $$system(/usr/bin/python3-config --ldflags)
-+    QMAKE_CXXFLAGS += $$system(/usr/bin/python-config-3.5 --includes)
-+    QMAKE_LFLAGS   += $$system(/usr/bin/python-config-3.5 --ldflags)
- 
-     # Even though this is in QMAKE_LFLAGS, the linker is picky about
-     # library ordering (so it needs to be here too).
--    LIBS += -lpython3.5m
-+    LIBS += -lpython3.5
- 
-     # ldconfig is being used to find libboost_python, but it's in a different
-     # place in different distros (and is not in the default $PATH on Debian).
-@@ -40,7 +40,7 @@
- 
-     # Check for different boost::python naming schemes
-     LDCONFIG_OUT = $$system($$LDCONFIG_BIN -p|grep python)
--    for (b, $$list(boost_python-py34 boost_python3)) {
-+    for (b, $$list(boost_python-py34 boost_python-3.5)) {
-         contains(LDCONFIG_OUT, "lib$${b}.so") {
-             LIBS += "-l$$b"
-             GOT_BOOST_PYTHON = True
