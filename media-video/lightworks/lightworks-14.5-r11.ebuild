@@ -10,7 +10,7 @@ MY_PV="12.6.0"
 
 DESCRIPTION="Lightworks is the fastest, most accessible and focused NLE in the industry"
 HOMEPAGE="http://www.lwks.com/"
-SRC_URI="http://downloads.lwks.com/v14/lwks-14.0.0-amd64.deb"
+SRC_URI="http://downloads.lwks.com/Lightworks-145RC11-108471-14.5.0.0.deb"
 
 LICENSE="EditShare"
 SLOT="0"
@@ -20,6 +20,7 @@ IUSE=""
 
 RDEPEND="
 	dev-libs/glib:2
+	dev-libs/libedit
 	dev-libs/atk
 	dev-libs/expat
 	dev-libs/libffi
@@ -30,17 +31,16 @@ RDEPEND="
 	x11-libs/cairo
 	x11-libs/pixman
 	x11-libs/gtk+:3
-	dev-qt/qtgui:4
-	dev-qt/qtcore:4
-	media-libs/jpeg:8
+	media-libs/libjpeg-turbo
 	gnome-extra/libgsf
 	media-libs/libpng:0
-	media-libs/tiff:3
+	media-libs/jpeg:8
+	media-libs/tiff
 	>=media-libs/freetype-2
 	media-libs/fontconfig
 	media-libs/glu
 	media-libs/mesa
-	=media-libs/portaudio-19_pre20140130
+	=media-libs/portaudio-19_pre20140130[jack] 
 	>=media-gfx/nvidia-cg-toolkit-3.1.0013-r2
 	x11-libs/libxcb
 	x11-libs/libXinerama
