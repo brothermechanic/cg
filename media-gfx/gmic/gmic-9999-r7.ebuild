@@ -1,7 +1,8 @@
-# Copyright 1999-2017 Gentoo Foundation
+# Copyright 1999-2018 Gentoo Foundation
 # Distributed under the terms of the GNU General Public License v2
 
 EAPI=6
+CMAKE_MAKEFILE_GENERATOR="emake"
 
 inherit bash-completion-r1 cmake-utils git-r3
 
@@ -16,10 +17,9 @@ KEYWORDS=""
 
 LICENSE="CeCILL-2 GPL-3"
 SLOT="0"
-IUSE="bash-completion +cli ffmpeg fftw gimp gimp-gtk graphicsmagick gui jpeg krita opencv openexr openmp png static-libs tiff X"
+IUSE="bash-completion +cli ffmpeg fftw gimp graphicsmagick gui jpeg krita opencv openexr openmp png static-libs tiff X"
 REQUIRED_USE="
 	gimp? ( png fftw X )
-	gimp-gtk? ( png fftw X )
 	gui? ( png fftw X )
 	krita? ( png fftw X )
 "
@@ -35,9 +35,6 @@ COMMON_DEPEND="
 	gimp? (
 		${QT_DEPS}
 		>=media-gfx/gimp-2.8.0
-	)
-	gimp-gtk? (
-		>=media-gfx/gimp-2.4.0
 	)
 	graphicsmagick? ( media-gfx/graphicsmagick )
 	gui? ( ${QT_DEPS} )
@@ -67,12 +64,6 @@ DEPEND="${COMMON_DEPEND}
 	virtual/pkgconfig
 "
 
-PATCHES=(
-	"${FILESDIR}"/${PN}-9999-dynamic-linking.patch
-	"${FILESDIR}"/${PN}-1.7.9-flags.patch
-	"${FILESDIR}"/${PN}-9999-man.patch
-)
-
 GMIC_QT_DIR="gmic-qt"
 S="${WORKDIR}/${PN}"
 
@@ -98,7 +89,6 @@ src_unpack() {
 }
 
 src_prepare() {
-	#cp -a resources/CMakeLists.txt .
 	cmake-utils_src_prepare
 
 	if use gimp || use gui || use krita; then
@@ -106,9 +96,6 @@ src_prepare() {
 			-e '/CMAKE_CXX_FLAGS_RELEASE/d' \
 			../${GMIC_QT_DIR}/CMakeLists.txt || die "sed failed"
 		local S="${WORKDIR}/${GMIC_QT_DIR}"
-		local PATCHES=(
-			"${FILESDIR}"/${PN}-2.1.5-dynamic-linking-qt.patch
-		)
 		cmake-utils_src_prepare
 	fi
 }
@@ -122,7 +109,6 @@ src_configure() {
 		-DBUILD_CLI=$(usex cli ON OFF)
 		-DBUILD_MAN=$(usex cli ON OFF)
 		-DBUILD_BASH_COMPLETION=$(usex cli $(usex bash-completion ON OFF) OFF)
-		-DBUILD_PLUGIN=$(usex gimp-gtk ON OFF)
 		-DENABLE_X=$(usex X ON OFF)
 		-DENABLE_FFMPEG=$(usex ffmpeg ON OFF)
 		-DENABLE_FFTW=$(usex fftw ON OFF)
@@ -204,7 +190,7 @@ src_install() {
 	# using the installed gmic.h.
 	sed -i -e '/^#define cimg_plugin/d' "${ED}/usr/include/gmic.h" || die "sed failed"
 
-	use cli && use bash-completion && newbashcomp "resources/${PN}_bashcompletion.sh" ${PN}
+	use cli && use bash-completion && newbashcomp "${WORKDIR}/${P}_build/resources/${PN}_bashcompletion.sh" ${PN}
 
 	# gmic-qt
 	if use gimp; then

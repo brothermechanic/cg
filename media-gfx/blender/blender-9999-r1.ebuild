@@ -4,7 +4,7 @@
 EAPI=6
 PYTHON_COMPAT=( python3_6 )
 
-inherit cmake-utils eutils python-single-r1 gnome2-utils xdg-utils pax-utils git-r3 versionator toolchain-funcs flag-o-matic
+inherit check-reqs cmake-utils python-single-r1 gnome2-utils xdg-utils pax-utils git-r3 versionator toolchain-funcs flag-o-matic
 
 DESCRIPTION="3D Creation/Animation/Publishing System"
 HOMEPAGE="http://www.blender.org/"
@@ -99,6 +99,10 @@ DEPEND="${RDEPEND}
 	)"
 
 CMAKE_BUILD_TYPE="Release"
+
+PATCHES=(   "${FILESDIR}"/blender-doxyfile.patch
+            "${FILESDIR}"/blender-fix-install-rules.patch
+            "${FILESDIR}"/SAVE_PREFS.patch)
 
 blender_check_requirements() {
 	[[ ${MERGE_TYPE} != binary ]] && use openmp && tc-check-openmp
@@ -342,24 +346,26 @@ src_compile() {
 src_test() { :; }
 
 src_install() {
-	local i
-
 	# Pax mark blender for hardened support.
 	pax-mark m "${CMAKE_BUILD_DIR}"/bin/blender
 
 	if use doc; then
-		docinto "API/python"
-		dohtml -r "${CMAKE_USE_DIR}"/doc/python_api/BPY_API/*
+		docinto "html/API/python"
+		dodoc -r "${CMAKE_USE_DIR}"/doc/python_api/BPY_API/.
 
-		docinto "API/blender"
-		dohtml -r "${CMAKE_USE_DIR}"/doc/doxygen/html/*
+		docinto "html/API/blender"
+		dodoc -r "${CMAKE_USE_DIR}"/doc/doxygen/html/.
 	fi
 
-	# fucked up cmake will relink binary for no reason
-	emake -C "${CMAKE_BUILD_DIR}" DESTDIR="${D}" install/fast
+	cmake-utils_src_install
 
-	python_fix_shebang "${ED%/}"/usr/bin/blender-thumbnailer.py
-	python_optimize "${ED%/}"/usr/share/blender/${PV}/scripts
+	# fix doc installdir
+	docinto "html"
+	dodoc "${CMAKE_USE_DIR}"/release/text/readme.html
+	rm -r "${ED%/}"/usr/share/doc/blender || die
+
+	python_fix_shebang "${ED%/}/usr/bin/blender-thumbnailer.py"
+	python_optimize "${ED%/}/usr/share/blender/${MY_PV}/scripts"
 }
 
 pkg_preinst() {
@@ -387,4 +393,10 @@ pkg_postinst() {
 pkg_postrm() {
 	gnome2_icon_cache_update
 	xdg_mimeinfo_database_update
+
+	ewarn ""
+	ewarn "You may want to remove the following directory."
+	ewarn "~/.config/${PN}/${MY_PV}/cache/"
+	ewarn "It may contain extra render kernels not tracked by portage"
+	ewarn ""
 }
