@@ -1,0 +1,1450 @@
+--- a/tests/python/UseCase_MEDinterp_2.py.orig	2017-09-29 15:46:26.000000000 +0200
++++ a/tests/python/UseCase_MEDinterp_2.py	2018-07-29 12:23:48.941766728 +0200
+@@ -35,20 +35,20 @@
+ geotype, cellnodes, nbasisfunc, nvariable, maxdegree, nmaxcoefficient = MEDinterpInfoByName(fid,interpname)
+ 
+ #/* read each basis function */
+-for  basisfuncit in xrange(1,nbasisfunc+1):
++for  basisfuncit in range(1,nbasisfunc+1):
+ 
+     ncoefficient = MEDinterpBaseFunctionCoefSize(fid,interpname,basisfuncit)
+-    print "\t Nombre de coefficients :",ncoefficient
++    print( "\t Nombre de coefficients :",ncoefficient )
+    
+     coefficient = MEDFLOAT(ncoefficient)
+     power       = MEDINT(nvariable*ncoefficient)
+     
+     MEDinterpBaseFunctionRd(fid,interpname,basisfuncit,power,coefficient)
+-    print "Function de base n°%d de l'interpolation |%s| : "%(basisfuncit,interpname)
+-    print "\t Nombre de coefficients :",ncoefficient
+-    print "\t Nombre de variables :",nvariable
+-    print "\t coefficient :",coefficient
+-    print "\t power       :",power
++    print( "Function de base n°%d de l'interpolation |%s| : "%(basisfuncit,interpname) )
++    print( "\t Nombre de coefficients :",ncoefficient )
++    print( "\t Nombre de variables :",nvariable )
++    print( "\t coefficient :",coefficient )
++    print( "\t power       :",power )
+     
+ MEDfileClose(fid)
+ 
+--- a/tests/python/UseCase_MEDinterp_3.py.orig	2017-09-29 15:46:26.000000000 +0200
++++ a/tests/python/UseCase_MEDinterp_3.py	2018-07-29 12:23:48.944766728 +0200
+@@ -36,11 +36,11 @@
+ 
+ #/* read each interpolation family */
+ #/* with an access by an iterator */
+-for it in xrange(1,ninterp+1):
++for it in range(1,ninterp+1):
+ 
+     interpname, geotype, cellnodes, nbasisfunc, nvariable, maxdegree, nmaxcoefficient = MEDinterpInfo(fid,it) 
+     # /* read each basis function */
+-    for  basisfuncit in xrange(1,nbasisfunc+1):
++    for  basisfuncit in range(1,nbasisfunc+1):
+         ncoefficient = MEDinterpBaseFunctionCoefSize(fid,interpname,basisfuncit)
+ 
+         coefficient = MEDFLOAT(ncoefficient)
+--- a/tests/python/test1.py.orig	2017-07-10 14:50:20.000000000 +0200
++++ a/tests/python/test1.py	2018-07-29 12:23:48.945766728 +0200
+@@ -8,17 +8,17 @@
+ MEDfileClose(fid)
+ 
+ hdfok,medok = MEDfileCompatibility("test1.med");
+-print "Verification de la compatibilite du fichier avec HDF : hdfok=",hdfok," ; avec MED : medok=",medok
++print( "Verification de la compatibilite du fichier avec HDF : hdfok=",hdfok," ; avec MED : medok=",medok )
+ 
+ fid= MEDfileOpen("test1.med",MED_ACC_RDONLY)
+ 
+ mm,m,r =  MEDfileNumVersionRd(fid)
+-print "Version Du Fichier (num) :",mm,m,r
++print( "Version Du Fichier (num) :",mm,m,r )
+ version = MEDfileStrVersionRd(fid);
+-print "Version Du Fichier (str) :",version
++print( "Version Du Fichier (str) :",version )
+ 
+ comment = MEDfileCommentRd(fid)
+-print comment
++print( comment )
+ 
+ 
+ MEDfileClose(fid)
+--- a/tests/python/test10_f32_i32.py.orig	2017-09-29 15:49:54.000000000 +0200
++++ a/tests/python/test10_f32_i32.py	2018-07-29 12:23:48.948766728 +0200
+@@ -39,7 +39,7 @@
+ from med.medlocalization import *
+ from med.medlink import *
+ 
+-execfile(os.path.join(os.path.dirname(__file__),'test10_params_f32_i32.py'),locals(),globals())
++exec(open(os.path.join(os.path.dirname(__file__),'test10_params_f32_i32.py')).read(),locals(),globals())
+ #cf test10.atpy qui lance les différents test10_TEST_PARAMS_PY.py et sauvegarde le fichier généré
+ filename='test10'+PARAM_ID+'.med'
+ 
+--- a/tests/python/test10_f32_i64.py.orig	2017-10-31 17:17:09.000000000 +0100
++++ a/tests/python/test10_f32_i64.py	2018-07-29 12:23:48.949766728 +0200
+@@ -39,7 +39,7 @@
+ from med.medlocalization import *
+ from med.medlink import *
+ 
+-execfile(os.path.join(os.path.dirname(__file__),'test10_params_f32_i64.py'),locals(),globals())
++exec(open(os.path.join(os.path.dirname(__file__),'test10_params_f32_i64.py')).read(),locals(),globals())
+ #cf test10.atpy qui lance les différents test10_TEST_PARAMS_PY.py et sauvegarde le fichier généré
+ filename='test10'+PARAM_ID+'.med'
+ 
+--- a/tests/python/test10_f64_i32.py.orig	2017-10-31 17:17:09.000000000 +0100
++++ a/tests/python/test10_f64_i32.py	2018-07-29 12:23:48.951766728 +0200
+@@ -39,7 +39,7 @@
+ from med.medlocalization import *
+ from med.medlink import *
+ 
+-execfile(os.path.join(os.path.dirname(__file__),'test10_params_f64_i32.py'),locals(),globals())
++exec(open(os.path.join(os.path.dirname(__file__),'test10_params_f64_i32.py').read()),locals(),globals())
+ #cf test10.atpy qui lance les différents test10_TEST_PARAMS_PY.py et sauvegarde le fichier généré
+ filename='test10'+PARAM_ID+'.med'
+ 
+--- a/tests/python/test10_f64_i64.py.orig	2017-10-31 17:17:09.000000000 +0100
++++ a/tests/python/test10_f64_i64.py	2018-07-29 12:23:48.952766729 +0200
+@@ -39,7 +39,7 @@
+ from med.medlocalization import *
+ from med.medlink import *
+ 
+-execfile(os.path.join(os.path.dirname(__file__),'test10_params_f64_i64.py'),locals(),globals())
++exec(open(os.path.join(os.path.dirname(__file__),'test10_params_f64_i64.py').read()),locals(),globals())
+ #cf test10.atpy qui lance les différents test10_TEST_PARAMS_PY.py et sauvegarde le fichier généré
+ filename='test10'+PARAM_ID+'.med'
+ 
+--- a/tests/python/test11.py.orig	2017-09-29 15:46:26.000000000 +0200
++++ a/tests/python/test11.py	2018-07-29 12:23:48.958766729 +0200
+@@ -35,7 +35,7 @@
+ from med.medlink import *
+ 
+ 
+-execfile(os.path.join(os.path.dirname(__file__)+'/tests_params.py'),locals(),globals())
++exec(open(os.path.join(os.path.dirname(__file__)+'/tests_params.py')).read(),locals(),globals())
+ # filename='test10'+PARAM_ID+'.med'
+ if (len(sys.argv) > 1): filename=sys.argv[1]
+ # else: filename=""
+@@ -56,22 +56,22 @@
+         nbpdtnor = ncstp;
+         if (nbpdtnor < 1 ): continue
+         
+-        for j in xrange(nbpdtnor):
++        for j in range(nbpdtnor):
+             try:
+                 numdt, numo, dt, nmesh, meshname,localmesh, meshnumdt, meshnumit = MEDfield23ComputingStepMeshInfo(fid,nomcha,j+1)
+             except: continue
+             
+-            for i in xrange(nmesh):
++            for i in range(nmesh):
+                 try: # verifier meshname == prec meshname
+                     _nprofile, meshname, pflname, locname = MEDfield23nProfile(fid,nomcha,numdt,numo,entite,type_geo, i+1 )
+                 except: continue
+ 
+-                for l in xrange(_nprofile):
++                for l in range(_nprofile):
+                     nval,pflname, pflsize, locname, ngauss = MEDfield23nValueWithProfile(fid, nomcha, numdt, numo,  entite, type_geo, meshname, l+1,  USER_MODE )
+ 
+-                    print "\n  +Pas de Temps n.%d (%f) [%s], n. d'ordre %d, avec %d valeur(s) par entité.\n"%(numdt,dt,dt_unit,numo,ngauss)
+-                    print "\t- Il y a %d entités qui portent des valeurs en mode %i. Chaque entite %s\
+- de type geometrique %s associes au profile |%s| a %d valeurs associées \n"%(nval,USER_MODE,MED_ENTITY_TYPE(entite),type_geoname,pflname,ngauss)
++                    print( "\n  +Pas de Temps n.%d (%f) [%s], n. d'ordre %d, avec %d valeur(s) par entité.\n"%(numdt,dt,dt_unit,numo,ngauss) )
++                    print( "\t- Il y a %d entités qui portent des valeurs en mode %i. Chaque entite %s" \
++" de type geometrique %s associes au profile |%s| a %d valeurs associées \n"%(nval,USER_MODE,MED_ENTITY_TYPE(entite),type_geoname,pflname,ngauss) )
+ 
+                     #TODO : les API renvoient des objets enum et non des int
+                     #TODO: c'est une source d'erreur pour la comparaison .val
+@@ -85,40 +85,40 @@
+ 					 USER_MODE, pflname, stockage, MED_ALL_CONSTITUENT, val)
+           
+                     if len(locname):
+-                        print "\t- Modèle de localisation des points de Gauss de nom |%s|\n"%(locname)
+-                    print "%s\n"%(val)
++                        print( "\t- Modèle de localisation des points de Gauss de nom |%s|\n"%(locname) )
++                    print( "%s\n"%(val) )
+ 
+                     #/*Lecture du profil associe */
+                     if ( pflname == MED_NO_PROFILE ):
+-                        print "\t- Profil : MED_NO_PROFILE"
++                        print( "\t- Profil : MED_NO_PROFILE" )
+                     else:
+                         pflsize = MEDprofileSizeByName(fid,pflname)
+-                        print "\t- Profil : |%s| de taille %d"%(pflname,pflsize)
++                        print( "\t- Profil : |%s| de taille %d"%(pflname,pflsize) )
+ 
+                         pflval = MEDINT(pflsize)
+                         MEDprofileRd(fid,pflname,pflval)
+-                        print "\t";print pflval;print "\n"
++                        print( "\t" );print( pflval );print( "\n" )
+ 
+ # /* ouverture du fichier */
+ fid=MEDfileOpen(filename,MODE_ACCES)
+ 
+ maa, sdim, mdim, meshtype, desc, dtunit, sort, nstep,  repere, axisname, axisunit = MEDmeshInfo(fid, 1)
+ 
+-print "\nMaillage de nom : |%s| , de dimension : %d , et de type %s\n"%(maa,mdim,meshtype)
+-print "\t -Dimension de l'espace : %d\n"%(sdim)
+-print "\t -Description du maillage : |%s|\n"%(desc)
+-print "\t -Noms des axes : |%s|\n"%(axisname)
+-print "\t -Unités des axes : |%s|\n"%(axisunit)
+-print "\t -Type de repère : %s\n"%(repere)
+-print "\t -Nombre d'étapes de calcul : %d\n"%(nstep)
+-print "\t -Unité des dates : |%s|\n"%(dtunit)
++print( "\nMaillage de nom : |%s| , de dimension : %d , et de type %s\n"%(maa,mdim,meshtype) )
++print( "\t -Dimension de l'espace : %d\n"%(sdim) )
++print( "\t -Description du maillage : |%s|\n"%(desc) )
++print( "\t -Noms des axes : |%s|\n"%(axisname) )
++print( "\t -Unités des axes : |%s|\n"%(axisunit) )
++print( "\t -Type de repère : %s\n"%(repere) )
++print( "\t -Nombre d'étapes de calcul : %d\n"%(nstep) )
++print( "\t -Unité des dates : |%s|\n"%(dtunit) )
+ 
+ ncha = MEDnField(fid)
+-print "Nombre de champs : %d \n"%(ncha)
++print( "Nombre de champs : %d \n"%(ncha) )
+ 
+-for i in xrange(ncha):
++for i in range(ncha):
+ 
+-    print "\nChamp numero : %d \n"%(i+1)
++    print( "\nChamp numero : %d \n"%(i+1) )
+ 
+     # /* Lecture du nombre de composantes */
+     ncomp = MEDfieldnComponent(fid,i+1)
+@@ -127,19 +127,19 @@
+ 
+     nomcha,_meshname,_local,typcha,comp,unit,_dtunit,_ncstp = MEDfieldInfo(fid,i+1)
+     
+-    print "Nom du champ : |%s| de type %s\n"%(nomcha,typcha)
+-    print "Nombre de composantes : |%d|\n"%(ncomp)
+-    print "Nom des composantes : |%s|\n"%(comp)
+-    print "Unites des composantes : |%s| \n"%(unit)
+-    print "Unites des dates  : |%s| \n"%(_dtunit)
+-    print "Le maillage associé est |%s|\n"%(_meshname)
+-    print "Nombre de séquences de calcul |%d|\n"%(_ncstp)
++    print( "Nom du champ : |%s| de type %s\n"%(nomcha,typcha) )
++    print( "Nombre de composantes : |%d|\n"%(ncomp) )
++    print( "Nom des composantes : |%s|\n"%(comp) )
++    print( "Unites des composantes : |%s| \n"%(unit) )
++    print( "Unites des dates  : |%s| \n"%(_dtunit) )
++    print( "Le maillage associé est |%s|\n"%(_meshname) )
++    print( "Nombre de séquences de calcul |%d|\n"%(_ncstp) )
+ 
+     # /* Le maillage reference est-il porte par un autre fichier */
+     if not(_local):
+         # inutile en python : lnsize=MEDlinkInfoByName(fid,_meshname)
+         lien = MEDlinkRd(fid,_meshname)
+-        print "\tLe maillage |%s| est porte par un fichier distant |%s|\n"%(_meshname,lien)
++        print( "\tLe maillage |%s| est porte par un fichier distant |%s|\n"%(_meshname,lien) )
+     
+ 
+     for (entitype,entitypename) in MED_GET_ENTITY_TYPE:      
+@@ -156,46 +156,46 @@
+ # /* Interrogation des profils */
+ npro = MEDnProfile(fid)
+ 
+-print "\nNombre de profils stockes : %d\n"%(npro)
+-for i in xrange(1,npro+1):
++print( "\nNombre de profils stockes : %d\n"%(npro) )
++for i in range(1,npro+1):
+     pflname, nval = MEDprofileInfo(fid, i)
+-    print "\t- Profil n°%i de nom |%s| et de taille %d"%(i,pflname,nval)
++    print( "\t- Profil n°%i de nom |%s| et de taille %d"%(i,pflname,nval) )
+     pflval = MEDINT(nval)
+     MEDprofileRd(fid, pflname, pflval)
+-    print "\t",pflval
++    print( "\t",pflval )
+     
+ # /* Interrogation des liens */
+ nln = MEDnLink(fid)
+-print "\nNombre de liens stockes : %d\n\n"%(nln)
+-for i in xrange(1,nln+1):
++print( "\nNombre de liens stockes : %d\n\n"%(nln) )
++for i in range(1,nln+1):
+     nomlien, nval = MEDlinkInfo(fid, i)
+-    print "\t- Lien n°%i de nom |%s| et de taille %d\n"%(i,nomlien,nval)
++    print( "\t- Lien n°%i de nom |%s| et de taille %d\n"%(i,nomlien,nval) )
+ 
+     lien = MEDlinkRd(fid, nomlien )
+-    print "\t\t|%s|\n\n"%(lien)
++    print( "\t\t|%s|\n\n"%(lien) )
+  
+ # /* Interrogation des localisations des points de GAUSS */
+ nloc = MEDnLocalization(fid)
+ 
+-print "\nNombre de localisations stockees : %d\n"%(nloc)
+-for i in xrange(1,nloc):
++print( "\nNombre de localisations stockees : %d\n"%(nloc) )
++for i in range(1,nloc):
+     locname, type_geo, locsdim, ngauss, geointerpname, ipointstructmeshname, nsectionmeshcell, sectiongeotype = MEDlocalizationInfo(fid, i)
+-    print "\t- Loc. n°%i de nom |%s| de dimension |%d| avec %d pts de GAUSS \n"%(i,locname,locsdim,ngauss)
++    print( "\t- Loc. n°%i de nom |%s| de dimension |%d| avec %d pts de GAUSS \n"%(i,locname,locsdim,ngauss) )
+     t1 = (type_geo%100)*(type_geo/100)
+     t2 = ngauss*(type_geo/100)
+     t3 = ngauss
+     geodim,nnode = MEDmeshGeotypeParameter(fid,type_geo)
+-    if ( t1 != geodim*nnode): print "Erreur de cohérence entre T,geodim et nnode"
++    if ( t1 != geodim*nnode): print( "Erreur de cohérence entre T,geodim et nnode" )
+     refcoo = MEDFLOAT(t1)
+     gscoo  = MEDFLOAT(t2)
+     wg     = MEDFLOAT(t3)
+ 
+     MEDlocalizationRd(fid, locname, USER_INTERLACE, refcoo, gscoo, wg  )
+-    print "\t  Coordonnees de l'element de reference de type %s :\n\t\t"%(MEDmeshGeotypeName(fid,type_geo))
+-    print refcoo; print "\n"
+-    print "\t  Localisation des points de GAUSS : \n\t\t"
+-    print gscoo;print "\n"
+-    print "\t  Poids associes aux points de GAUSS :\n\t\t"
+-    print wg;print "\n\n"
++    print( "\t  Coordonnees de l'element de reference de type %s :\n\t\t"%(MEDmeshGeotypeName(fid,type_geo)) )
++    print( refcoo) ; print( "\n" )
++    print( "\t  Localisation des points de GAUSS : \n\t\t" )
++    print( gscoo) ; print( "\n" )
++    print( "\t  Poids associes aux points de GAUSS :\n\t\t" )
++    print( wg );print( "\n\n" )
+ 
+ MEDfileClose(fid)
+--- a/tests/python/test13.py.orig	2017-09-29 15:46:26.000000000 +0200
++++ a/tests/python/test13.py	2018-07-29 12:23:48.962766729 +0200
+@@ -38,31 +38,31 @@
+ # /* Lecture des infos concernant le premier maillage */
+ maa, sdim, mdim, type, desc, dtunit, sort, nstep, rep, nomcoo, unicoo = MEDmeshInfo(fid, 1)
+ 
+-# print "Maillage de nom : |%s| , de dimension : %ld , et de type %d\n"%(maa,mdim,type._val)
+-print "Maillage de nom : |%s| , de dimension : %ld , et de type %s\n"%(maa,mdim,type)
+-print "\t -Dimension de l'espace : %ld\n"%(sdim)
+-print "\t -Description du maillage : %s\n"%(desc)
+-print "\t -Noms des axes : |%s|\n"%(nomcoo)
+-print "\t -Unités des axes : |%s|\n"%(unicoo)
+-# print "\t -Type de repère : %d\n"%(rep._val)
+-print "\t -Type de repère : %s\n"%(rep)
+-print "\t -Nombre d'étape de calcul : %ld\n"%(nstep)
+-print "\t -Unité des dates : |%s|\n"%(dtunit)
++# print( "Maillage de nom : |%s| , de dimension : %ld , et de type %d\n"%(maa,mdim,type._val) )
++print( "Maillage de nom : |%s| , de dimension : %ld , et de type %s\n"%(maa,mdim,type) )
++print( "\t -Dimension de l'espace : %ld\n"%(sdim) )
++print( "\t -Description du maillage : %s\n"%(desc) )
++print( "\t -Noms des axes : |%s|\n"%(nomcoo) )
++print( "\t -Unités des axes : |%s|\n"%(unicoo) )
++# print( "\t -Type de repère : %d\n"%(rep._val) )
++print( "\t -Type de repère : %s\n"%(rep) )
++print( "\t -Nombre d'étape de calcul : %ld\n"%(nstep) )
++print( "\t -Unité des dates : |%s|\n"%(dtunit) )
+ 
+ nequ = MEDnEquivalence(fid,maa)
+-print "Nombre d'equivalences : %d \n"%(nequ)
++print( "Nombre d'equivalences : %d \n"%(nequ) )
+ 
+ # /* Lecture de toutes les equivalences du maillage */
+ if nequ > 0:
+-    for i in xrange(0,nequ):
+-        print "Equivalence numero : %d \n"%(i+1)
++    for i in range(0,nequ):
++        print( "Equivalence numero : %d \n"%(i+1) )
+ 
+         # /* Lecture des infos sur l'equivalence */
+         equ,des,nstep,nocstpncor=MEDequivalenceInfo(fid,maa,i+1)
+-        print "Nom de l'equivalence: |%s| \n"%(equ)
+-        print "Description de l'equivalence : |%s| \n"%(des)
+-        print "Nombre d'étapes de calcul : %d \n"%(nstep)
+-        print "Nombre de correspondances pour l'étape de calcul MED_NO_DT,MED_NO_IT : %d \n"%(nocstpncor)
++        print( "Nom de l'equivalence: |%s| \n"%(equ) )
++        print( "Description de l'equivalence : |%s| \n"%(des) )
++        print( "Nombre d'étapes de calcul : %d \n"%(nstep) )
++        print( "Nombre de correspondances pour l'étape de calcul MED_NO_DT,MED_NO_IT : %d \n"%(nocstpncor) )
+         
+         for (entitype,entitypename) in MED_GET_NODAL_ENTITY_TYPE:
+             for (geotype,geotypename) in MED_GET_GEOTYPE[entitype]:
+@@ -70,11 +70,11 @@
+                 ncor=MEDequivalenceCorrespondenceSize(fid,maa,equ,MED_NO_DT,MED_NO_IT,entitype,geotype)
+                 
+                 if ncor > 0:
+-                    print "\tIl y a %d correspondances sur les (%s,%s) \n"%(ncor,entitypename,geotypename)
++                    print( "\tIl y a %d correspondances sur les (%s,%s) \n"%(ncor,entitypename,geotypename) )
+                     cor=MEDINT(ncor*2)
+                     cor=MEDequivalenceCorrespondenceRd(fid,maa,equ,MED_NO_DT,MED_NO_IT,
+                                                            entitype,geotype,cor)
+-                    for j in xrange(0,ncor):
+-                        print "\tCorrespondance %d : %d et %d \n"%(j+1,cor[2*j],cor[2*j+1])
++                    for j in range(0,ncor):
++                        print( "\tCorrespondance %d : %d et %d \n"%(j+1,cor[2*j],cor[2*j+1]) )
+ 
+ MEDfileClose(fid)
+--- a/tests/python/test2.py.orig	2016-04-14 18:27:58.000000000 +0200
++++ a/tests/python/test2.py	2018-07-29 12:40:11.094843148 +0200
+@@ -8,21 +8,21 @@
+ axisunit="cm              "+"cm              "+"cm              "
+ 
+ fileexist, accessok = MEDfileExist( "test1.med", MED_ACC_RDONLY )
+-if (not fileexist):  print "Le fichier test1.med n'existe pas."
+-if (not accessok ):  print "Le fichier test1.med ne peut pas être ouvert selon le mode d'accès demandé ."
++if (not fileexist):  print( "Le fichier test1.med n'existe pas." )
++if (not accessok ):  print( "Le fichier test1.med ne peut pas être ouvert selon le mode d'accès demandé ." )
+ 
+ # Verification de la conformite du format med du fichier test1.med 
+ hdfok,medok = MEDfileCompatibility("test1.med");
+-print "Vérification de la compatibilité du fichier avec HDF : hdfok=",hdfok," ; avec MED : medok=",medok
++print( "Vérification de la compatibilité du fichier avec HDF : hdfok=",hdfok," ; avec MED : medok=",medok )
+ 
+ fid     = MEDfileOpen("test1.med",MED_ACC_RDONLY)
+ comment = MEDfileCommentRd(fid)
+-print "En-tete du fichier ",MEDfileName(fid),":",comment
++print( "En-tete du fichier ",MEDfileName(fid),":",comment )
+ MEDfileClose(fid)
+ 
+ fileexist, accessok = MEDfileExist( "test2.med", MED_ACC_CREAT )
+-if (not fileexist):  print "Le fichier test2.med n'existe pas."
+-if (not accessok ):  print "Le fichier test2.med ne peut pas être ouvert selon le mode d'accès demandé ."
++if (not fileexist):  print( "Le fichier test2.med n'existe pas." )
++if (not accessok ):  print( "Le fichier test2.med ne peut pas être ouvert selon le mode d'accès demandé ." )
+ 
+ fid = MEDfileOpen("test2.med",MED_ACC_CREAT)
+ 
+@@ -38,7 +38,7 @@
+ cstp = 0
+ for ndtnit in  [(MED_NO_DT,MED_NO_IT, 20,-1, 1.1), (0,0,  20,-1, 1.1), (20,-1, 20,-1, 1.1), (1,3, 20,-1, 1.1), (20,-1, 20,10, 1.1), (20,5, 20,5, 1.1), (20,-1, 20,20, 1.1) ]:
+     try: cstp=cstp+1;MEDmeshComputationStepCr(fid,"maa2",*(ndtnit));
+-    except  RuntimeError,ex: print "Exception attendue (cstp: "+str(cstp)+") ",ex
++    except  RuntimeError as ex: print( "Exception attendue (cstp: "+str(cstp)+") ",ex )
+ 
+ 
+ MEDmeshCr(fid,"maa3",3,1,MED_UNSTRUCTURED_MESH,	"un troisieme maillage","s",MED_SORT_DTIT,MED_CARTESIAN,axisname,axisunit)
+--- a/tests/python/test21.py.orig	2017-09-29 15:46:26.000000000 +0200
++++ a/tests/python/test21.py	2018-07-29 12:23:48.966766730 +0200
+@@ -42,23 +42,23 @@
+ 
+ # /* Creation d'un variable scalaire entiere */
+ MEDparameterCr(fid,nom_scalaire1,MED_INT,description1,"ms")
+-print "Creation d'une variable scalaire entiere \n"
++print( "Creation d'une variable scalaire entiere \n" )
+ 
+ # /* Ecriture d'un valeur sans pas de temps et sans numero d'ordre*/
+ MEDparameterValueWr(fid,nom_scalaire1,MED_NO_DT,MED_NO_IT,MED_UNDEF_DT,MEDINT([vali1]))
+-print "Ecriture d'une valeur entiere avec pas de temps \n"
++print( "Ecriture d'une valeur entiere avec pas de temps \n" )
+ 
+ # /* Ecriture d'une valeur entiere avec 1 pas de temps et sans numero d'ordre */
+ MEDparameterValueWr(fid,nom_scalaire1,1,MED_NO_IT,5.5,MEDINT([vali2]))
+-print "Ecriture d'une valeur entiere avec pas de temps \n"
++print( "Ecriture d'une valeur entiere avec pas de temps \n" )
+ 
+ # /* Creation d'un variable scalaire flottante */
+ MEDparameterCr(fid,nom_scalaire2,MED_FLOAT64,description2,"ms")
+-print "Creation d'une variable scalaire flottante \n"
++print( "Creation d'une variable scalaire flottante \n" )
+ 
+ # /* Ecriture d'une valeur reelle avec 1 pas de temps et 1 numero d'ordre */
+ MEDparameterValueWr(fid, nom_scalaire2, 1, 2, 5.5, MEDFLOAT([valr1]))
+-print "Ecriture d'une valeur reelle avec pas de temps et numero d'ordre \n"
++print( "Ecriture d'une valeur reelle avec pas de temps et numero d'ordre \n" )
+ 
+ # /* Fermeture du fichier */
+ MEDfileClose(fid)
+--- a/tests/python/test22.py.orig	2017-09-29 15:46:26.000000000 +0200
++++ a/tests/python/test22.py	2018-07-29 12:27:53.849785784 +0200
+@@ -34,35 +34,35 @@
+ 
+ # /* Lecture du nombre de variable scalaire */
+ n = MEDnParameter(fid)
+-print "Nombre de variables scalaires dans test21.med = %d\n"%(n)
++print( "Nombre de variables scalaires dans test21.med = %d\n"%(n) )
+ 
+ # /* Lecture des infos sur les variables (type,description) */
+-for i in xrange(1,n+1):
++for i in range(1,n+1):
+ 
+     #TODO : Réflechir à la possibilité de renvoyer directement le typearray
+     nom_scalaire, type, description, dt_unit, npdt = MEDparameterInfo(fid, i)
+-    print "- Scalaire n°%d de nom %s \n"%(i,nom_scalaire)
+-    print "Type du paramètre : ",type
+-    # if (type == MED_FLOAT64): print "  Type flottant. \n"
+-    # else:                     print "  Type entier. \n"
+-    print "  Description associee : [%s] \n"%(description)
+-    print "  Nombre de pas de temps : %d \n"%(npdt)
++    print( "- Scalaire n°%d de nom %s \n"%(i,nom_scalaire) )
++    print( "Type du paramètre : ",type )
++    # if (type == MED_FLOAT64): print( "  Type flottant. \n" )
++    # else:                     print( "  Type entier. \n" )
++    print( "  Description associee : [%s] \n"%(description) )
++    print( "  Nombre de pas de temps : %d \n"%(npdt) )
+ 
+-    for j in xrange(1,npdt+1):
++    for j in range(1,npdt+1):
+ 
+         numdt, numo, dt = MEDparameterComputationStepInfo(fid,nom_scalaire,j)
+-        print "   Valeur n°%d : \n"%(j)
+-        if (numdt == MED_NO_DT): print "   - Aucun de pas de temps \n"
+-        else:                    print "   - Pas de de temps de numero %d de valeur %f [%s] \n"%(numdt,dt,dt_unit)
+-        if (numo == MED_NO_IT) : print "   - Aucun numero d'ordre \n"
+-        else:	                 print "   - Numero d'ordre : %d \n"%(numo)
++        print( "   Valeur n°%d : \n"%(j) )
++        if (numdt == MED_NO_DT): print( "   - Aucun de pas de temps \n" )
++        else:                    print( "   - Pas de de temps de numero %d de valeur %f [%s] \n"%(numdt,dt,dt_unit) )
++        if (numo == MED_NO_IT) : print( "   - Aucun numero d'ordre \n" )
++        else:	                 print( "   - Numero d'ordre : %d \n"%(numo) )
+ 
+         if (type.val == MED_FLOAT64): val=MEDFLOAT(1)
+         else:                         val=MEDINT(1)
+ 
+         # /* Lecture de la valeur flottante associee au pas de temps */
+         MEDparameterValueRd(fid,nom_scalaire,numdt,numo, val)
+-	print "    - Valeur : ",val
++        print( "    - Valeur : %s", val )
+ 
+ # /* Fermeture du fichier */
+ MEDfileClose(fid)
+--- a/tests/python/test23.py.orig	2017-09-29 15:46:26.000000000 +0200
++++ a/tests/python/test23.py	2018-07-29 12:23:48.971766730 +0200
+@@ -56,13 +56,13 @@
+ 
+ # /* Creation du fichier test23.med */
+ fid = MEDfileOpen("test23.med",MED_ACC_CREAT);
+-print "Creation du fichier test23.med \n"
++print( "Creation du fichier test23.med \n" )
+ 
+ # /* Creation du maillage */
+ MEDmeshCr( fid, maa, mdim, mdim, MED_UNSTRUCTURED_MESH,
+            "un maillage pour test23","s", MED_SORT_DTIT,
+            MED_CARTESIAN, nomcoo, unicoo)
+-print "Creation du maillage \n"
++print( "Creation du maillage \n" )
+ 
+ # Ecriture des coordonnees des noeuds en mode MED_FULL_INTERLACE :
+ #   (X1,Y1, X2,Y2, X3,Y3, ...) dans un repere cartesien */
+@@ -73,12 +73,12 @@
+ #                  ni,index,con)
+ MEDmeshPolygon2Wr(fid,maa,MED_NO_DT,MED_NO_IT,MED_UNDEF_DT,MED_CELL,MED_POLYGON,MED_NODAL,
+                   ni,index,con)
+-print "Ecriture des connectivites de mailles de type MED_POLYGONE en mode nodal \n"
++print( "Ecriture des connectivites de mailles de type MED_POLYGONE en mode nodal \n" )
+ 
+ # /* Ecriture de la connectivite des mailles polygones en mode nodal */
+ MEDmeshPolygon2Wr(fid,maa,MED_NO_DT,MED_NO_IT,MED_UNDEF_DT,MED_CELL,MED_POLYGON2,MED_NODAL,
+                   ni,index2,con2)
+-print "Ecriture des connectivites de mailles de type MED_POLYGONE Quadratique en mode nodal \n"
++print( "Ecriture des connectivites de mailles de type MED_POLYGONE Quadratique en mode nodal \n" )
+ 
+ param=(fid,maa,MED_NO_DT,MED_NO_IT,MED_CELL,MED_POLYGON,n)
+ # /* Ecriture des noms des polygones */
+@@ -86,15 +86,15 @@
+ MEDmeshEntityNameWr(*param,name=nom)
+ # MEDmeshEntityNameWr(fid,maa,MED_NO_DT,MED_NO_IT,
+ #                     MED_CELL,MED_POLYGON,n,nom)
+-print "Ecriture des noms des polygones \n"
++print( "Ecriture des noms des polygones \n" )
+ 
+ # /* ecriture (optionnelle) des numeros des polygones */
+ MEDmeshEntityNumberWr(*param,number=num)
+-print "Ecriture des numeros des polygones \n"
++print( "Ecriture des numeros des polygones \n" )
+ 
+ # /* ecriture des numeros des familles des polygones */
+ MEDmeshEntityFamilyNumberWr(*param,number=fam)
+-print "Ecriture des numeros des familles des polygones \n"
++print( "Ecriture des numeros des familles des polygones \n" )
+ 
+ # /* Fermeture du fichier */
+ MEDfileClose(fid)
+--- a/tests/python/test24.py.orig	2017-09-29 15:46:26.000000000 +0200
++++ a/tests/python/test24.py	2018-07-29 12:23:48.973766730 +0200
+@@ -34,19 +34,19 @@
+ 
+ # /* Lecture du nombre de maillages */
+ nmaa = MEDnMesh(fid)
+-print "Nombre de maillages = \n",nmaa
++print( "Nombre de maillages = \n",nmaa )
+ 
+-for i in xrange(nmaa):
++for i in range(nmaa):
+     maa, spacedim, mdim, type, desc, dtunit, sort, nstep,  rep, nomcoo, unicoo = MEDmeshInfo(fid, i+1)
+ 
+-    print "\nMaillage de nom : |%s| , de dimension : %d , et de type %s\n"%(maa,mdim,type)
+-    print "\t -Dimension de l'espace : %d\n"%(spacedim)
+-    print "\t -Description du maillage : |%s|\n"%(desc)
+-    print "\t -Noms des axes : |%s|\n"%(nomcoo)
+-    print "\t -Unités des axes : |%s|\n"%(unicoo)
+-    print "\t -Type de repère : %s\n"%(rep)
+-    print "\t -Nombre d'étapes de calcul : %d\n"%(nstep)
+-    print "\t -Unité des dates : |%s|\n"%(dtunit)
++    print( "\nMaillage de nom : |%s| , de dimension : %d , et de type %s\n"%(maa,mdim,type) )
++    print( "\t -Dimension de l'espace : %d\n"%(spacedim) )
++    print( "\t -Description du maillage : |%s|\n"%(desc) )
++    print( "\t -Noms des axes : |%s|\n"%(nomcoo) )
++    print( "\t -Unités des axes : |%s|\n"%(unicoo) )
++    print( "\t -Type de repère : %s\n"%(rep) )
++    print( "\t -Nombre d'étapes de calcul : %d\n"%(nstep) )
++    print( "\t -Unité des dates : |%s|\n"%(dtunit) )
+ 
+     for (polytype,polyname) in [( MED_POLYGON, MEDmeshGeotypeName(fid,MED_POLYGON) ),
+                                 ( MED_POLYGON2, MEDmeshGeotypeName(fid,MED_POLYGON2) )]:
+@@ -54,7 +54,7 @@
+         nind,chgt,trsf = MEDmeshnEntity(fid,maa,MED_NO_DT,MED_NO_IT,
+                                         MED_CELL,polytype,MED_INDEX_NODE,MED_NODAL)
+         npoly = nind-1;
+-        print "Nombre de mailles ",polyname," en mode nodal : \n",npoly
++        print( "Nombre de mailles ",polyname," en mode nodal : \n",npoly )
+ 
+         # /* Quelle taille pour le tableau des connectivites, nombre de noeuds
+         #     tous polygones confondus*/
+@@ -75,13 +75,13 @@
+ 
+         # /* Lecture de la connectivite des mailles polygones */
+         MEDmeshPolygon2Rd(fid,maa,MED_NO_DT,MED_NO_IT,MED_CELL,polytype,MED_NODAL,index,con)
+-        print "Lecture de la connectivite des mailles ",polyname," en mode nodal \n"
++        print( "Lecture de la connectivite des mailles ",polyname," en mode nodal \n" )
+ 
+         # /* Lecture (optionnelle) des noms des polygones */
+         try:
+             nom=MEDmeshEntityNameRd(fid, maa, MED_NO_DT, MED_NO_IT, MED_CELL, polytype, nom)
+         except RuntimeError as ex:
+-            print "Une RuntimeError exception a été attrapée : ",ex
++            print( "Une RuntimeError exception a été attrapée : ",ex )
+             ret=ex.args[1]
+             
+         if (ret <0):
+@@ -93,7 +93,7 @@
+         try:
+             num=MEDmeshEntityNumberRd(fid, maa, MED_NO_DT, MED_NO_IT,MED_CELL, polytype,num)
+         except RuntimeError as ex:
+-            print "Une RuntimeError exception a été attrapée : ",ex
++            print( "Une RuntimeError exception a été attrapée : ",ex )
+             ret=ex.args[1]
+         if (ret < 0):
+             inuele = MED_FALSE;
+@@ -104,20 +104,20 @@
+         try:
+             fam = MEDmeshEntityFamilyNumberRd(fid,maa, MED_NO_DT, MED_NO_IT,MED_CELL, polytype,fam)
+         except RuntimeError as ex:
+-            print "Une RuntimeError exception a été attrapée : ",ex
++            print( "Une RuntimeError exception a été attrapée : ",ex )
+             
+-        print "Affichage des resultats \n"
+-        for j in xrange(npoly):
+-            print ">> Maille %s %d : \n"%(polyname,j+1)
++        print( "Affichage des resultats \n" )
++        for j in range(npoly):
++            print( ">> Maille %s %d : \n"%(polyname,j+1) )
+             ind1 = index[j]-1
+             ind2 = index[j+1]-1
+-            print "---- Connectivite       ----- :",con[ind1:ind2]
++            print( "---- Connectivite       ----- :",con[ind1:ind2] )
+                                                   
+             if inoele:
+-                print "---- Nom                ----- : |%s| "%("".join(nom[j*MED_SNAME_SIZE:j*MED_SNAME_SIZE+MED_SNAME_SIZE]))
++                print( "---- Nom                ----- : |%s| "%("".join(nom[j*MED_SNAME_SIZE:j*MED_SNAME_SIZE+MED_SNAME_SIZE])) )
+             if inuele:
+-                print "---- Numero             ----- : %d "%(num[j])
+-            print "---- Numero de famille  ----- : %d \n"%(fam[j])
++                print( "---- Numero             ----- : %d "%(num[j]) )
++            print( "---- Numero de famille  ----- : %d \n"%(fam[j]) )
+ 
+ # /* Fermeture du fichier */
+ MEDfileClose(fid)
+--- a/tests/python/test27.py.orig	2017-09-29 15:46:26.000000000 +0200
++++ a/tests/python/test27.py	2018-07-29 12:23:48.975766730 +0200
+@@ -50,7 +50,7 @@
+ MEDmeshCr( fid, "maillage vide",mdim, mdim, MED_UNSTRUCTURED_MESH,
+            "un maillage vide","s", MED_SORT_DTIT,
+            MED_CARTESIAN, comp, unit)
+-print "Creation d'un maillage structure MED_STRUCTURED_MESH \n"
++print( "Creation d'un maillage structure MED_STRUCTURED_MESH \n" )
+ 
+ # /* creation d'une grille cartesienne de dimension 2 */
+ # /* on commence par definir un maillage MED_STRUCTURED_MESH
+@@ -58,10 +58,10 @@
+ MEDmeshCr( fid, maa, mdim, mdim, MED_STRUCTURED_MESH,
+       	 "un exemple de grille cartesienne","s", MED_SORT_DTIT,
+       	 MED_CARTESIAN, comp, unit)
+-print "Creation d'un maillage structure MED_STRUCTURED_MESH \n"
++print( "Creation d'un maillage structure MED_STRUCTURED_MESH \n" )
+ 
+ MEDmeshGridTypeWr(fid,maa, MED_CARTESIAN_GRID)
+-print "On definit la nature du maillage structure : MED_GRILLE_CARTESIENNE \n"
++print( "On definit la nature du maillage structure : MED_GRILLE_CARTESIENNE \n" )
+ 
+ # /* on definit les indices des coordonnees de la grille selon chaque dimension  */
+ # /* axe des "X" */
+@@ -70,7 +70,7 @@
+ 
+ MEDmeshGridIndexCoordinateWr(fid,maa,MED_NO_DT,MED_NO_IT,MED_UNDEF_DT,
+                              axe,nind,indiceX)
+-print "Ecriture des indices des coordonnees selon l'axe des X \n"
++print( "Ecriture des indices des coordonnees selon l'axe des X \n" )
+ 
+ 
+ # /* axe des "Y" */
+@@ -79,7 +79,7 @@
+ 
+ MEDmeshGridIndexCoordinateWr(fid,maa,MED_NO_DT,MED_NO_IT,MED_UNDEF_DT,
+                              axe,nind,indiceY)
+-print "Ecriture des indices des coordonnees selon l'axe des Y \n"
++print( "Ecriture des indices des coordonnees selon l'axe des Y \n" )
+ 
+ # /* Creation d'une grille MED_CURVILINEAR_GRID de dimension 2 */
+ # /* on commence par definir un maillage MED_STRUCTURED_MESH
+@@ -88,18 +88,18 @@
+ MEDmeshCr(fid, maa2, mdim, mdim, MED_STRUCTURED_MESH,
+           "un exemple de grille standard","s", MED_SORT_DTIT,
+           MED_CARTESIAN, comp, unit)
+-print "Creation d'un maillage structure MED_STRUCTURED_MESH \n"
++print( "Creation d'un maillage structure MED_STRUCTURED_MESH \n" )
+ 
+ # /* On specifie la nature du maillage structure : MED_CURVILINEAR_GRID */
+ MEDmeshGridTypeWr(fid,maa2, MED_CURVILINEAR_GRID)
+-print "On definit la nature du maillage structure : MED_CURVILINEAR_GRID \n"
++print( "On definit la nature du maillage structure : MED_CURVILINEAR_GRID \n" )
+ 
+ MEDmeshNodeCoordinateWr(fid,maa2,MED_NO_DT,MED_NO_IT,MED_UNDEF_DT,
+                         MED_FULL_INTERLACE,nnoeuds,coo)
+-print "Ecriture des coordonnees des noeuds \n"
++print( "Ecriture des coordonnees des noeuds \n" )
+ 
+ # /* On definit la structure de la grille */
+ MEDmeshGridStructWr(fid,maa2,MED_NO_DT,MED_NO_IT, MED_UNDEF_DT, structure_grille )
+-print "Ecriture de la structure de la grille : / 2,2 / \n"
++print( "Ecriture de la structure de la grille : / 2,2 / \n" )
+ 
+ MEDfileClose(fid)
+--- a/tests/python/test28.py.orig	2017-09-29 15:46:26.000000000 +0200
++++ a/tests/python/test28.py	2018-07-29 12:48:45.837883200 +0200
+@@ -35,70 +35,70 @@
+ # /* Lecture du nombre de maillage */
+ nmaa = MEDnMesh(fid)
+ 
+-for i in xrange(nmaa):
++for i in range(nmaa):
+     maa, sdim, mdim, meshtype, desc, dtunit, sort, nstep,  repere, axisname, axisunit = MEDmeshInfo(fid, i+1)
+ 
+-    print "\nMaillage de nom : |%s| , de dimension : %d , et de type %s\n"%(maa,mdim,meshtype)
+-    print "\t -Dimension de l'espace : %d\n"%(sdim)
+-    print "\t -Description du maillage : |%s|\n"%(desc)
+-    print "\t -Noms des axes : |%s|\n"%(axisname)
+-    print "\t -Unités des axes : |%s|\n"%(axisunit)
+-    print "\t -Type de repère : %s\n"%(repere)
+-    print "\t -Nombre d'étapes de calcul : %d\n"%(nstep)
+-    print "\t -Unité des dates : |%s|\n"%(dtunit)
++    print( "\nMaillage de nom : |%s| , de dimension : %d , et de type %s\n"%(maa,mdim,meshtype) )
++    print( "\t -Dimension de l'espace : %d\n"%(sdim) )
++    print( "\t -Description du maillage : |%s|\n"%(desc) )
++    print( "\t -Noms des axes : |%s|\n"%(axisname) )
++    print( "\t -Unités des axes : |%s|\n"%(axisunit) )
++    print( "\t -Type de repère : %s\n"%(repere) )
++    print( "\t -Nombre d'étapes de calcul : %d\n"%(nstep) )
++    print( "\t -Unité des dates : |%s|\n"%(dtunit) )
+     if (meshtype.val == MED_STRUCTURED_MESH):
+-      print "\t - Type : Maillage structuré \n"
++      print( "\t - Type : Maillage structuré \n" )
+     else:
+-      print "\t - Type : Maillage non structuré \n"
++      print( "\t - Type : Maillage non structuré \n" )
+ 
+     gridtype=MED_GRID_TYPE()
+     if (meshtype.val == MED_STRUCTURED_MESH):
+         gridtype=MEDmeshGridTypeRd(fid,maa)
+-    if (gridtype.val == MED_CARTESIAN_GRID):	print "\t - Grille cartesienne \n"
+-    if (gridtype.val == MED_CURVILINEAR_GRID):	print "\t - Grille déstructuré \n"
++    if (gridtype.val == MED_CARTESIAN_GRID):	print( "\t - Grille cartesienne \n" )
++    if (gridtype.val == MED_CURVILINEAR_GRID):	print( "\t - Grille déstructuré \n" )
+ 
+ # /* On regarde les coordonnees de la grille standard */
+     if ( (meshtype.val == MED_STRUCTURED_MESH) and (gridtype.val == MED_CURVILINEAR_GRID)):
+ 
+         nnoeuds,chgt,trsf = MEDmeshnEntity(fid, maa, MED_NO_DT, MED_NO_IT,
+                                                MED_NODE, MED_NONE, MED_COORDINATE, MED_NO_CMODE)
+-        print "\t   Nombre de noeuds : %d"%(nnoeuds)
++        print( "\t   Nombre de noeuds : %d"%(nnoeuds) )
+ 
+         structure_grille = MEDINT(mdim)
+         MEDmeshGridStructRd(fid,maa,MED_NO_DT,MED_NO_IT, structure_grille)
+-	print "\t   Structure des noeuds de la grille : ",structure_grille
++        print( "\t   Structure des noeuds de la grille : ",structure_grille )
+ 
+-	coo = MEDFLOAT(nnoeuds*mdim)
++        coo = MEDFLOAT(nnoeuds*mdim)
+         MEDmeshNodeCoordinateRd(fid, maa, MED_NO_DT, MED_NO_IT,
+                                 MED_FULL_INTERLACE, coo)
+-	print "\t   Coordonnees des oeuds de la grille: ",coo
++        print( "\t   Coordonnees des oeuds de la grille: ",coo )
+ 
+         nfam,chgt,trsf=MEDmeshnEntity(fid,maa,MED_NO_DT,MED_NO_IT,
+                                       MED_NODE, MED_NONE, MED_FAMILY_NUMBER,MED_NODAL)
+ 
+-        if (nfam != 0):print "Le nombre de famille de vrait être nul"
++        if (nfam != 0):print( "Le nombre de famille de vrait être nul" )
+ 
+  # /* On regarde les coordonnees des indices de la grille cartesienne */
+     if (meshtype.val == MED_STRUCTURED_MESH) and (gridtype.val == MED_CARTESIAN_GRID):
+-      for cdim in xrange(mdim):
+-	  quoi = [MED_COORDINATE_AXIS1,MED_COORDINATE_AXIS2,MED_COORDINATE_AXIS3][cdim]
++      for cdim in range(mdim):
++          quoi = [MED_COORDINATE_AXIS1,MED_COORDINATE_AXIS2,MED_COORDINATE_AXIS3][cdim]
+ 
+           nind,chgt,trsf = MEDmeshnEntity(fid, maa, MED_NO_DT, MED_NO_IT,
+                                           MED_NODE, MED_NONE, quoi, MED_NO_CMODE)
+-          print "\t   Lecture de la taille de l'indice : ",nind
++          print( "\t   Lecture de la taille de l'indice : ",nind )
+ 
+           # /* on lit le tableau des indices */
+           indices = MEDFLOAT(nind)
+           MEDmeshGridIndexCoordinateRd(fid,maa,MED_NO_DT,MED_NO_IT,cdim+1,indices)
+ 
+-          print "\t   Axe %s [%s] : "%(axisname[cdim*MED_SNAME_SIZE:cdim*MED_SNAME_SIZE+MED_SNAME_SIZE],
+-                                       axisunit[cdim*MED_SNAME_SIZE:cdim*MED_SNAME_SIZE+MED_SNAME_SIZE])
+-          print "\t\t",indices
++          print( "\t   Axe %s [%s] : "%(axisname[cdim*MED_SNAME_SIZE:cdim*MED_SNAME_SIZE+MED_SNAME_SIZE], 
++                                       axisunit[cdim*MED_SNAME_SIZE:cdim*MED_SNAME_SIZE+MED_SNAME_SIZE]) )
++          print( "\t\t",indices )
+ 
+ 
+           nfam,chgt,trsf=MEDmeshnEntity(fid,maa,MED_NO_DT,MED_NO_IT,  
+                                         MED_NODE, MED_NONE, MED_FAMILY_NUMBER,MED_NODAL)
+ 
+-          if (nfam != 0):print "Le nombre de famille de vrait être nul" 
++          if (nfam != 0):print( "Le nombre de famille de vrait être nul"  )
+           
+ MEDfileClose(fid)
+--- a/tests/python/test3.py.orig	2016-04-14 18:27:58.000000000 +0200
++++ a/tests/python/test3.py	2018-07-29 12:40:25.263844251 +0200
+@@ -10,37 +10,37 @@
+ fid=MEDfileOpen("test2.med",MED_ACC_RDONLY)
+ 
+ def myMeshExist(meshname):
+-    if MEDfileObjectExist(fid,MED_MESH, meshname): print "Le maillage "+meshname+" existe."
+-    else: print "Le maillage "+meshname+" n'existe pas."
++    if MEDfileObjectExist(fid,MED_MESH, meshname): print( "Le maillage "+meshname+" existe." )
++    else: print( "Le maillage "+meshname+" n'existe pas." )
+ 
+ myMeshExist("maa1");myMeshExist("maa2");myMeshExist("maa3");myMeshExist("maa3");
+ 
+ nmaa = MEDnMesh(fid)
+-print "- Nombre de maillage dans test2.med = %d\n"%(nmaa);
++print( "- Nombre de maillage dans test2.med = %d\n"%(nmaa) )
+ 
+-for i in xrange(1,nmaa+1):
++for i in range(1,nmaa+1):
+     sdim=MEDmeshnAxis(fid, i)
+     maa, sdim, mdim, meshtype, desc, dtunit, sort, nstep,  axistype, axisname, axisunit = MEDmeshInfo(fid, 1)
+     
+     try:
+         nomu = MEDmeshUniversalNameRd(fid,maa)
+-        print "maillage %d de nom %s, de dimension %d et de nom univ. %s\n"%(i,maa,mdim,nomu)
++        print( "maillage %d de nom %s, de dimension %d et de nom univ. %s\n"%(i,maa,mdim,nomu) )
+     except:
+-        print "maillage %d de nom %s, de dimension %d \n"%(i,maa,mdim)
++        print( "maillage %d de nom %s, de dimension %d \n"%(i,maa,mdim) )
+ 
+-    print "La dimension de l'espace est %d \n"%(sdim);
++    print( "La dimension de l'espace est %d \n"%(sdim) )
+ 
+     if (meshtype == MED_STRUCTURED_MESH):
+-        print "Il s'agit d'un maillage structure \n"
++        print( "Il s'agit d'un maillage structure \n" )
+     else:
+-      print "Il s'agit d'un maillage non structure \n"
++      print( "Il s'agit d'un maillage non structure \n" )
+       
+-    print "Description associee au maillage : %s \n"%(desc)
+-    print "\t -Noms des axes : %s"%(axisname)
+-    print "\t -Unités des axes : %s"%(axisunit)
+-    print "\t -Type de repère : %s"%(axistype)
+-    print "\t -Nombre d'étape de calcul : %d"%(nstep)
+-    print "\t -Unité des dates : %s"%(dtunit)
++    print( "Description associee au maillage : %s \n"%(desc) )
++    print( "\t -Noms des axes : %s"%(axisname) )
++    print( "\t -Unités des axes : %s"%(axisunit) )
++    print( "\t -Type de repère : %s"%(axistype) )
++    print( "\t -Nombre d'étape de calcul : %d"%(nstep) )
++    print( "\t -Unité des dates : %s"%(dtunit) )
+ 
+ MEDfileClose(fid)
+ 
+--- a/tests/python/test30.py.orig	2017-09-29 15:46:26.000000000 +0200
++++ a/tests/python/test30.py	2018-07-29 12:27:42.425784895 +0200
+@@ -44,46 +44,46 @@
+ 
+   nc = MEDsubdomainCorrespondenceSize(fid,maa,jnt,MED_NO_DT,MED_NO_IT,
+ 				      typ_ent_local,typ_geo_local,typ_ent_distant,typ_geo_distant) 
+-  print "nb de couples d'entites en regard |%s|: %d"%(type,nc)
++  print( "nb de couples d'entites en regard |%s|: %d"%(type,nc) )
+ 
+   if nc > 0:
+     cortab = MEDINT(nc*2)
+     MEDsubdomainCorrespondenceRd(fid,maa,jnt,MED_NO_DT,MED_NO_IT,
+                                  typ_ent_local,typ_geo_local,typ_ent_distant,typ_geo_distant,
+                                  cortab)
+-    for k in xrange(nc):
+-	print "Correspondance %d : %d et %d"%(k+1,cortab[2*k],cortab[2*k+1])
++    for k in range(nc):
++        print( "Correspondance %d : %d et %d"%(k+1,cortab[2*k],cortab[2*k+1]) )
+ 
+ 
+ 
+ maa, sdim, mdim, meshtype, desc, dtunit, sort, nstep,  repere, axisname, axisunit = MEDmeshInfo(fid, 1)
+ 
+-print "\nMaillage de nom : |%s| , de dimension : %d , et de type %s\n"%(maa,mdim,meshtype)
+-print "\t -Dimension de l'espace : %d\n"%(sdim)
+-print "\t -Description du maillage : |%s|\n"%(desc)
+-print "\t -Noms des axes : |%s|\n"%(axisname)
+-print "\t -Unités des axes : |%s|\n"%(axisunit)
+-print "\t -Type de repère : %s\n"%(repere)
+-print "\t -Nombre d'étapes de calcul : %d\n"%(nstep)
+-print "\t -Unité des dates : |%s|\n"%(dtunit)
++print( "\nMaillage de nom : |%s| , de dimension : %d , et de type %s\n"%(maa,mdim,meshtype) )
++print( "\t -Dimension de l'espace : %d\n"%(sdim) )
++print( "\t -Description du maillage : |%s|\n"%(desc) )
++print( "\t -Noms des axes : |%s|\n"%(axisname) )
++print( "\t -Unités des axes : |%s|\n"%(axisunit) )
++print( "\t -Type de repère : %s\n"%(repere) )
++print( "\t -Nombre d'étapes de calcul : %d\n"%(nstep) )
++print( "\t -Unité des dates : |%s|\n"%(dtunit) )
+ 
+ 
+ #/* Lecture du nombre de joints */
+ njnt = MEDnSubdomainJoint(fid,maa)
+-print "Nombre de joints : %d"%(njnt)
++print( "Nombre de joints : %d"%(njnt) )
+ 
+ #/* Lecture de tous les joints du maillage */
+-for i in xrange(njnt):
+-    print "Joint numero : %d "%(i+1)
++for i in range(njnt):
++    print( "Joint numero : %d "%(i+1) )
+ 
+     #/* Lecture des infos sur le joints */
+     jnt,des,ndom,maa_dist,njstep,nodtitncor = MEDsubdomainJointInfo(fid,maa,i+1)
+-    print "Nom du joint: |%s| \n"%(jnt)
+-    print "Description du joint      : |%s|"%(des)
+-    print "Domaine en regard         : %d"%(ndom)
+-    print "Maillage distant          : |%s|"%(maa_dist)
+-    print "Nombre d'étapes de calcul : %d"%(njstep)
+-    print "Nombre de correspondance pour (NO_DT,NO_IT) : %d"%(nodtitncor)
++    print( "Nom du joint: |%s| \n"%(jnt) )
++    print( "Description du joint      : |%s|"%(des) )
++    print( "Domaine en regard         : %d"%(ndom) )
++    print( "Maillage distant          : |%s|"%(maa_dist) )
++    print( "Nombre d'étapes de calcul : %d"%(njstep) )
++    print( "Nombre de correspondance pour (NO_DT,NO_IT) : %d"%(nodtitncor) )
+ 
+     # /* lecture des correspondances une par une
+     #    en connaissant leur type a priori */
+@@ -100,7 +100,7 @@
+     #   -> utilisation de la fonction MEDjointTypeCorres */
+ 
+   
+-    for ncor in xrange(1,nodtitncor+1):
++    for ncor in range(1,nodtitncor+1):
+         typ_ent_local,typ_geo_local,typ_ent_distant,typ_geo_distant, nentity = MEDsubdomainCorrespondenceSizeInfo(fid,maa,jnt,MED_NO_DT,MED_NO_IT,ncor)
+ 
+         # /* Lecture de la correspondance Noeud Noeud */
+--- a/tests/python/test5.py.orig	2017-09-29 15:46:26.000000000 +0200
++++ a/tests/python/test5.py	2018-07-29 12:23:48.988766731 +0200
+@@ -39,20 +39,20 @@
+ 
+ maa, sdim, mdim, meshtype, desc, dtunit, sort, nstep,  repere, axisname, axisunit = MEDmeshInfo(fid, 1)
+ 
+-print "\nMaillage de nom : |%s| , de dimension : %d , et de type %s\n"%(maa,mdim,meshtype)
+-print "\t -Dimension de l'espace : %d\n"%(sdim)
+-print "\t -Description du maillage : |%s|\n"%(desc)
+-print "\t -Noms des axes : |%s|\n"%(axisname)
+-print "\t -Unités des axes : |%s|\n"%(axisunit)
+-print "\t -Type de repère : %s\n"%(repere)
+-print "\t -Nombre d'étapes de calcul : %d\n"%(nstep)
+-print "\t -Unité des dates : |%s|\n"%(dtunit)
++print( "\nMaillage de nom : |%s| , de dimension : %d , et de type %s\n"%(maa,mdim,meshtype) )
++print( "\t -Dimension de l'espace : %d\n"%(sdim) )
++print( "\t -Description du maillage : |%s|\n"%(desc) )
++print( "\t -Noms des axes : |%s|\n"%(axisname) )
++print( "\t -Unités des axes : |%s|\n"%(axisunit) )
++print( "\t -Type de repère : %s\n"%(repere) )
++print( "\t -Nombre d'étapes de calcul : %d\n"%(nstep) )
++print( "\t -Unité des dates : |%s|\n"%(dtunit) )
+ 
+ # /* Lecture des attributs des noeuds du maillage  */
+ isolatednodes, verticesnodes, cellmaxnodes = MEDmeshAttributeRd( fid, maa)
+-print "\t -Nombre de noeuds isolés             : %d\n"%(isolatednodes)
+-print "\t -Nombre de noeuds sommets            : %d\n"%(verticesnodes)
+-print "\t -Nombre maximum de noeuds par maille : %d\n"%(cellmaxnodes)
++print( "\t -Nombre de noeuds isolés             : %d\n"%(isolatednodes) )
++print( "\t -Nombre de noeuds sommets            : %d\n"%(verticesnodes) )
++print( "\t -Nombre maximum de noeuds par maille : %d\n"%(cellmaxnodes) )
+ 
+ # /* Combien de noeuds a lire ? */
+ nnoe, chgt, trsf = MEDmeshnEntity(fid,maa,MED_NO_DT,MED_NO_IT,
+@@ -74,7 +74,7 @@
+     nomnoe = MEDCHAR(MED_SNAME_SIZE*nnoe+1)
+ 
+ #   MEDfilterAllocate & MEDfilterDeAllocate ne sont pas utiles :
+-#   [med_filter() for x in xrange(5)]
++#   [med_filter() for x in range(5)]
+ 
+     filter=med_filter()
+     MEDfilterEntityCr( fid, nnoe, 1, sdim, 2,
+@@ -84,7 +84,7 @@
+     # /* Lecture des composantes n°2 des coordonnees des noeuds */
+     if (nnoe > 0):
+         MEDmeshNodeCoordinateAdvancedRd(fid, maa, MED_NO_DT, MED_NO_IT, filter, coo1)
+-        print "Valeur de coo1 : ",coo1
++        print( "Valeur de coo1 : ",coo1 )
+         
+     MEDfilterClose(filter)
+ 
+@@ -94,7 +94,7 @@
+     
+     # /* Lecture des composantes n°1 des coordonnees des noeuds */ 
+     MEDmeshNodeCoordinateAdvancedRd(fid, maa, MED_NO_DT, MED_NO_IT, filter, coo1)
+-    print "Valeur de coo1 : ",coo1
++    print( "Valeur de coo1 : ",coo1 )
+     MEDfilterClose(filter)
+ 
+     MEDfilterEntityCr( fid, nnoe, 1, sdim, 1,
+@@ -103,7 +103,7 @@
+     # /* Lecture des composantes n°1 des coordonnees des noeuds du filtre */
+     if (nnoe > 0):
+         MEDmeshNodeCoordinateAdvancedRd(fid, maa, MED_NO_DT, MED_NO_IT, filter, coo2)
+-        print "Valeur de coo2 : ",coo2
++        print( "Valeur de coo2 : ",coo2 )
+     MEDfilterClose(filter)
+ 
+     MEDfilterEntityCr( fid, nnoe, 1, sdim, 2,
+@@ -112,7 +112,7 @@
+     # /* Lecture des composantes n°2 des coordonnees des noeuds du filtre */
+     if (nnoe > 0):
+         MEDmeshNodeCoordinateAdvancedRd(fid, maa, MED_NO_DT, MED_NO_IT, filter, coo2)
+-        print "Valeur de coo2 : ",coo2
++        print( "Valeur de coo2 : ",coo2 )
+     MEDfilterClose(filter)
+ 
+     MEDfilterEntityCr( fid, nnoe, 1, sdim, MED_ALL_CONSTITUENT,
+@@ -121,13 +121,13 @@
+     # /* Lecture de toutes les composantes des coordonnees des noeuds du filtre */
+     if (nnoe > 0):
+         MEDmeshNodeCoordinateAdvancedRd(fid, maa, MED_NO_DT, MED_NO_IT, filter, coo2)
+-        print "Valeur de coo2 : ",coo2
++        print( "Valeur de coo2 : ",coo2 )
+     MEDfilterClose(filter)
+ 
+     # /* Lecture des composantes des coordonnees des noeuds */
+     if (nnoe > 0):
+         MEDmeshNodeCoordinateRd(fid, maa, MED_NO_DT, MED_NO_IT, MED_FULL_INTERLACE, coo2)
+-        print "Valeur de coo2 : ",coo2
++        print( "Valeur de coo2 : ",coo2 )
+ 
+         #/* Lecture des noms des noeuds (optionnel dans un maillage MED) */
+         try: MEDmeshEntityNameRd(fid,maa, MED_NO_DT, MED_NO_IT, MED_NODE,MED_NONE,nomnoe)
+@@ -141,16 +141,16 @@
+ 
+         #/* Lecture des numeros de familles des noeuds */
+         MEDmeshEntityFamilyNumberRd(fid,maa, MED_NO_DT, MED_NO_IT, MED_NODE,MED_NONE,nufano)
+-        print "Type de repere : %s "%(repere)
+-        print "Nom des coordonnees : "
+-        # for i in xrange(sdim): print "|%s| "%(axisname[i*MED_SNAME_SIZE:i*MED_SNAME_SIZE+MED_SNAME_SIZE])
+-        print [axisname[i*MED_SNAME_SIZE:i*MED_SNAME_SIZE+MED_SNAME_SIZE] for i in xrange(sdim)]
+-        print "\nUnites des coordonnees :"
+-        print [axisunit[i*MED_SNAME_SIZE:i*MED_SNAME_SIZE+MED_SNAME_SIZE] for i in xrange(sdim)]
+-        print "\nCoordonnees des noeuds : ",coo2
+-        print "\nNoms des noeuds : ",["".join(nomnoe[i*MED_SNAME_SIZE:i*MED_SNAME_SIZE+MED_SNAME_SIZE]) for i in xrange(nnoe)]
+-        print "\nNumeros des noeuds : ",numnoe
+-        print "\nNumeros des familles des noeuds : ",nufano
++        print( "Type de repere : %s "%(repere) )
++        print( "Nom des coordonnees : " )
++        # for i in range(sdim): print( "|%s| "%(axisname[i*MED_SNAME_SIZE:i*MED_SNAME_SIZE+MED_SNAME_SIZE]) )
++        print( [axisname[i*MED_SNAME_SIZE:i*MED_SNAME_SIZE+MED_SNAME_SIZE] for i in range(sdim)] )
++        print( "\nUnites des coordonnees :" )
++        print( [axisunit[i*MED_SNAME_SIZE:i*MED_SNAME_SIZE+MED_SNAME_SIZE] for i in range(sdim)] )
++        print( "\nCoordonnees des noeuds : ",coo2 )
++        print( "\nNoms des noeuds : ",["".join(nomnoe[i*MED_SNAME_SIZE:i*MED_SNAME_SIZE+MED_SNAME_SIZE]) for i in range(nnoe)] )
++        print( "\nNumeros des noeuds : ",numnoe )
++        print( "\nNumeros des familles des noeuds : ",nufano )
+ 
+ # /* Fermeture du fichier */
+ MEDfileClose(fid)
+--- a/tests/python/test7.py.orig	2017-09-29 15:46:26.000000000 +0200
++++ a/tests/python/test7.py	2018-07-29 12:32:57.528809413 +0200
+@@ -40,14 +40,14 @@
+ 
+ maa, sdim, mdim, meshtype, desc, dtunit, sort, nstep,  repere, axisname, axisunit = MEDmeshInfo(fid, 1)
+ 
+-print "\nMaillage de nom : |%s| , de dimension : %d , et de type %s\n"%(maa,mdim,meshtype)
+-print "\t -Dimension de l'espace : %d\n"%(sdim)
+-print "\t -Description du maillage : |%s|\n"%(desc)
+-print "\t -Noms des axes : |%s|\n"%(axisname)
+-print "\t -Unités des axes : |%s|\n"%(axisunit)
+-print "\t -Type de repère : %s\n"%(repere)
+-print "\t -Nombre d'étapes de calcul : %d\n"%(nstep)
+-print "\t -Unité des dates : |%s|\n"%(dtunit)
++print( "\nMaillage de nom : |%s| , de dimension : %d , et de type %s\n"%(maa,mdim,meshtype) )
++print( "\t -Dimension de l'espace : %d\n"%(sdim) )
++print( "\t -Description du maillage : |%s|\n"%(desc) )
++print( "\t -Noms des axes : |%s|\n"%(axisname) )
++print( "\t -Unités des axes : |%s|\n"%(axisunit) )
++print( "\t -Type de repère : %s\n"%(repere) )
++print( "\t -Nombre d'étapes de calcul : %d\n"%(nstep) )
++print( "\t -Unité des dates : |%s|\n"%(dtunit) )
+ 
+ # /* Combien de noeuds a lire ? */
+ nse2, chgt, trsf = MEDmeshnEntity(fid,maa,MED_NO_DT,MED_NO_IT,
+@@ -56,7 +56,7 @@
+ ntr3, chgt, trsf = MEDmeshnEntity(fid, maa, MED_NO_DT, MED_NO_IT,
+                                   MED_CELL,MED_TRIA3,MED_CONNECTIVITY, MED_DESCENDING)
+ 
+-print "Nombre de MED_SEG2 : %d - nombre de MED_TRIA3 : %d"%(nse2,ntr3)
++print( "Nombre de MED_SEG2 : %d - nombre de MED_TRIA3 : %d"%(nse2,ntr3) )
+ 
+ # /* Allocations memoires */
+ tse2    = 2;
+@@ -73,7 +73,7 @@
+ nomtr3  = MEDCHAR(MED_SNAME_SIZE*ntr3+1)
+ 
+ #   MEDfilterAllocate & MEDfilterDeAllocate ne sont pas utiles :
+-#   [med_filter() for x in xrange(5)]
++#   [med_filter() for x in range(5)]
+ 
+ filter=med_filter()
+ MEDfilterEntityCr( fid, nse2, 1, sdim, 2,
+@@ -99,7 +99,7 @@
+ 
+ #/* Test complémentaire */
+ nname,chgt,trsf = MEDmeshnEntity(fid, maa, MED_NO_DT, MED_NO_IT, MED_DESCENDING_EDGE,MED_SEG2,MED_NAME, MED_NO_CMODE)
+-print "Nombre de nom de MED_SEG2 : %d \n"%(nname)
++print( "Nombre de nom de MED_SEG2 : %d \n"%(nname) )
+ 
+ #/* Lecture (optionnelle) des numeros des segments */
+ try: MEDmeshEntityNumberRd(fid, maa, MED_NO_DT, MED_NO_IT, MED_DESCENDING_EDGE, MED_SEG2, numse2)
+@@ -126,18 +126,18 @@
+ #/* Lecture des numeros des familles des triangles */
+ MEDmeshEntityFamilyNumberRd(fid,maa, MED_NO_DT, MED_NO_IT, MED_CELL, MED_TRIA3,nufatr3)
+ 
+-print "Connectivite des segments (1): ",se2_1
+-print "Connectivite des segments (1): ",se2_2
+-print "Nom des coordonnees : "
+-print "Noms des segments : ",["".join(nomse2[i*MED_SNAME_SIZE:i*MED_SNAME_SIZE+MED_SNAME_SIZE])
+-                                for i in xrange(nse2)]
+-print "Numeros des segments : ",numse2
+-print "Numeros des familles des segments : ",nufase2
+-print "Connectivite des triangles: ",tr3
+-print "Noms des triangles : ",["".join(nomtr3[i*MED_SNAME_SIZE:i*MED_SNAME_SIZE+MED_SNAME_SIZE])
+-                                for i in xrange(ntr3)]
+-print "Numeros des triangles : ",numtr3
+-print "Numeros des familles des triangles : ",nufatr3
++print( "Connectivite des segments (1): ",se2_1 )
++print( "Connectivite des segments (1): ",se2_2 )
++print( "Nom des coordonnees : " )
++print( "Noms des segments : ",["".join(nomse2[i*MED_SNAME_SIZE:i*MED_SNAME_SIZE+MED_SNAME_SIZE]) \
++                                for i in range(nse2)] )
++print( "Numeros des segments : ",numse2 )
++print( "Numeros des familles des segments : ",nufase2 )
++print( "Connectivite des triangles: ",tr3 )
++print( "Noms des triangles : ",["".join(nomtr3[i*MED_SNAME_SIZE:i*MED_SNAME_SIZE+MED_SNAME_SIZE]) \
++                                for i in range(ntr3)] )
++print( "Numeros des triangles : ",numtr3 )
++print( "Numeros des familles des triangles : ",nufatr3 )
+ 
+ # /* Fermeture du fichier */
+ MEDfileClose(fid)
+--- a/tests/python/test8.py.orig	2017-09-29 15:46:26.000000000 +0200
++++ a/tests/python/test8.py	2018-07-29 12:40:59.310846900 +0200
+@@ -38,8 +38,8 @@
+ 
+ try:
+   MEDmeshCr(fid, maa, mdim, mdim, MED_UNSTRUCTURED_MESH,"un maillage pour test8","s", MED_SORT_DTIT, MED_CARTESIAN, nomcoo, unicoo)
+-except RuntimeError,ex:
+-    print "Erreur a la creation du maillage : ",maa,ex
++except RuntimeError as ex:
++    print( "Erreur a la creation du maillage : ",maa,ex )
+ 
+ # /* Ecriture des familles                                                */
+ # /* Conventions appliquees dans MED :
+@@ -58,8 +58,8 @@
+ 
+ try:
+     MEDfamilyCr(fid,maa,nomfam,numfam,0,gro)
+-except RuntimeError,ex:
+-    print "Erreur a la creation  de la famille 0 : ",maa,ex
++except RuntimeError as ex:
++    print( "Erreur a la creation  de la famille 0 : ",maa,ex )
+ 
+   # /* Creation pour correspondre aux cas test precedent de :
+   #    - 3 familles d'elements (-1,-2,-3)
+@@ -72,11 +72,11 @@
+ for i in range(0,nfame):
+     numfam = -(i+1)
+     nomfam="FAMILLE_ELEMENT_"+str(-numfam)
+-    print "%s - %d - %d \n"%(nomfam,numfam, ngro)
++    print( "%s - %d - %d \n"%(nomfam,numfam, ngro) )
+     try:
+         MEDfamilyCr(fid,maa,nomfam,numfam,ngro,gro)
+-    except RuntimeError,ex:
+-      print "Erreur a la creation de la famille :",nomfam,"(",numfam,"("
++    except RuntimeError as ex:
++      print( "Erreur a la creation de la famille :",nomfam,"(",numfam,"(" )
+ 
+ nfamn = 2
+ for i in range(0,nfamn):
+@@ -84,8 +84,8 @@
+     nomfam="FAMILLE_NOEUD_"+str(numfam)
+     try:
+         MEDfamilyCr(fid,maa,nomfam,numfam,ngro,gro)
+-    except RuntimeError,ex:
+-      print "Erreur a la creation de la famille :",nomfam,"(",numfam,"("
++    except RuntimeError as ex:
++      print( "Erreur a la creation de la famille :",nomfam,"(",numfam,"(" )
+ 
+ 
+ err = MEDfileClose(fid)
+--- a/tests/python/test9.py.orig	2017-09-29 15:46:26.000000000 +0200
++++ a/tests/python/test9.py	2018-07-29 12:23:48.996766732 +0200
+@@ -40,23 +40,23 @@
+ # /* Lecture des infos concernant le premier maillage */
+ maa, sdim, mdim, type, desc, dtunit, sort, nstep, rep, nomcoo,unicoo = MEDmeshInfo(fid, 1)
+ 
+-#print "Maillage de nom : |%s| , de dimension : %ld , et de type %d\n"%(maa,mdim,type)
+-print "Maillage de nom : |%s| , de dimension : %ld , et de type %s\n"%(maa,mdim,type)
+-print "\t -Dimension de l'espace : %ld\n"%(sdim)
+-print "\t -Description du maillage : %s\n"%(desc)
+-print "\t -Noms des axes : |%s|\n"%(nomcoo)
+-print "\t -Unités des axes : |%s|\n"%(unicoo)
+-#print "\t -Type de repère : %d\n"%(rep)
+-print "\t -Type de repère : %s\n"%(rep)
+-print "\t -Nombre d'étape de calcul : %ld\n"%(nstep)
+-print "\t -Unité des dates : |%s|\n"%(dtunit)
++#print( "Maillage de nom : |%s| , de dimension : %ld , et de type %d\n"%(maa,mdim,type) )
++print( "Maillage de nom : |%s| , de dimension : %ld , et de type %s\n"%(maa,mdim,type) )
++print( "\t -Dimension de l'espace : %ld\n"%(sdim) )
++print( "\t -Description du maillage : %s\n"%(desc) )
++print( "\t -Noms des axes : |%s|\n"%(nomcoo) )
++print( "\t -Unités des axes : |%s|\n"%(unicoo) )
++#print( "\t -Type de repère : %d\n"%(rep) )
++print( "\t -Type de repère : %s\n"%(rep) )
++print( "\t -Nombre d'étape de calcul : %ld\n"%(nstep) )
++print( "\t -Unité des dates : |%s|\n"%(dtunit) )
+ 
+ # /* Lecture du nombre de familles */
+ nfam = MEDnFamily(fid,maa)
+-print "Nombre de familles : %d \n"%(nfam)
++print( "Nombre de familles : %d \n"%(nfam) )
+ 
+ # /* Lecture de chaque famille */
+-for i in xrange(0,nfam):
++for i in range(0,nfam):
+ 
+   # /* Lecture du nombre de groupe */
+   ngro = MEDnFamilyGroup(fid,maa,i+1)
+@@ -65,7 +65,7 @@
+   natt = MEDnFamily23Attribute(fid,maa,i+1) 
+ 
+ 
+-  print "Famille %d a %d attributs et %d groupes \n"%(i+1,natt,ngro)
++  print( "Famille %d a %d attributs et %d groupes \n"%(i+1,natt,ngro) )
+ 
+   attide = MEDINT(natt)
+   attval = MEDINT(natt)
+@@ -78,14 +78,14 @@
+   nomfam,numfam,attide,attval,attdes,gro = MEDfamily23Info(fid,maa,i+1,attide,attval,attdes,gro)
+ 
+ 
+-  print "Famille de nom %s et de numero %d : \n"%(nomfam,numfam)
+-  print "Attributs : \n"
+-  for j in xrange(0,natt):
+-      print "ide = %d - val = %d - des = %s\n"%( attide[j], attval[j], attdes[j*MED_COMMENT_SIZE,j*MED_COMMENT_SIZE+MED_COMMENT_SIZE])
+-
+-  print "Groupes : \n"
+-  for j in xrange(0,ngro):
+-      print "gro = %s\n"%(gro[j*MED_LNAME_SIZE:j*MED_LNAME_SIZE+MED_LNAME_SIZE])
++  print( "Famille de nom %s et de numero %d : \n"%(nomfam,numfam) )
++  print( "Attributs : \n" )
++  for j in range(0,natt):
++      print( "ide = %d - val = %d - des = %s\n"%( attide[j], attval[j], attdes[j*MED_COMMENT_SIZE,j*MED_COMMENT_SIZE+MED_COMMENT_SIZE]) )
++
++  print( "Groupes : \n" )
++  for j in range(0,ngro):
++      print( "gro = %s\n"%(gro[j*MED_LNAME_SIZE:j*MED_LNAME_SIZE+MED_LNAME_SIZE]) )
+ 
+ 
+ MEDfileClose(fid)
+--- a/tests/python/test_medfile.py.orig	2016-04-14 18:27:40.000000000 +0200
++++ a/tests/python/test_medfile.py	2018-07-29 12:34:53.983818474 +0200
+@@ -8,19 +8,19 @@
+ MEDfileClose(fid)
+ 
+ hdfok,medok = MEDfileCompatibility("test_medfile_1_1.med");
+-print "Vérification de la compatibilité du fichier avec HDF : hdfok=",hdfok," ; avec MED : medok=",medok
++print( "Vérification de la compatibilité du fichier avec HDF : hdfok=",hdfok," ; avec MED : medok=",medok )
+ 
+ fid = MEDfileOpen("test_medfile_1_1.med",MED_ACC_RDONLY)
+ 
+ mm,m,r =  MEDfileNumVersionRd(fid)
+-print "Version Du Fichier (num) :",mm,m,r
++print( "Version Du Fichier (num) :",mm,m,r )
+ version = MEDfileStrVersionRd(fid);
+-print "Version Du Fichier (str) :",version
++print( "Version Du Fichier (str) :",version )
+ 
+ comment = MEDfileCommentRd(fid)
+-print comment
++print( comment )
+ 
+-print MEDfileName(fid);
++print( MEDfileName(fid) )
+ 
+ MEDfileClose(fid)
+ 
+--- a/tests/python/test_medmesh.py.orig	2016-04-14 18:27:58.000000000 +0200
++++ a/tests/python/test_medmesh.py	2018-07-29 12:48:17.477880993 +0200
+@@ -32,7 +32,7 @@
+ #     err=MEDmeshComputationStepCr(fid, evol)
+ 
+ isolatednodes, verticesnodes, cellmaxnodes = 1,2,3
+-#print isolatednodes, verticesnodes, cellmaxnodes
++#print( isolatednodes, verticesnodes, cellmaxnodes )
+ MEDmeshAttributeWr(fid,meshnames[0],isolatednodes, verticesnodes, cellmaxnodes)
+  
+ # meshname    = str().zfill(MED_NAME_SIZE   )
+@@ -43,30 +43,30 @@
+ 
+ for it in range(1,MEDnMesh(fid)+1):
+     naxis1=MEDmeshnAxis(fid,it)
+-    #print "Nombre d'axes du maillage n",it," : ",naxis1
++    #print( "Nombre d'axes du maillage n",it," : ",naxis1 )
+     meshinfo1=MEDmeshInfo(fid,it)
+     meshname,spacedim1,meshdim1,meshtype1,description1,dtunit1,sortingtype1,nstep1,axistype1,axisname1,axisunit1=meshinfo1
+-    # print meshinfo1
+-    del(meshinfo1[0]);aff1=map(str,meshinfo1); print aff1
++    # print( meshinfo1 )
++    del(meshinfo1[0]);aff1=map(str,meshinfo1); print( aff1 )
+     naxis2   =MEDmeshnAxisByName(fid,meshname)
+-    if naxis1 != naxis2 : print "Erreur: les informations lues par MEDmeshnAxis (%s) et MEDmeshnAxisByname (%s) differes sur le maillage n%d" % (naxis1,naxis2,it);break
++    if naxis1 != naxis2 : print( "Erreur: les informations lues par MEDmeshnAxis (%s) et MEDmeshnAxisByname (%s) differes sur le maillage n%d" % (naxis1,naxis2,it));break 
+     meshinfo2=MEDmeshInfoByName (fid,meshname)
+     spacedim2,meshdim2,meshtype2,description2,dtunit2,sortingtype2,nstep2,axistype2,axisname2,axisunit2=meshinfo2
+-    aff2=map(str,meshinfo2);#print aff2
+-    if aff1 != aff2 : print "Erreur: les informations lues par MEDmeshInfo et MEDmeshInfoByname different sur le maillage n",it;break
+-    print "\nMaillage n :",it," de nom ",meshname
+-    print "\tspacedim:%d \n\tmeshdim:%d \n\tmeshtype:%s \n\tdescription:%s \n\tdtunit:%s \n\tsortingtype:%s \n\tnstep:%d \n\taxistype:%s \n\taxisname:%s \n\taxisunit:%s " % (spacedim2,meshdim2,meshtype2,description2,dtunit2,sortingtype2,nstep2,axistype2,axisname2,axisunit2)
++    aff2=map(str,meshinfo2);#print( aff2 )
++    if aff1 != aff2 : print( "Erreur: les informations lues par MEDmeshInfo et MEDmeshInfoByname different sur le maillage n",it);break
++    print( "\nMaillage n :",it," de nom ",meshname )
++    print( "\tspacedim:%d \n\tmeshdim:%d \n\tmeshtype:%s \n\tdescription:%s \n\tdtunit:%s \n\tsortingtype:%s \n\tnstep:%d \n\taxistype:%s \n\taxisname:%s \n\taxisunit:%s " % (spacedim2,meshdim2,meshtype2,description2,dtunit2,sortingtype2,nstep2,axistype2,axisname2,axisunit2) )
+ 
+-    print MEDmeshSortingTypeRd(fid,meshname)
+-    print "\n\tNom universel du maillage : ",MEDmeshUniversalNameRd(fid,meshname)
++    print( MEDmeshSortingTypeRd(fid,meshname) )
++    print( "\n\tNom universel du maillage : ",MEDmeshUniversalNameRd(fid,meshname) )
+     attmesh=MEDmeshAttributeRd( fid, meshname );
+     isolatednodes, verticesnodes, cellmaxnodes = attmesh
+-    print "\tisolatednodes: ",isolatednodes," verticesnodes: ",verticesnodes,", cellmaxnodes: ",cellmaxnodes
++    print( "\tisolatednodes: ",isolatednodes," verticesnodes: ",verticesnodes,", cellmaxnodes: ",cellmaxnodes )
+     for csit in range(1,nstep1+1):
+         numdt,numit,dt1 = MEDmeshComputationStepInfo(fid,meshname,csit)
+         dt2 = MEDmeshComputationStepDtRd( fid, meshname,  numdt, numit )
+-        if dt1 != dt2:print "Erreur: la date est différente entre MEDmeshComputationStepInfo et MEDmeshComputationStepDtRd",dt1,dt2
+-        print "\tEtape d'évolution n :",csit," : (numdt=",numdt,",numit=",numit,",dt=",dt1,")"
++        if dt1 != dt2:print( "Erreur: la date est différente entre MEDmeshComputationStepInfo et MEDmeshComputationStepDtRd",dt1,dt2 )
++        print( "\tEtape d'évolution n :",csit," : (numdt=",numdt,",numit=",numit,",dt=",dt1,")" )
+ 
+ # coo=doubleArray(6)
+ # initcoo=[ 0.0, 0.0, 0.0, 1.1, 1.1, 1.1 ]
+@@ -88,23 +88,23 @@
+ try:
+     MEDmeshNodeCoordinateWr(fid,'maa1',0,MED_NO_IT,0.1,
+                             MED_FULL_INTERLACE,ncoo2, coo2 )
+-except RuntimeError,ex:
+-    print "Une RuntimeError exception a été attrapée : ",ex
++except RuntimeError as ex:
++    print( "Une RuntimeError exception a été attrapée : ",ex )
+     
+ coo1_rd=MEDFLOAT(ncoo1*spacedim)
+ MEDmeshNodeCoordinateRd(fid,'maa1',MED_NO_DT,MED_NO_IT,MED_FULL_INTERLACE,coo1_rd)
+-print coo1_rd
++print( coo1_rd )
+ 
+ coo2_rd=MEDFLOAT(ncoo2*spacedim)
+ MEDmeshNodeCoordinateRd(fid,'maa1',0,MED_NO_IT,MED_FULL_INTERLACE,coo2_rd)
+-print coo2_rd
++print( coo2_rd )
+ 
+ nconn1=2
+ conn1=MEDINT([1,2,1,2])
+ MEDmeshElementConnectivityWr(fid,'maa1',MED_NO_DT,MED_NO_IT,0.0,MED_CELL,MED_SEG2,MED_NODAL,MED_FULL_INTERLACE,nconn1,conn1)
+ conn1_rd=MEDINT(nconn1*(MED_SEG2%100))
+ MEDmeshElementConnectivityRd(fid,'maa1',MED_NO_DT,MED_NO_IT,MED_CELL,MED_SEG2,MED_NODAL,MED_FULL_INTERLACE,conn1_rd)
+-if conn1 != conn1_rd : print "Erreur: les informations lues par MEDmeshElementConnectivityRd sur le maillage <%s>(%d,%d) sont inexactes."%('maa1',MED_NO_DT,MED_NO_IT)
++if conn1 != conn1_rd : print( "Erreur: les informations lues par MEDmeshElementConnectivityRd sur le maillage <%s>(%d,%d) sont inexactes."%('maa1',MED_NO_DT,MED_NO_IT) )
+ 
+ 
+ nconn2=10000
+@@ -115,18 +115,18 @@
+ MEDmeshElementConnectivityWr( *(param2 + (nconn2, conn2)) )
+ conn2_rd=MEDINT(nconn2*(MED_SEG2%100))
+ MEDmeshElementConnectivityRd( fid,'maa1',0,MED_NO_IT,MED_CELL,MED_SEG2,MED_NODAL,MED_FULL_INTERLACE, conn2_rd )
+-if conn2 != conn2_rd : print "Erreur: les informations lues par MEDmeshElementConnectivityRd sur le maillage <%s>(%d,%d) sont inexactes."%('maa1',0,MED_NO_IT)
++if conn2 != conn2_rd : print( "Erreur: les informations lues par MEDmeshElementConnectivityRd sur le maillage <%s>(%d,%d) sont inexactes."%('maa1',0,MED_NO_IT))
+ 
+ nnam1=2
+  # "".join( [str(i).zfill(MED_SNAME_SIZE) for i in range(nnam1)] )
+ nam1=MEDCHAR(  "".join( [str(i).zfill(MED_SNAME_SIZE) for i in range(nnam1)] )+'\0' )
+ MEDmeshEntityNameWr(fid,'maa1',MED_NO_DT,MED_NO_IT,MED_CELL,MED_SEG2,nnam1,nam1)
+ nam1_rd=MEDCHAR(nnam1*MED_SNAME_SIZE+1)
+-print "----------- 1a ---------------"
+-print MEDmeshEntityNameRd(fid,'maa1',MED_NO_DT,MED_NO_IT,MED_CELL,MED_SEG2,nam1_rd)
+-print "----------- 2a ---------------"
+-#print [x for x in nam1_rd]
+-if nam1 != nam1_rd : print "Erreur: les informations lues par MEDmeshEntityNameRd sur le maillage < %s >( %d , %d ) sont inexactes."%('maa1',MED_NO_DT,MED_NO_IT)
++print( "----------- 1a ---------------" )
++print( MEDmeshEntityNameRd(fid,'maa1',MED_NO_DT,MED_NO_IT,MED_CELL,MED_SEG2,nam1_rd) )
++print( "----------- 2a ---------------" )
++#print( [x for x in nam1_rd] )
++if nam1 != nam1_rd : print( "Erreur: les informations lues par MEDmeshEntityNameRd sur le maillage < %s >( %d , %d ) sont inexactes."%('maa1',MED_NO_DT,MED_NO_IT) )
+ 
+ nnam2=10
+ # "".join( [str(i).zfill(MED_SNAME_SIZE) for i in range(nnam2)] )
+@@ -134,7 +134,7 @@
+ MEDmeshEntityNameWr(fid,'maa1',0,MED_NO_IT,MED_CELL,MED_SEG2,nnam2,nam2)
+ nam2_rd=MEDCHAR(nnam2*MED_SNAME_SIZE+1)
+ MEDmeshEntityNameRd(fid,'maa1',0,MED_NO_IT,MED_CELL,MED_SEG2,nam2_rd)
+-if nam2 != nam2_rd : print "Erreur: les informations lues par MEDmeshEntityNameRd sur le maillage <%s>(%d,%d) sont inexactes."%('maa1',0,MED_NO_IT)
++if nam2 != nam2_rd : print( "Erreur: les informations lues par MEDmeshEntityNameRd sur le maillage <%s>(%d,%d) sont inexactes."%('maa1',0,MED_NO_IT) )
+ 
+ #TODO : Tester les attributes MESH
+ 
+@@ -193,7 +193,7 @@
+ #X=type('X',(),{'foo':lambda self:'foo'})
+ #FIELD=type('FIELD',(),field1)
+ # a=FIELD()
+-# print a
++# print( a )
+ # dir(a)
+  
+ # err,meshname_field1_rd,lmesh_field1_rd,type_field1_rd,comp_field1_rd,unit_field1_rd,dtunit_field1_rd,ncstp_field1_rd=MEDfieldInfoByName(fid,fieldname1)
+@@ -213,7 +213,7 @@
+ field1_info3=dict([ (x,field1_info2[x]) for x in fieldinfo_keys if x in field1.keys()] )
+  
+   
+-if field1 != field1_info2 : print "Erreur: les informations lues par MEDfieldInfoByName sur le champ <%s> sont inexactes."% field1['fieldname']
++if field1 != field1_info2 : print( "Erreur: les informations lues par MEDfieldInfoByName sur le champ <%s> sont inexactes."% field1['fieldname'] )
+ 
+ nentity_field1=10
+ value_field1=MEDFLOAT(range(nentity_field1))
+@@ -228,7 +228,7 @@
+ 
+ it=value_field1.begin()
+ while it!=value_field1.end():
+-    print it.value();it+=1
++    print( it.value() );it+=1
+ 
+ value_field1_rd=MEDFLOAT(nentity_field1*field1['ncomponent'])
+ MEDfieldValueRd(fid,
+@@ -238,7 +238,7 @@
+                 MED_FULL_INTERLACE,MED_ALL_CONSTITUENT,
+                 value_field1_rd);
+ 
+-if value_field1 != value_field1_rd : print "Erreur: les informations lues par MEDfieldValueRd sur le champ <%s>(%d,%d) sont inexactes."%('fieldname1',MED_NO_DT,MED_NO_IT)
++if value_field1 != value_field1_rd : print( "Erreur: les informations lues par MEDfieldValueRd sur le champ <%s>(%d,%d) sont inexactes."%('fieldname1',MED_NO_DT,MED_NO_IT) )
+ 
+ 
+ #Opérations algébrique sur les tableaux stl (cf algo.) vs numpy
+@@ -285,6 +285,6 @@
+                 MED_FULL_INTERLACE,MED_ALL_CONSTITUENT,
+                 value_field2_rd);
+ 
+-if value_field2 != value_field2_rd : print "Erreur: les informations lues par MEDfieldValueRd sur le champ <%s>(%d,%d) sont inexactes."%('fieldname2',MED_NO_DT,MED_NO_IT)
++if value_field2 != value_field2_rd : print( "Erreur: les informations lues par MEDfieldValueRd sur le champ <%s>(%d,%d) sont inexactes."%('fieldname2',MED_NO_DT,MED_NO_IT) )
+ 
+ MEDfileClose(fid)
