@@ -101,8 +101,7 @@ DEPEND="${RDEPEND}
 CMAKE_BUILD_TYPE="Release"
 
 PATCHES=(   "${FILESDIR}"/blender-doxyfile.patch
-            "${FILESDIR}"/blender-fix-install-rules.patch
-            "${FILESDIR}"/SAVE_PREFS.patch)
+            "${FILESDIR}"/blender-fix-install-rules.patch)
 
 blender_check_requirements() {
 	[[ ${MERGE_TYPE} != binary ]] && use openmp && tc-check-openmp
@@ -381,10 +380,11 @@ pkg_postinst() {
 	elog "and don't forget add to /etc/portage/package.env"
 	elog "media-gfx/blender blender"
 	elog
-	elog "It is recommended to change your blender temp directory"
-	elog "from /tmp to /home/user/tmp or another tmp file under your"
-	elog "home directory. This can be done by starting blender, then"
-	elog "dragging the main menu down do display all paths."
+	elog "There is some my prefer blender settings as patches"
+	elog "find them in cg/local-patches/blender/"
+	elog "To apply someone copy them in "
+	elog "/etc/portage/patches/media-gfx/blender/"
+	elog "or create simlink"
 	elog
 	gnome2_icon_cache_update
 	xdg_mimeinfo_database_update
