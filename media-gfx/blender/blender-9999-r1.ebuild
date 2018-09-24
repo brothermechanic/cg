@@ -88,6 +88,7 @@ RDEPEND="${PYTHON_DEPS}
 	lzo? ( dev-libs/lzo )
 	alembic? ( media-gfx/alembic )
 	opencl? ( app-eselect/eselect-opencl )
+	opensubdiv? ( media-libs/opensubdiv )
 	nls? ( virtual/libiconv )"
 
 DEPEND="${RDEPEND}
@@ -127,7 +128,6 @@ src_prepare() {
 
 	# remove some bundled deps
 	rm -r \
-		extern/libopenjpeg \
 		extern/glew \
 		extern/glew-es \
 		extern/Eigen3 \
