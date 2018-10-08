@@ -35179,12 +35179,12 @@ reverted:
 +				}
 +			}
 +
-+			BLI_ghash_insert(material_hash, orig_mat, SET_INT_IN_POINTER(mat_nr));
++			BLI_ghash_insert(material_hash, orig_mat, POINTER_FROM_INT(mat_nr));
 +
 +			mpoly->mat_nr = mat_nr;
 +		}
 +		else
-+			mpoly->mat_nr = GET_INT_FROM_POINTER(BLI_ghash_lookup(material_hash, orig_mat));
++			mpoly->mat_nr = POINTER_AS_INT(BLI_ghash_lookup(material_hash, orig_mat));
 +	}
 +	else {
 +		mpoly->mat_nr = 0;
