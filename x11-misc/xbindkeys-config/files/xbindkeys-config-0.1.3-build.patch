@@ -1,0 +1,35 @@
+--- Makefile
++++ Makefile
+@@ -1,27 +1,27 @@
+ # makefile crée par Laurent VUIBERT
+ 
+-CC=	gcc $(CFLAGS)
+ STD=	_GNU_SOURCE
+-GTK=	`pkg-config  --cflags --libs gtk+-2.0`
+-GTK2=	`pkg-config  --cflags gtk+-2.0`
++LIBS = $(shell pkg-config --libs gtk+-2.0)
++CFLAGS += $(shell pkg-config --cflags gtk+-2.0)
+ OBJS=	xbindkeys_config.o menu.o middle.o speedc.o
+ NOM=    xbindkeys_config
+ 
+ prefix=	/usr
+ 
+ .c.o: 
+-	$(CC) $(GTK2) -D$(STD) -c $<
++	$(CC) $(CPPFLAGS) $(CFLAGS) -D$(STD) -c $<
+ 
+ all: main
+ 
+ main: $(OBJS)
+-	$(CC) $(GTK) $(OBJS) -o $(NOM)
++	$(CC) $(CFLAGS) $(OBJS) -o $(NOM) $(LDFLAGS) $(LIBS)
+ 
+ clean:
+ 	rm -f *.o */*.o */*~ core $(NOM) *~
+ 	rm -rf .v*
+ 
+ install:
++	mkdir -p $(DESTDIR)$(prefix)/bin/
+ 	cp $(NOM) $(DESTDIR)$(prefix)/bin/
+ 
+ unistall: rm $(DESTDIR)$(prefix)/bin/$(NOM)
