@@ -9,7 +9,7 @@ inherit qmake-utils git-r3
 DESCRIPTION="Converts images into normal maps"
 HOMEPAGE="https://github.com/Theverat/NormalmapGenerator"
 EGIT_REPO_URI="https://github.com/Theverat/NormalmapGenerator.git"
-EGIT_BRANCH="3d_preview"
+#EGIT_BRANCH="3d_preview"
 
 LICENSE="GPL-3"
 SLOT="0"
