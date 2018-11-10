@@ -101,7 +101,8 @@ DEPEND="${RDEPEND}
 CMAKE_BUILD_TYPE="Release"
 
 PATCHES=(   "${FILESDIR}"/blender-doxyfile.patch
-            "${FILESDIR}"/blender-fix-install-rules.patch)
+            "${FILESDIR}"/blender-fix-install-rules.patch
+            "${FILESDIR}"/revers-a15e631.patch)
 
 blender_check_requirements() {
 	[[ ${MERGE_TYPE} != binary ]] && use openmp && tc-check-openmp
@@ -175,7 +176,7 @@ src_configure() {
 	append-lfs-flags
 	append-cppflags -DOPENVDB_4_ABI_COMPATIBLE
 	local mycmakeargs=""
-	#CUDA Kernal Selection
+	#CUDA Kernel Selection
 	local CUDA_ARCH=""
 	if use cuda; then
 		if use sm_21; then
