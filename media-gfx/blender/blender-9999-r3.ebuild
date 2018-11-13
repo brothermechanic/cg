@@ -1,22 +1,26 @@
 # Copyright 1999-2017 Gentoo Foundation
 # Distributed under the terms of the GNU General Public License v2
 
-EAPI=6
+EAPI=5
 PYTHON_COMPAT=( python3_6 )
 
-inherit check-reqs cmake-utils python-single-r1 gnome2-utils xdg-utils pax-utils git-r3 versionator toolchain-funcs flag-o-matic
+inherit check-reqs cmake-utils python-single-r1 gnome2-utils xdg-utils pax-utils git-2 versionator toolchain-funcs flag-o-matic
 
 DESCRIPTION="3D Creation/Animation/Publishing System"
 HOMEPAGE="http://www.blender.org/"
 
-EGIT_REPO_URI="https://git.blender.org/blender.git"
-EGIT_SUBMODULES=( "*" )
+BLENDERGIT_URI="http://git.blender.org"
+EGIT_REPO_URI="${BLENDERGIT_URI}/blender.git"
+BLENDER_ADDONS_URI="${BLENDERGIT_URI}/blender-addons.git"
+BLENDER_ADDONS_CONTRIB_URI="${BLENDERGIT_URI}/blender-addons-contrib.git"
+BLENDER_TRANSLATIONS_URI="${BLENDERGIT_URI}/blender-translations.git"
+
 EGIT_BRANCH="master"
 
 LICENSE="|| ( GPL-2 BL )"
 SLOT="9999"
 KEYWORDS=""
-IUSE_BUILD="+blender +game-engine +addons +nls -ndof +cycles -freestyle -player"
+IUSE_BUILD="+blender +game-engine +addons +addons-contrib +nls -ndof +cycles -freestyle -player"
 IUSE_COMPILER="openmp embree +sse"
 IUSE_SYSTEM="X -portable -valgrind -debug -doc"
 IUSE_IMAGE="-dpx -dds +openexr jpeg2k tiff"
@@ -31,7 +35,8 @@ REQUIRED_USE="${PYTHON_REQUIRED_USE}
 	player? ( game-engine X )
 	cuda? ( cycles )
 	cycles? ( openexr tiff openimageio )
-	osl? ( cycles )"
+	osl? ( cycles )
+	embree? ( cycles )"
 
 LANGS="en ar bg ca cs de el es es_ES fa fi fr he hr hu id it ja ky ne nl pl pt pt_BR ru sr sr@latin sv tr uk zh_CN zh_TW"
 for X in ${LANGS} ; do
@@ -101,10 +106,29 @@ DEPEND="${RDEPEND}
 
 CMAKE_BUILD_TYPE="Release"
 
-PATCHES=(   "${FILESDIR}"/blender-doxyfile.patch
-            "${FILESDIR}"/blender-fix-install-rules.patch
-            "${FILESDIR}"/revers-a15e631.patch)
-
+src_unpack(){
+	git-2_src_unpack
+	unset EGIT_BRANCH EGIT_COMMIT
+	if use addons; then
+		unset EGIT_BRANCH EGIT_COMMIT
+		EGIT_SOURCEDIR="${WORKDIR}/${P}/release/scripts/addons" \
+		EGIT_REPO_URI="${BLENDER_ADDONS_URI}" \
+		git-2_src_unpack
+	fi
+    if use addons-contrib; then
+		unset EGIT_BRANCH EGIT_COMMIT
+		EGIT_SOURCEDIR="${WORKDIR}/${P}/release/scripts/addons_contrib" \
+		EGIT_REPO_URI="${BLENDER_ADDONS_CONTRIB_URI}" \
+		git-2_src_unpack
+	fi
+	if use nls; then
+		unset EGIT_BRANCH EGIT_COMMIT
+		EGIT_SOURCEDIR="${WORKDIR}/${P}/release/datafiles/locale" \
+		EGIT_REPO_URI="${BLENDER_TRANSLATIONS_URI}" \
+		git-2_src_unpack
+	fi
+}
+            
 blender_check_requirements() {
 	[[ ${MERGE_TYPE} != binary ]] && use openmp && tc-check-openmp
 
@@ -123,6 +147,11 @@ pkg_setup() {
 }
 
 src_prepare() {
+    epatch_user
+    epatch "${FILESDIR}"/blender-doxyfile.patch \
+		"${FILESDIR}"/blender-fix-install-rules.patch \
+		"${FILESDIR}"/revers-a15e631.patch
+
 	#add custom matcap
 	rm "${S}"/release/datafiles/matcaps/mc10.jpg
 	cp "${FILESDIR}"/mc10.jpg "${S}"/release/datafiles/matcaps/
@@ -138,6 +167,10 @@ src_prepare() {
 		ewarn "$(echo "Bundled addons")"
 	else
 		rm -r release/scripts/addons/*
+	fi
+	if use addons-contrib ; then
+		ewarn "$(echo "Bundled addons")"
+	else
 		rm -r release/scripts/addons_contrib/*
 	fi
 

@@ -9,6 +9,7 @@ inherit qmake-utils git-r3
 DESCRIPTION="Models Ship hulls using subdivision surfaces."
 HOMEPAGE="https://github.com/gpgreen/ShipCAD"
 EGIT_REPO_URI="https://github.com/gpgreen/ShipCAD.git"
+#EGIT_COMMIT="fe84a80"
 
 LICENSE="GPL-2"
 SLOT="0"
