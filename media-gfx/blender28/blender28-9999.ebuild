@@ -397,11 +397,17 @@ src_install() {
 
 	# fix doc installdir
 	docinto "html"
-	dodoc "${CMAKE_USE_DIR}"/release/text/readme.html
-	rm -r "${ED%/}"/usr/share/doc/blender28 || die
+	rm "${CMAKE_USE_DIR}"/release/text/readme.html
+	rm -r "${ED%/}"/usr/share/doc/blender || die
 
-	python_fix_shebang "${ED%/}/usr/bin/blender28-thumbnailer28.py"
-	python_optimize "${ED%/}/usr/share/blender28/${MY_PV}/scripts"
+	rm "${ED%/}/usr/bin/blender-thumbnailer.py"
+	rm -r "${ED%/}/usr/share/icons"
+	python_optimize "${ED%/}/usr/share/blender/${MY_PV}/scripts"
+	mv "${ED%/}/usr/bin/blender" "${ED%/}/usr/bin/blender28" || die
+	mv "${ED%/}/usr/share/applications/blender.desktop" "${ED%/}/usr/share/applications/blender28.desktop" || die
+	sed -i -e "s|^Exec.*|Exec=blender28 %f|" "${ED%/}/usr/share/applications/blender28.desktop"
+	sed -i -e "s|^Name.*|Name=Blender28 %f|" "${ED%/}/usr/share/applications/blender28.desktop"
+	
 }
 
 pkg_preinst() {
