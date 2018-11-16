@@ -2,7 +2,7 @@
 # Distributed under the terms of the GNU General Public License v2
 
 EAPI=5
-PYTHON_COMPAT=( python3_6 )
+PYTHON_COMPAT=( python{3_6,3_7} )
 
 inherit check-reqs cmake-utils python-single-r1 gnome2-utils xdg-utils pax-utils git-2 versionator toolchain-funcs flag-o-matic
 

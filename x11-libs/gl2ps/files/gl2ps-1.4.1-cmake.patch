@@ -1,0 +1,65 @@
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -49,6 +49,8 @@
+ 
+ option(ENABLE_ZLIB "Enable compression using ZLIB" ON)
+ option(ENABLE_PNG "Enable PNG support" ON)
++option(ENABLE_DOC "Enable documentation" OFF)
++option(ENABLE_EXAMPLES "Build and install examples" OFF)
+ 
+ set(GL2PS_MAJOR_VERSION 1)
+ set(GL2PS_MINOR_VERSION 4)
+@@ -130,8 +132,6 @@
+ include_directories(${EXTERNAL_INCLUDES})
+ 
+ if(OPENGL_FOUND)
+-  add_library(lib STATIC gl2ps.c gl2ps.h)
+-  set_target_properties(lib PROPERTIES OUTPUT_NAME gl2ps)
+ 
+   add_library(shared SHARED gl2ps.c gl2ps.h)
+   target_link_libraries(shared ${EXTERNAL_LIBRARIES})
+@@ -144,7 +144,7 @@
+     set_target_properties(shared PROPERTIES
+         COMPILE_FLAGS "-DGL2PSDLL -DGL2PSDLL_EXPORTS")
+   endif(WIN32 OR CYGWIN)
+-  install(TARGETS lib shared RUNTIME DESTINATION bin
++  install(TARGETS shared RUNTIME DESTINATION bin
+                              LIBRARY DESTINATION lib${LIB_SUFFIX}
+                              ARCHIVE DESTINATION lib${LIB_SUFFIX})
+ endif(OPENGL_FOUND)
+@@ -152,13 +152,13 @@
+ if(WIN32)
+   set(GL2PS_DOC .)
+ else(WIN32)
+-  set(GL2PS_DOC share/doc/gl2ps)
++  set(GL2PS_DOC ${CMAKE_INSTALL_DOCDIR})
+ endif(WIN32)
+ 
+ install(FILES gl2ps.h DESTINATION include)
+ install(FILES ${CMAKE_SOURCE_DIR}/README.txt DESTINATION ${GL2PS_DOC})
+-install(FILES ${CMAKE_SOURCE_DIR}/COPYING.LGPL DESTINATION ${GL2PS_DOC})
+-install(FILES ${CMAKE_SOURCE_DIR}/COPYING.GL2PS DESTINATION ${GL2PS_DOC})
++
++if(ENABLE_EXAMPLES)
+ install(FILES ${CMAKE_SOURCE_DIR}/gl2psTest.c DESTINATION ${GL2PS_DOC})
+ install(FILES ${CMAKE_SOURCE_DIR}/gl2psTestSimple.c DESTINATION ${GL2PS_DOC})
+ 
+@@ -168,7 +168,9 @@
+   add_executable(gl2psTestSimple WIN32 gl2psTestSimple.c)
+   target_link_libraries(gl2psTestSimple lib ${EXTERNAL_LIBRARIES})
+ endif(GLUT_FOUND)
+-
++endif(ENABLE_EXAMPLES)
++ 
++if(ENABLE_DOC)
+ find_package(LATEX)
+ if(PDFLATEX_COMPILER)
+   add_custom_command(OUTPUT gl2ps.pdf DEPENDS gl2ps.tex
+@@ -187,6 +189,7 @@
+     add_custom_target(html DEPENDS gl2ps.html)
+   endif(TTH)
+ endif(PDFLATEX_COMPILER)
++endif(ENABLE_DOC)
+ 
+ set(CPACK_PACKAGE_VENDOR "Christophe Geuzaine")
+ set(CPACK_PACKAGE_VERSION_MAJOR ${GL2PS_MAJOR_VERSION})
