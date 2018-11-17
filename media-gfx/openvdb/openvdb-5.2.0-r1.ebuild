@@ -3,7 +3,7 @@
 
 EAPI=6
 
-PYTHON_COMPAT=( python{3_6,3_7} )
+PYTHON_COMPAT=( python{2_7,3_{6,7}} )
 
 inherit cmake-utils flag-o-matic python-single-r1
 
@@ -14,11 +14,11 @@ SRC_URI="https://github.com/dreamworksanimation/${PN}/archive/v${PV}.tar.gz -> $
 LICENSE="MPL-2.0"
 SLOT="0"
 KEYWORDS="~amd64 ~x86"
-IUSE="+abi4-compat doc python test"
+IUSE="+abi4-compat doc python test libglvnd"
 REQUIRED_USE="python? ( ${PYTHON_REQUIRED_USE} )"
 
 RDEPEND="
-	>=dev-libs/boost-1.62:=[python?,${PYTHON_USEDEP}]
+	>=dev-libs/boost-1.68:=[python?,${PYTHON_USEDEP}]
 	>=dev-libs/c-blosc-1.5.0
 	dev-libs/jemalloc
 	dev-libs/log4cplus
@@ -29,6 +29,7 @@ RDEPEND="
 	x11-libs/libXi
 	x11-libs/libXinerama
 	x11-libs/libXrandr
+	libglvnd? ( media-libs/libglvnd )
 	python? (
 		${PYTHON_DEPS}
 		dev-python/numpy[${PYTHON_USEDEP}]
@@ -60,10 +61,15 @@ src_configure() {
 		-DOPENVDB_BUILD_DOCS=$(usex doc)
 		-DOPENVDB_BUILD_PYTHON_MODULE=$(usex python)
 		-DOPENVDB_BUILD_UNITTESTS=$(usex test)
-		-DOPENVDB_ENABLE_RPATH=OFF
+		-DOPENVDB_ENABLE_RPATH=ON
 		-DTBB_LOCATION="${myprefix}"
 		-DUSE_GLFW3=ON
 	)
+	if use libglvnd; then
+		maycmakeargs+=( -DOpenGL_GL_PREFERENCE=GLVND )
+	else
+		maycmakeargs+=( -DOpenGL_GL_PREFERENCE=LEGACY )
+	fi
 
 	use python && mycmakeargs+=( -DPYOPENVDB_INSTALL_DIRECTORY="$(python_get_sitedir)" )
 	use test && mycmakeargs+=( -DCPPUNIT_LOCATION="${myprefix}" )
