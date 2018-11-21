@@ -45,6 +45,8 @@ PATCHES=(
 	"${FILESDIR}/${P}-use-GNUInstallDirs-and-fix-cmake-install-location.patch"
 	"${FILESDIR}/${P}-remove-building-of-bundled-programs.patch"
 	"${FILESDIR}/${P}-yaml-cpp-0.6.patch"
+    "${FILESDIR}/gl.patch"
+    "${FILESDIR}/gcc8_python.patch"
 )
 
 pkg_setup() {
