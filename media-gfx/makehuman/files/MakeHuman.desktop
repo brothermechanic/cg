@@ -1,0 +1,9 @@
+[Desktop Entry]
+Name=MakeHuman
+Comment=Open source tool for making 3d characters.
+Exec=makehuman %f
+Terminal=false
+Type=Application
+Icon=/usr/share/makehuman/icons/makehuman_bg.svg
+Categories=Graphics;3DGraphics;
+
