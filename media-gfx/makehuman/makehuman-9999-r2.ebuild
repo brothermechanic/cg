@@ -10,7 +10,7 @@ DESCRIPTION="Open source tool for making 3d characters."
 HOMEPAGE="http://www.makehumancommunity.org/"
 
 EGIT_REPO_URI="https://github.com/makehumancommunity/makehuman.git"
-ASSETS_URI="https://github.com/makehumancommunity/makehuman-assets.git"
+SRC_URI="assets? ( https://github.com/makehumancommunity/makehuman-assets/archive/v1.1.1.tar.gz )"
 
 EGIT_BRANCH="master"
 
@@ -29,15 +29,17 @@ RDEPEND="${PYTHON_DEPS}
 
 DEPEND="${RDEPEND}"
 
-src_unpack(){
+src_unpack() {
 	git-2_src_unpack
-	unset EGIT_BRANCH EGIT_COMMIT
+	for tarball in ${A}; do
+		[[ "${tarball}" == ${P}.tar.gz ]] && continue
+		unpack "${tarball}"
+	done
+}
+
+src_prepare(){
 	if use assets; then
-		unset EGIT_BRANCH EGIT_COMMIT
-		EGIT_SOURCEDIR="${S}/assets" \
-		EGIT_REPO_URI="${ASSETS_URI}" \
-		git-2_src_unpack
-		cp -dpR ${S}/assets/base ${S}/${PN}/data/ || die
+		cp -dpR ${WORKDIR}/makehuman-assets-1.1.1/base/* ${S}/${PN}/data/ || die
 	fi
 }
 
