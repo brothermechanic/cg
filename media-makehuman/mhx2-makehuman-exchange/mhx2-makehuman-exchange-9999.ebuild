@@ -8,7 +8,6 @@ inherit mercurial
 DESCRIPTION="MHX2 - MakeHuman eXchange format 2"
 HOMEPAGE="https://bitbucket.org/Diffeomorphic/mhx2-makehuman-exchange/overview"
 EHG_REPO_URI="https://bitbucket.org/Diffeomorphic/mhx2-makehuman-exchange"
-
 LICENSE="AGPL-3"
 SLOT="0"
 KEYWORDS="~amd64 ~x86"
