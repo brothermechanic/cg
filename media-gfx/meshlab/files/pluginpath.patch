@@ -1,0 +1,119 @@
+--- a/common/pluginmanager.cpp
++++ b/common/pluginmanager.cpp
+@@ -253,7 +253,7 @@
+ 
+ QString PluginManager::getDefaultPluginDirPath()
+ {
+-	QDir pluginsDir(getBaseDirPath());
++	QDir pluginsDir("/usr/lib/meshlab");
+ 	if (!pluginsDir.exists("plugins"))
+ 		//QMessageBox::warning(0,"Meshlab Initialization","Serious error. Unable to find the plugins directory.");
+ 		qDebug("Meshlab Initialization: Serious error. Unable to find the plugins directory.");
+--- a/meshlab/meshlab.pro
++++ b/meshlab/meshlab.pro
+@@ -152,7 +152,7 @@
+ #}
+ 
+ linux:LIBS += -L$$PWD/../external/lib/linux -ljhead -L../distrib -lcommon -lGLU -lGLEW
+-linux:QMAKE_RPATHDIR += ../distrib
++linux:QMAKE_RPATHDIR += /usr/lib/meshlab
+ 
+ # uncomment in your local copy only in emergency cases.
+ # We should never be too permissive
+--- a/meshlab_full.pro
++++ b/meshlab_full.pro
+@@ -27,7 +27,7 @@
+ #no longer needed# meshlabplugins/filter_colorize \
+                 meshlabplugins/filter_colorproc \
+                 meshlabplugins/filter_create \
+-                meshlabplugins/filter_csg \
++                # meshlabplugins/filter_csg \
+                 meshlabplugins/filter_dirt \
+                 meshlabplugins/filter_fractal \
+                 meshlabplugins/filter_func \
+@@ -47,7 +47,7 @@
+                 meshlabplugins/filter_sdfgpu \
+                 meshlabplugins/filter_select \
+                 meshlabplugins/filter_sketchfab \
+-                meshlabplugins/filter_ssynth \
++                # meshlabplugins/filter_ssynth \
+                 meshlabplugins/filter_texture \
+                 meshlabplugins/filter_trioptimize \
+                 meshlabplugins/filter_unsharp \
+--- a/meshlabplugins/render_gdp/meshrender.cpp
++++ b/meshlabplugins/render_gdp/meshrender.cpp
+@@ -38,7 +38,7 @@
+ 	qaNone->setCheckable(false);
+ 	actionList << qaNone;*/
+ 
+-	QDir shadersDir = QDir(qApp->applicationDirPath());
++	QDir shadersDir = QDir("/usr/share/meshlab");
+ #if defined(Q_OS_WIN)
+ 	if (shadersDir.dirName() == "debug" || shadersDir.dirName() == "release" || shadersDir.dirName() == "plugins")
+ 		shadersDir.cdUp();
+--- a/meshlabplugins/render_gdp/shaderDialog.cpp
++++ b/meshlabplugins/render_gdp/shaderDialog.cpp
+@@ -317,7 +317,7 @@
+ void ShaderDialog::browseTexturePath(int i) {
+ 	QFileDialog fd(0,"Choose new texture");
+ 
+-	QDir shadersDir = QDir(qApp->applicationDirPath());
++	QDir shadersDir = QDir("/usr/share/meshlab");
+ #if defined(Q_OS_WIN)
+ 	if (shadersDir.dirName() == "debug" || shadersDir.dirName() == "release")
+ 		shadersDir.cdUp();
+--- a/meshlabserver/meshlabserver.pro
++++ b/meshlabserver/meshlabserver.pro
+@@ -30,7 +30,7 @@
+ win32-msvc2015:  LIBS += -L../distrib -lcommon -lopengl32 -lGLU32
+ win32-g++:  LIBS += -L../distrib -lcommon
+ linux:  LIBS += -L../distrib -lcommon -lGLEW
+-linux:QMAKE_RPATHDIR += ../distrib
++linux:QMAKE_RPATHDIR += /usr/lib/meshlab
+ #CONFIG (release,debug | release) {
+ #	win32-msvc2005:release:  LIBS += -L../common/release -lcommon
+ #	win32-msvc2008:release:  LIBS += -L../common/release -lcommon
+--- a/plugins_experimental/render_splatpyramid/dialog.cpp
++++ b/plugins_experimental/render_splatpyramid/dialog.cpp
+@@ -123,7 +123,7 @@
+ void Dialog::browseTexturePath(int i) {
+   QFileDialog fd(0,"Choose new texture");
+ 
+-  QDir shadersDir = QDir(qApp->applicationDirPath());
++  QDir shadersDir = QDir("/usr/share/meshlab");
+ #if defined(Q_OS_WIN)
+   if (shadersDir.dirName() == "debug" || shadersDir.dirName() == "release")
+ 	shadersDir.cdUp();
+--- a/plugins_experimental/render_splatpyramid/splat_pyramid.cc
++++ b/plugins_experimental/render_splatpyramid/splat_pyramid.cc
+@@ -85,7 +85,7 @@
+ 		objects[i].setRendererType( render_mode );
+ 
+   	/// Sets the path to the meshlab's shaders directory
+-  	QDir shadersDir = QDir(qApp->applicationDirPath());
++  	QDir shadersDir = QDir("/usr/share/meshlab");
+ #if defined(Q_OS_WIN)
+ 	if (shadersDir.dirName() == "debug" || shadersDir.dirName() == "release" || shadersDir.dirName() == "plugins"  )
+ 		shadersDir.cdUp();
+--- a/plugins_unsupported/render_rfx/render_rfx.cpp
++++ b/plugins_unsupported/render_rfx/render_rfx.cpp
+@@ -55,7 +55,7 @@
+ 
+ void RenderRFX::initActionList()
+ {
+-	QDir shadersDir = PluginManager::getBaseDirPath();
++	QDir shadersDir = QDir("/usr/share/meshlab");;
+ 
+ #if defined(Q_OS_WIN)
+ 	if (shadersDir.dirName() == "debug"   ||
+--- a/plugins_unsupported/render_rm/rmmeshrender.cpp
++++ b/plugins_unsupported/render_rm/rmmeshrender.cpp
+@@ -63,7 +63,7 @@
+ 
+ void RmMeshShaderRenderPlugin::initActionList() {
+ 
+-	QDir shadersDir = QDir(qApp->applicationDirPath());
++	QDir shadersDir = QDir("/usr/share/meshlab");
+ #if defined(Q_OS_WIN)
+ 	if (shadersDir.dirName() == "debug" ||
+ 	    shadersDir.dirName() == "release" ||

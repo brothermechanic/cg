@@ -3,13 +3,15 @@
 
 EAPI=6
 
-PYTHON_COMPAT=( python{2_7,3_{6,7}} )
+PYTHON_COMPAT=( python{2_7,3_5,3_6,3_7} )
 
 inherit cmake-utils flag-o-matic python-single-r1
 
 DESCRIPTION="Libs for the efficient manipulation of volumetric data"
 HOMEPAGE="http://www.openvdb.org"
-SRC_URI="https://github.com/dreamworksanimation/${PN}/archive/v${PV}.tar.gz -> ${P}.tar.gz"
+# SRC_URI="https://github.com/dreamworksanimation/${PN}/archive/v${PV}.tar.gz -> ${P}.tar.gz"
+COMMIT="b471f8bc334eb5d85e9078d9506c73af57d02a0a"
+SRC_URI="https://github.com/AcademySoftwareFoundation/openvdb/archive/${COMMIT}.tar.gz -> ${P}-b471f8b.tar.gz"
 
 LICENSE="MPL-2.0"
 SLOT="0"
@@ -41,10 +43,15 @@ DEPEND="${RDEPEND}
 	doc? ( app-doc/doxygen[latex] )
 	test? ( dev-util/cppunit )"
 
-PATCHES=( "${FILESDIR}/${P}-use-gnuinstalldirs.patch"
+PATCHES=(
+	"${FILESDIR}/${P}-use-gnuinstalldirs.patch"
 	"${FILESDIR}/${P}-use-pkgconfig-for-ilmbase-and-openexr.patch"
 	"${FILESDIR}/${P}-find-boost_python.patch"
+	"${FILESDIR}/${P}-boost_numpy.patch"
+	"${FILESDIR}/${P}-remesh.patch"
 )
+
+S="${WORKDIR}"/${PN}-${COMMIT}
 
 pkg_setup() {
 	use python && python-single-r1_pkg_setup
@@ -64,7 +71,10 @@ src_configure() {
 		-DOPENVDB_ENABLE_RPATH=ON
 		-DTBB_LOCATION="${myprefix}"
 		-DUSE_GLFW3=ON
+		-DBoost_PYTHON_LIBRARY="/usr/lib64/libboost_python-3_7.so.1.68.0"
+		-DBoost_NUMPY_LIBRARY="/usr/lib64/libboost_numpy-3_7.so.1.68.0"
 	)
+#		-DPY_OPENVDB_USE_NUMPY=ON
 	if use libglvnd; then
 		maycmakeargs+=( -DOpenGL_GL_PREFERENCE=GLVND )
 	else

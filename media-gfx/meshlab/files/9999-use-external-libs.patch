@@ -1,5 +1,3 @@
-diff --git a/common/common.pro b/common/common.pro
-index dc89adeb..3d9404b3 100644
 --- a/common/common.pro
 +++ b/common/common.pro
 @@ -1,7 +1,4 @@
@@ -10,26 +8,26 @@ index dc89adeb..3d9404b3 100644
  
  win32-msvc2005:DESTDIR = ../distrib
  win32-msvc2008:DESTDIR = ../distrib
-@@ -56,8 +53,7 @@ fi;\
+@@ -43,9 +40,7 @@
  "
  INCLUDEPATH *= ../.. \
      $$VCGDIR \
 -    $$EIGENDIR \
--    $$GLEWDIR/include
+-    $$GLEWDIR/include \
+-    $$EXIF_DIR
 +    $$EIGENDIR
  TEMPLATE = lib
- linux-g++:CONFIG += dll
- linux-g++:DESTDIR = ../distrib
-@@ -84,8 +80,6 @@ QT += script
+ 
+ linux:CONFIG += dll
+@@ -69,7 +64,6 @@
  
  TARGET = common
  DEPENDPATH += .
--INCLUDEPATH += . $$EXIF_DIR
 -DEFINES += GLEW_STATIC
- win32-msvc2005:DEFINES += _CRT_SECURE_NO_WARNINGS
- win32-msvc2008:DEFINES += _CRT_SECURE_NO_WARNINGS
- win32-msvc2010:DEFINES += _CRT_SECURE_NO_WARNINGS
-@@ -123,7 +117,6 @@ SOURCES += 	filterparameter.cpp \
+ 
+ win32-msvc:DEFINES += _CRT_SECURE_NO_WARNINGS
+ 
+@@ -102,7 +96,6 @@
  			mlapplication.cpp \
  			scriptsyntax.cpp \
  			searcher.cpp \
@@ -37,20 +35,16 @@ index dc89adeb..3d9404b3 100644
  			meshlabdocumentxml.cpp \
  			meshlabdocumentbundler.cpp \
  			ml_shared_data_context.cpp 
-diff --git a/general.pri b/general.pri
-index fa9dcdc8..57352f4e 100644
 --- a/general.pri
 +++ b/general.pri
-@@ -7,7 +7,6 @@ DEFINES += MESHLAB_SCALAR=float
+@@ -7,7 +7,6 @@
  
  VCGDIR   = ../../../vcglib
  EIGENDIR = $$VCGDIR/eigenlib
--GLEWDIR = ../external/glew-1.7.0
+-GLEWDIR = ../external/glew-2.1.0
  
  CONFIG += c++11
  
-diff --git a/meshlab/meshlab.pro b/meshlab/meshlab.pro
-index 2661143f..0df2cd77 100644
 --- a/meshlab/meshlab.pro
 +++ b/meshlab/meshlab.pro
 @@ -1,7 +1,6 @@
@@ -61,7 +55,7 @@ index 2661143f..0df2cd77 100644
  
  DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x000000
  
-@@ -9,9 +8,7 @@ INCLUDEPATH *= . \
+@@ -9,9 +8,7 @@
  	.. \
  	../.. \
      $$VCGDIR \
@@ -72,26 +66,18 @@ index 2661143f..0df2cd77 100644
  DEPENDPATH += $$VCGDIR \
      $$VCGDIR/vcg \
      $$VCGDIR/wrap
-@@ -154,11 +151,11 @@ win32-g++:LIBS        	+= -L../external/lib/win32-gcc -ljhead -L../distrib -lcom
+@@ -154,7 +151,7 @@
  #	win32-g++:release:LIBS 			+= -L../common/release -lcommon
  #}
  
--linux-g++:LIBS += -L$$PWD/../external/lib/linux-g++ -ljhead -L../distrib -lcommon -lGLU
-+linux-g++:LIBS += -L$$PWD/../external/lib/linux-g++ -ljhead -L../distrib -lcommon -lGLU -lGLEW
- linux-g++:QMAKE_RPATHDIR += ../distrib
--linux-g++-32:LIBS += -L../external/lib/linux-g++-32 -ljhead -L../distrib -lcommon -lGLU
-+linux-g++-32:LIBS += -L../external/lib/linux-g++-32 -ljhead -L../distrib -lcommon -lGLU -lGLEW
- linux-g++-32:QMAKE_RPATHDIR += ../distrib
--linux-g++-64:LIBS += -L../external/lib/linux-g++-64 -ljhead -L../distrib -lcommon -lGLU
-+linux-g++-64:LIBS += -L../external/lib/linux-g++-64 -ljhead -L../distrib -lcommon -lGLU -lGLEW
- linux-g++-64:QMAKE_RPATHDIR += ../distrib
+-linux:LIBS += -L$$PWD/../external/lib/linux -ljhead -L../distrib -lcommon -lGLU
++linux:LIBS += -L$$PWD/../external/lib/linux -ljhead -L../distrib -lcommon -lGLU -lGLEW
+ linux:QMAKE_RPATHDIR += ../distrib
  
  # uncomment in your local copy only in emergency cases.
-diff --git a/meshlabplugins/filter_func/filter_func.pro b/meshlabplugins/filter_func/filter_func.pro
-index ef6b654c..026c66be 100644
 --- a/meshlabplugins/filter_func/filter_func.pro
 +++ b/meshlabplugins/filter_func/filter_func.pro
-@@ -8,7 +8,6 @@ TARGET        = filter_func
+@@ -8,7 +8,6 @@
  
  
  DEFINES += _UNICODE
@@ -99,7 +85,7 @@ index ef6b654c..026c66be 100644
  
  # Note: we need static libs so when building muparser lib use 
  # ./configure --enable-shared=no
-@@ -22,7 +21,4 @@ win32-msvc2013:LIBS += ../../external/lib/win32-msvc2013/muparser.lib
+@@ -22,7 +21,4 @@
  win32-msvc2015:LIBS += ../../external/lib/win32-msvc2015/muparser.lib
  
  macx:LIBS            += $$MACLIBDIR/libmuparser.a
@@ -107,11 +93,9 @@ index ef6b654c..026c66be 100644
 -linux-g++-32:LIBS       += $$PWD/../../external/lib/linux-g++-32/libmuparser.a
 -linux-g++-64:LIBS       += $$PWD/../../external/lib/linux-g++-64/libmuparser.a
  win32-g++:LIBS		 += ../../external/lib/win32-gcc/libmuparser.a
-diff --git a/meshlabplugins/io_3ds/io_3ds.pro b/meshlabplugins/io_3ds/io_3ds.pro
-index 85b4a744..2cfad82d 100644
 --- a/meshlabplugins/io_3ds/io_3ds.pro
 +++ b/meshlabplugins/io_3ds/io_3ds.pro
-@@ -10,11 +10,9 @@ HEADERS		= meshio.h \
+@@ -10,11 +10,9 @@
  				
  SOURCES       += 	meshio.cpp \
  			
@@ -123,7 +107,7 @@ index 85b4a744..2cfad82d 100644
  
  # Notes on the paths of lib3ds files.
  # Once you have compiled the library put the lib files in a dir named lib/XXX/ 
-@@ -26,9 +24,6 @@ win32-msvc2015:LIBS += ../../external/lib/win32-msvc2015/3ds.lib
+@@ -26,9 +24,6 @@
  win32-msvc2005:LIBS	+= ../../external/lib/win32-msvc2005/3ds.lib
  win32-msvc2008:LIBS	+= ../../external/lib/win32-msvc2008/3ds.lib
  win32-g++:LIBS		+= ../../external/lib/win32-gcc/lib3ds.a
@@ -133,11 +117,9 @@ index 85b4a744..2cfad82d 100644
  
  # unix:LIBS		+= -L../../../../code/lib/lib3ds-1.3.0/lib3ds/lib/unix -l3ds
  
-diff --git a/meshlabplugins/io_ctm/io_ctm.pro b/meshlabplugins/io_ctm/io_ctm.pro
-index fc060de0..59528e0c 100644
 --- a/meshlabplugins/io_ctm/io_ctm.pro
 +++ b/meshlabplugins/io_ctm/io_ctm.pro
-@@ -3,7 +3,6 @@ HEADERS += io_ctm.h \
+@@ -3,7 +3,6 @@
      $$VCGDIR/wrap/io_trimesh/import_ctm.h \
      $$VCGDIR/wrap/io_trimesh/export_ctm.h
  SOURCES += io_ctm.cpp
@@ -145,7 +127,7 @@ index fc060de0..59528e0c 100644
  TARGET = io_ctm
  
  win32-msvc.net:QMAKE_CXXFLAGS += /DOPENCTM_STATIC
-@@ -21,8 +20,5 @@ win32-msvc2010:LIBS	+= ../../external/lib/win32-msvc2010/openctm.lib
+@@ -21,8 +20,5 @@
  win32-msvc2012:LIBS	+= ../../external/lib/win32-msvc2012/openctm.lib
  win32-msvc2015:LIBS	+= ../../external/lib/win32-msvc2015/openctm.lib
  win32-g++:LIBS		+= ../../external/lib/win32-gcc/libopenctm.a
@@ -154,22 +136,25 @@ index fc060de0..59528e0c 100644
 -linux-g++-64:LIBS	+= $$PWD/../../external/lib/linux-g++-64/libopenctm.a
  #macx:LIBS += ../../external/lib/macx/libopenctm.a
  macx:LIBS += $$MACLIBDIR/libopenctm.a
-diff --git a/meshlabserver/meshlabserver.pro b/meshlabserver/meshlabserver.pro
-index 4df0a6f0..78892c78 100644
 --- a/meshlabserver/meshlabserver.pro
 +++ b/meshlabserver/meshlabserver.pro
-@@ -29,11 +29,11 @@ win32-msvc2010:  LIBS += -L../distrib -lcommon -lopengl32 -lGLU32
+@@ -28,8 +28,8 @@
+ win32-msvc2010:  LIBS += -L../distrib -lcommon -lopengl32 -lGLU32
  win32-msvc2012:  LIBS += -L../distrib -lcommon -lopengl32 -lGLU32
  win32-msvc2015:  LIBS += -L../distrib -lcommon -lopengl32 -lGLU32
- win32-g++:  LIBS += -L../distrib -lcommon      
--linux-g++:  LIBS += -L../distrib -lcommon
-+linux-g++:  LIBS += -L../distrib -lcommon -lGLEW
- linux-g++:QMAKE_RPATHDIR += ../distrib
--linux-g++-32:  LIBS += -L../distrib -lcommon
-+linux-g++-32:  LIBS += -L../distrib -lcommon -lGLEW
- linux-g++-32:QMAKE_RPATHDIR += ../distrib
--linux-g++-64:  LIBS += -L../distrib -lcommon
-+linux-g++-64:  LIBS += -L../distrib -lcommon -lGLEW
- linux-g++-64:QMAKE_RPATHDIR += ../distrib
+-win32-g++:  LIBS += -L../distrib -lcommon      
+-linux:  LIBS += -L../distrib -lcommon
++win32-g++:  LIBS += -L../distrib -lcommon
++linux:  LIBS += -L../distrib -lcommon -lGLEW
+ linux:QMAKE_RPATHDIR += ../distrib
  #CONFIG (release,debug | release) {
  #	win32-msvc2005:release:  LIBS += -L../common/release -lcommon
+@@ -44,8 +44,6 @@
+ win32-msvc2012:DEFINES += GLEW_STATIC
+ win32-msvc2015:DEFINES += GLEW_STATIC
+ 
+-#DEFINES += GLEW_STATIC
+-
+ # This removes the need of XSERVER to run meshlabserver
+ DEFINES += NO_XSERVER_DEPENDENCY
+ 

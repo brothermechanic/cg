@@ -1,0 +1,11 @@
+--- a/meshlab_full.pro
++++ b/meshlab_full.pro
+@@ -47,7 +47,7 @@
+                 meshlabplugins/filter_sdfgpu \
+                 meshlabplugins/filter_select \
+                 meshlabplugins/filter_sketchfab \
+-                meshlabplugins/filter_ssynth \
++#                meshlabplugins/filter_ssynth \
+                 meshlabplugins/filter_texture \
+                 meshlabplugins/filter_trioptimize \
+                 meshlabplugins/filter_unsharp \

@@ -65,6 +65,7 @@ src_prepare(){
 	rm -r "external/glew-2.1.0" || die "rm failed"
 
 	pushd "${WORKDIR}/vcglib" &>/dev/null
+#	eapply "${FILESDIR}/lib3ds-vcglib.patch"
 	eapply "${FILESDIR}/import_bundle_out.patch"
 #	rm -r "eigenlib" || die "rm failed"
 	popd &>/dev/null
