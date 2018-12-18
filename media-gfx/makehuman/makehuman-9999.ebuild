@@ -4,7 +4,7 @@
 EAPI=7
 PYTHON_COMPAT=( python{3_6,3_7} )
 
-inherit git-r3 python-single-r1 desktop
+inherit git-r3 python-single-r1 desktop eutils
 
 DESCRIPTION="Open source tool for making 3d characters."
 HOMEPAGE="http://www.makehumancommunity.org/"
