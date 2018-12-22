@@ -22,6 +22,6 @@ src_install() {
 	if VER="/usr/share/blender/*";then
 		insinto ${VER}/scripts/addons/
 		insopts -g users -m0775
-		doins -r "${S}"/{system_time_tracker.py,system_time_tracker.csv}
+		doins -r "${S}"/2.7x/system_time_tracker.py
 	fi
 }

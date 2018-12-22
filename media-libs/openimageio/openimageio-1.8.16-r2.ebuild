@@ -25,7 +25,7 @@ REQUIRED_USE="python? ( ${PYTHON_REQUIRED_USE} )"
 
 RESTRICT="test" #431412
 
-RDEPEND=">=dev-libs/boost-1.68
+RDEPEND="
 	dev-libs/pugixml:=
 	>=media-libs/ilmbase-2.2.0-r1:=
 	media-libs/libpng:0=
@@ -68,7 +68,8 @@ DEPEND="${RDEPEND}
 
 DOCS=( CHANGES.md CREDITS.md README.md src/doc/${PN}.pdf )
 
-PATCHES=( "${FILESDIR}"/ivgl_h.patch )
+PATCHES=( "${FILESDIR}"/ivgl_h.patch
+            )
 
 pkg_setup() {
 	use python && python-single-r1_pkg_setup

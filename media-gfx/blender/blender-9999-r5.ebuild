@@ -321,7 +321,7 @@ src_configure() {
 		-DWITH_SYSTEM_GLES=$(usex !portable)
 		-DWITH_SYSTEM_GLEW=$(usex !portable)
 		-DWITH_SYSTEM_LZO=$(usex !portable)
-		-DWITH_PLAYER=ON
+		-DWITH_PLAYER=$(usex player)
 		-DWITH_DEBUG=$(usex debug)
 		-DWITH_GHOST_DEBUG=$(usex debug)
 		-DWITH_WITH_CYCLES_DEBUG=$(usex debug)

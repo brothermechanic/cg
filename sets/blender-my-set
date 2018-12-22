@@ -1,9 +1,12 @@
 media-blender/batch-operations
 media-blender/blender-light-studio
 media-blender/camera-calibration-pvr
+media-blender/cork-on-blender
 media-blender/EasyLattice
+media-blender/fastlattice
 media-blender/edgeequalize
 media-blender/export-selected
+media-blender/image-background-transform
 media-blender/mira-tools
 media-blender/MultiEdit
 media-blender/offset_edges

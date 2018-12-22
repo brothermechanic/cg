@@ -1,40 +1,39 @@
 # Copyright 1999-2017 Gentoo Foundation
 # Distributed under the terms of the GNU General Public License v2
 
-EAPI=5
+EAPI=6
 PYTHON_COMPAT=( python{3_6,3_7} )
 
-inherit check-reqs cmake-utils python-single-r1 gnome2-utils xdg-utils pax-utils git-2 versionator toolchain-funcs flag-o-matic
+inherit git-r3 check-reqs cmake-utils python-single-r1 gnome2-utils xdg-utils pax-utils versionator toolchain-funcs flag-o-matic
 
 DESCRIPTION="3D Creation/Animation/Publishing System"
 HOMEPAGE="http://www.blender.org/"
 
-BLENDERGIT_URI="http://git.blender.org"
-EGIT_REPO_URI="${BLENDERGIT_URI}/blender.git"
-BLENDER_ADDONS_URI="${BLENDERGIT_URI}/blender-addons.git"
-BLENDER_ADDONS_CONTRIB_URI="${BLENDERGIT_URI}/blender-addons-contrib.git"
-BLENDER_TRANSLATIONS_URI="${BLENDERGIT_URI}/blender-translations.git"
-
-EGIT_BRANCH="blender2.8"
-
+EGIT_REPO_URI="http://git.blender.org/blender.git"
+EGIT_BRANCH="master"
 LICENSE="|| ( GPL-2 BL )"
 SLOT="9999"
 KEYWORDS=""
-IUSE_BUILD="+blender +game-engine +addons +addons-contrib +nls -ndof +cycles -freestyle -player"
-IUSE_COMPILER="openmp embree +sse"
-IUSE_SYSTEM="X -portable -valgrind -debug -doc"
-IUSE_IMAGE="-dpx -dds +openexr jpeg2k tiff"
-IUSE_CODEC="openal -sdl jack avi +ffmpeg -sndfile +quicktime"
+
+IUSE_DESKTOP="-portable +blender +X +addons +addons-contrib +nls -ndof"
+IUSE_GPU="+opengl cuda opencl -sm_21 -sm_30 -sm_35 -sm_50 -sm_52 -sm_61 -sm_70"
+IUSE_LIBS="+cycles -sdl jack openal freestyle -osl -openvdb +opensubdiv +opencolorio +openimageio +collada -alembic +fftw"
+IUSE_CPU="openmp embree +sse"
+IUSE_TEST="-valgrind -debug -doc"
+IUSE_IMAGE="-dpx -dds +openexr jpeg2k tiff +hdr"
+IUSE_CODEC="avi +ffmpeg -sndfile +quicktime"
 IUSE_COMPRESSION="-lzma +lzo"
-IUSE_MODIFIERS="+fluid +smoke +boolean +remesh oceansim +decimate"
-IUSE_LIBS="-osl -openvdb +opensubdiv +colorio +openimageio +collada -alembic opencl"
-IUSE_GPU="+opengl cuda -sm_21 -sm_30 -sm_35 -sm_50 -sm_52 -sm_61 -sm_70"
-IUSE="${IUSE_BUILD} ${IUSE_COMPILER} ${IUSE_SYSTEM} ${IUSE_IMAGE} ${IUSE_CODEC} ${IUSE_COMPRESSION} ${IUSE_MODIFIERS} ${IUSE_LIBS} ${IUSE_GPU}"
+IUSE_MODIFIERS="+fluid +smoke +oceansim"
+IUSE="${IUSE_DESKTOP} ${IUSE_GPU} ${IUSE_LIBS} ${IUSE_CPU} ${IUSE_TEST} ${IUSE_IMAGE} ${IUSE_CODEC} ${IUSE_COMPRESSION} ${IUSE_MODIFIERS}"
 
 REQUIRED_USE="${PYTHON_REQUIRED_USE}
-	player? ( game-engine X )
-	cuda? ( cycles )
-	cycles? ( openexr tiff openimageio )
+	fluid  ( fftw )
+	oceansim ( fftw )
+	smoke ( fftw )
+	tiff ( openimageio )
+	openexr ( openimageio )
+	cuda? ( cycles openimageio )
+	cycles? ( openexr tiff openimageio opencolorio )
 	osl? ( cycles )
 	embree? ( cycles )"
 
@@ -46,7 +45,6 @@ done
 
 RDEPEND="${PYTHON_DEPS}
     dev-libs/jemalloc
-	dev-vcs/git
 	dev-python/numpy[${PYTHON_USEDEP}]
 	dev-python/requests[${PYTHON_USEDEP}]
 	sys-libs/zlib
@@ -66,13 +64,13 @@ RDEPEND="${PYTHON_DEPS}
 	   x11-libs/libX11
 	   x11-libs/libXxf86vm
 	)
-	colorio? ( media-libs/opencolorio )
+	opencolorio? ( media-libs/opencolorio )
 	cycles? (
 		openimageio? ( >=media-libs/openimageio-1.1.5 )
 		cuda? ( dev-util/nvidia-cuda-toolkit )
 		osl? ( media-libs/osl )
-		embree? ( media-gfx/embree )
-		openvdb? ( media-gfx/openvdb
+		embree? ( media-libs/embree )
+		openvdb? ( media-gfx/openvdb[${PYTHON_USEDEP}]
 		dev-cpp/tbb )
 	)
 	sdl? ( media-libs/libsdl[sound,joystick] )
@@ -106,31 +104,6 @@ DEPEND="${RDEPEND}
 
 CMAKE_BUILD_TYPE="Release"
 
-src_unpack(){
-	git-2_src_unpack
-	unset EGIT_BRANCH EGIT_COMMIT
-	if use addons; then
-		unset EGIT_BRANCH EGIT_COMMIT
-		EGIT_SOURCEDIR="${WORKDIR}/${P}/release/scripts/addons" \
-		EGIT_REPO_URI="${BLENDER_ADDONS_URI}" \
-		EGIT_BRANCH="blender2.8" \
-		git-2_src_unpack
-	fi
-    if use addons-contrib; then
-		unset EGIT_BRANCH EGIT_COMMIT
-		EGIT_SOURCEDIR="${WORKDIR}/${P}/release/scripts/addons_contrib" \
-		EGIT_REPO_URI="${BLENDER_ADDONS_CONTRIB_URI}" \
-		EGIT_BRANCH="blender2.8" \
-		git-2_src_unpack
-	fi
-	if use nls; then
-		unset EGIT_BRANCH EGIT_COMMIT
-		EGIT_SOURCEDIR="${WORKDIR}/${P}/release/datafiles/locale" \
-		EGIT_REPO_URI="${BLENDER_TRANSLATIONS_URI}" \
-		git-2_src_unpack
-	fi
-}
-            
 blender_check_requirements() {
 	[[ ${MERGE_TYPE} != binary ]] && use openmp && tc-check-openmp
 
@@ -163,6 +136,9 @@ src_prepare() {
 		extern/glew \
 		extern/glew-es \
 		extern/Eigen3 \
+		extern/lzma \
+		extern/lzo \
+		extern/gtest \
 		release/scripts/addons/uv_magic_uv \
 		|| die
 	if use addons ; then
@@ -286,76 +262,70 @@ src_configure() {
 		-DPYTHON_VERSION=${EPYTHON/python/}
 		-DPYTHON_LIBRARY=$(python_get_library_path)
 		-DPYTHON_INCLUDE_DIR=$(python_get_includedir)
+		-DWITH_PYTHON_INSTALL=$(usex portable)
+		-DWITH_PYTHON_INSTALL_NUMPY=$(usex portable)
+		-DWITH_PYTHON_INSTALL_REQUESTS=$(usex portable)
+		-DWITH_PYTHON_MODULE=$(usex !X)
+		-DWITH_HEADLESS=$(usex !X)
 		-DWITH_BLENDER=$(usex blender)
-		-DWITH_BOOST=ON
-		-DWITH_BUILDINFO=ON
+		-DWITH_ALEMBIC=$(usex alembic)
 		-DWITH_CODEC_AVI=$(usex avi)
 		-DWITH_CODEC_FFMPEG=$(usex ffmpeg)
 		-DWITH_CODEC_SNDFILE=$(usex sndfile)
-		-DWITH_ALEMBIC=$(usex alembic)
-		-DWITH_QUICKTIME=$(usex quicktime)
-		-DWITH_FFTW3=$(usex smoke)
+		-DWITH_FFTW3=$(usex fftw)
 		-DWITH_CPU_SSE=$(usex sse)
-		-DWITH_RAYOPTIMIZATION=$(usex sse)
 		-DWITH_CYCLES=$(usex cycles)
-		-DWITH_CYCLES_NATIVE_ONLY=$(usex cycles)
+		-DWITH_CYCLES_DEVICE_CUDA=$(usex cuda)
+		-DWITH_CYCLES_DEVICE_OPENCL=$(usex opencl)
 		-DWITH_CYCLES_EMBREE=$(usex embree)
+		-DWITH_CYCLES_NATIVE_ONLY=$(usex cycles)
+		-DWITH_CYCLES_NETWORK=OFF   
+		-DWITH_CYCLES_OSL=$(usex osl)
+		-DWITH_CYCLES_STANDALONE=OFF
+		-DWITH_CYCLES_STANDALONE_GUI=OFF
 		-DWITH_FREESTYLE=$(usex freestyle)
-		-DWITH_GAMEENGINE=$(usex game-engine)
-		-DWITH_HEADLESS=$(usex !X)
 		-DWITH_X11=$(usex X)
 		-DWITH_GHOST_XDND=$(usex X)
+		-DWITH_IMAGE_CINEON=$(usex dpx)
+		-DWITH_IMAGE_DDS=$(usex dds)
+		-DWITH_IMAGE_HDR=$(usex hdr)
+		-DWITH_IMAGE_OPENEXR=$(usex openexr)
+		-DWITH_IMAGE_OPENJPEG=$(usex jpeg2k)
+		-DWITH_IMAGE_TIFF=$(usex tiff)
+		-DWITH_INPUT_NDOF=$(usex ndof)
+		-DWITH_INSTALL_PORTABLE=$(usex portable)
 		-DWITH_INTERNATIONAL=$(usex nls)
+		-DWITH_JACK=$(usex jack)
+		-DWITH_LEGACY_DEPSGRAPH=OFF
 		-DWITH_LLVM=$(usex osl)
-		-DWITH_CYCLES_OSL=$(usex osl)
-		-DLLVM_STATIC=OFF
-		-DLLVM_LIBRARY=/usr/lib
 		-DWITH_LZMA=$(usex lzma)
 		-DWITH_LZO=$(usex lzo)
 		-DWITH_VALGRIND=$(usex valgrind)
-		-DWITH_MOD_BOOLEAN=$(usex boolean)
-		-DWITH_MOD_REMESH=$(usex remesh)
 		-DWITH_MOD_FLUID=$(usex fluid)
 		-DWITH_MOD_OCEANSIM=$(usex oceansim)
-		-DWITH_MOD_DECIMATE=$(usex decimate)
 		-DWITH_MOD_SMOKE=$(usex smoke)
+		-DWITH_OPENAL=$(usex openal)
 		-DWITH_OPENCOLLADA=$(usex collada)
-		-DWITH_OPENCOLORIO=$(usex colorio)
+		-DWITH_OPENCOLORIO=$(usex opencolorio)
+		-DWITH_OPENGL=$(usex opengl)
 		-DWITH_OPENIMAGEIO=$(usex openimageio)
 		-DWITH_OPENMP=$(usex openmp)
 		-DWITH_OPENSUBDIV=$(usex opensubdiv)
 		-DWITH_OPENVDB=$(usex openvdb)
 		-DWITH_OPENVDB_BLOSC=$(usex openvdb)
-		-DWITH_PLAYER=$(usex player)
-		-DWITH_IMAGE_CINEON=$(usex dpx)
-		-DWITH_IMAGE_DDS=$(usex dds)
-		-DWITH_IMAGE_OPENEXR=$(usex openexr)
-		-DWITH_IMAGE_OPENJPEG=$(usex jpeg2k)
-		-DWITH_IMAGE_TIFF=$(usex tiff)
-		-DWITH_INPUT_NDOF=$(usex ndof)
-		-DWITH_OPENAL=$(usex openal)
+		-DWITH_RAYOPTIMIZATION=$(usex sse)
 		-DWITH_SDL=$(usex sdl)
-		-DWITH_JACK=$(usex jack)
-		-DWITH_SYSTEM_EIGEN3=$(usex !portable)
-		-DWITH_SYSTEM_LZO=$(usex !portable)
-		-DWITH_SYSTEM_OPENJPEG=$(usex !portable)
-		-DWITH_SYSTEM_GLEW=$(usex !portable)
-		-DWITH_SYSTEM_GLES=$(usex !portable)
-		-DWITH_INSTALL_PORTABLE=$(usex portable)
 		-DWITH_STATIC_LIBS=$(usex portable)
-		-DWITH_PYTHON_INSTALL=$(usex portable)
-		-DWITH_PYTHON_INSTALL_NUMPY=$(usex portable)
-		-DWITH_PYTHON_INSTALL_REQUESTS=$(usex portable)
-		-DWITH_OPENCL=$(usex opencl)
-		-DWITH_CYCLES_DEVICE_OPENCL=$(usex opencl)
+		-DWITH_SYSTEM_BULLET=OFF
+		-DWITH_SYSTEM_EIGEN3=$(usex !portable)
+		-DWITH_SYSTEM_GLES=$(usex !portable)
+		-DWITH_SYSTEM_GLEW=$(usex !portable)
+		-DWITH_SYSTEM_LZO=$(usex !portable)
+		-DWITH_PLAYER=OFF
 		-DWITH_DEBUG=$(usex debug)
-		-DWITH_GPU_DEBUG=$(usex debug)
+		-DWITH_GHOST_DEBUG=$(usex debug)
 		-DWITH_WITH_CYCLES_DEBUG=$(usex debug)
-		-DWITH_DOCS=$(usex doc)
-		-DWITH_DOC_MANPAGE=$(usex doc)
-		-DWITH_OPENNL=ON
-		-DWITH_C11=ON
-		-DWITH_CXX11=ON
+		-DWITH_CXX_GUARDEDALLOC=$(usex debug)
 	)
 
 	cmake-utils_src_configure
@@ -407,7 +377,6 @@ src_install() {
 	mv "${ED%/}/usr/share/applications/blender.desktop" "${ED%/}/usr/share/applications/blender28.desktop" || die
 	sed -i -e "s|^Exec.*|Exec=blender28 %f|" "${ED%/}/usr/share/applications/blender28.desktop"
 	sed -i -e "s|^Name.*|Name=Blender28 %f|" "${ED%/}/usr/share/applications/blender28.desktop"
-	
 }
 
 pkg_preinst() {
@@ -417,11 +386,6 @@ pkg_preinst() {
 pkg_postinst() {
 	elog
 	elog "Blender compiles from master thunk by default"
-	elog "You may change a branch and a rev, for ex, in /etc/portage/env/blender"
-	elog "EGIT_COMMIT="v2.77a""
-	elog "EGIT_BRANCH="master""
-	elog "and don't forget add to /etc/portage/package.env"
-	elog "media-gfx/blender blender"
 	elog
 	elog "There is some my prefer blender settings as patches"
 	elog "find them in cg/local-patches/blender/"
