@@ -71,8 +71,8 @@ src_configure() {
 		-DOPENVDB_ENABLE_RPATH=ON
 		-DTBB_LOCATION="${myprefix}"
 		-DUSE_GLFW3=ON
-		-DBoost_PYTHON_LIBRARY="/usr/lib64/libboost_python-3_7.so.1.68.0"
-		-DBoost_NUMPY_LIBRARY="/usr/lib64/libboost_numpy-3_7.so.1.68.0"
+		-DBoost_PYTHON_LIBRARY="/usr/lib64/libboost_python-3_7.so"
+		-DBoost_NUMPY_LIBRARY="/usr/lib64/libboost_numpy-3_7.so"
 	)
 #		-DPY_OPENVDB_USE_NUMPY=ON
 	if use libglvnd; then

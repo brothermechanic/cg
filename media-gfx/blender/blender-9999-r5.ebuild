@@ -1,32 +1,26 @@
 # Copyright 1999-2017 Gentoo Foundation
 # Distributed under the terms of the GNU General Public License v2
 
-EAPI=5
+EAPI=6
 PYTHON_COMPAT=( python{3_6,3_7} )
 
-inherit check-reqs cmake-utils python-single-r1 gnome2-utils xdg-utils pax-utils git-2 versionator toolchain-funcs flag-o-matic
+inherit git-r3 check-reqs cmake-utils python-single-r1 gnome2-utils xdg-utils pax-utils versionator toolchain-funcs flag-o-matic
 
 DESCRIPTION="3D Creation/Animation/Publishing System"
 HOMEPAGE="http://www.blender.org/"
 
-BLENDERGIT_URI="http://git.blender.org"
-EGIT_REPO_URI="${BLENDERGIT_URI}/blender.git"
-BLENDER_ADDONS_URI="${BLENDERGIT_URI}/blender-addons.git"
-BLENDER_ADDONS_CONTRIB_URI="${BLENDERGIT_URI}/blender-addons-contrib.git"
-BLENDER_TRANSLATIONS_URI="${BLENDERGIT_URI}/blender-translations.git"
-
-EGIT_BRANCH="master"
-
+EGIT_REPO_URI="http://git.blender.org/blender.git"
+EGIT_BRANCH="blender2.7"
 LICENSE="|| ( GPL-2 BL )"
 SLOT="9999"
 KEYWORDS=""
 
 IUSE_DESKTOP="-portable +blender +X +addons +addons-contrib +nls -ndof -player"
 IUSE_GPU="+opengl cuda opencl -sm_21 -sm_30 -sm_35 -sm_50 -sm_52 -sm_61 -sm_70"
-IUSE_LIBS="+cycles -sdl jack openal freestyle -osl -openvdb +opensubdiv +color-management +openimageio +collada -alembic +fftw"
+IUSE_LIBS="+cycles -sdl jack openal freestyle -osl -openvdb +opensubdiv +opencolorio +openimageio +collada -alembic +fftw"
 IUSE_CPU="openmp embree +sse"
 IUSE_TEST="-valgrind -debug -doc"
-IUSE_IMAGE="-dpx -dds +openexr jpeg2k tiff"
+IUSE_IMAGE="-dpx -dds +openexr jpeg2k tiff +hdr"
 IUSE_CODEC="avi +ffmpeg -sndfile +quicktime"
 IUSE_COMPRESSION="-lzma +lzo"
 IUSE_MODIFIERS="+fluid +smoke +oceansim"
@@ -39,7 +33,7 @@ REQUIRED_USE="${PYTHON_REQUIRED_USE}
 	tiff ( openimageio )
 	openexr ( openimageio )
 	cuda? ( cycles openimageio )
-	cycles? ( openexr tiff openimageio color-management )
+	cycles? ( openexr tiff openimageio opencolorio )
 	osl? ( cycles )
 	embree? ( cycles )"
 
@@ -51,7 +45,6 @@ done
 
 RDEPEND="${PYTHON_DEPS}
     dev-libs/jemalloc
-	dev-vcs/git
 	dev-python/numpy[${PYTHON_USEDEP}]
 	dev-python/requests[${PYTHON_USEDEP}]
 	sys-libs/zlib
@@ -71,7 +64,7 @@ RDEPEND="${PYTHON_DEPS}
 	   x11-libs/libX11
 	   x11-libs/libXxf86vm
 	)
-	color-management? ( media-libs/opencolorio )
+	opencolorio? ( media-libs/opencolorio )
 	cycles? (
 		openimageio? ( >=media-libs/openimageio-1.1.5 )
 		cuda? ( dev-util/nvidia-cuda-toolkit )
@@ -111,29 +104,6 @@ DEPEND="${RDEPEND}
 
 CMAKE_BUILD_TYPE="Release"
 
-src_unpack(){
-	git-2_src_unpack
-	unset EGIT_BRANCH EGIT_COMMIT
-	if use addons; then
-		unset EGIT_BRANCH EGIT_COMMIT
-		EGIT_SOURCEDIR="${WORKDIR}/${P}/release/scripts/addons" \
-		EGIT_REPO_URI="${BLENDER_ADDONS_URI}" \
-		git-2_src_unpack
-	fi
-    if use addons-contrib; then
-		unset EGIT_BRANCH EGIT_COMMIT
-		EGIT_SOURCEDIR="${WORKDIR}/${P}/release/scripts/addons_contrib" \
-		EGIT_REPO_URI="${BLENDER_ADDONS_CONTRIB_URI}" \
-		git-2_src_unpack
-	fi
-	if use nls; then
-		unset EGIT_BRANCH EGIT_COMMIT
-		EGIT_SOURCEDIR="${WORKDIR}/${P}/release/datafiles/locale" \
-		EGIT_REPO_URI="${BLENDER_TRANSLATIONS_URI}" \
-		git-2_src_unpack
-	fi
-}
-            
 blender_check_requirements() {
 	[[ ${MERGE_TYPE} != binary ]] && use openmp && tc-check-openmp
 
@@ -166,6 +136,9 @@ src_prepare() {
 		extern/glew \
 		extern/glew-es \
 		extern/Eigen3 \
+		extern/lzma \
+		extern/lzo \
+		extern/gtest \
 		release/scripts/addons/uv_magic_uv \
 		|| die
 	if use addons ; then
@@ -292,7 +265,7 @@ src_configure() {
 		-DWITH_PYTHON_INSTALL=$(usex portable)
 		-DWITH_PYTHON_INSTALL_NUMPY=$(usex portable)
 		-DWITH_PYTHON_INSTALL_REQUESTS=$(usex portable)
-		-DWITH_PYTHON_MODULE$(usex !X)
+		-DWITH_PYTHON_MODULE=$(usex !X)
 		-DWITH_HEADLESS=$(usex !X)
 		-DWITH_BLENDER=$(usex blender)
 		-DWITH_ALEMBIC=$(usex alembic)
@@ -333,8 +306,8 @@ src_configure() {
 		-DWITH_MOD_SMOKE=$(usex smoke)
 		-DWITH_OPENAL=$(usex openal)
 		-DWITH_OPENCOLLADA=$(usex collada)
-		-DWITH_OPENCOLORIO=$(usex colorio)
-		-DWITH_OPENGL$(usex opengl)
+		-DWITH_OPENCOLORIO=$(usex opencolorio)
+		-DWITH_OPENGL=$(usex opengl)
 		-DWITH_OPENIMAGEIO=$(usex openimageio)
 		-DWITH_OPENMP=$(usex openmp)
 		-DWITH_OPENSUBDIV=$(usex opensubdiv)
@@ -345,16 +318,14 @@ src_configure() {
 		-DWITH_STATIC_LIBS=$(usex portable)
 		-DWITH_SYSTEM_BULLET=OFF
 		-DWITH_SYSTEM_EIGEN3=$(usex !portable)
-		-DWITH_SYSTEM_GFLAGS=$(usex !portable)
 		-DWITH_SYSTEM_GLES=$(usex !portable)
 		-DWITH_SYSTEM_GLEW=$(usex !portable)
-		-DWITH_SYSTEM_GLOG=$(usex !portable)
 		-DWITH_SYSTEM_LZO=$(usex !portable)
 		-DWITH_PLAYER=ON
 		-DWITH_DEBUG=$(usex debug)
 		-DWITH_GHOST_DEBUG=$(usex debug)
 		-DWITH_WITH_CYCLES_DEBUG=$(usex debug)
-		-DWITH_CXX_GUARDEDALLOC$(usex debug)
+		-DWITH_CXX_GUARDEDALLOC=$(usex debug)
 	)
 
 	cmake-utils_src_configure
@@ -410,11 +381,6 @@ pkg_preinst() {
 pkg_postinst() {
 	elog
 	elog "Blender compiles from master thunk by default"
-	elog "You may change a branch and a rev, for ex, in /etc/portage/env/blender"
-	elog "EGIT_COMMIT="v2.77a""
-	elog "EGIT_BRANCH="master""
-	elog "and don't forget add to /etc/portage/package.env"
-	elog "media-gfx/blender blender"
 	elog
 	elog "There is some my prefer blender settings as patches"
 	elog "find them in cg/local-patches/blender/"

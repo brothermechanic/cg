@@ -1,0 +1,12 @@
+--- a/src/iv/ivgl.h
++++ b/src/iv/ivgl.h
+@@ -52,6 +52,9 @@
+ #include <OpenImageIO/imageio.h>
+ #include <OpenImageIO/imagebuf.h>
+ 
++#include <GL/glu.h>
++#include <GL/glut.h>
++
+ using namespace OIIO;
+ 
+ class IvImage;

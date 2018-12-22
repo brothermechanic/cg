@@ -36,7 +36,7 @@
 			Add support for Collada interchange format through
 			<pkg>media-libs/opencollada</pkg>.
 		</flag>
-		<flag name="colorio">
+		<flag name="opencolorio">
 			Enable OpenColorIO color management through
 			<pkg>media-libs/opencolorio</pkg>.
 		</flag>

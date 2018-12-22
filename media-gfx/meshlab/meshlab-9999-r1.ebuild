@@ -24,7 +24,7 @@ DEPEND="dev-cpp/eigen:3
 	>=media-gfx/jhead-3.00-r2
 	media-libs/glew:0
 	media-libs/qhull
-	media-libs/lib3ds
+	=media-libs/lib3ds-1*
 	media-libs/openctm
 	sci-libs/levmar
 	sci-libs/mpir"
