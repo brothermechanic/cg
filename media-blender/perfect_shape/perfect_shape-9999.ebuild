@@ -7,7 +7,7 @@ inherit git-r3 eutils
 
 DESCRIPTION="Blender addon. Shape Extrude Tool"
 HOMEPAGE="http://blenderartists.org/forum/showthread.php?389974-Addon-Perfect-Shape-Shape-Extrude-Tool"
-EGIT_REPO_URI="https://github.com/hophead-ninja/perfect_shape.git"
+EGIT_REPO_URI="https://github.com/crantisz/perfect_shape.git"
 
 LICENSE="GPL-2"
 SLOT="0"

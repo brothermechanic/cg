@@ -20,7 +20,7 @@ IUSE="+abi4-compat doc python test libglvnd"
 REQUIRED_USE="python? ( ${PYTHON_REQUIRED_USE} )"
 
 RDEPEND="
-	>=dev-libs/boost-1.68:=[python?,${PYTHON_USEDEP}]
+	>=dev-libs/boost-1.67:=[python?,${PYTHON_USEDEP}]
 	>=dev-libs/c-blosc-1.5.0
 	dev-libs/jemalloc
 	dev-libs/log4cplus
@@ -49,6 +49,7 @@ PATCHES=(
 	"${FILESDIR}/${P}-find-boost_python.patch"
 	"${FILESDIR}/${P}-boost_numpy.patch"
 	"${FILESDIR}/${P}-remesh.patch"
+	"${FILESDIR}/boost.patch"
 )
 
 S="${WORKDIR}"/${PN}-${COMMIT}
