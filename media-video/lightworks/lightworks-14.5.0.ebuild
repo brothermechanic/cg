@@ -1,4 +1,4 @@
-# Copyright 1999-2013 Gentoo Foundation
+# Copyright 1999-2019 Gentoo Foundation
 # Distributed under the terms of the GNU General Public License v2
 # $Id$
 
@@ -6,11 +6,9 @@ EAPI="5"
 
 inherit eutils
 
-MY_PV="12.6.0"
-
 DESCRIPTION="Lightworks is the fastest, most accessible and focused NLE in the industry"
 HOMEPAGE="http://www.lwks.com/"
-SRC_URI="http://downloads.lwks.com/Lightworks-145RC11-108471-14.5.0.0.deb"
+SRC_URI="https://downloads.lwks.com/v14-5-new/lightworks-14.5.0-amd64.deb"
 
 LICENSE="EditShare"
 SLOT="0"
@@ -40,7 +38,7 @@ RDEPEND="
 	media-libs/fontconfig
 	media-libs/glu
 	media-libs/mesa
-	=media-libs/portaudio-19_pre20140130[jack] 
+	media-libs/portaudio[jack]
 	>=media-gfx/nvidia-cg-toolkit-3.1.0013-r2
 	x11-libs/libxcb
 	x11-libs/libXinerama
@@ -58,8 +56,7 @@ RDEPEND="
 	x11-libs/libXau
 	x11-libs/libXdmcp
 	x11-libs/libdrm
-	app-accessibility/at-spi2-core
-"
+	app-accessibility/at-spi2-core"
 
 DEPEND="${RDEPEND}
 	!app-arch/deb2targz
@@ -73,16 +70,15 @@ src_unpack() {
 	unpack ./data.tar.xz
 }
 
-
 src_install() {
 	exeinto /usr/bin
 	doexe usr/bin/lightworks
 	domenu usr/share/applications/lightworks.desktop
 	doicon usr/share/lightworks/Icons/App.png
-	
+
 	insinto /lib/udev/rules.d/
 	doins lib/udev/rules.d/20-lightworks.rules
-	
+
 	insinto /usr/lib64/${PN}
 	doins -r usr/lib/${PN}/* || die "doins lib failed"
 
@@ -102,5 +98,3 @@ src_install() {
 
 	dodoc usr/share/doc/${PN}/*
 }
-
-
