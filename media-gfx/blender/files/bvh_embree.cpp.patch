@@ -1,0 +1,10 @@
+--- a/intern/cycles/bvh/bvh_embree.cpp
++++ b/intern/cycles/bvh/bvh_embree.cpp
+@@ -37,6 +37,7 @@
+ #include <pmmintrin.h>
+ #include <xmmintrin.h>
+ #include <embree3/rtcore_geometry.h>
++#include <embree3/rtcore_scene.h>
+ 
+ #include "bvh/bvh_embree.h"
+ 

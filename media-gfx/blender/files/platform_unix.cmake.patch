@@ -1,0 +1,10 @@
+--- a/build_files/cmake/platform/platform_unix.cmake
++++ b/build_files/cmake/platform/platform_unix.cmake
+@@ -361,6 +361,7 @@
+ 
+ if(WITH_CYCLES_EMBREE)
+ 	find_package(Embree 3.2.4 REQUIRED)
++	list(APPEND PLATFORM_LINKLIBS -lembree3)
+ endif()
+ 
+ if(WITH_LLVM)
