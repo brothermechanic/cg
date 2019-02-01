@@ -1,0 +1,242 @@
+reverted:
+--- b/intern/numaapi/README.blender
++++ a/intern/numaapi/README.blender
+@@ -1,5 +1,5 @@
+ Project: LibNumaAPI
+ URL: https://github.com/Nazg-Gul/libNumaAPI
+ License: MIT
++Upstream version: f83d41ec4d7
+-Upstream version: 4e7206befce
+ Local modifications: None
+reverted:
+--- b/intern/numaapi/include/numaapi.h
++++ a/intern/numaapi/include/numaapi.h
+@@ -70,16 +70,6 @@
+ // Get number of available processors on a given node.
+ int numaAPI_GetNumNodeProcessors(int node);
+ 
+-////////////////////////////////////////////////////////////////////////////////
+-// Topology helpers.
+-//
+-// Those are a bit higher level queries, but is still rather platform-specific
+-// and generally useful.
+-
+-// Get number of processors within the NUMA nodes on which current thread is
+-// set affinity on.
+-int numaAPI_GetNumCurrentNodesProcessors(void);
+-
+ ////////////////////////////////////////////////////////////////////////////////
+ // Affinities.
+ 
+reverted:
+--- b/intern/numaapi/source/numaapi_linux.c
++++ a/intern/numaapi/source/numaapi_linux.c
+@@ -34,6 +34,8 @@
+ #  include <dlfcn.h>
+ #endif
+ 
++#include <stdio.h>
++
+ #ifdef WITH_DYNLOAD
+ 
+ // Descriptor numa library.
+@@ -62,7 +64,6 @@
+ typedef void tnuma_free_nodemask(struct bitmask* bitmask);
+ typedef int tnuma_run_on_node_mask(struct bitmask *nodemask);
+ typedef int tnuma_run_on_node_mask_all(struct bitmask *nodemask);
+-typedef struct bitmask *tnuma_get_run_node_mask(void);
+ typedef void tnuma_set_interleave_mask(struct bitmask *nodemask);
+ typedef void tnuma_set_localalloc(void);
+ 
+@@ -86,7 +87,6 @@
+ static tnuma_free_cpumask* numa_free_cpumask;
+ static tnuma_run_on_node_mask* numa_run_on_node_mask;
+ static tnuma_run_on_node_mask_all* numa_run_on_node_mask_all;
+-static tnuma_get_run_node_mask* numa_get_run_node_mask;
+ static tnuma_set_interleave_mask* numa_set_interleave_mask;
+ static tnuma_set_localalloc* numa_set_localalloc;
+ 
+@@ -162,7 +162,6 @@
+   NUMA_LIBRARY_FIND(numa_free_nodemask);
+   NUMA_LIBRARY_FIND(numa_run_on_node_mask);
+   NUMA_LIBRARY_FIND(numa_run_on_node_mask_all);
+-  NUMA_LIBRARY_FIND(numa_get_run_node_mask);
+   NUMA_LIBRARY_FIND(numa_set_interleave_mask);
+   NUMA_LIBRARY_FIND(numa_set_localalloc);
+ 
+@@ -205,7 +204,7 @@
+   struct bitmask* cpu_mask = numa_allocate_cpumask();
+   numa_node_to_cpus(node, cpu_mask);
+   const unsigned int num_bytes = numa_bitmask_nbytes(cpu_mask);
++  const unsigned int num_bits = num_bytes  *8;
+-  const unsigned int num_bits = num_bytes * 8;
+   // TODO(sergey): There might be faster way calculating number of set bits.
+   int num_processors = 0;
+   for (unsigned int bit = 0; bit < num_bits; ++bit) {
+@@ -225,23 +224,6 @@
+   return num_processors;
+ }
+ 
+-////////////////////////////////////////////////////////////////////////////////
+-// Topology helpers.
+-
+-int numaAPI_GetNumCurrentNodesProcessors(void) {
+-  struct bitmask* node_mask = numa_get_run_node_mask();
+-  const unsigned int num_bytes = numa_bitmask_nbytes(node_mask);
+-  const unsigned int num_bits = num_bytes * 8;
+-  int num_processors = 0;
+-  for (unsigned int bit = 0; bit < num_bits; ++bit) {
+-    if (numa_bitmask_isbitset(node_mask, bit)) {
+-      num_processors += numaAPI_GetNumNodeProcessors(bit);
+-    }
+-  }
+-  numa_bitmask_free(node_mask);
+-  return num_processors;
+-}
+-
+ ////////////////////////////////////////////////////////////////////////////////
+ // Affinities.
+ 
+reverted:
+--- b/intern/numaapi/source/numaapi_stub.c
++++ a/intern/numaapi/source/numaapi_stub.c
+@@ -52,13 +52,6 @@
+   return 0;
+ }
+ 
+-////////////////////////////////////////////////////////////////////////////////
+-// Topology helpers.
+-
+-int numaAPI_GetNumCurrentNodesProcessors(void) {
+-  return 0;
+-}
+-
+ ////////////////////////////////////////////////////////////////////////////////
+ // Affinities.
+ 
+reverted:
+--- b/intern/numaapi/source/numaapi_win32.c
++++ a/intern/numaapi/source/numaapi_win32.c
+@@ -47,6 +47,8 @@
+ #  include <VersionHelpers.h>
+ #endif
+ 
++#include <stdio.h>
++
+ ////////////////////////////////////////////////////////////////////////////////
+ // Initialization.
+ 
+@@ -72,14 +74,9 @@
+ typedef BOOL t_SetProcessAffinityMask(HANDLE process_handle,
+                                       DWORD_PTR process_affinity_mask);
+ typedef BOOL t_SetThreadGroupAffinity(HANDLE thread_handle,
++                                      const GROUP_AFFINITY* GroupAffinity,
+-                                      const GROUP_AFFINITY* group_affinity,
+                                       GROUP_AFFINITY* PreviousGroupAffinity);
+-typedef BOOL t_GetThreadGroupAffinity(HANDLE thread_handle,
+-                                      GROUP_AFFINITY* group_affinity);
+ typedef DWORD t_GetCurrentProcessorNumber(void);
+-typedef void t_GetCurrentProcessorNumberEx(PROCESSOR_NUMBER* proc_number);
+-typedef DWORD t_GetActiveProcessorCount(WORD group_number);
+-
+ 
+ // NUMA symbols.
+ static t_GetNumaHighestNodeNumber* _GetNumaHighestNodeNumber;
+@@ -91,10 +88,7 @@
+ // Threading symbols.
+ static t_SetProcessAffinityMask* _SetProcessAffinityMask;
+ static t_SetThreadGroupAffinity* _SetThreadGroupAffinity;
+-static t_GetThreadGroupAffinity* _GetThreadGroupAffinity;
+ static t_GetCurrentProcessorNumber* _GetCurrentProcessorNumber;
+-static t_GetCurrentProcessorNumberEx* _GetCurrentProcessorNumberEx;
+-static t_GetActiveProcessorCount* _GetActiveProcessorCount;
+ 
+ static void numaExit(void) {
+   // TODO(sergey): Consider closing library here.
+@@ -134,10 +128,7 @@
+   // Threading.
+   KERNEL_LIBRARY_FIND(SetProcessAffinityMask);
+   KERNEL_LIBRARY_FIND(SetThreadGroupAffinity);
+-  KERNEL_LIBRARY_FIND(GetThreadGroupAffinity);
+   KERNEL_LIBRARY_FIND(GetCurrentProcessorNumber);
+-  KERNEL_LIBRARY_FIND(GetCurrentProcessorNumberEx);
+-  KERNEL_LIBRARY_FIND(GetActiveProcessorCount);
+ 
+ #undef KERNEL_LIBRARY_FIND
+ #undef _LIBRARY_FIND
+@@ -160,19 +151,6 @@
+ #endif
+ }
+ 
+-////////////////////////////////////////////////////////////////////////////////
+-// Internal helpers.
+-
+-static int countNumSetBits(int64_t mask) {
+-  // TODO(sergey): There might be faster way calculating number of set bits.
+-  int num_bits = 0;
+-  while (mask != 0) {
+-    num_bits += (mask & 1);
+-    mask = (mask >> 1);
+-  }
+-  return num_bits;
+-}
+-
+ ////////////////////////////////////////////////////////////////////////////////
+ // Topology query.
+ 
+@@ -207,26 +185,11 @@
+   if (!_GetNumaNodeProcessorMask(node, &processor_mask)) {
+     return 0;
+   }
++  // TODO(sergey): There might be faster way calculating number of set bits.
++  int num_processors = 0;
++  while (processor_mask != 0) {
++    num_processors += (processor_mask & 1);
++    processor_mask = (processor_mask >> 1);
+-  return countNumSetBits(processor_mask);
+-}
+-
+-////////////////////////////////////////////////////////////////////////////////
+-// Topology helpers.
+-
+-int numaAPI_GetNumCurrentNodesProcessors(void) {
+-  HANDLE thread_handle = GetCurrentThread();
+-  GROUP_AFFINITY group_affinity;
+-  // TODO(sergey): Needs implementation.
+-  if (!_GetThreadGroupAffinity(thread_handle, &group_affinity)) {
+-    return 0;
+-  }
+-  // First, count number of possible bits in the affinity mask.
+-  const int num_processors = countNumSetBits(group_affinity.Mask);
+-  // Then check that it's not exceeding number of processors in tjhe group.
+-  const int num_group_processors =
+-      _GetActiveProcessorCount(group_affinity.Group);
+-  if (num_group_processors < num_processors) {
+-    return num_group_processors;
+   }
+   return num_processors;
+ }
+reverted:
+--- b/release/datafiles/locale
++++ a/release/datafiles/locale
+@@ -1 +1 @@
++Subproject commit fec9a7e88c8686830e9210099818a61489e699e4
+-Subproject commit 8eafc437295b0edc990db231fe957e2ad42af70d
+reverted:
+--- b/release/scripts/addons
++++ a/release/scripts/addons
+@@ -1 +1 @@
++Subproject commit 9cc2ad1eaf941d8ed3b5542a3d5cdfccec7ba60b
+-Subproject commit 46a9160c6f67d60610fdcc1dadbe3946a7010625
+reverted:
+--- b/release/scripts/addons_contrib
++++ a/release/scripts/addons_contrib
+@@ -1 +1 @@
++Subproject commit 68a2d28b24430133946f21d7deede1312d181aaf
+-Subproject commit 272b1a4ef07717beb3d0bfcb7380c2164fd008a3
+reverted:
+--- b/source/tools
++++ a/source/tools
+@@ -1 +1 @@
++Subproject commit 2278dd8d6aea4d56632dee37196a5e341ce99283
+-Subproject commit aef8f32086b9393d286c49cbe5a51ae465fe0589
