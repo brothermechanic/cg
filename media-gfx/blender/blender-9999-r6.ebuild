@@ -13,7 +13,7 @@ EGIT_REPO_URI="http://git.blender.org/blender.git"
 EGIT_BRANCH="blender2.7"
 
 #T61095 bug
-EGIT_COMMIT=c1dd745
+#EGIT_COMMIT=c1dd745
 
 LICENSE="|| ( GPL-2 BL )"
 SLOT="9999"
