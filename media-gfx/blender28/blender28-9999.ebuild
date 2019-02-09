@@ -127,10 +127,6 @@ src_prepare() {
 		"${FILESDIR}"/blender-fix-install-rules.patch \
 		"${FILESDIR}"/revers-a15e631.patch
 
-	#add custom matcap
-	rm "${S}"/release/datafiles/matcaps/mc10.jpg
-	cp "${FILESDIR}"/mc10.jpg "${S}"/release/datafiles/matcaps/
-
 	# remove some bundled deps
 	rm -r \
 		extern/glew \
@@ -139,7 +135,6 @@ src_prepare() {
 		extern/lzma \
 		extern/lzo \
 		extern/gtest \
-		release/scripts/addons/uv_magic_uv \
 		|| die
 	if use addons ; then
 		ewarn "$(echo "Bundled addons")"
