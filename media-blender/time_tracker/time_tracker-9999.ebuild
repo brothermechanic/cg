@@ -19,7 +19,7 @@ RDEPEND="media-gfx/blender[addons]"
 
 src_install() {
 	touch system_time_tracker.csv
-	if VER="/usr/share/blender/*";then
+	if VER="/usr/share/blender/2.79";then
 		insinto ${VER}/scripts/addons/
 		insopts -g users -m0775
 		doins -r "${S}"/2.7x/system_time_tracker.py

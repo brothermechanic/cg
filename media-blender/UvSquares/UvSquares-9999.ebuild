@@ -18,7 +18,7 @@ DEPEND=""
 RDEPEND="media-gfx/blender[addons]"
 
 src_install() {
-	if VER="/usr/share/blender/*";then
+	if VER="/usr/share/blender/2.79";then
 		insinto ${VER}/scripts/addons/
 		doins -r "${S}"/uv_squares.py
 	fi

@@ -21,7 +21,7 @@ RDEPEND="media-gfx/blender[addons]
 
 src_install() {
 	egit_clean
-	if VER="/usr/share/blender/*";then
+	if VER="/usr/share/blender/2.79";then
 		insinto ${VER}/scripts/addons/
 		doins -r "${S}"
 	fi

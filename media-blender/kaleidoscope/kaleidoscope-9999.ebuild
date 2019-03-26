@@ -19,7 +19,7 @@ RDEPEND="media-gfx/blender[addons]"
 
 src_install() {
 	egit_clean
-	if VER="/usr/share/blender/*";then
+	if VER="/usr/share/blender/2.79";then
 		insinto ${VER}/scripts/addons/
 		diropts -g users -m0775
 		doins -r "${S}"
@@ -28,6 +28,6 @@ src_install() {
 
 pkg_postrm() {
 	if [[ -z "${REPLACED_BY_VERSION}" ]]; then
-		rm -r ${ROOT}usr/share/blender/*/scripts/addons/"${P}"
+		rm -r ${ROOT}usr/share/blender/2.79/scripts/addons/"${P}"
 	fi
 }
