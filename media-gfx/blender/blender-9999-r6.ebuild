@@ -306,7 +306,6 @@ src_configure() {
 		-DWITH_INTERNATIONAL=$(usex nls)
 		-DWITH_JACK=$(usex jack)
 		-DWITH_LEGACY_DEPSGRAPH=ON
-		-DWITH_LLVM=$(usex osl)
 		-DWITH_LZMA=$(usex lzma)
 		-DWITH_LZO=$(usex lzo)
 		-DWITH_VALGRIND=$(usex valgrind)
