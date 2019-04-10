@@ -25,7 +25,6 @@ DEPEND="
 RDEPEND=""
 
 src_prepare() {
-    epatch "${FILESDIR}"/cmath.patch
 	myconf=(
 		PREFIX=/usr \
 	)
