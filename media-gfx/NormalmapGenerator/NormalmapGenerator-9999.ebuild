@@ -1,6 +1,5 @@
-# Copyright 1999-2016 Gentoo Foundation
+# Copyright 1999-2019 Gentoo Foundation
 # Distributed under the terms of the GNU General Public License v2
-# $Id$
 
 EAPI=5
 
@@ -32,10 +31,8 @@ src_prepare() {
 }
 
 src_install() {
-    default
 	exeinto /usr/bin/
 	doexe NormalmapGenerator
 	newicon "${S}"/resources/logo.png "${PN}".png
 	make_desktop_entry NormalmapGenerator
-	
 }
