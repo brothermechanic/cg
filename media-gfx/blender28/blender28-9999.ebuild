@@ -123,9 +123,7 @@ pkg_setup() {
 
 src_prepare() {
     epatch_user
-    epatch "${FILESDIR}"/blender-doxyfile.patch \
-		"${FILESDIR}"/blender-fix-install-rules.patch \
-		"${FILESDIR}"/revers-a15e631.patch
+    epatch "${FILESDIR}"/blender-doxyfile.patch
 
 	# remove some bundled deps
 	rm -r \
