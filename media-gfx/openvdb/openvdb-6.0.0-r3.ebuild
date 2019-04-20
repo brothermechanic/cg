@@ -1,26 +1,24 @@
-# Copyright 1999-2018 Gentoo Foundation
+# Copyright 1999-2019 Gentoo Foundation
 # Distributed under the terms of the GNU General Public License v2
 
 EAPI=6
 
-PYTHON_COMPAT=( python{2_7,3_5,3_6,3_7} )
+PYTHON_COMPAT=( python{2_7,3_7} )
 
 inherit cmake-utils flag-o-matic python-single-r1
 
 DESCRIPTION="Libs for the efficient manipulation of volumetric data"
 HOMEPAGE="http://www.openvdb.org"
-# SRC_URI="https://github.com/dreamworksanimation/${PN}/archive/v${PV}.tar.gz -> ${P}.tar.gz"
-COMMIT="b471f8bc334eb5d85e9078d9506c73af57d02a0a"
-SRC_URI="https://github.com/AcademySoftwareFoundation/openvdb/archive/${COMMIT}.tar.gz -> ${P}-b471f8b.tar.gz"
+SRC_URI="https://github.com/AcademySoftwareFoundation/${PN}/archive/v${PV}.tar.gz -> ${P}.tar.gz"
 
 LICENSE="MPL-2.0"
 SLOT="0"
 KEYWORDS="~amd64 ~x86"
-IUSE="+abi4-compat doc python test libglvnd"
+IUSE="doc python test libglvnd"
 REQUIRED_USE="python? ( ${PYTHON_REQUIRED_USE} )"
 
 RDEPEND="
-	>=dev-libs/boost-1.68:=[python?,${PYTHON_USEDEP}]
+	>=dev-libs/boost-1.70:=[python?,${PYTHON_USEDEP},numpy]
 	>=dev-libs/c-blosc-1.5.0
 	dev-libs/jemalloc
 	dev-libs/log4cplus
@@ -52,7 +50,7 @@ PATCHES=(
 	"${FILESDIR}/boost.patch"
 )
 
-S="${WORKDIR}"/${PN}-${COMMIT}
+#S="${WORKDIR}"/${PN}-${COMMIT}
 
 pkg_setup() {
 	use python && python-single-r1_pkg_setup
@@ -65,15 +63,15 @@ src_configure() {
 		-DBLOSC_LOCATION="${myprefix}"
 		-DCMAKE_INSTALL_DOCDIR="share/doc/${PF}"
 		-DGLFW3_LOCATION="${myprefix}"
-		-DOPENVDB_ABI_VERSION_NUMBER=$(usex abi4-compat 4 5)
+		-DOPENVDB_ABI_VERSION_NUMBER=6
 		-DOPENVDB_BUILD_DOCS=$(usex doc)
 		-DOPENVDB_BUILD_PYTHON_MODULE=$(usex python)
 		-DOPENVDB_BUILD_UNITTESTS=$(usex test)
 		-DOPENVDB_ENABLE_RPATH=ON
 		-DTBB_LOCATION="${myprefix}"
 		-DUSE_GLFW3=ON
-		-DBoost_PYTHON_LIBRARY="/usr/lib64/libboost_python-3_7.so"
-		-DBoost_NUMPY_LIBRARY="/usr/lib64/libboost_numpy-3_7.so"
+		-DBoost_PYTHON_LIBRARY="/usr/lib64/libboost_python37.so.1.70.0"
+		-DBoost_NUMPY_LIBRARY="/usr/lib64/libboost_numpy37.so.1.70.0"
 	)
 #		-DPY_OPENVDB_USE_NUMPY=ON
 	if use libglvnd; then
