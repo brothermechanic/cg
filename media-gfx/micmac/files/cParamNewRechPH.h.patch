@@ -1,0 +1,11 @@
+--- a/src/uti_image/NewRechPH/cParamNewRechPH.h
++++ b/src/uti_image/NewRechPH/cParamNewRechPH.h
+@@ -1,5 +1,8 @@
+ #ifndef Define_NotRechNewPH
+ #define Define_NotRechNewPH
++
++#include "StdAfx.h"
++
+ // NOMORE ...
+ typedef enum
+ {

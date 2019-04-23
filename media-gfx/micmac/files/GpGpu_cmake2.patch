@@ -1,0 +1,19 @@
+--- a/src/GpGpu.cmake
++++ b/src/GpGpu.cmake
+@@ -33,10 +33,12 @@
+                         ERROR_QUIET OUTPUT_STRIP_TRAILING_WHITESPACE)
+ else()
+ # build and run FoundCapa mac and LINUX
+-    execute_process(COMMAND "${CUDA_NVCC_EXECUTABLE}" "-o=FoundCapa" "${PROJECT_SOURCE_DIR}/src/uti_phgrm/GpGpu/tools/FoundCapa.cu"  "--run" 
+-                        WORKING_DIRECTORY "${CMAKE_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/CMakeTmp/"
+-                        RESULT_VARIABLE _resultNVCC OUTPUT_VARIABLE _outNVCC
+-                        ERROR_QUIET OUTPUT_STRIP_TRAILING_WHITESPACE)
++#    execute_process(COMMAND "${CUDA_NVCC_EXECUTABLE}" "-o=FoundCapa" "${PROJECT_SOURCE_DIR}/src/uti_phgrm/GpGpu/tools/FoundCapa.cu"  "--run" 
++#                        WORKING_DIRECTORY "${CMAKE_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/CMakeTmp/"
++#                        RESULT_VARIABLE _resultNVCC OUTPUT_VARIABLE _outNVCC
++#                        ERROR_QUIET OUTPUT_STRIP_TRAILING_WHITESPACE)
++	set(_resultNVCC 0)
++	set(_outNVCC "6.1")
+ endif()
+ 
+ #message(${_outNVCC}) 

@@ -1,0 +1,12 @@
+--- a/include/general/ptxd.h
++++ b/include/general/ptxd.h
+@@ -1496,7 +1496,9 @@
+     public :
+         cProj4(const std::string  & aStr,const Pt3dr & aMOdg);
+ 
++        Pt3dr ToGeoC(const Pt3dr &) const;
+         std::vector<Pt3dr> ToGeoC(const std::vector<Pt3dr> &) const;
++        Pt3dr FromGeoC(const Pt3dr &) const;
+         std::vector<Pt3dr> FromGeoC(const std::vector<Pt3dr> &) const ;
+ 
+         static cProj4  Lambert(double aPhi0,double aPhi1,double aPhi2,double aLon0,double aX0,double aY0);
