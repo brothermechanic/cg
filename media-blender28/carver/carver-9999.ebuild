@@ -19,7 +19,7 @@ RDEPEND="media-gfx/blender28[addons]"
 
 src_install() {
 	egit_clean
-	if VER="/usr/share/blender/2.79.80";then
+	if VER="/usr/share/blender/2.80";then
 		insinto ${VER}/scripts/addons/
 		doins -r "${S}"
 	fi
