@@ -1,0 +1,11 @@
+--- a/Setup.sh
++++ b/Setup.sh
+@@ -41,6 +41,8 @@
+ 
+ 	echo Register the engine installation...
+ 	if [ -f Engine/Binaries/Linux/UnrealVersionSelector-Linux-Shipping ]; then
++		make
++
+ 		pushd Engine/Binaries/Linux > /dev/null
+ 		./UnrealVersionSelector-Linux-Shipping -register
+ 		popd > /dev/null

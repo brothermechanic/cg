@@ -1,0 +1,11 @@
+--- a/Engine/Source/Programs/UnrealBuildTool/Platform/HTML5/HTML5SDKInfo.cs
++++ b/Engine/Source/Programs/UnrealBuildTool/Platform/HTML5/HTML5SDKInfo.cs
+@@ -176,7 +176,7 @@
+ 
+ 					case UnrealTargetPlatform.Mac:
+ 					case UnrealTargetPlatform.Linux:
+-						return "/usr/bin/python";
++						return "/usr/bin/python2";
+ 
+ 					default:
+ 						return "error_unknown_platform";
