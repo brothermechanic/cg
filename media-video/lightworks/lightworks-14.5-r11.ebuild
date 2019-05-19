@@ -19,6 +19,7 @@ RESTRICT=""
 IUSE=""
 
 RDEPEND="
+	=dev-libs/openssl-1.0*
 	dev-libs/glib:2
 	dev-libs/libedit
 	dev-libs/atk
