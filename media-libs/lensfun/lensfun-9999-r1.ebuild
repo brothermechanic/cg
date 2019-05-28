@@ -9,7 +9,7 @@ inherit python-single-r1 cmake-utils git-r3
 
 DESCRIPTION="Library for rectifying and simulating photographic lens distortions"
 HOMEPAGE="http://lensfun.sourceforge.net/"
-EGIT_REPO_URI="https://git.code.sf.net/p/lensfun/code"
+EGIT_REPO_URI="https://github.com/lensfun/lensfun.git"
 
 LICENSE="LGPL-3 CC-BY-SA-3.0" # See README for reasoning.
 SLOT="0"
