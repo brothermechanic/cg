@@ -3,11 +3,13 @@
 
 EAPI=6
 
+SCRIPTS="/usr/share/blender/scripts"
+
 inherit git-r3 eutils
 
-DESCRIPTION="Blender addon. Multiple tools to carve or to create objects"
-HOMEPAGE="https://blenderartists.org/t/carver-mt-for-2-8/1151461"
-EGIT_REPO_URI="https://github.com/clarkx/Carver.git"
+DESCRIPTION="Blender addon. Blender tools for working with edgeloops."
+HOMEPAGE="https://blenderartists.org/t/it-is-finally-here-edge-flow-set-flow-for-blender-benjamin-saunder/1128115"
+EGIT_REPO_URI="https://github.com/BenjaminSauder/EdgeFlow.git"
 
 LICENSE="GPL-3"
 SLOT="0"
@@ -19,14 +21,14 @@ RDEPEND="media-gfx/blender[addons]"
 
 src_install() {
 	egit_clean
-    insinto /usr/share/blender/addons/
-	doins -r "${S}"
+    insinto ${SCRIPTS}/addons/${PN}
+	doins -r "${S}"/*.py
 }
 
 pkg_postinst() {
 	elog
 	elog "This blender addon installs to system subdirectory"
-	elog "/usr/share/blender/addons/"
+	elog "${SCRIPTS}"
 	elog "Please, set it to PreferencesFilePaths.scripts_directory"
 	elog "More info you can find at page "
 	elog "https://docs.blender.org/manual/en/latest/preferences/file.html#scripts-path"

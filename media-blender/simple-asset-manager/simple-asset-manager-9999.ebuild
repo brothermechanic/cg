@@ -7,11 +7,11 @@ SCRIPTS="/usr/share/blender/scripts"
 
 inherit git-r3 eutils
 
-DESCRIPTION="Blender addon. New modeling Cloth tools"
-HOMEPAGE="https://github.com/the3dadvantage/Modeling-Cloth-2.8"
-EGIT_REPO_URI="https://github.com/the3dadvantage/Modeling-Cloth-2.8.git"
+DESCRIPTION="Blender addon. Works with objects, materials and particle systems."
+HOMEPAGE="https://blenderartists.org/t/simple-asset-manager-2-8/1134084"
+EGIT_REPO_URI="https://gitlab.com/tibicen/simple-asset-manager.git"
 
-LICENSE="MIT"
+LICENSE="GPL-2"
 SLOT="0"
 KEYWORDS="~amd64 ~x86"
 IUSE=""
@@ -22,7 +22,7 @@ RDEPEND="media-gfx/blender[addons]"
 src_install() {
 	egit_clean
     insinto ${SCRIPTS}/addons/
-	doins -r "${S}"
+	doins -r "${S}"/SimpleAssetManager
 }
 
 pkg_postinst() {

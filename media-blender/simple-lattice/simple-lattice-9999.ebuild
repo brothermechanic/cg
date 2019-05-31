@@ -7,11 +7,11 @@ SCRIPTS="/usr/share/blender/scripts"
 
 inherit git-r3 eutils
 
-DESCRIPTION="Blender addon. New modeling Cloth tools"
-HOMEPAGE="https://github.com/the3dadvantage/Modeling-Cloth-2.8"
-EGIT_REPO_URI="https://github.com/the3dadvantage/Modeling-Cloth-2.8.git"
+DESCRIPTION="Blender addon. Make working with lattices simpler."
+HOMEPAGE="https://github.com/BenjaminSauder/SimpleLattice"
+EGIT_REPO_URI="https://github.com/BenjaminSauder/SimpleLattice.git"
 
-LICENSE="MIT"
+LICENSE="GPL-3"
 SLOT="0"
 KEYWORDS="~amd64 ~x86"
 IUSE=""
@@ -21,8 +21,8 @@ RDEPEND="media-gfx/blender[addons]"
 
 src_install() {
 	egit_clean
-    insinto ${SCRIPTS}/addons/
-	doins -r "${S}"
+    insinto ${SCRIPTS}/addons/${PN}
+	doins -r "${S}"/*.py
 }
 
 pkg_postinst() {
