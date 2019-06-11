@@ -18,7 +18,7 @@ KEYWORDS=""
 
 IUSE_DESKTOP="-portable +blender +X +addons +addons-contrib +nls -ndof -player"
 IUSE_GPU="+opengl cuda opencl -sm_30 -sm_35 -sm_50 -sm_52 -sm_61 -sm_70"
-IUSE_LIBS="+cycles -sdl jack openal freestyle -osl -openvdb +opensubdiv +opencolorio +openimageio +collada -alembic +fftw"
+IUSE_LIBS="+cycles -sdl jack openal freestyle -osl -openvdb +opensubdiv +opencolorio +openimageio +collada -alembic +fftw +oind"
 IUSE_CPU="openmp embree +sse"
 IUSE_TEST="-valgrind -debug -doc"
 IUSE_IMAGE="-dpx -dds +openexr jpeg2k tiff +hdr"
@@ -36,7 +36,8 @@ REQUIRED_USE="${PYTHON_REQUIRED_USE}
 	cuda? ( cycles openimageio )
 	cycles? ( openexr tiff openimageio opencolorio )
 	osl? ( cycles )
-	embree? ( cycles )"
+	embree? ( cycles )
+	oind? ( cycles )"
 
 LANGS="en ar bg ca cs de el es es_ES fa fi fr he hr hu id it ja ky ne nl pl pt pt_BR ru sr sr@latin sv tr uk zh_CN zh_TW"
 for X in ${LANGS} ; do
@@ -93,7 +94,8 @@ RDEPEND="${PYTHON_DEPS}
 	alembic? ( media-gfx/alembic )
 	opencl? ( app-eselect/eselect-opencl )
 	opensubdiv? ( media-libs/opensubdiv )
-	nls? ( virtual/libiconv )"
+	nls? ( virtual/libiconv )
+	oind? ( media-libs/oidn )"
 
 DEPEND="${RDEPEND}
 	dev-cpp/eigen:3
@@ -317,6 +319,7 @@ src_configure() {
 		-DWITH_GHOST_DEBUG=$(usex debug)
 		-DWITH_WITH_CYCLES_DEBUG=$(usex debug)
 		-DWITH_CXX_GUARDEDALLOC=$(usex debug)
+		-DWITH_OPENIMAGEDENOISE=$(usex oind)
 	)
 
 	cmake-utils_src_configure
