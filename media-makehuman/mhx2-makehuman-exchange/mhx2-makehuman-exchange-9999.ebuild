@@ -3,11 +3,13 @@
 
 EAPI=6
 
+SCRIPTS="/usr/share/blender/scripts"
+
 inherit mercurial
 
 DESCRIPTION="MHX2 - MakeHuman eXchange format 2"
 HOMEPAGE="https://bitbucket.org/Diffeomorphic/mhx2-makehuman-exchange/overview"
-EHG_REPO_URI="https://bitbucket.org/Diffeomorphic/mhx2-makehuman-exchange"
+EHG_REPO_URI="https://bitbucket.org/Aranuvir/mhx2-makehuman-exchange"
 LICENSE="AGPL-3"
 SLOT="0"
 KEYWORDS="~amd64 ~x86"
@@ -22,8 +24,6 @@ RDEPEND="
 src_install() {
 	insinto /usr/share/makehuman/plugins/
 	doins -r ${S}/9_export_mhx2 || die "doins share failed"
-	if VER="/usr/share/blender/*";then
-		insinto ${VER}/scripts/addons/
-		doins -r "${S}"/import_runtime_mhx2
-	fi
+	insinto ${SCRIPTS}/addons/
+	doins -r "${S}"/import_runtime_mhx2
 }
