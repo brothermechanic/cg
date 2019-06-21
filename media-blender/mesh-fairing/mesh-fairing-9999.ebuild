@@ -3,8 +3,6 @@
 
 EAPI=6
 
-SCRIPTS="/usr/share/blender/scripts"
-
 inherit git-r3 eutils
 
 DESCRIPTION="Blender addon. Provides an alternative smoothing operation"
@@ -22,14 +20,15 @@ RDEPEND="media-gfx/blender[addons]
 
 src_install() {
 	egit_clean
-    insinto ${SCRIPTS}/addons/${PN}
+    insinto ${BLENDER_ADDONS_DIR}/addons/${PN}
 	doins -r "${S}"/*.py
 }
 
 pkg_postinst() {
 	elog
 	elog "This blender addon installs to system subdirectory"
-	elog "${SCRIPTS}"
+	elog "${BLENDER_ADDONS_DIR}"
+	elog "You can set it to make.conf before"
 	elog "Please, set it to PreferencesFilePaths.scripts_directory"
 	elog "More info you can find at page "
 	elog "https://docs.blender.org/manual/en/latest/preferences/file.html#scripts-path"
