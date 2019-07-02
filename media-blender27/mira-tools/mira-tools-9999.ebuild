@@ -21,6 +21,6 @@ src_install() {
 	egit_clean
 	if VER="/usr/share/blender/2.79";then
 		insinto ${VER}/scripts/addons/
-		doins -r "${S}"/blender/addons/mira_tools
+		doins -r "${S}"/blender/addons/2.7/mira_tools
 	fi
 }
