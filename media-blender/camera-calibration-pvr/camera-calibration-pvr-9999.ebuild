@@ -2,8 +2,8 @@
 # Distributed under the terms of the GNU General Public License v2
 
 EAPI=6
-
-inherit git-r3
+PYTHON_COMPAT=( python3_7 ) 
+inherit git-r3 distutils-r1 
 
 DESCRIPTION="Blender addon. Camera Calibration using Perspective Views of Rectangles"
 HOMEPAGE="https://blenderartists.org/forum/showthread.php?414359-Add-on-Camera-Calibration-using-Perspective-Views-of-Rectangles"
@@ -15,7 +15,15 @@ KEYWORDS="~amd64 ~x86"
 IUSE=""
 
 DEPEND=""
-RDEPEND="media-gfx/blender[addons]"
+RDEPEND="media-gfx/blender[addons]
+        dev-python/setuptools[${PYTHON_USEDEP}]
+        dev-python/pycairo[${PYTHON_USEDEP}]"
+
+src_compile() { 
+   cd "${S}"/figures
+   python generate-figures.py
+} 
+
 
 src_install() {
 	egit_clean
