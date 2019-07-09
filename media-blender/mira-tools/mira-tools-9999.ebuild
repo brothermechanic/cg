@@ -8,7 +8,7 @@ inherit git-r3 eutils
 DESCRIPTION="Blender addon. Modeling/Retopo tools"
 HOMEPAGE="https://blenderartists.org/t/miratools/637385"
 EGIT_REPO_URI="https://github.com/JoseConseco/mira_tools.git"
-EGIT_BRANCH="blender_2.8"
+EGIT_BRANCH="blender_28"
 LICENSE="GPL-2"
 SLOT="0"
 KEYWORDS="~amd64 ~x86"
