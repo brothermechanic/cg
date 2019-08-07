@@ -125,7 +125,7 @@ pkg_setup() {
 }
 
 src_prepare() {
-    epatch_user
+    eapply_user
     epatch "${FILESDIR}"/blender-doxyfile.patch
 
 	#add custom matcap
