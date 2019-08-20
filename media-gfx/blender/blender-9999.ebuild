@@ -18,7 +18,7 @@ KEYWORDS=""
 
 IUSE_DESKTOP="-portable +blender +X +addons +addons-contrib +nls -ndof -player"
 IUSE_GPU="+opengl cuda opencl -sm_30 -sm_35 -sm_50 -sm_52 -sm_61 -sm_70"
-IUSE_LIBS="+cycles -sdl jack openal freestyle -osl -openvdb +opensubdiv +opencolorio +openimageio +collada -alembic +fftw +oind"
+IUSE_LIBS="+cycles -sdl jack openal freestyle -osl -openvdb +opensubdiv +opencolorio +openimageio +collada -alembic +fftw +oidn"
 IUSE_CPU="openmp embree +sse"
 IUSE_TEST="-valgrind -debug -doc"
 IUSE_IMAGE="-dpx -dds +openexr jpeg2k tiff +hdr"
@@ -95,7 +95,7 @@ RDEPEND="${PYTHON_DEPS}
 	opencl? ( app-eselect/eselect-opencl )
 	opensubdiv? ( media-libs/opensubdiv )
 	nls? ( virtual/libiconv )
-	oind? ( media-libs/oidn )"
+	oidn? ( media-libs/oidn )"
 
 DEPEND="${RDEPEND}
 	dev-cpp/eigen:3
@@ -319,7 +319,7 @@ src_configure() {
 		-DWITH_GHOST_DEBUG=$(usex debug)
 		-DWITH_WITH_CYCLES_DEBUG=$(usex debug)
 		-DWITH_CXX_GUARDEDALLOC=$(usex debug)
-		-DWITH_OPENIMAGEDENOISE=$(usex oind)
+		-DWITH_OPENIMAGEDENOISE=$(usex oidn)
 	)
 
 	cmake-utils_src_configure
