@@ -37,7 +37,7 @@ REQUIRED_USE="${PYTHON_REQUIRED_USE}
 	cycles? ( openexr tiff openimageio opencolorio )
 	osl? ( cycles )
 	embree? ( cycles )
-	oind? ( cycles )"
+	oidn? ( cycles )"
 
 LANGS="en ar bg ca cs de el es es_ES fa fi fr he hr hu id it ja ky ne nl pl pt pt_BR ru sr sr@latin sv tr uk zh_CN zh_TW"
 for X in ${LANGS} ; do
