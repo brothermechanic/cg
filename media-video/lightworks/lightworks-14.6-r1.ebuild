@@ -14,7 +14,7 @@ SRC_URI="http://downloads.lwks.com/Lightworks-14.6-Beta-116294-14.6.0.0.deb"
 
 LICENSE="EditShare"
 SLOT="0"
-KEYWORDS="~amd64"
+KEYWORDS=""
 RESTRICT=""
 IUSE=""
 
