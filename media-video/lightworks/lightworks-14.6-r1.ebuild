@@ -74,6 +74,9 @@ src_unpack() {
 	unpack ./data.tar.xz
 }
 
+src_prepare() {
+    sed -i -e "s|^GDK.*|GDK_BACKEND=x11 /usr/lib64/lightworks/ntcardvt|" usr/bin/lightworks || die
+}
 
 src_install() {
 	exeinto /usr/bin
