@@ -6,10 +6,10 @@ EAPI=6
 inherit git-r3 eutils
 
 DESCRIPTION="Blender addon. Modeling/Retopo tools"
-HOMEPAGE="https://blenderartists.org/t/miratools/637385"
-EGIT_REPO_URI="https://github.com/JoseConseco/mira_tools.git"
-EGIT_BRANCH="blender_28"
-LICENSE="GPL-2"
+HOMEPAGE="https://github.com/mifth/mifthtools"
+EGIT_REPO_URI="https://github.com/mifth/mifthtools.git"
+#EGIT_BRANCH="blender_28"
+LICENSE="BSD-3"
 SLOT="0"
 KEYWORDS="~amd64 ~x86"
 IUSE=""
@@ -20,7 +20,7 @@ RDEPEND="media-gfx/blender[addons]"
 src_install() {
 	egit_clean
     insinto ${BLENDER_ADDONS_DIR}/addons/${PN}
-	doins -r "${S}"/*.py
+	doins -r "${S}"/blender/addons/2.8/mira_tools/*.py
 }
 
 pkg_postinst() {
