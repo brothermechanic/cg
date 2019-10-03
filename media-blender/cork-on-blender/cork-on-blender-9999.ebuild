@@ -6,8 +6,8 @@ EAPI=6
 inherit git-r3 eutils
 
 DESCRIPTION="Blender addon. Cork - a powerful standalone boolean calculations software"
-HOMEPAGE="https://github.com/A-Metaphysical-Drama/cork-on-blender"
-EGIT_REPO_URI="https://github.com/A-Metaphysical-Drama/cork-on-blender.git"
+HOMEPAGE="https://github.com/dfelinto/cork-on-blender"
+EGIT_REPO_URI="https://github.com/brothermechanic/cork-on-blender.git"
 
 LICENSE="GPL-2"
 SLOT="0"
