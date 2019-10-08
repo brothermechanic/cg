@@ -18,8 +18,8 @@ KEYWORDS=""
 
 IUSE_DESKTOP="-portable +blender +X +addons +addons-contrib +nls -ndof -player"
 IUSE_GPU="+opengl cuda opencl -sm_30 -sm_35 -sm_50 -sm_52 -sm_61 -sm_70"
-IUSE_LIBS="+cycles -sdl jack openal freestyle -osl -openvdb +opensubdiv +opencolorio +openimageio +collada -alembic +fftw +oidn"
-IUSE_CPU="openmp embree +sse"
+IUSE_LIBS="+cycles -sdl jack openal freestyle -osl +openvdb +opensubdiv +opencolorio +openimageio +collada -alembic +fftw +oidn"
+IUSE_CPU="openmp -embree +sse"
 IUSE_TEST="-valgrind -debug -doc"
 IUSE_IMAGE="-dpx -dds +openexr jpeg2k tiff +hdr"
 IUSE_CODEC="avi +ffmpeg -sndfile +quicktime"
@@ -186,7 +186,6 @@ src_prepare() {
 src_configure() {
 	append-flags -funsigned-char -fno-strict-aliasing
 	append-lfs-flags
-	append-cppflags -DOPENVDB_4_ABI_COMPATIBLE
 	local mycmakeargs=""
 	#CUDA Kernel Selection
 	local CUDA_ARCH=""
@@ -259,6 +258,7 @@ src_configure() {
 		-DWITH_PYTHON_INSTALL_NUMPY=$(usex portable)
 		-DWITH_PYTHON_INSTALL_REQUESTS=$(usex portable)
 		-DWITH_PYTHON_MODULE=$(usex !X)
+		-DWITH_DRACO=OFF
 		-DWITH_HEADLESS=$(usex !X)
 		-DWITH_BLENDER=$(usex blender)
 		-DWITH_ALEMBIC=$(usex alembic)
