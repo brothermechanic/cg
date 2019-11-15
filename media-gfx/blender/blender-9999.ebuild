@@ -10,7 +10,7 @@ DESCRIPTION="3D Creation/Animation/Publishing System"
 HOMEPAGE="http://www.blender.org/"
 
 EGIT_REPO_URI="http://git.blender.org/blender.git"
-EGIT_BRANCH="master"
+#EGIT_BRANCH="master"
 
 LICENSE="|| ( GPL-2 BL )"
 SLOT="28"
@@ -289,7 +289,6 @@ src_configure() {
 		-DWITH_INSTALL_PORTABLE=$(usex portable)
 		-DWITH_INTERNATIONAL=$(usex nls)
 		-DWITH_JACK=$(usex jack)
-		-DWITH_LEGACY_DEPSGRAPH=OFF
 		-DWITH_LLVM=$(usex osl)
 		-DWITH_LZMA=$(usex lzma)
 		-DWITH_LZO=$(usex lzo)
@@ -314,10 +313,7 @@ src_configure() {
 		-DWITH_SYSTEM_GLES=$(usex !portable)
 		-DWITH_SYSTEM_GLEW=$(usex !portable)
 		-DWITH_SYSTEM_LZO=$(usex !portable)
-		-DWITH_PLAYER=OFF
-		-DWITH_DEBUG=$(usex debug)
 		-DWITH_GHOST_DEBUG=$(usex debug)
-		-DWITH_WITH_CYCLES_DEBUG=$(usex debug)
 		-DWITH_CXX_GUARDEDALLOC=$(usex debug)
 		-DWITH_OPENIMAGEDENOISE=$(usex oidn)
 	)
