@@ -35,5 +35,5 @@ src_install() {
 	exeinto /usr/bin/
 	doexe NormalmapGenerator
 	newicon "${S}"/resources/logo.png "${PN}".png
-	make_desktop_entry NormalmapGenerator || die
+	make_desktop_entry NormalmapGenerator
 }
