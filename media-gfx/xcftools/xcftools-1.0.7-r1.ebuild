@@ -2,7 +2,7 @@
 # Distributed under the terms of the GNU General Public License v2
 # $Header: $
 
-EAPI=5
+EAPI=6
 inherit autotools eutils
 
 DESCRIPTION="A set of fast command-line tools for manipulationg Gimp's file format XCF."

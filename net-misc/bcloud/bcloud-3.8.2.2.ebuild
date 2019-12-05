@@ -1,7 +1,7 @@
 # Copyright 1999-2012 Gentoo Foundation
 # Distributed under the terms of the GNU General Public License v3
 # $Header: $
-EAPI=5
+EAPI=6
 
 PYTHON_COMPAT=( python3_5 )
 PYTHON_REQ_USE="sqlite"
