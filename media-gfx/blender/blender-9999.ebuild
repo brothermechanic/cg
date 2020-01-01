@@ -71,7 +71,7 @@ RDEPEND="${PYTHON_DEPS}
 		openimageio? ( >=media-libs/openimageio-1.1.5 )
 		cuda? ( dev-util/nvidia-cuda-toolkit )
 		osl? ( media-libs/osl )
-		embree? ( media-libs/embree )
+		embree? ( media-libs/embree[static-libs,raymask] )
 		openvdb? ( media-gfx/openvdb[${PYTHON_USEDEP}]
 		dev-cpp/tbb )
 	)
@@ -93,7 +93,7 @@ RDEPEND="${PYTHON_DEPS}
 	lzo? ( dev-libs/lzo )
 	alembic? ( media-gfx/alembic )
 	opencl? ( app-eselect/eselect-opencl )
-	opensubdiv? ( media-libs/opensubdiv )
+	opensubdiv? ( media-libs/opensubdiv[-opencl,-cuda] )
 	nls? ( virtual/libiconv )
 	oidn? ( media-libs/oidn )"
 
@@ -185,7 +185,6 @@ src_prepare() {
 
 src_configure() {
 	append-flags -funsigned-char -fno-strict-aliasing
-	append-lfs-flags
 	local mycmakeargs=""
 	#CUDA Kernel Selection
 	local CUDA_ARCH=""
@@ -316,6 +315,9 @@ src_configure() {
 		-DWITH_GHOST_DEBUG=$(usex debug)
 		-DWITH_CXX_GUARDEDALLOC=$(usex debug)
 		-DWITH_OPENIMAGEDENOISE=$(usex oidn)
+		-DWITH_C11=ON
+		-DWITH_CXX11=ON
+		-DWITH_BOOST=ON
 	)
 
 	cmake-utils_src_configure
