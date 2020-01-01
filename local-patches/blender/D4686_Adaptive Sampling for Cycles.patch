@@ -1,18 +1,92 @@
-diff --git a/intern/cycles/blender/addon/engine.py b/intern/cycles/blender/addon/engine.py
+From 8d378f97c2dd6c0bb21ce0f44a05637a02e5565f Mon Sep 17 00:00:00 2001
+From: Alex Fuller <boberfly@gmail.com>
+Date: Thu, 19 Sep 2019 23:15:56 -0700
+Subject: [PATCH] Adaptive sampling patch https://developer.blender.org/D4686
+
+# Conflicts:
+#	src/blender/addon/engine.py
+#	src/blender/blender_sync.cpp
+#	src/kernel/kernel_types.h
+#	src/render/film.cpp
+---
+ src/blender/addon/engine.py                   |   1 +
+ src/blender/addon/properties.py               |  27 ++
+ src/blender/addon/ui.py                       |  12 +-
+ src/blender/blender_session.cpp               |   3 +-
+ src/blender/blender_sync.cpp                  |  31 +-
+ src/blender/blender_sync.h                    |   4 +-
+ src/device/device_cpu.cpp                     |  52 +++-
+ src/device/device_cuda.cpp                    |  58 ++++
+ src/device/device_split_kernel.cpp            |  63 ++++
+ src/device/device_split_kernel.h              |   4 +
+ src/device/device_task.h                      |   1 +
+ src/device/opencl/opencl.h                    |   1 +
+ src/device/opencl/opencl_split.cpp            |  10 +-
+ src/kernel/CMakeLists.txt                     |   9 +
+ src/kernel/kernel_adaptive_sampling.h         | 239 +++++++++++++++
+ src/kernel/kernel_passes.h                    |  36 ++-
+ src/kernel/kernel_path.h                      |   9 +
+ src/kernel/kernel_path_branched.h             |   8 +
+ src/kernel/kernel_random.h                    |  54 +++-
+ src/kernel/kernel_textures.h                  |   2 +-
+ src/kernel/kernel_types.h                     |  14 +-
+ src/kernel/kernel_work_stealing.h             |  84 +++--
+ src/kernel/kernels/cpu/kernel_cpu.h           |   4 +
+ src/kernel/kernels/cpu/kernel_cpu_impl.h      |   8 +
+ src/kernel/kernels/cuda/kernel.cu             |  70 +++++
+ src/kernel/kernels/cuda/kernel_split.cu       |   8 +
+ .../opencl/kernel_adaptive_adjust_samples.cl  |  23 ++
+ .../opencl/kernel_adaptive_filter_x.cl        |  23 ++
+ .../opencl/kernel_adaptive_filter_y.cl        |  23 ++
+ .../opencl/kernel_adaptive_stopping.cl        |  23 ++
+ .../kernels/opencl/kernel_split_bundle.cl     |   4 +
+ .../split/kernel_adaptive_adjust_samples.h    |  44 +++
+ src/kernel/split/kernel_adaptive_filter_x.h   |  30 ++
+ src/kernel/split/kernel_adaptive_filter_y.h   |  29 ++
+ src/kernel/split/kernel_adaptive_stopping.h   |  37 +++
+ src/render/CMakeLists.txt                     |   2 +
+ src/render/buffers.cpp                        |  21 ++
+ src/render/film.cpp                           |  12 +
+ src/render/film.h                             |   2 +
+ src/render/integrator.cpp                     |  46 ++-
+ src/render/integrator.h                       |   3 +
+ src/render/jitter.cpp                         | 287 ++++++++++++++++++
+ src/render/jitter.h                           |  29 ++
+ src/render/scene.cpp                          |   2 +-
+ src/render/scene.h                            |   2 +-
+ src/render/session.cpp                        |   3 +-
+ src/render/session.h                          |   3 +
+ src/util/util_atomic.h                        |   2 +
+ 48 files changed, 1415 insertions(+), 47 deletions(-)
+ create mode 100644 src/kernel/kernel_adaptive_sampling.h
+ create mode 100644 src/kernel/kernels/opencl/kernel_adaptive_adjust_samples.cl
+ create mode 100644 src/kernel/kernels/opencl/kernel_adaptive_filter_x.cl
+ create mode 100644 src/kernel/kernels/opencl/kernel_adaptive_filter_y.cl
+ create mode 100644 src/kernel/kernels/opencl/kernel_adaptive_stopping.cl
+ create mode 100644 src/kernel/split/kernel_adaptive_adjust_samples.h
+ create mode 100644 src/kernel/split/kernel_adaptive_filter_x.h
+ create mode 100644 src/kernel/split/kernel_adaptive_filter_y.h
+ create mode 100644 src/kernel/split/kernel_adaptive_stopping.h
+ create mode 100644 src/render/jitter.cpp
+ create mode 100644 src/render/jitter.h
+
+diff --git a/src/blender/addon/engine.py b/src/blender/addon/engine.py
+index a45249fe..cacdb3ed 100644
 --- a/intern/cycles/blender/addon/engine.py
 +++ b/intern/cycles/blender/addon/engine.py
-@@ -253,6 +253,7 @@
-     if crl.pass_debug_bvh_traversed_instances: engine.register_pass(scene, srl, "Debug BVH Traversed Instances", 1, "X",   'VALUE')
-     if crl.pass_debug_bvh_intersections:       engine.register_pass(scene, srl, "Debug BVH Intersections",       1, "X",   'VALUE')
-     if crl.pass_debug_ray_bounces:             engine.register_pass(scene, srl, "Debug Ray Bounces",             1, "X",   'VALUE')
-+    if crl.pass_debug_sample_count:            engine.register_pass(scene, srl, "Debug Sample Count",            1, "X",   'VALUE')
-     if crl.use_pass_volume_direct:             engine.register_pass(scene, srl, "VolumeDir",                     3, "RGB", 'COLOR')
-     if crl.use_pass_volume_indirect:           engine.register_pass(scene, srl, "VolumeInd",                     3, "RGB", 'COLOR')
+@@ -258,6 +258,7 @@ def list_render_passes(srl):
+     if crl.pass_debug_bvh_traversed_instances: yield ("Debug BVH Traversed Instances", "X",   'VALUE')
+     if crl.pass_debug_bvh_intersections:       yield ("Debug BVH Intersections",       "X",   'VALUE')
+     if crl.pass_debug_ray_bounces:             yield ("Debug Ray Bounces",             "X",   'VALUE')
++    if crl.pass_debug_sample_count:            yield ("Debug Sample Count",            "X",   'VALUE')
+     if crl.use_pass_volume_direct:             yield ("VolumeDir",                     "RGB", 'COLOR')
+     if crl.use_pass_volume_indirect:           yield ("VolumeInd",                     "RGB", 'COLOR')
  
-diff --git a/intern/cycles/blender/addon/properties.py b/intern/cycles/blender/addon/properties.py
+diff --git a/src/blender/addon/properties.py b/src/blender/addon/properties.py
+index 80a12aad..64a0d5f1 100644
 --- a/intern/cycles/blender/addon/properties.py
 +++ b/intern/cycles/blender/addon/properties.py
-@@ -115,6 +115,7 @@
+@@ -112,6 +112,7 @@
  enum_sampling_pattern = (
      ('SOBOL', "Sobol", "Use Sobol random sampling pattern"),
      ('CORRELATED_MUTI_JITTER', "Correlated Multi-Jitter", "Use Correlated Multi-Jitter random sampling pattern"),
@@ -20,7 +94,7 @@ diff --git a/intern/cycles/blender/addon/properties.py b/intern/cycles/blender/a
  )
  
  enum_integrator = (
-@@ -296,6 +297,26 @@
+@@ -336,6 +337,26 @@ class CyclesRenderSettings(bpy.types.PropertyGroup):
          default=0.01,
      )
  
@@ -44,10 +118,10 @@ diff --git a/intern/cycles/blender/addon/properties.py b/intern/cycles/blender/a
 +        default=False,
 +    )
 +
-     caustics_reflective: BoolProperty(
-         name="Reflective Caustics",
-         description="Use reflective caustics, resulting in a brighter image (more noise but added realism)",
-@@ -1263,6 +1284,12 @@
+     min_light_bounces: IntProperty(
+             name="Min Light Bounces",
+             description="Minimum number of light bounces. Setting this higher reduces noise in the first bounces, "
+@@ -1279,6 +1300,12 @@ class CyclesRenderLayerSettings(bpy.types.PropertyGroup):
          default=False,
          update=update_render_passes,
      )
@@ -60,10 +134,11 @@ diff --git a/intern/cycles/blender/addon/properties.py b/intern/cycles/blender/a
      use_pass_volume_direct: BoolProperty(
          name="Volume Direct",
          description="Deliver direct volumetric scattering pass",
-diff --git a/intern/cycles/blender/addon/ui.py b/intern/cycles/blender/addon/ui.py
+diff --git a/src/blender/addon/ui.py b/src/blender/addon/ui.py
+index ffc067fd..61ac9b03 100644
 --- a/intern/cycles/blender/addon/ui.py
 +++ b/intern/cycles/blender/addon/ui.py
-@@ -179,6 +179,8 @@
+@@ -188,6 +188,8 @@ def draw(self, context):
              col.prop(cscene, "aa_samples", text="Render")
              col.prop(cscene, "preview_aa_samples", text="Viewport")
  
@@ -72,7 +147,7 @@ diff --git a/intern/cycles/blender/addon/ui.py b/intern/cycles/blender/addon/ui.
  
  class CYCLES_RENDER_PT_sampling_sub_samples(CyclesButtonsPanel, Panel):
      bl_label = "Sub Samples"
-@@ -230,7 +232,13 @@
+@@ -239,7 +241,13 @@ def draw(self, context):
          row.prop(cscene, "seed")
          row.prop(cscene, "use_animated_seed", text="", icon='TIME')
  
@@ -87,7 +162,7 @@ diff --git a/intern/cycles/blender/addon/ui.py b/intern/cycles/blender/addon/ui.
  
          layout.prop(cscene, "use_square_samples")
  
-@@ -794,6 +802,8 @@
+@@ -803,6 +811,8 @@ def draw(self, context):
          col.prop(cycles_view_layer, "denoising_store_passes", text="Denoising Data")
          col = flow.column()
          col.prop(cycles_view_layer, "pass_debug_render_time", text="Render Time")
@@ -96,10 +171,11 @@ diff --git a/intern/cycles/blender/addon/ui.py b/intern/cycles/blender/addon/ui.
  
          layout.separator()
  
-diff --git a/intern/cycles/blender/blender_session.cpp b/intern/cycles/blender/blender_session.cpp
+diff --git a/src/blender/blender_session.cpp b/src/blender/blender_session.cpp
+index 78fb49db..609f0ff4 100644
 --- a/intern/cycles/blender/blender_session.cpp
 +++ b/intern/cycles/blender/blender_session.cpp
-@@ -472,7 +472,8 @@
+@@ -474,7 +474,8 @@ void BlenderSession::render(BL::Depsgraph &b_depsgraph_)
    b_rlay_name = b_view_layer.name();
  
    /* add passes */
@@ -109,24 +185,11 @@ diff --git a/intern/cycles/blender/blender_session.cpp b/intern/cycles/blender/b
    buffer_params.passes = passes;
  
    PointerRNA crl = RNA_pointer_get(&b_view_layer.ptr, "cycles");
-diff --git a/intern/cycles/blender/blender_sync.h b/intern/cycles/blender/blender_sync.h
---- a/intern/cycles/blender/blender_sync.h
-+++ b/intern/cycles/blender/blender_sync.h
-@@ -68,7 +68,9 @@
-                  int height,
-                  void **python_thread_state);
-   void sync_view_layer(BL::SpaceView3D &b_v3d, BL::ViewLayer &b_view_layer);
--  vector<Pass> sync_render_passes(BL::RenderLayer &b_render_layer, BL::ViewLayer &b_view_layer);
-+  vector<Pass> sync_render_passes(BL::RenderLayer &b_render_layer,
-+                                  BL::ViewLayer &b_view_layer,
-+                                  bool adaptive_sampling);
-   void sync_integrator();
-   void sync_camera(BL::RenderSettings &b_render,
-                    BL::Object &b_override,
-diff --git a/intern/cycles/blender/blender_sync.cpp b/intern/cycles/blender/blender_sync.cpp
+diff --git a/src/blender/blender_sync.cpp b/src/blender/blender_sync.cpp
+index 332ee357..7757120e 100644
 --- a/intern/cycles/blender/blender_sync.cpp
 +++ b/intern/cycles/blender/blender_sync.cpp
-@@ -280,6 +280,16 @@
+@@ -291,6 +291,16 @@ void BlenderSync::sync_integrator()
    integrator->sample_all_lights_indirect = get_boolean(cscene, "sample_all_lights_indirect");
    integrator->light_sampling_threshold = get_float(cscene, "light_sampling_threshold");
  
@@ -143,7 +206,7 @@ diff --git a/intern/cycles/blender/blender_sync.cpp b/intern/cycles/blender/blen
    int diffuse_samples = get_int(cscene, "diffuse_samples");
    int glossy_samples = get_int(cscene, "glossy_samples");
    int transmission_samples = get_int(cscene, "transmission_samples");
-@@ -296,6 +306,8 @@
+@@ -307,6 +317,8 @@ void BlenderSync::sync_integrator()
      integrator->mesh_light_samples = mesh_light_samples * mesh_light_samples;
      integrator->subsurface_samples = subsurface_samples * subsurface_samples;
      integrator->volume_samples = volume_samples * volume_samples;
@@ -152,7 +215,7 @@ diff --git a/intern/cycles/blender/blender_sync.cpp b/intern/cycles/blender/blen
    }
    else {
      integrator->diffuse_samples = diffuse_samples;
-@@ -465,6 +477,8 @@
+@@ -482,6 +494,8 @@ PassType BlenderSync::get_pass_type(BL::RenderPass &b_pass)
    MAP_PASS("Debug Ray Bounces", PASS_RAY_BOUNCES);
  #endif
    MAP_PASS("Debug Render Time", PASS_RENDER_TIME);
@@ -161,7 +224,7 @@ diff --git a/intern/cycles/blender/blender_sync.cpp b/intern/cycles/blender/blen
    if (string_startswith(name, cryptomatte_prefix)) {
      return PASS_CRYPTOMATTE;
    }
-@@ -500,7 +514,9 @@
+@@ -517,7 +531,9 @@ int BlenderSync::get_denoising_pass(BL::RenderPass &b_pass)
    return -1;
  }
  
@@ -171,10 +234,10 @@ diff --git a/intern/cycles/blender/blender_sync.cpp b/intern/cycles/blender/blen
 +                                             bool adaptive_sampling)
  {
    vector<Pass> passes;
-   Pass::add(PASS_COMBINED, passes);
-@@ -573,6 +589,10 @@
+ 
+@@ -589,6 +605,10 @@ vector<Pass> BlenderSync::sync_render_passes(BL::RenderLayer &b_rlay, BL::ViewLa
      b_engine.add_pass("Debug Render Time", 1, "X", b_view_layer.name().c_str());
-     Pass::add(PASS_RENDER_TIME, passes);
+     Pass::add(PASS_RENDER_TIME, passes, "Debug Render Time");
    }
 +  if (get_boolean(crp, "pass_debug_sample_count")) {
 +    b_engine.add_pass("Debug Sample Count", 1, "X", b_view_layer.name().c_str());
@@ -182,10 +245,10 @@ diff --git a/intern/cycles/blender/blender_sync.cpp b/intern/cycles/blender/blen
 +  }
    if (get_boolean(crp, "use_pass_volume_direct")) {
      b_engine.add_pass("VolumeDir", 3, "RGB", b_view_layer.name().c_str());
-     Pass::add(PASS_VOLUME_DIRECT, passes);
-@@ -619,6 +639,13 @@
-                                                         CRYPT_ACCURATE);
+     Pass::add(PASS_VOLUME_DIRECT, passes, "VolumeDir");
+@@ -650,6 +670,13 @@ vector<Pass> BlenderSync::sync_render_passes(BL::RenderLayer &b_rlay, BL::ViewLa
    }
+   RNA_END;
  
 +  if (adaptive_sampling) {
 +    Pass::add(PASS_ADAPTIVE_AUX_BUFFER, passes);
@@ -197,7 +260,7 @@ diff --git a/intern/cycles/blender/blender_sync.cpp b/intern/cycles/blender/blen
    return passes;
  }
  
-@@ -849,6 +876,8 @@
+@@ -883,6 +910,8 @@ SessionParams BlenderSync::get_session_params(BL::RenderEngine &b_engine,
    params.use_profiling = params.device.has_profiling && !b_engine.is_preview() && background &&
                           BlenderSession::print_render_stats;
  
@@ -206,7 +269,23 @@ diff --git a/intern/cycles/blender/blender_sync.cpp b/intern/cycles/blender/blen
    return params;
  }
  
-diff --git a/intern/cycles/device/device_cpu.cpp b/intern/cycles/device/device_cpu.cpp
+diff --git a/src/blender/blender_sync.h b/src/blender/blender_sync.h
+index a80f484f..d00baef3 100644
+--- a/intern/cycles/blender/blender_sync.h
++++ b/intern/cycles/blender/blender_sync.h
+@@ -70,7 +70,9 @@ class BlenderSync {
+                  int height,
+                  void **python_thread_state);
+   void sync_view_layer(BL::SpaceView3D &b_v3d, BL::ViewLayer &b_view_layer);
+-  vector<Pass> sync_render_passes(BL::RenderLayer &b_render_layer, BL::ViewLayer &b_view_layer);
++  vector<Pass> sync_render_passes(BL::RenderLayer &b_render_layer,
++                                  BL::ViewLayer &b_view_layer,
++                                  bool adaptive_sampling);
+   void sync_integrator();
+   void sync_camera(BL::RenderSettings &b_render,
+                    BL::Object &b_override,
+diff --git a/src/device/device_cpu.cpp b/src/device/device_cpu.cpp
+index c2843a61..ab7e7b35 100644
 --- a/intern/cycles/device/device_cpu.cpp
 +++ b/intern/cycles/device/device_cpu.cpp
 @@ -34,6 +34,7 @@
@@ -217,7 +296,7 @@ diff --git a/intern/cycles/device/device_cpu.cpp b/intern/cycles/device/device_c
  
  #include "kernel/filter/filter.h"
  
-@@ -311,6 +312,10 @@
+@@ -317,6 +318,10 @@ class CPUDevice : public Device {
      REGISTER_SPLIT_KERNEL(next_iteration_setup);
      REGISTER_SPLIT_KERNEL(indirect_subsurface);
      REGISTER_SPLIT_KERNEL(buffer_update);
@@ -228,7 +307,7 @@ diff --git a/intern/cycles/device/device_cpu.cpp b/intern/cycles/device/device_c
  #undef REGISTER_SPLIT_KERNEL
  #undef KERNEL_FUNCTIONS
    }
-@@ -843,10 +848,33 @@
+@@ -851,10 +856,33 @@ class CPUDevice : public Device {
            path_trace_kernel()(kg, render_buffer, sample, x, y, tile.offset, tile.stride);
          }
        }
@@ -263,7 +342,7 @@ diff --git a/intern/cycles/device/device_cpu.cpp b/intern/cycles/device/device_c
      }
      if (use_coverage) {
        coverage.finalize();
-@@ -923,6 +951,28 @@
+@@ -931,6 +959,28 @@ class CPUDevice : public Device {
          }
          else {
            path_trace(task, tile, kg);
@@ -292,10 +371,11 @@ diff --git a/intern/cycles/device/device_cpu.cpp b/intern/cycles/device/device_c
          }
        }
        else if (tile.task == RenderTile::DENOISE) {
-diff --git a/intern/cycles/device/device_cuda.cpp b/intern/cycles/device/device_cuda.cpp
+diff --git a/src/device/device_cuda.cpp b/src/device/device_cuda.cpp
+index dfd80d67..260d9403 100644
 --- a/intern/cycles/device/device_cuda.cpp
 +++ b/intern/cycles/device/device_cuda.cpp
-@@ -1752,6 +1752,23 @@
+@@ -1788,6 +1788,23 @@ class CUDADevice : public Device {
  
      cuda_assert(cuFuncSetCacheConfig(cuPathTrace, CU_FUNC_CACHE_PREFER_L1));
  
@@ -319,7 +399,7 @@ diff --git a/intern/cycles/device/device_cuda.cpp b/intern/cycles/device/device_
      /* Allocate work tile. */
      work_tiles.alloc(1);
  
-@@ -1776,6 +1793,16 @@
+@@ -1812,6 +1829,16 @@ class CUDADevice : public Device {
  
      uint step_samples = divide_up(min_blocks * num_threads_per_block, wtile->w * wtile->h);
  
@@ -336,7 +416,7 @@ diff --git a/intern/cycles/device/device_cuda.cpp b/intern/cycles/device/device_
      /* Render all samples. */
      int start_sample = rtile.start_sample;
      int end_sample = rtile.start_sample + rtile.num_samples;
-@@ -1796,6 +1823,26 @@
+@@ -1832,6 +1859,26 @@ class CUDADevice : public Device {
        cuda_assert(cuLaunchKernel(
            cuPathTrace, num_blocks, 1, 1, num_threads_per_block, 1, 1, 0, 0, args, 0));
  
@@ -363,7 +443,7 @@ diff --git a/intern/cycles/device/device_cuda.cpp b/intern/cycles/device/device_
        cuda_assert(cuCtxSynchronize());
  
        /* Update progress. */
-@@ -1807,6 +1854,17 @@
+@@ -1843,6 +1890,17 @@ class CUDADevice : public Device {
            break;
        }
      }
@@ -381,24 +461,11 @@ diff --git a/intern/cycles/device/device_cuda.cpp b/intern/cycles/device/device_
    }
  
    void film_convert(DeviceTask &task,
-diff --git a/intern/cycles/device/device_split_kernel.h b/intern/cycles/device/device_split_kernel.h
---- a/intern/cycles/device/device_split_kernel.h
-+++ b/intern/cycles/device/device_split_kernel.h
-@@ -75,6 +75,10 @@
-   SplitKernelFunction *kernel_next_iteration_setup;
-   SplitKernelFunction *kernel_indirect_subsurface;
-   SplitKernelFunction *kernel_buffer_update;
-+  SplitKernelFunction *kernel_adaptive_stopping;
-+  SplitKernelFunction *kernel_adaptive_filter_x;
-+  SplitKernelFunction *kernel_adaptive_filter_y;
-+  SplitKernelFunction *kernel_adaptive_adjust_samples;
- 
-   /* Global memory variables [porting]; These memory is used for
-    * co-operation between different kernels; Data written by one
-diff --git a/intern/cycles/device/device_split_kernel.cpp b/intern/cycles/device/device_split_kernel.cpp
+diff --git a/src/device/device_split_kernel.cpp b/src/device/device_split_kernel.cpp
+index 42e597a3..197293b7 100644
 --- a/intern/cycles/device/device_split_kernel.cpp
 +++ b/intern/cycles/device/device_split_kernel.cpp
-@@ -55,6 +55,10 @@
+@@ -55,6 +55,10 @@ DeviceSplitKernel::DeviceSplitKernel(Device *device)
    kernel_next_iteration_setup = NULL;
    kernel_indirect_subsurface = NULL;
    kernel_buffer_update = NULL;
@@ -409,7 +476,7 @@ diff --git a/intern/cycles/device/device_split_kernel.cpp b/intern/cycles/device
  }
  
  DeviceSplitKernel::~DeviceSplitKernel()
-@@ -83,6 +87,10 @@
+@@ -83,6 +87,10 @@ DeviceSplitKernel::~DeviceSplitKernel()
    delete kernel_next_iteration_setup;
    delete kernel_indirect_subsurface;
    delete kernel_buffer_update;
@@ -420,7 +487,7 @@ diff --git a/intern/cycles/device/device_split_kernel.cpp b/intern/cycles/device
  }
  
  bool DeviceSplitKernel::load_kernels(const DeviceRequestedFeatures &requested_features)
-@@ -114,6 +122,10 @@
+@@ -114,6 +122,10 @@ bool DeviceSplitKernel::load_kernels(const DeviceRequestedFeatures &requested_fe
    LOAD_KERNEL(next_iteration_setup);
    LOAD_KERNEL(indirect_subsurface);
    LOAD_KERNEL(buffer_update);
@@ -431,7 +498,7 @@ diff --git a/intern/cycles/device/device_split_kernel.cpp b/intern/cycles/device
  
  #undef LOAD_KERNEL
  
-@@ -208,6 +220,19 @@
+@@ -208,6 +220,19 @@ bool DeviceSplitKernel::path_trace(DeviceTask *task,
  
      RenderTile subtile = tile;
      subtile.start_sample = tile.sample;
@@ -451,7 +518,7 @@ diff --git a/intern/cycles/device/device_split_kernel.cpp b/intern/cycles/device
      subtile.num_samples = min(samples_per_second,
                                tile.start_sample + tile.num_samples - tile.sample);
  
-@@ -302,6 +327,22 @@
+@@ -302,6 +327,22 @@ bool DeviceSplitKernel::path_trace(DeviceTask *task,
        }
      }
  
@@ -474,7 +541,7 @@ diff --git a/intern/cycles/device/device_split_kernel.cpp b/intern/cycles/device
      double time_per_sample = ((time_dt() - start_time) / subtile.num_samples);
  
      if (avg_time_per_sample == 0.0) {
-@@ -324,6 +365,28 @@
+@@ -324,6 +365,28 @@ bool DeviceSplitKernel::path_trace(DeviceTask *task,
      }
    }
  
@@ -503,10 +570,26 @@ diff --git a/intern/cycles/device/device_split_kernel.cpp b/intern/cycles/device
    return true;
  }
  
-diff --git a/intern/cycles/device/device_task.h b/intern/cycles/device/device_task.h
+diff --git a/src/device/device_split_kernel.h b/src/device/device_split_kernel.h
+index 6ff326bf..9d6b9efd 100644
+--- a/intern/cycles/device/device_split_kernel.h
++++ b/intern/cycles/device/device_split_kernel.h
+@@ -75,6 +75,10 @@ class DeviceSplitKernel {
+   SplitKernelFunction *kernel_next_iteration_setup;
+   SplitKernelFunction *kernel_indirect_subsurface;
+   SplitKernelFunction *kernel_buffer_update;
++  SplitKernelFunction *kernel_adaptive_stopping;
++  SplitKernelFunction *kernel_adaptive_filter_x;
++  SplitKernelFunction *kernel_adaptive_filter_y;
++  SplitKernelFunction *kernel_adaptive_adjust_samples;
+ 
+   /* Global memory variables [porting]; These memory is used for
+    * co-operation between different kernels; Data written by one
+diff --git a/src/device/device_task.h b/src/device/device_task.h
+index f45de556..305177b7 100644
 --- a/intern/cycles/device/device_task.h
 +++ b/intern/cycles/device/device_task.h
-@@ -109,6 +109,7 @@
+@@ -110,6 +110,7 @@ class DeviceTask : public Task {
  
    bool need_finish_queue;
    bool integrator_branched;
@@ -514,10 +597,11 @@ diff --git a/intern/cycles/device/device_task.h b/intern/cycles/device/device_ta
    int2 requested_tile_size;
  
   protected:
-diff --git a/intern/cycles/device/opencl/opencl.h b/intern/cycles/device/opencl/opencl.h
+diff --git a/src/device/opencl/opencl.h b/src/device/opencl/opencl.h
+index 61b1e3e3..b761726b 100644
 --- a/intern/cycles/device/opencl/opencl.h
 +++ b/intern/cycles/device/opencl/opencl.h
-@@ -446,6 +446,7 @@
+@@ -445,6 +445,7 @@ class OpenCLDevice : public Device {
                      device_ptr rgba_byte,
                      device_ptr rgba_half);
    void shader(DeviceTask &task);
@@ -525,10 +609,11 @@ diff --git a/intern/cycles/device/opencl/opencl.h b/intern/cycles/device/opencl/
  
    void denoise(RenderTile &tile, DenoisingTask &denoising);
  
-diff --git a/intern/cycles/device/opencl/opencl_split.cpp b/intern/cycles/device/opencl/opencl_split.cpp
+diff --git a/src/device/opencl/opencl_split.cpp b/src/device/opencl/opencl_split.cpp
+index 76f9ce7a..f56c2027 100644
 --- a/intern/cycles/device/opencl/opencl_split.cpp
 +++ b/intern/cycles/device/opencl/opencl_split.cpp
-@@ -56,7 +56,11 @@
+@@ -56,7 +56,11 @@ static const string SPLIT_BUNDLE_KERNELS =
      "enqueue_inactive "
      "next_iteration_setup "
      "indirect_subsurface "
@@ -541,7 +626,7 @@ diff --git a/intern/cycles/device/opencl/opencl_split.cpp b/intern/cycles/device
  
  const string OpenCLDevice::get_opencl_program_name(const string &kernel_name)
  {
-@@ -283,6 +287,10 @@
+@@ -283,6 +287,10 @@ void OpenCLDevice::OpenCLSplitPrograms::load_kernels(
      ADD_SPLIT_KERNEL_BUNDLE_PROGRAM(next_iteration_setup);
      ADD_SPLIT_KERNEL_BUNDLE_PROGRAM(indirect_subsurface);
      ADD_SPLIT_KERNEL_BUNDLE_PROGRAM(buffer_update);
@@ -552,10 +637,11 @@ diff --git a/intern/cycles/device/opencl/opencl_split.cpp b/intern/cycles/device
      programs.push_back(&program_split);
  
  #  undef ADD_SPLIT_KERNEL_PROGRAM
-diff --git a/intern/cycles/kernel/CMakeLists.txt b/intern/cycles/kernel/CMakeLists.txt
+diff --git a/src/kernel/CMakeLists.txt b/src/kernel/CMakeLists.txt
+index 67fc78eb..c7ebdcaf 100644
 --- a/intern/cycles/kernel/CMakeLists.txt
 +++ b/intern/cycles/kernel/CMakeLists.txt
-@@ -36,6 +36,10 @@
+@@ -36,6 +36,10 @@ set(SRC_CUDA_KERNELS
  )
  
  set(SRC_OPENCL_KERNELS
@@ -566,7 +652,7 @@ diff --git a/intern/cycles/kernel/CMakeLists.txt b/intern/cycles/kernel/CMakeLis
    kernels/opencl/kernel_bake.cl
    kernels/opencl/kernel_base.cl
    kernels/opencl/kernel_displace.cl
-@@ -90,6 +94,7 @@
+@@ -94,6 +98,7 @@ set(SRC_BVH_HEADERS
  
  set(SRC_HEADERS
    kernel_accumulate.h
@@ -574,7 +660,7 @@ diff --git a/intern/cycles/kernel/CMakeLists.txt b/intern/cycles/kernel/CMakeLis
    kernel_bake.h
    kernel_camera.h
    kernel_color.h
-@@ -308,6 +313,10 @@
+@@ -323,6 +328,10 @@ set(SRC_UTIL_HEADERS
  )
  
  set(SRC_SPLIT_HEADERS
@@ -585,8 +671,9 @@ diff --git a/intern/cycles/kernel/CMakeLists.txt b/intern/cycles/kernel/CMakeLis
    split/kernel_branched.h
    split/kernel_buffer_update.h
    split/kernel_data_init.h
-diff --git a/intern/cycles/kernel/kernel_adaptive_sampling.h b/intern/cycles/kernel/kernel_adaptive_sampling.h
+diff --git a/src/kernel/kernel_adaptive_sampling.h b/src/kernel/kernel_adaptive_sampling.h
 new file mode 100644
+index 00000000..1c1fcc06
 --- /dev/null
 +++ b/intern/cycles/kernel/kernel_adaptive_sampling.h
 @@ -0,0 +1,239 @@
@@ -829,10 +916,11 @@ new file mode 100644
 +CCL_NAMESPACE_END
 +
 +#endif /* __KERNEL_ADAPTIVE_SAMPLING_H__ */
-diff --git a/intern/cycles/kernel/kernel_passes.h b/intern/cycles/kernel/kernel_passes.h
+diff --git a/src/kernel/kernel_passes.h b/src/kernel/kernel_passes.h
+index 828add9d..9196710a 100644
 --- a/intern/cycles/kernel/kernel_passes.h
 +++ b/intern/cycles/kernel/kernel_passes.h
-@@ -102,7 +102,9 @@
+@@ -29,7 +29,9 @@ ccl_device_inline void kernel_write_denoising_shadow(KernelGlobals *kg,
    if (kernel_data.film.pass_denoising_data == 0)
      return;
  
@@ -843,7 +931,7 @@ diff --git a/intern/cycles/kernel/kernel_passes.h b/intern/cycles/kernel/kernel_
  
    path_total = ensure_finite(path_total);
    path_total_shaded = ensure_finite(path_total_shaded);
-@@ -446,6 +448,38 @@
+@@ -378,6 +380,38 @@ ccl_device_inline void kernel_write_result(KernelGlobals *kg,
  #ifdef __KERNEL_DEBUG__
    kernel_write_debug_passes(kg, buffer, L);
  #endif
@@ -882,10 +970,11 @@ diff --git a/intern/cycles/kernel/kernel_passes.h b/intern/cycles/kernel/kernel_
  }
  
  CCL_NAMESPACE_END
-diff --git a/intern/cycles/kernel/kernel_path.h b/intern/cycles/kernel/kernel_path.h
+diff --git a/src/kernel/kernel_path.h b/src/kernel/kernel_path.h
+index 1a0b6727..bdd2703a 100644
 --- a/intern/cycles/kernel/kernel_path.h
 +++ b/intern/cycles/kernel/kernel_path.h
-@@ -30,6 +30,7 @@
+@@ -31,6 +31,7 @@
  #include "kernel/kernel_accumulate.h"
  #include "kernel/kernel_shader.h"
  #include "kernel/kernel_light.h"
@@ -893,7 +982,7 @@ diff --git a/intern/cycles/kernel/kernel_path.h b/intern/cycles/kernel/kernel_pa
  #include "kernel/kernel_passes.h"
  
  #if defined(__VOLUME__) || defined(__SUBSURFACE__)
-@@ -665,6 +666,14 @@
+@@ -656,6 +657,14 @@ ccl_device void kernel_path_trace(
  
    buffer += index * pass_stride;
  
@@ -908,10 +997,11 @@ diff --git a/intern/cycles/kernel/kernel_path.h b/intern/cycles/kernel/kernel_pa
    /* Initialize random numbers and sample ray. */
    uint rng_hash;
    Ray ray;
-diff --git a/intern/cycles/kernel/kernel_path_branched.h b/intern/cycles/kernel/kernel_path_branched.h
+diff --git a/src/kernel/kernel_path_branched.h b/src/kernel/kernel_path_branched.h
+index f75e4ab4..0d5781fe 100644
 --- a/intern/cycles/kernel/kernel_path_branched.h
 +++ b/intern/cycles/kernel/kernel_path_branched.h
-@@ -521,6 +521,14 @@
+@@ -523,6 +523,14 @@ ccl_device void kernel_branched_path_trace(
  
    buffer += index * pass_stride;
  
@@ -926,19 +1016,19 @@ diff --git a/intern/cycles/kernel/kernel_path_branched.h b/intern/cycles/kernel/
    /* initialize random numbers and ray */
    uint rng_hash;
    Ray ray;
-diff --git a/intern/cycles/kernel/kernel_random.h b/intern/cycles/kernel/kernel_random.h
+diff --git a/src/kernel/kernel_random.h b/src/kernel/kernel_random.h
+index 80738213..b2523e3c 100644
 --- a/intern/cycles/kernel/kernel_random.h
 +++ b/intern/cycles/kernel/kernel_random.h
-@@ -43,7 +43,7 @@
+@@ -43,20 +43,34 @@ ccl_device uint sobol_dimension(KernelGlobals *kg, int index, int dimension)
    uint i = index + SOBOL_SKIP;
-   for (uint j = 0; i; i >>= 1, j++) {
-     if (i & 1) {
--      result ^= kernel_tex_fetch(__sobol_directions, 32 * dimension + j);
-+      result ^= kernel_tex_fetch(__sample_pattern_lut, 32 * dimension + j);
-     }
+   for (int j = 0, x; (x = find_first_set(i)); i >>= x) {
+     j += x;
+-    result ^= kernel_tex_fetch(__sobol_directions, 32 * dimension + j - 1);
++    result ^= kernel_tex_fetch(__sample_pattern_lut, 32 * dimension + j - 1);
    }
    return result;
-@@ -51,13 +51,27 @@
+ }
  
  #endif /* __SOBOL__ */
  
@@ -967,7 +1057,7 @@ diff --git a/intern/cycles/kernel/kernel_random.h b/intern/cycles/kernel/kernel_
  #ifdef __CMJ__
  #  ifdef __SOBOL__
    if (kernel_data.integrator.sampling_pattern == SAMPLING_PATTERN_CMJ)
-@@ -100,7 +114,22 @@
+@@ -99,7 +113,22 @@ ccl_device_forceinline void path_rng_2D(KernelGlobals *kg,
    *fy = (float)drand48();
    return;
  #endif
@@ -991,7 +1081,7 @@ diff --git a/intern/cycles/kernel/kernel_random.h b/intern/cycles/kernel/kernel_
  #ifdef __CMJ__
  #  ifdef __SOBOL__
    if (kernel_data.integrator.sampling_pattern == SAMPLING_PATTERN_CMJ)
-@@ -285,4 +314,23 @@
+@@ -284,4 +313,23 @@ ccl_device float lcg_step_float_addrspace(ccl_addr_space uint *rng)
    return (float)*rng * (1.0f / (float)0xFFFFFFFF);
  }
  
@@ -1015,10 +1105,11 @@ diff --git a/intern/cycles/kernel/kernel_random.h b/intern/cycles/kernel/kernel_
 +}
 +
  CCL_NAMESPACE_END
-diff --git a/intern/cycles/kernel/kernel_textures.h b/intern/cycles/kernel/kernel_textures.h
+diff --git a/src/kernel/kernel_textures.h b/src/kernel/kernel_textures.h
+index 9eaa6b55..1cae3434 100644
 --- a/intern/cycles/kernel/kernel_textures.h
 +++ b/intern/cycles/kernel/kernel_textures.h
-@@ -77,7 +77,7 @@
+@@ -77,7 +77,7 @@ KERNEL_TEX(KernelShader, __shaders)
  KERNEL_TEX(float, __lookup_table)
  
  /* sobol */
@@ -1027,10 +1118,11 @@ diff --git a/intern/cycles/kernel/kernel_textures.h b/intern/cycles/kernel/kerne
  
  /* image textures */
  KERNEL_TEX(TextureInfo, __texture_info)
-diff --git a/intern/cycles/kernel/kernel_types.h b/intern/cycles/kernel/kernel_types.h
+diff --git a/src/kernel/kernel_types.h b/src/kernel/kernel_types.h
+index c35e3457..ec19031e 100644
 --- a/intern/cycles/kernel/kernel_types.h
 +++ b/intern/cycles/kernel/kernel_types.h
-@@ -261,6 +261,7 @@
+@@ -269,6 +269,7 @@ enum PathTraceDimension {
  enum SamplingPattern {
    SAMPLING_PATTERN_SOBOL = 0,
    SAMPLING_PATTERN_CMJ = 1,
@@ -1038,35 +1130,44 @@ diff --git a/intern/cycles/kernel/kernel_types.h b/intern/cycles/kernel/kernel_t
  
    SAMPLING_NUM_PATTERNS,
  };
-@@ -365,6 +366,8 @@
- #endif
-   PASS_RENDER_TIME,
+@@ -375,6 +376,8 @@ typedef enum PassType {
    PASS_CRYPTOMATTE,
+   PASS_AOV_COLOR,
+   PASS_AOV_VALUE,
 +  PASS_ADAPTIVE_AUX_BUFFER,
 +  PASS_SAMPLE_COUNT,
    PASS_CATEGORY_MAIN_END = 31,
  
    PASS_MIST = 32,
-@@ -1209,6 +1212,9 @@
+@@ -1238,6 +1241,9 @@ typedef struct KernelFilm {
+   int cryptomatte_passes;
    int cryptomatte_depth;
    int pass_cryptomatte;
- 
++  
 +  int pass_adaptive_aux_buffer;
 +  int pass_sample_count;
-+
+ 
    int pass_mist;
    float mist_start;
-   float mist_inv_depth;
-@@ -1231,6 +1237,8 @@
-   int pass_bvh_intersections;
-   int pass_ray_bounces;
- #endif
+@@ -1258,7 +1264,7 @@ typedef struct KernelFilm {
+   float4 xyz_to_r;
+   float4 xyz_to_g;
+   float4 xyz_to_b;
+-  float4 rgb_to_y;
++  float4 rgb_to_y; //50
+ 
+ #ifdef __KERNEL_DEBUG__
+   int pass_bvh_traversed_nodes;
+@@ -1273,6 +1279,8 @@ typedef struct KernelFilm {
+   int display_divide_pass_stride;
+   int use_display_exposure;
+   int use_display_pass_alpha;
 +
 +  int pad1, pad2;
  } KernelFilm;
  static_assert_align(KernelFilm, 16);
  
-@@ -1310,6 +1318,8 @@
+@@ -1354,6 +1362,8 @@ typedef struct KernelIntegrator {
    /* sampler */
    int sampling_pattern;
    int aa_samples;
@@ -1075,28 +1176,20 @@ diff --git a/intern/cycles/kernel/kernel_types.h b/intern/cycles/kernel/kernel_t
  
    /* volume render */
    int use_volumes;
-@@ -1321,7 +1331,7 @@
+@@ -1365,7 +1375,7 @@ typedef struct KernelIntegrator {
  
    int max_closures;
  
--  int pad1, pad2, pad3;
-+  int pad1;
+-  int pad1;
++  int pad1, pad2, pad3;
  } KernelIntegrator;
  static_assert_align(KernelIntegrator, 16);
  
-@@ -1628,7 +1638,7 @@
-   uint start_sample;
-   uint num_samples;
- 
--  uint offset;
-+  int offset;
-   uint stride;
- 
-   ccl_global float *buffer;
-diff --git a/intern/cycles/kernel/kernel_work_stealing.h b/intern/cycles/kernel/kernel_work_stealing.h
+diff --git a/src/kernel/kernel_work_stealing.h b/src/kernel/kernel_work_stealing.h
+index 799561a7..c642d227 100644
 --- a/intern/cycles/kernel/kernel_work_stealing.h
 +++ b/intern/cycles/kernel/kernel_work_stealing.h
-@@ -23,17 +23,41 @@
+@@ -23,17 +23,41 @@ CCL_NAMESPACE_BEGIN
   * Utility functions for work stealing
   */
  
@@ -1143,7 +1236,7 @@ diff --git a/intern/cycles/kernel/kernel_work_stealing.h b/intern/cycles/kernel/
  {
    /* With a small amount of work there may be more threads than work due to
     * rounding up of global size, stop such threads immediately. */
-@@ -56,31 +80,37 @@
+@@ -56,31 +80,37 @@ ccl_device bool get_next_work(KernelGlobals *kg,
    /* Test if all work for this pool is done. */
    return (*global_work_index < total_work_size);
  }
@@ -1203,10 +1296,11 @@ diff --git a/intern/cycles/kernel/kernel_work_stealing.h b/intern/cycles/kernel/
  
  CCL_NAMESPACE_END
  
-diff --git a/intern/cycles/kernel/kernels/cpu/kernel_cpu.h b/intern/cycles/kernel/kernels/cpu/kernel_cpu.h
+diff --git a/src/kernel/kernels/cpu/kernel_cpu.h b/src/kernel/kernels/cpu/kernel_cpu.h
+index f5d981fb..683f4b88 100644
 --- a/intern/cycles/kernel/kernels/cpu/kernel_cpu.h
 +++ b/intern/cycles/kernel/kernels/cpu/kernel_cpu.h
-@@ -89,5 +89,9 @@
+@@ -89,5 +89,9 @@ DECLARE_SPLIT_KERNEL_FUNCTION(enqueue_inactive)
  DECLARE_SPLIT_KERNEL_FUNCTION(next_iteration_setup)
  DECLARE_SPLIT_KERNEL_FUNCTION(indirect_subsurface)
  DECLARE_SPLIT_KERNEL_FUNCTION(buffer_update)
@@ -1216,7 +1310,8 @@ diff --git a/intern/cycles/kernel/kernels/cpu/kernel_cpu.h b/intern/cycles/kerne
 +DECLARE_SPLIT_KERNEL_FUNCTION(adaptive_adjust_samples)
  
  #undef KERNEL_ARCH
-diff --git a/intern/cycles/kernel/kernels/cpu/kernel_cpu_impl.h b/intern/cycles/kernel/kernels/cpu/kernel_cpu_impl.h
+diff --git a/src/kernel/kernels/cpu/kernel_cpu_impl.h b/src/kernel/kernels/cpu/kernel_cpu_impl.h
+index 9ca3f46b..96b2bf11 100644
 --- a/intern/cycles/kernel/kernels/cpu/kernel_cpu_impl.h
 +++ b/intern/cycles/kernel/kernels/cpu/kernel_cpu_impl.h
 @@ -58,6 +58,10 @@
@@ -1230,7 +1325,7 @@ diff --git a/intern/cycles/kernel/kernels/cpu/kernel_cpu_impl.h b/intern/cycles/
  #  endif /* __SPLIT_KERNEL__ */
  #else
  #  define STUB_ASSERT(arch, name) \
-@@ -204,6 +208,10 @@
+@@ -204,6 +208,10 @@ DEFINE_SPLIT_KERNEL_FUNCTION_LOCALS(enqueue_inactive, uint)
  DEFINE_SPLIT_KERNEL_FUNCTION_LOCALS(next_iteration_setup, uint)
  DEFINE_SPLIT_KERNEL_FUNCTION(indirect_subsurface)
  DEFINE_SPLIT_KERNEL_FUNCTION_LOCALS(buffer_update, uint)
@@ -1241,7 +1336,8 @@ diff --git a/intern/cycles/kernel/kernels/cpu/kernel_cpu_impl.h b/intern/cycles/
  #endif   /* __SPLIT_KERNEL__ */
  
  #undef KERNEL_STUB
-diff --git a/intern/cycles/kernel/kernels/cuda/kernel.cu b/intern/cycles/kernel/kernels/cuda/kernel.cu
+diff --git a/src/kernel/kernels/cuda/kernel.cu b/src/kernel/kernels/cuda/kernel.cu
+index af311027..4f3a70a5 100644
 --- a/intern/cycles/kernel/kernels/cuda/kernel.cu
 +++ b/intern/cycles/kernel/kernels/cuda/kernel.cu
 @@ -33,6 +33,7 @@
@@ -1252,7 +1348,7 @@ diff --git a/intern/cycles/kernel/kernels/cuda/kernel.cu b/intern/cycles/kernel/
  
  /* kernels */
  extern "C" __global__ void
-@@ -81,6 +82,75 @@
+@@ -81,6 +82,75 @@ kernel_cuda_branched_path_trace(WorkTile *tile, uint total_work_size)
  }
  #endif
  
@@ -1328,7 +1424,8 @@ diff --git a/intern/cycles/kernel/kernels/cuda/kernel.cu b/intern/cycles/kernel/
  extern "C" __global__ void
  CUDA_LAUNCH_BOUNDS(CUDA_THREADS_BLOCK_WIDTH, CUDA_KERNEL_MAX_REGISTERS)
  kernel_cuda_convert_to_byte(uchar4 *rgba, float *buffer, float sample_scale, int sx, int sy, int sw, int sh, int offset, int stride)
-diff --git a/intern/cycles/kernel/kernels/cuda/kernel_split.cu b/intern/cycles/kernel/kernels/cuda/kernel_split.cu
+diff --git a/src/kernel/kernels/cuda/kernel_split.cu b/src/kernel/kernels/cuda/kernel_split.cu
+index 43b3d0aa..95ad7599 100644
 --- a/intern/cycles/kernel/kernels/cuda/kernel_split.cu
 +++ b/intern/cycles/kernel/kernels/cuda/kernel_split.cu
 @@ -43,6 +43,10 @@
@@ -1342,7 +1439,7 @@ diff --git a/intern/cycles/kernel/kernels/cuda/kernel_split.cu b/intern/cycles/k
  
  #include "kernel/kernel_film.h"
  
-@@ -121,6 +125,10 @@
+@@ -121,6 +125,10 @@ DEFINE_SPLIT_KERNEL_FUNCTION_LOCALS(enqueue_inactive, uint)
  DEFINE_SPLIT_KERNEL_FUNCTION_LOCALS(next_iteration_setup, uint)
  DEFINE_SPLIT_KERNEL_FUNCTION(indirect_subsurface)
  DEFINE_SPLIT_KERNEL_FUNCTION_LOCALS(buffer_update, uint)
@@ -1353,8 +1450,9 @@ diff --git a/intern/cycles/kernel/kernels/cuda/kernel_split.cu b/intern/cycles/k
  
  extern "C" __global__ void
  CUDA_LAUNCH_BOUNDS(CUDA_THREADS_BLOCK_WIDTH, CUDA_KERNEL_MAX_REGISTERS)
-diff --git a/intern/cycles/kernel/kernels/opencl/kernel_adaptive_adjust_samples.cl b/intern/cycles/kernel/kernels/opencl/kernel_adaptive_adjust_samples.cl
+diff --git a/src/kernel/kernels/opencl/kernel_adaptive_adjust_samples.cl b/src/kernel/kernels/opencl/kernel_adaptive_adjust_samples.cl
 new file mode 100644
+index 00000000..ebdb99d4
 --- /dev/null
 +++ b/intern/cycles/kernel/kernels/opencl/kernel_adaptive_adjust_samples.cl
 @@ -0,0 +1,23 @@
@@ -1381,8 +1479,9 @@ new file mode 100644
 +#define KERNEL_NAME adaptive_adjust_samples
 +#include "kernel/kernels/opencl/kernel_split_function.h"
 +#undef KERNEL_NAME
-diff --git a/intern/cycles/kernel/kernels/opencl/kernel_adaptive_filter_x.cl b/intern/cycles/kernel/kernels/opencl/kernel_adaptive_filter_x.cl
+diff --git a/src/kernel/kernels/opencl/kernel_adaptive_filter_x.cl b/src/kernel/kernels/opencl/kernel_adaptive_filter_x.cl
 new file mode 100644
+index 00000000..76d82d41
 --- /dev/null
 +++ b/intern/cycles/kernel/kernels/opencl/kernel_adaptive_filter_x.cl
 @@ -0,0 +1,23 @@
@@ -1409,8 +1508,9 @@ new file mode 100644
 +#define KERNEL_NAME adaptive_filter_x
 +#include "kernel/kernels/opencl/kernel_split_function.h"
 +#undef KERNEL_NAME
-diff --git a/intern/cycles/kernel/kernels/opencl/kernel_adaptive_filter_y.cl b/intern/cycles/kernel/kernels/opencl/kernel_adaptive_filter_y.cl
+diff --git a/src/kernel/kernels/opencl/kernel_adaptive_filter_y.cl b/src/kernel/kernels/opencl/kernel_adaptive_filter_y.cl
 new file mode 100644
+index 00000000..1e6d15ba
 --- /dev/null
 +++ b/intern/cycles/kernel/kernels/opencl/kernel_adaptive_filter_y.cl
 @@ -0,0 +1,23 @@
@@ -1437,8 +1537,9 @@ new file mode 100644
 +#define KERNEL_NAME adaptive_filter_y
 +#include "kernel/kernels/opencl/kernel_split_function.h"
 +#undef KERNEL_NAME
-diff --git a/intern/cycles/kernel/kernels/opencl/kernel_adaptive_stopping.cl b/intern/cycles/kernel/kernels/opencl/kernel_adaptive_stopping.cl
+diff --git a/src/kernel/kernels/opencl/kernel_adaptive_stopping.cl b/src/kernel/kernels/opencl/kernel_adaptive_stopping.cl
 new file mode 100644
+index 00000000..51de0059
 --- /dev/null
 +++ b/intern/cycles/kernel/kernels/opencl/kernel_adaptive_stopping.cl
 @@ -0,0 +1,23 @@
@@ -1465,7 +1566,8 @@ new file mode 100644
 +#define KERNEL_NAME adaptive_stopping
 +#include "kernel/kernels/opencl/kernel_split_function.h"
 +#undef KERNEL_NAME
-diff --git a/intern/cycles/kernel/kernels/opencl/kernel_split_bundle.cl b/intern/cycles/kernel/kernels/opencl/kernel_split_bundle.cl
+diff --git a/src/kernel/kernels/opencl/kernel_split_bundle.cl b/src/kernel/kernels/opencl/kernel_split_bundle.cl
+index 6041f13b..c3b7b094 100644
 --- a/intern/cycles/kernel/kernels/opencl/kernel_split_bundle.cl
 +++ b/intern/cycles/kernel/kernels/opencl/kernel_split_bundle.cl
 @@ -28,3 +28,7 @@
@@ -1476,8 +1578,9 @@ diff --git a/intern/cycles/kernel/kernels/opencl/kernel_split_bundle.cl b/intern
 +#include "kernel/kernels/opencl/kernel_adaptive_filter_x.cl"
 +#include "kernel/kernels/opencl/kernel_adaptive_filter_y.cl"
 +#include "kernel/kernels/opencl/kernel_adaptive_adjust_samples.cl"
-diff --git a/intern/cycles/kernel/split/kernel_adaptive_adjust_samples.h b/intern/cycles/kernel/split/kernel_adaptive_adjust_samples.h
+diff --git a/src/kernel/split/kernel_adaptive_adjust_samples.h b/src/kernel/split/kernel_adaptive_adjust_samples.h
 new file mode 100644
+index 00000000..60ebf415
 --- /dev/null
 +++ b/intern/cycles/kernel/split/kernel_adaptive_adjust_samples.h
 @@ -0,0 +1,44 @@
@@ -1525,8 +1628,9 @@ new file mode 100644
 +}
 +
 +CCL_NAMESPACE_END
-diff --git a/intern/cycles/kernel/split/kernel_adaptive_filter_x.h b/intern/cycles/kernel/split/kernel_adaptive_filter_x.h
+diff --git a/src/kernel/split/kernel_adaptive_filter_x.h b/src/kernel/split/kernel_adaptive_filter_x.h
 new file mode 100644
+index 00000000..93f41f7c
 --- /dev/null
 +++ b/intern/cycles/kernel/split/kernel_adaptive_filter_x.h
 @@ -0,0 +1,30 @@
@@ -1560,8 +1664,9 @@ new file mode 100644
 +}
 +
 +CCL_NAMESPACE_END
-diff --git a/intern/cycles/kernel/split/kernel_adaptive_filter_y.h b/intern/cycles/kernel/split/kernel_adaptive_filter_y.h
+diff --git a/src/kernel/split/kernel_adaptive_filter_y.h b/src/kernel/split/kernel_adaptive_filter_y.h
 new file mode 100644
+index 00000000..eca53d07
 --- /dev/null
 +++ b/intern/cycles/kernel/split/kernel_adaptive_filter_y.h
 @@ -0,0 +1,29 @@
@@ -1594,8 +1699,9 @@ new file mode 100644
 +  }
 +}
 +CCL_NAMESPACE_END
-diff --git a/intern/cycles/kernel/split/kernel_adaptive_stopping.h b/intern/cycles/kernel/split/kernel_adaptive_stopping.h
+diff --git a/src/kernel/split/kernel_adaptive_stopping.h b/src/kernel/split/kernel_adaptive_stopping.h
 new file mode 100644
+index 00000000..c8eb1ebd
 --- /dev/null
 +++ b/intern/cycles/kernel/split/kernel_adaptive_stopping.h
 @@ -0,0 +1,37 @@
@@ -1636,10 +1742,11 @@ new file mode 100644
 +  }
 +}
 +CCL_NAMESPACE_END
-diff --git a/intern/cycles/render/CMakeLists.txt b/intern/cycles/render/CMakeLists.txt
+diff --git a/src/render/CMakeLists.txt b/src/render/CMakeLists.txt
+index 53196b01..ede157e5 100644
 --- a/intern/cycles/render/CMakeLists.txt
 +++ b/intern/cycles/render/CMakeLists.txt
-@@ -21,6 +21,7 @@
+@@ -22,6 +22,7 @@ set(SRC
    graph.cpp
    image.cpp
    integrator.cpp
@@ -1647,7 +1754,7 @@ diff --git a/intern/cycles/render/CMakeLists.txt b/intern/cycles/render/CMakeLis
    light.cpp
    merge.cpp
    mesh.cpp
-@@ -56,6 +57,7 @@
+@@ -58,6 +59,7 @@ set(SRC_HEADERS
    image.h
    integrator.h
    light.h
@@ -1655,10 +1762,11 @@ diff --git a/intern/cycles/render/CMakeLists.txt b/intern/cycles/render/CMakeLis
    merge.h
    mesh.h
    nodes.h
-diff --git a/intern/cycles/render/buffers.cpp b/intern/cycles/render/buffers.cpp
+diff --git a/src/render/buffers.cpp b/src/render/buffers.cpp
+index fe8606e1..46e8a9f0 100644
 --- a/intern/cycles/render/buffers.cpp
 +++ b/intern/cycles/render/buffers.cpp
-@@ -237,6 +237,22 @@
+@@ -240,6 +240,22 @@ bool RenderBuffers::get_pass_rect(
      return false;
    }
  
@@ -1681,7 +1789,7 @@ diff --git a/intern/cycles/render/buffers.cpp b/intern/cycles/render/buffers.cpp
    int pass_offset = 0;
  
    for (size_t j = 0; j < params.passes.size(); j++) {
-@@ -401,6 +417,11 @@
+@@ -400,6 +416,11 @@ bool RenderBuffers::get_pass_rect(
        }
        else {
          for (int i = 0; i < size; i++, in += pass_stride, pixels += 4) {
@@ -1693,10 +1801,48 @@ diff --git a/intern/cycles/render/buffers.cpp b/intern/cycles/render/buffers.cpp
            float4 f = make_float4(in[0], in[1], in[2], in[3]);
  
            pixels[0] = f.x * scale_exposure;
-diff --git a/intern/cycles/render/film.h b/intern/cycles/render/film.h
+diff --git a/src/render/film.cpp b/src/render/film.cpp
+index 3cd7936a..c6f87a2d 100644
+--- a/intern/cycles/render/film.cpp
++++ b/intern/cycles/render/film.cpp
+@@ -168,6 +168,12 @@ void Pass::add(PassType type, vector<Pass> &passes, const char *name)
+       break;
+     case PASS_AOV_VALUE:
+       pass.components = 1;
++    case PASS_ADAPTIVE_AUX_BUFFER:
++      pass.components = 4;
++      break;
++    case PASS_SAMPLE_COUNT:
++      pass.components = 1;
++      pass.exposure = false;
+       break;
+     default:
+       assert(false);
+@@ -291,6 +297,7 @@ NODE_DEFINE(Film)
+   SOCKET_BOOLEAN(denoising_clean_pass, "Generate Denoising Clean Pass", false);
+   SOCKET_BOOLEAN(denoising_prefiltered_pass, "Generate Denoising Prefiltered Pass", false);
+   SOCKET_INT(denoising_flags, "Denoising Flags", 0);
++  SOCKET_BOOLEAN(use_adaptive_sampling, "Use Adaptive Sampling", false);
+ 
+   return type;
+ }
+@@ -479,6 +486,11 @@ void Film::device_update(Device *device, DeviceScene *dscene, Scene *scene)
+           kfilm->pass_aov_value = kfilm->pass_stride;
+           have_aov_value = true;
+         }
++      case PASS_ADAPTIVE_AUX_BUFFER:
++        kfilm->pass_adaptive_aux_buffer = kfilm->pass_stride;
++        break;
++      case PASS_SAMPLE_COUNT:
++        kfilm->pass_sample_count = kfilm->pass_stride;
+         break;
+       default:
+         assert(false);
+diff --git a/src/render/film.h b/src/render/film.h
+index 95e54cb5..aae8fb40 100644
 --- a/intern/cycles/render/film.h
 +++ b/intern/cycles/render/film.h
-@@ -81,6 +81,8 @@
+@@ -81,6 +81,8 @@ class Film : public Node {
    CryptomatteType cryptomatte_passes;
    int cryptomatte_depth;
  
@@ -1705,58 +1851,8 @@ diff --git a/intern/cycles/render/film.h b/intern/cycles/render/film.h
    bool need_update;
  
    Film();
-diff --git a/intern/cycles/render/film.cpp b/intern/cycles/render/film.cpp
---- a/intern/cycles/render/film.cpp
-+++ b/intern/cycles/render/film.cpp
-@@ -163,6 +163,13 @@
-     case PASS_CRYPTOMATTE:
-       pass.components = 4;
-       break;
-+    case PASS_ADAPTIVE_AUX_BUFFER:
-+      pass.components = 4;
-+      break;
-+    case PASS_SAMPLE_COUNT:
-+      pass.components = 1;
-+      pass.exposure = false;
-+      break;
-     default:
-       assert(false);
-       break;
-@@ -287,6 +294,7 @@
-   SOCKET_BOOLEAN(denoising_clean_pass, "Generate Denoising Clean Pass", false);
-   SOCKET_BOOLEAN(denoising_prefiltered_pass, "Generate Denoising Prefiltered Pass", false);
-   SOCKET_INT(denoising_flags, "Denoising Flags", 0);
-+  SOCKET_BOOLEAN(use_adaptive_sampling, "Use Adaptive Sampling", false);
- 
-   return type;
- }
-@@ -459,6 +467,12 @@
-                                       kfilm->pass_stride;
-         have_cryptomatte = true;
-         break;
-+      case PASS_ADAPTIVE_AUX_BUFFER:
-+        kfilm->pass_adaptive_aux_buffer = kfilm->pass_stride;
-+        break;
-+      case PASS_SAMPLE_COUNT:
-+        kfilm->pass_sample_count = kfilm->pass_stride;
-+        break;
-       default:
-         assert(false);
-         break;
-diff --git a/intern/cycles/render/integrator.h b/intern/cycles/render/integrator.h
---- a/intern/cycles/render/integrator.h
-+++ b/intern/cycles/render/integrator.h
-@@ -73,6 +73,9 @@
-   bool sample_all_lights_indirect;
-   float light_sampling_threshold;
- 
-+  int adaptive_min_samples;
-+  float adaptive_threshold;
-+
-   enum Method {
-     BRANCHED_PATH = 0,
-     PATH = 1,
-diff --git a/intern/cycles/render/integrator.cpp b/intern/cycles/render/integrator.cpp
+diff --git a/src/render/integrator.cpp b/src/render/integrator.cpp
+index 530c3210..e69a2eba 100644
 --- a/intern/cycles/render/integrator.cpp
 +++ b/intern/cycles/render/integrator.cpp
 @@ -18,12 +18,14 @@
@@ -1774,7 +1870,7 @@ diff --git a/intern/cycles/render/integrator.cpp b/intern/cycles/render/integrat
  #include "util/util_hash.h"
  
  CCL_NAMESPACE_BEGIN
-@@ -64,6 +66,9 @@
+@@ -66,6 +68,9 @@ NODE_DEFINE(Integrator)
    SOCKET_INT(volume_samples, "Volume Samples", 1);
    SOCKET_INT(start_sample, "Start Sample", 0);
  
@@ -1784,7 +1880,7 @@ diff --git a/intern/cycles/render/integrator.cpp b/intern/cycles/render/integrat
    SOCKET_BOOLEAN(sample_all_lights_direct, "Sample All Lights Direct", true);
    SOCKET_BOOLEAN(sample_all_lights_indirect, "Sample All Lights Indirect", true);
    SOCKET_FLOAT(light_sampling_threshold, "Light Sampling Threshold", 0.05f);
-@@ -76,6 +81,7 @@
+@@ -78,6 +83,7 @@ NODE_DEFINE(Integrator)
    static NodeEnum sampling_pattern_enum;
    sampling_pattern_enum.insert("sobol", SAMPLING_PATTERN_SOBOL);
    sampling_pattern_enum.insert("cmj", SAMPLING_PATTERN_CMJ);
@@ -1792,7 +1888,7 @@ diff --git a/intern/cycles/render/integrator.cpp b/intern/cycles/render/integrat
    SOCKET_ENUM(sampling_pattern, "Sampling Pattern", sampling_pattern_enum, SAMPLING_PATTERN_SOBOL);
  
    return type;
-@@ -170,6 +176,22 @@
+@@ -174,6 +180,22 @@ void Integrator::device_update(Device *device, DeviceScene *dscene, Scene *scene
  
    kintegrator->sampling_pattern = sampling_pattern;
    kintegrator->aa_samples = aa_samples;
@@ -1815,7 +1911,7 @@ diff --git a/intern/cycles/render/integrator.cpp b/intern/cycles/render/integrat
  
    if (light_sampling_threshold > 0.0f) {
      kintegrator->light_inv_rr_threshold = 1.0f / light_sampling_threshold;
-@@ -199,11 +221,27 @@
+@@ -203,18 +225,34 @@ void Integrator::device_update(Device *device, DeviceScene *dscene, Scene *scene
    int dimensions = PRNG_BASE_NUM + max_samples * PRNG_BOUNCE_NUM;
    dimensions = min(dimensions, SOBOL_MAX_DIMENSIONS);
  
@@ -1844,9 +1940,8 @@ diff --git a/intern/cycles/render/integrator.cpp b/intern/cycles/render/integrat
 +    dscene->sample_pattern_lut.copy_to_device();
 +  }
  
-   /* Clamping. */
-   bool use_sample_clamp = (sample_clamp_direct != 0.0f || sample_clamp_indirect != 0.0f);
-@@ -217,7 +255,7 @@
+   need_update = false;
+ }
  
  void Integrator::device_free(Device *, DeviceScene *dscene)
  {
@@ -1855,42 +1950,23 @@ diff --git a/intern/cycles/render/integrator.cpp b/intern/cycles/render/integrat
  }
  
  bool Integrator::modified(const Integrator &integrator)
-diff --git a/intern/cycles/render/jitter.h b/intern/cycles/render/jitter.h
+diff --git a/src/render/integrator.h b/src/render/integrator.h
+index 32d84c27..9930e907 100644
+--- a/intern/cycles/render/integrator.h
++++ b/intern/cycles/render/integrator.h
+@@ -75,6 +75,9 @@ class Integrator : public Node {
+   bool sample_all_lights_indirect;
+   float light_sampling_threshold;
+ 
++  int adaptive_min_samples;
++  float adaptive_threshold;
++
+   enum Method {
+     BRANCHED_PATH = 0,
+     PATH = 1,
+diff --git a/src/render/jitter.cpp b/src/render/jitter.cpp
 new file mode 100644
---- /dev/null
-+++ b/intern/cycles/render/jitter.h
-@@ -0,0 +1,29 @@
-+/*
-+ * Copyright 2019 Blender Foundation
-+ *
-+ * Licensed under the Apache License, Version 2.0 (the "License");
-+ * you may not use this file except in compliance with the License.
-+ * You may obtain a copy of the License at
-+ *
-+ * http://www.apache.org/licenses/LICENSE-2.0
-+ *
-+ * Unless required by applicable law or agreed to in writing, software
-+ * distributed under the License is distributed on an "AS IS" BASIS,
-+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-+ * See the License for the specific language governing permissions and
-+ * limitations under the License.
-+ */
-+
-+#ifndef __JITTER_H__
-+#define __JITTER_H__
-+
-+#include "util/util_types.h"
-+
-+CCL_NAMESPACE_BEGIN
-+
-+void progressive_multi_jitter_generate_2D(float2 points[], int size, int rng_seed);
-+void progressive_multi_jitter_02_generate_2D(float2 points[], int size, int rng_seed);
-+
-+CCL_NAMESPACE_END
-+
-+#endif /* __JITTER_H__ */
-diff --git a/intern/cycles/render/jitter.cpp b/intern/cycles/render/jitter.cpp
-new file mode 100644
+index 00000000..579d406c
 --- /dev/null
 +++ b/intern/cycles/render/jitter.cpp
 @@ -0,0 +1,287 @@
@@ -2181,22 +2257,46 @@ new file mode 100644
 +}
 +
 +CCL_NAMESPACE_END
-diff --git a/intern/cycles/render/scene.h b/intern/cycles/render/scene.h
---- a/intern/cycles/render/scene.h
-+++ b/intern/cycles/render/scene.h
-@@ -119,7 +119,7 @@
-   device_vector<float> lookup_table;
- 
-   /* integrator */
--  device_vector<uint> sobol_directions;
-+  device_vector<uint> sample_pattern_lut;
- 
-   /* ies lights */
-   device_vector<float> ies_lights;
-diff --git a/intern/cycles/render/scene.cpp b/intern/cycles/render/scene.cpp
+diff --git a/src/render/jitter.h b/src/render/jitter.h
+new file mode 100644
+index 00000000..ed34c7a4
+--- /dev/null
++++ b/intern/cycles/render/jitter.h
+@@ -0,0 +1,29 @@
++/*
++ * Copyright 2019 Blender Foundation
++ *
++ * Licensed under the Apache License, Version 2.0 (the "License");
++ * you may not use this file except in compliance with the License.
++ * You may obtain a copy of the License at
++ *
++ * http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++
++#ifndef __JITTER_H__
++#define __JITTER_H__
++
++#include "util/util_types.h"
++
++CCL_NAMESPACE_BEGIN
++
++void progressive_multi_jitter_generate_2D(float2 points[], int size, int rng_seed);
++void progressive_multi_jitter_02_generate_2D(float2 points[], int size, int rng_seed);
++
++CCL_NAMESPACE_END
++
++#endif /* __JITTER_H__ */
+diff --git a/src/render/scene.cpp b/src/render/scene.cpp
+index 1e75fa0f..6cea3c7c 100644
 --- a/intern/cycles/render/scene.cpp
 +++ b/intern/cycles/render/scene.cpp
-@@ -77,7 +77,7 @@
+@@ -77,7 +77,7 @@ DeviceScene::DeviceScene(Device *device)
        svm_nodes(device, "__svm_nodes", MEM_TEXTURE),
        shaders(device, "__shaders", MEM_TEXTURE),
        lookup_table(device, "__lookup_table", MEM_TEXTURE),
@@ -2205,37 +2305,24 @@ diff --git a/intern/cycles/render/scene.cpp b/intern/cycles/render/scene.cpp
        ies_lights(device, "__ies", MEM_TEXTURE)
  {
    memset((void *)&data, 0, sizeof(data));
-diff --git a/intern/cycles/render/session.h b/intern/cycles/render/session.h
---- a/intern/cycles/render/session.h
-+++ b/intern/cycles/render/session.h
-@@ -55,6 +55,7 @@
-   int start_resolution;
-   int pixel_size;
-   int threads;
-+  bool adaptive_sampling;
+diff --git a/src/render/scene.h b/src/render/scene.h
+index f99510d2..ae4cb2ec 100644
+--- a/intern/cycles/render/scene.h
++++ b/intern/cycles/render/scene.h
+@@ -119,7 +119,7 @@ class DeviceScene {
+   device_vector<float> lookup_table;
  
-   bool use_profiling;
+   /* integrator */
+-  device_vector<uint> sobol_directions;
++  device_vector<uint> sample_pattern_lut;
  
-@@ -86,6 +87,7 @@
-     start_resolution = INT_MAX;
-     pixel_size = 1;
-     threads = 0;
-+    adaptive_sampling = false;
- 
-     use_profiling = false;
- 
-@@ -112,6 +114,7 @@
-              && progressive == params.progressive && experimental == params.experimental &&
-              tile_size == params.tile_size && start_resolution == params.start_resolution &&
-              pixel_size == params.pixel_size && threads == params.threads &&
-+             adaptive_sampling == params.adaptive_sampling &&
-              use_profiling == params.use_profiling &&
-              display_buffer_linear == params.display_buffer_linear &&
-              cancel_timeout == params.cancel_timeout && reset_timeout == params.reset_timeout &&
-diff --git a/intern/cycles/render/session.cpp b/intern/cycles/render/session.cpp
+   /* ies lights */
+   device_vector<float> ies_lights;
+diff --git a/src/render/session.cpp b/src/render/session.cpp
+index 7a894c1e..b7205c64 100644
 --- a/intern/cycles/render/session.cpp
 +++ b/intern/cycles/render/session.cpp
-@@ -902,7 +902,7 @@
+@@ -902,7 +902,7 @@ bool Session::update_scene()
    Integrator *integrator = scene->integrator;
    BakeManager *bake_manager = scene->bake_manager;
  
@@ -2244,7 +2331,7 @@ diff --git a/intern/cycles/render/session.cpp b/intern/cycles/render/session.cpp
      int aa_samples = tile_manager.num_samples;
  
      if (aa_samples != integrator->aa_samples) {
-@@ -1024,6 +1024,7 @@
+@@ -1024,6 +1024,7 @@ void Session::render()
    task.update_progress_sample = function_bind(&Progress::add_samples, &this->progress, _1, _2);
    task.need_finish_queue = params.progressive_refine;
    task.integrator_branched = scene->integrator->method == Integrator::BRANCHED_PATH;
@@ -2252,10 +2339,39 @@ diff --git a/intern/cycles/render/session.cpp b/intern/cycles/render/session.cpp
    task.requested_tile_size = params.tile_size;
    task.passes_size = tile_manager.params.get_passes_size();
  
-diff --git a/intern/cycles/util/util_atomic.h b/intern/cycles/util/util_atomic.h
+diff --git a/src/render/session.h b/src/render/session.h
+index 9fffc13d..d1e8648d 100644
+--- a/intern/cycles/render/session.h
++++ b/intern/cycles/render/session.h
+@@ -55,6 +55,7 @@ class SessionParams {
+   int start_resolution;
+   int pixel_size;
+   int threads;
++  bool adaptive_sampling;
+ 
+   bool use_profiling;
+ 
+@@ -86,6 +87,7 @@ class SessionParams {
+     start_resolution = INT_MAX;
+     pixel_size = 1;
+     threads = 0;
++    adaptive_sampling = false;
+ 
+     use_profiling = false;
+ 
+@@ -112,6 +114,7 @@ class SessionParams {
+              && progressive == params.progressive && experimental == params.experimental &&
+              tile_size == params.tile_size && start_resolution == params.start_resolution &&
+              pixel_size == params.pixel_size && threads == params.threads &&
++             adaptive_sampling == params.adaptive_sampling &&
+              use_profiling == params.use_profiling &&
+              display_buffer_linear == params.display_buffer_linear &&
+              cancel_timeout == params.cancel_timeout && reset_timeout == params.reset_timeout &&
+diff --git a/src/util/util_atomic.h b/src/util/util_atomic.h
+index a8ea1dc9..13d177d2 100644
 --- a/intern/cycles/util/util_atomic.h
 +++ b/intern/cycles/util/util_atomic.h
-@@ -77,6 +77,7 @@
+@@ -77,6 +77,7 @@ ccl_device_inline float atomic_compare_and_swap_float(volatile ccl_global float
  #    define atomic_fetch_and_add_uint32(p, x) atomic_add((p), (x))
  #    define atomic_fetch_and_inc_uint32(p) atomic_inc((p))
  #    define atomic_fetch_and_dec_uint32(p) atomic_dec((p))
@@ -2263,7 +2379,7 @@ diff --git a/intern/cycles/util/util_atomic.h b/intern/cycles/util/util_atomic.h
  
  #    define CCL_LOCAL_MEM_FENCE CLK_LOCAL_MEM_FENCE
  #    define ccl_barrier(flags) barrier(flags)
-@@ -91,6 +92,7 @@
+@@ -91,6 +92,7 @@ ccl_device_inline float atomic_compare_and_swap_float(volatile ccl_global float
  #    define atomic_fetch_and_sub_uint32(p, x) atomicSub((unsigned int *)(p), (unsigned int)(x))
  #    define atomic_fetch_and_inc_uint32(p) atomic_fetch_and_add_uint32((p), 1)
  #    define atomic_fetch_and_dec_uint32(p) atomic_fetch_and_sub_uint32((p), 1)
@@ -2271,4 +2387,3 @@ diff --git a/intern/cycles/util/util_atomic.h b/intern/cycles/util/util_atomic.h
  
  ccl_device_inline float atomic_compare_and_swap_float(volatile float *dest,
                                                        const float old_val,
-

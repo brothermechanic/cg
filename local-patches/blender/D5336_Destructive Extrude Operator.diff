@@ -1,0 +1,1242 @@
+Index: release/scripts/presets/keyconfig/keymap_data/blender_default.py
+===================================================================
+--- a/release/scripts/presets/keyconfig/keymap_data/blender_default.py
++++ b/release/scripts/presets/keyconfig/keymap_data/blender_default.py
+@@ -5395,6 +5395,17 @@
+     )
+ 
+ 
++def km_3d_view_tool_edit_mesh_extrude_destructive(params):
++    return (
++        "3D View Tool: Edit Mesh, Destructive Extrude",
++        {"space_type": 'VIEW_3D', "region_type": 'WINDOW'},
++        {"items": [
++            ("mesh.extrude_destructive", {"type": params.tool_tweak, "value": 'ANY'},
++             {"properties": [("release_confirm", True)]}),
++        ]},
++    )
++
++
+ def km_3d_view_tool_edit_mesh_extrude_individual(params):
+     return (
+         "3D View Tool: Edit Mesh, Extrude Individual",
+@@ -6178,6 +6189,7 @@
+         km_3d_view_tool_edit_armature_extrude_to_cursor(params),
+         km_3d_view_tool_edit_mesh_add_cube(params),
+         km_3d_view_tool_edit_mesh_extrude_region(params),
++        km_3d_view_tool_edit_mesh_extrude_destructive(params),
+         km_3d_view_tool_edit_mesh_extrude_along_normals(params),
+         km_3d_view_tool_edit_mesh_extrude_individual(params),
+         km_3d_view_tool_edit_mesh_extrude_to_cursor(params),
+Index: release/scripts/startup/bl_ui/space_toolsystem_toolbar.py
+===================================================================
+--- a/release/scripts/startup/bl_ui/space_toolsystem_toolbar.py
++++ b/release/scripts/startup/bl_ui/space_toolsystem_toolbar.py
+@@ -622,6 +622,27 @@
+             draw_settings=_template_widget.VIEW3D_GGT_xform_extrude.draw_settings,
+         )
+ 
++    @ToolDef.from_fn
++    def extrude_destructive():
++        def draw_settings(_context, layout, tool):
++            props = tool.operator_properties("mesh.extrude_destructive")
++            layout.prop(props, "original_loop")
++            layout.prop(props, "recurse_loops")
++            layout.prop(props, "destroy_end")
++            layout.prop(props, "keep_sides")
++        return dict(
++            idname="builtin.extrude_destructive",
++            label="Destructive Extrude",
++            description=(
++                "Extrude destructively along combined normals"
++            ),
++            icon="none",
++            widget=None,
++            operator="ops.mesh.extrude_destructive",
++            keymap=(),
++            draw_settings=draw_settings,
++        )
++
+     @ToolDef.from_fn
+     def extrude_normals():
+         def draw_settings(_context, layout, tool):
+@@ -1914,6 +1935,7 @@
+             None,
+             (
+                 _defs_edit_mesh.extrude,
++                _defs_edit_mesh.extrude_destructive,
+                 _defs_edit_mesh.extrude_normals,
+                 _defs_edit_mesh.extrude_individual,
+                 _defs_edit_mesh.extrude_cursor,
+Index: release/scripts/startup/bl_ui/space_view3d.py
+===================================================================
+--- a/release/scripts/startup/bl_ui/space_view3d.py
++++ b/release/scripts/startup/bl_ui/space_view3d.py
+@@ -3574,6 +3574,8 @@
+         layout.operator("mesh.extrude_edges_move", text="Extrude Edges"),
+         'REGION': lambda layout:
+         layout.operator("view3d.edit_mesh_extrude_move_normal", text="Extrude Faces"),
++        'REGION_ALT': lambda layout:
++        layout.operator("mesh.extrude_destructive", text="Destructive Extrude Faces"),
+         'REGION_VERT_NORMAL': lambda layout:
+         layout.operator("view3d.edit_mesh_extrude_move_shrink_fatten", text="Extrude Faces Along Normals"),
+         'FACE': lambda layout:
+@@ -3588,7 +3590,7 @@
+ 
+         menu = []
+         if mesh.total_face_sel:
+-            menu += ['REGION', 'REGION_VERT_NORMAL', 'FACE']
++            menu += ['REGION', 'REGION_ALT', 'REGION_VERT_NORMAL', 'FACE']
+         if mesh.total_edge_sel and (select_mode[0] or select_mode[1]):
+             menu += ['EDGE']
+         if mesh.total_vert_sel and select_mode[0]:
+@@ -3780,6 +3782,7 @@
+         layout.operator_context = 'INVOKE_REGION_WIN'
+ 
+         layout.operator("view3d.edit_mesh_extrude_move_normal", text="Extrude Faces")
++        layout.operator("mesh.extrude_destructive", text="Destructive Extrude")
+         layout.operator("view3d.edit_mesh_extrude_move_shrink_fatten", text="Extrude Faces Along Normals")
+         layout.operator("mesh.extrude_faces_move", text="Extrude Individual Faces")
+ 
+Index: source/blender/bmesh/CMakeLists.txt
+===================================================================
+--- a/source/blender/bmesh/CMakeLists.txt
++++ b/source/blender/bmesh/CMakeLists.txt
+@@ -49,6 +49,7 @@
+   operators/bmo_dupe.c
+   operators/bmo_edgenet.c
+   operators/bmo_extrude.c
++  operators/bmo_extrude_destructive.c
+   operators/bmo_fill_attribute.c
+   operators/bmo_fill_edgeloop.c
+   operators/bmo_fill_grid.c
+Index: source/blender/bmesh/intern/bmesh_opdefines.c
+===================================================================
+--- a/source/blender/bmesh/intern/bmesh_opdefines.c
++++ b/source/blender/bmesh/intern/bmesh_opdefines.c
+@@ -931,6 +931,31 @@
+   (BMO_OPTYPE_FLAG_SELECT_FLUSH),
+ };
+ 
++/*
++ * Destructive Extrude (Regions).
++ *
++ * Extrudes face regions destructively.
++ */
++static BMOpDefine bmo_extrude_destructive_def = {
++  "extrude_destructive",
++  /* slots_in */
++  {{"faces", BMO_OP_SLOT_ELEMENT_BUF, {BM_FACE}},    /* input faces */
++   {"dir", BMO_OP_SLOT_VEC},
++   {"depth", BMO_OP_SLOT_FLT},
++   {"original_loop", BMO_OP_SLOT_BOOL},
++   {"keep_sides", BMO_OP_SLOT_BOOL},
++   {{'\0'}},
++  },
++  /* slots_out */
++  {{"depth_limit", BMO_OP_SLOT_FLT}, /* used for snapping and recursion */
++   {"geom.out", BMO_OP_SLOT_ELEMENT_BUF, {BM_VERT | BM_EDGE | BM_FACE}},
++   {{'\0'}},
++  },
++  bmo_extrude_destructive_exec,
++  (BMO_OPTYPE_FLAG_NORMALS_CALC |
++   BMO_OPTYPE_FLAG_SELECT_FLUSH),
++};
++
+ /*
+  * Connect Verts.
+  *
+@@ -1041,6 +1066,7 @@
+   },
+   /* slots_out */
+   {{"geom.out", BMO_OP_SLOT_ELEMENT_BUF, {BM_VERT | BM_EDGE | BM_FACE}},
++   {"boundary_map.out", BMO_OP_SLOT_MAPPING, {(int)BMO_OP_SLOT_SUBTYPE_MAP_ELEM}},
+    {{'\0'}},
+   },
+   bmo_extrude_face_region_exec,
+@@ -2092,6 +2118,7 @@
+     &bmo_extrude_edge_only_def,
+     &bmo_extrude_face_region_def,
+     &bmo_extrude_vert_indiv_def,
++    &bmo_extrude_destructive_def,
+     &bmo_find_doubles_def,
+     &bmo_grid_fill_def,
+     &bmo_inset_individual_def,
+Index: source/blender/bmesh/intern/bmesh_operators_private.h
+===================================================================
+--- a/source/blender/bmesh/intern/bmesh_operators_private.h
++++ b/source/blender/bmesh/intern/bmesh_operators_private.h
+@@ -62,6 +62,7 @@
+ void bmo_extrude_discrete_faces_exec(BMesh *bm, BMOperator *op);
+ void bmo_extrude_edge_only_exec(BMesh *bm, BMOperator *op);
+ void bmo_extrude_face_region_exec(BMesh *bm, BMOperator *op);
++void bmo_extrude_destructive_exec(BMesh *bm, BMOperator *op);
+ void bmo_extrude_vert_indiv_exec(BMesh *bm, BMOperator *op);
+ void bmo_find_doubles_exec(BMesh *bm, BMOperator *op);
+ void bmo_grid_fill_exec(BMesh *bm, BMOperator *op);
+Index: source/blender/bmesh/operators/bmo_extrude.c
+===================================================================
+--- a/source/blender/bmesh/operators/bmo_extrude.c
++++ b/source/blender/bmesh/operators/bmo_extrude.c
+@@ -443,6 +443,7 @@
+   }
+ 
+   BMO_slot_copy(&dupeop, slots_out, "geom.out", op, slots_out, "geom.out");
++  BMO_slot_copy(&dupeop, slots_out, "boundary_map.out", op, slots_out, "boundary_map.out");
+ 
+   slot_edges_exclude = BMO_slot_get(op->slots_in, "edges_exclude");
+   for (e = BMO_iter_new(&siter, dupeop.slots_out, "boundary_map.out", 0); e;
+Index: source/blender/bmesh/operators/bmo_extrude_destructive.c
+===================================================================
+--- a//dev/null
++++ b/source/blender/bmesh/operators/bmo_extrude_destructive.c
+@@ -0,0 +1,346 @@
++/*
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License
++ * as published by the Free Software Foundation; either version 2
++ * of the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software Foundation,
++ * Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
++ */
++
++/** \file
++ * \ingroup bmesh
++ *
++ * Destructive extrue face regions.
++ */
++
++#include "MEM_guardedalloc.h"
++
++#include "BLI_math.h"
++#include "BLI_alloca.h"
++#include "BLI_memarena.h"
++#include "BKE_customdata.h"
++
++#include "bmesh.h"
++
++#include "intern/bmesh_operators_private.h" /* own include */
++
++#define VERT_MARK 1
++#define EDGE_MARK 1
++#define EDGE_WELD 2 /* used for tracking edges to be merged into existing edges */
++#define FACE_MARK 1 /* used for faces to be destructed */
++
++/**
++ * Checks whether any faces not in BM_ELEM_TAG and connected to e are parrallel with dir.
++ * force_side determines whether faces in the exact opposite side can be used.
++ */
++static BMFace *bm_edge_parallel_face(BMEdge *e, const float dir[3], const bool force_side)
++{
++  BMLoop *l = e->l;
++  BMLoop *l_iter;
++  l_iter = l;
++  bool allow_opposite = !force_side && (BM_edge_face_count(e) == 2);
++  BMFace *face_opposite = NULL; /* used to prioritize faces on the side of dir first */
++
++  do {
++    if (BM_elem_flag_test(l_iter->f, BM_ELEM_TAG)) {
++      continue;
++    }
++
++    /* check if face is parallel */
++    float dot = dot_v3v3(l_iter->f->no, dir);
++    if (fabs(dot) < 0.0001f) {
++
++      /* check which side the edge the face is on, compared to dir */
++      float tan[3];
++      BM_edge_calc_face_tangent(e, l_iter, tan);
++      if (dot_v3v3(tan, dir) > 0.00001f) {
++        /* face is parallel and on the same side; we can return it immediately */
++        return l_iter->f;
++      }
++      else if (allow_opposite) {
++        /* will be used if no other faces on the same side are found */
++        face_opposite = l_iter->f;
++      }
++    }
++
++  } while ((l_iter = l_iter->radial_next) != l);
++
++  if (face_opposite != NULL) {
++    return face_opposite;
++  }
++  else {
++    return NULL;
++  }
++}
++
++/* Finds an edge of at v which is pointing in the same direction as dir. */
++static BMEdge *bm_vert_parallel_edge(BMVert *v, const float dir[3])
++{
++  BMIter iter;
++  BMEdge *e;
++  BM_ITER_ELEM (e, &iter, v, BM_EDGES_OF_VERT) {
++    if (BM_edge_calc_length(e) > 0.0001f) {
++      float e_dir[3];
++      sub_v3_v3v3(e_dir, BM_edge_other_vert(e, v)->co, v->co);
++      normalize_v3(e_dir);
++
++      if (dot_v3v3(e_dir, dir) > 0.999f) {
++        return e;
++      }
++    }
++  }
++  return NULL;
++}
++
++/**
++ * Implementation is as follows...
++ *
++ * - extrude using the extrude operator
++ * - flag boundary edges which have a face parallel to the extrude direciton
++ * - join those faces and the boundary edges' extrude quads
++ * - merge verticies onto coincident parallel edges
++ * - detect if another recursion is needed, when parallel edges aren't long enough
++ * - translate verts
++ * - if a recursion is needed, first remove doubles into translated verts
++ * - destroy end by deleting faces with boundary edges
++ */
++void bmo_extrude_destructive_exec(BMesh *bm, BMOperator *op)
++{
++  const float depth = BMO_slot_float_get(op->slots_in, "depth");
++
++  float extrudeDir[3];
++  BMO_slot_vec_get(op->slots_in, "dir", extrudeDir);
++  normalize_v3(extrudeDir);
++  if (depth < 0) {
++    mul_v3_fl(extrudeDir, -1.0f);
++  }
++
++  float recurse_depth = fabs(depth) + 1; /* will represent the depth limit without having to recurse */
++  /* recurse_depth just needs to be bigger than depth at this point */
++
++  const bool keep_orig_loop = BMO_slot_bool_get(op->slots_in, "original_loop");
++  const bool keep_sides = BMO_slot_bool_get(op->slots_in, "keep_sides");
++
++  BMIter iter;
++  BMOIter oiter;
++  BMVert *v;
++  BMEdge *e;
++  BMFace *f;
++
++  BM_mesh_elem_hflag_disable_all(bm, BM_ALL, BM_ELEM_TAG, false);
++  BMO_slot_buffer_hflag_enable(bm, op->slots_in, "faces", BM_FACE, BM_ELEM_TAG, false);
++
++  /* tag edges of tagged faces */
++  BM_ITER_MESH (f, &iter, bm, BM_FACES_OF_MESH) {
++    if (BM_elem_flag_test(f, BM_ELEM_TAG)) {
++      BMIter eiter;
++      BM_ITER_ELEM (e, &eiter, f, BM_EDGES_OF_FACE) {
++        BM_elem_flag_enable(e, BM_ELEM_TAG);
++      }
++    }
++  }
++
++  if (depth == 0) {
++    /* do nothing */
++    BMO_slot_buffer_from_enabled_hflag(bm, op, op->slots_out, "geom.out", BM_FACE, BM_ELEM_TAG);
++    BMO_slot_float_set(op->slots_out, "depth_limit", recurse_depth);
++    return;
++  }
++
++  BMOperator extop;
++
++  BMO_op_initf(bm, &extop, op->flag, "extrude_face_region geom=%hef use_keep_orig=%b", BM_ELEM_TAG, false);
++  BMO_op_exec(bm, &extop);
++
++  BM_mesh_elem_hflag_disable_all(bm, BM_ALL, BM_ELEM_TAG, false);
++  BMO_slot_buffer_hflag_enable(bm, extop.slots_out, "geom.out", BM_VERT | BM_FACE, BM_ELEM_TAG, true);
++  /* While other faces and edges will be added into BM_ELEM_TAG, the verts will remain
++   * untouched and will be accessed only for the final translation. */
++
++  BMO_mesh_flag_disable_all(bm, op, BM_EDGE, EDGE_MARK);
++  BMO_mesh_flag_disable_all(bm, op, BM_EDGE, EDGE_WELD);
++  BMO_mesh_flag_disable_all(bm, op, BM_VERT, VERT_MARK);
++  BMO_mesh_flag_disable_all(bm, op, BM_FACE, FACE_MARK);
++
++  /* Loop through original boundary edges. Setup by flagging certain geometry. */
++  for (e = BMO_iter_new(&oiter, extop.slots_out, "boundary_map.out", 0); e;
++       e = BMO_iter_step(&oiter)) {
++    BMEdge *e_new = BMO_iter_map_value_ptr(&oiter);
++
++    /* tag extrude quads */
++    BMVert *varr[4] = {e->v2, e->v1, e_new->v1, e_new->v2};
++    if (BM_face_exists(varr, 4) != NULL) {
++      BMO_face_flag_enable(bm, BM_face_exists(varr, 4), FACE_MARK);
++      /* tag with BM_ELEM_TAG so that bm_edge_parallel_face will ignore it */
++      BM_elem_flag_enable(BM_face_exists(varr, 4), BM_ELEM_TAG);
++
++      /* tag these edges in case they become wire and need to be deleted */
++      BM_elem_flag_enable(e, BM_ELEM_TAG);
++      BM_elem_flag_enable(BM_edge_exists(e->v1, e_new->v1), BM_ELEM_TAG);
++      BM_elem_flag_enable(BM_edge_exists(e_new->v2, e->v2), BM_ELEM_TAG);
++    }
++
++    f = bm_edge_parallel_face(e, extrudeDir, keep_orig_loop);
++    if (f != NULL) {
++      /* these tags help keep track of destructing geometry */
++      BMO_edge_flag_enable(bm, e, EDGE_MARK);
++      BMO_face_flag_enable(bm, f, FACE_MARK);
++
++      /* tag verts incase they need to be dissolved later */
++      BMO_vert_flag_enable(bm, e->v1, VERT_MARK);
++      BMO_vert_flag_enable(bm, e->v2, VERT_MARK);
++    }
++
++    f = bm_edge_parallel_face(e, extrudeDir, true);
++    /* untag since all bm_edge_parallel_face checks are over */
++    BM_elem_flag_disable(BM_face_exists(varr, 4), BM_ELEM_TAG);
++
++    if (f != NULL && keep_sides) {
++      /* remake extrude quads, but don't tag with FACE_MARK so they aren't changed */
++      BM_face_create_verts(bm, varr, 4, BM_face_exists(varr, 4), BM_CREATE_NOP, false);
++    }
++
++    /* Prepare for merging verts onto coincident edges. */
++    for (int j = 0; j < 2; j++) {
++      v = (j == 0) ? e->v1 : e->v2;
++      BMVert *v_new = (j == 0) ? e_new->v1 : e_new->v2;
++
++      BMEdge *edge_merge = bm_vert_parallel_edge(v, extrudeDir);
++      if (edge_merge != NULL) {
++
++        /* The edge of v to v_new will be merged into edge_merge.
++         * Tagging one vert with VERT_MARK keeps track of v versus v_new, for later. */
++        BMO_vert_flag_enable(bm, v, VERT_MARK);
++        BMO_edge_flag_enable(bm, BM_edge_exists(v, v_new), EDGE_WELD);
++
++        /* Calculate recurse_depth, given that verts shouldn't be moved
++         * past edges they will be merged onto. */
++        recurse_depth = fminf(recurse_depth, BM_edge_calc_length(edge_merge));
++      }
++    }
++  }
++
++  /* Join extrusion quads to faces to be destructed. This is the main destructive step. */
++  BM_ITER_MESH (e, &iter, bm, BM_EDGE) {
++    if (BMO_edge_flag_test(bm, e, EDGE_MARK)) {
++      BMFace *farr[2];
++      int farr_len = 0;
++
++      BMIter fiter;
++      BM_ITER_ELEM (f, &fiter, e, BM_FACES_OF_EDGE) {
++        if (BMO_face_flag_test(bm, f, FACE_MARK) && farr_len < 2) {
++          farr[farr_len] = f;
++          farr_len++;
++        }
++      }
++
++      f = BM_faces_join(bm, farr, farr_len, false);
++      /* Set do_del as false and delete any wire edge later. This is more reliable than
++       * enabling do_del, in cases where this operator has to separate geometry. */
++
++      /* mark the joined face in case another edge will also use this face */
++      BMO_face_flag_enable(bm, f, FACE_MARK);
++    }
++  }
++
++  /* Merge edges from extrusion onto the flagged, parallel edges. */
++  BM_ITER_MESH (e, &iter, bm, BM_EDGE) {
++    if (BMO_edge_flag_test(bm, e, EDGE_WELD)) {
++
++      v = (BMO_vert_flag_test(bm, e->v1, VERT_MARK)) ? e->v1 : e->v2;
++      BMVert *v_new = BM_edge_other_vert(e, v);
++
++      BMEdge *edge_merge = bm_vert_parallel_edge(v, extrudeDir);
++      if (edge_merge != NULL) {
++
++        BMVert *v_split = BM_edge_split(bm, edge_merge, v, NULL, 0.5f);
++
++        BMVert *v_merge[2];
++        v_merge[0] = v_new;
++        v_merge[1] = v_split;
++
++        BMO_op_callf(bm,
++                    op->flag,
++                    "pointmerge verts=%eb merge_co=%v",
++                    v_merge,
++                    2,
++                    v_new->co);
++      }
++    }
++  }
++
++  /* Delete any wire edges left from BM_faces_join where do_del was false. */
++  BM_ITER_MESH (e, &iter, bm, BM_EDGE) {
++    if (BM_elem_flag_test(e, BM_ELEM_TAG)) {
++      if (BM_edge_is_wire(e)) {
++        BMO_op_callf(bm, 0, "delete geom=%e context=%i", e, DEL_EDGES);
++      }
++    }
++  }
++
++  /* Dissolve verts between two straight edges, created from BM_faces_join or an edge merge. */
++  BM_ITER_MESH (v, &iter, bm, BM_VERT) {
++    if (BMO_vert_flag_test(bm, v, VERT_MARK)) {
++      if (!keep_orig_loop && BM_vert_edge_count(v) == 2) {
++
++        /* check if both edges parrallel */
++        bool both_parallel = true;
++
++        BMIter eiter;
++        BM_ITER_ELEM (e, &eiter, v, BM_EDGES_OF_VERT) {
++
++          float edgeDir[3];
++          sub_v3_v3v3(edgeDir, e->v1->co, e->v2->co);
++          normalize_v3(edgeDir);
++
++          if (BM_edge_calc_length(e) > 0.0001f && fabs(dot_v3v3(edgeDir, extrudeDir)) < 0.999f) {
++            both_parallel = false;
++          }
++        }
++
++        if (both_parallel) {
++          BMO_op_callf(bm,
++                      0,
++                      "dissolve_verts verts=%e use_face_split=%b use_boundary_tear=%b",
++                      v,
++                      false,
++                      false);
++        }
++      }
++    }
++  }
++
++  /**
++   * Begin process of translating extruded geometry and cleanup for a next recursion.
++   */
++
++  /* change from absolute to actual value for the operator output */
++  recurse_depth *= depth/fabs(depth);
++  BMO_slot_float_set(op->slots_out, "depth_limit", recurse_depth);
++
++  float trans[3];
++  if (fabs(recurse_depth) > fabs(depth) + 0.0001f) {
++    /* No recursion needed. Translate full depth amount. */
++    mul_v3_v3fl(trans, extrudeDir, fabs(depth));
++  }
++  else {
++    /* translate only as far the limit. (Later recursions should handle the left-over depth */
++    mul_v3_v3fl(trans, extrudeDir, fabs(recurse_depth));
++  }
++
++  BM_ITER_MESH (v, &iter, bm, BM_VERTS_OF_MESH) {
++    if (BM_elem_flag_test(v, BM_ELEM_TAG)) {
++      add_v3_v3(v->co, trans);
++    }
++  }
++
++  BMO_slot_copy(&extop, slots_out, "geom.out", op, slots_out, "geom.out");
++  BMO_op_finish(bm, &extop);
++}
+Index: source/blender/bmesh/tools/bmesh_intersect_edges.c
+===================================================================
+--- a/source/blender/bmesh/tools/bmesh_intersect_edges.c
++++ b/source/blender/bmesh/tools/bmesh_intersect_edges.c
+@@ -488,8 +488,8 @@
+ {
+   bool ret = false;
+   struct EDBMSplitData *data = userdata;
+-  BMEdge *e_a = BM_edge_at_index(data->bm, index_a);
+-  BMEdge *e_b = BM_edge_at_index(data->bm, index_b);
++  BMEdge *e_a = BM_edge_at_index_find(data->bm, index_a);
++  BMEdge *e_b = BM_edge_at_index_find(data->bm, index_b);
+ 
+   float co_a[3], dir_a[3], co_b[3], dir_b[3];
+   copy_v3_v3(co_a, e_a->v1->co);
+Index: source/blender/editors/mesh/CMakeLists.txt
+===================================================================
+--- a/source/blender/editors/mesh/CMakeLists.txt
++++ b/source/blender/editors/mesh/CMakeLists.txt
+@@ -47,6 +47,7 @@
+   editmesh_bevel.c
+   editmesh_bisect.c
+   editmesh_extrude.c
++  editmesh_extrude_destructive.c
+   editmesh_extrude_screw.c
+   editmesh_extrude_spin.c
+   editmesh_extrude_spin_gizmo.c
+Index: source/blender/editors/mesh/editmesh_extrude_destructive.c
+===================================================================
+--- a//dev/null
++++ b/source/blender/editors/mesh/editmesh_extrude_destructive.c
+@@ -0,0 +1,645 @@
++/*
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License
++ * as published by the Free Software Foundation; either version 2
++ * of the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software Foundation,
++ * Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
++ */
++
++/** \file
++ * \ingroup edmesh
++ */
++
++#include "MEM_guardedalloc.h"
++
++#include "DNA_object_types.h"
++
++#include "BLI_string.h"
++#include "BLI_math.h"
++
++#include "BLT_translation.h"
++
++#include "BKE_context.h"
++#include "BKE_global.h"
++#include "BKE_editmesh.h"
++#include "BKE_unit.h"
++#include "BKE_layer.h"
++
++#include "RNA_define.h"
++#include "RNA_access.h"
++
++#include "WM_api.h"
++#include "WM_types.h"
++
++#include "UI_interface.h"
++
++#include "ED_mesh.h"
++#include "ED_numinput.h"
++#include "ED_screen.h"
++#include "ED_space_api.h"
++#include "ED_transform.h"
++#include "ED_view3d.h"
++
++#include "mesh_intern.h" /* own include */
++
++typedef struct {
++  BMEditMesh *em;
++  BMBackup mesh_backup;
++} ExtrudeObjectStore;
++
++typedef struct {
++  float initial_val;
++  float pixel_size; /* use when mouse input is interpreted as spatial distance */
++  bool is_modal;
++  bool shift;
++  float shift_amount;
++  bool snap;
++  float extrude_dir[3];
++  float screen_extrude_dir[2];
++  float max_obj_scale;
++  NumInput num_input;
++
++  ExtrudeObjectStore *ob_store;
++  uint ob_store_len;
++
++  /* modal only */
++  void *draw_handle_pixel;
++  short gizmo_flag;
++} ExtrudeData;
++
++static void edbm_weld_recursion (wmOperator *op, BMEditMesh *em, const bool destroy_end)
++{
++  EDBM_automerge_and_split(em->ob, true, true, true, BM_ELEM_SELECT, 0.001f);
++  EDBM_selectmode_flush_ex(em, SCE_SELECT_EDGE);
++
++  if (destroy_end) {
++    BMIter iter;
++    BMFace *f;
++    BM_ITER_MESH (f, &iter, em->bm, BM_FACES_OF_MESH) {
++      if (BM_elem_flag_test(f, BM_ELEM_SELECT)) {
++        /* check if face contains boundary edges */
++        BMLoop *l_iter = f->l_first;
++        bool boundary_face = false;
++
++        do {
++          if (BM_edge_is_boundary(l_iter->e)) {
++            boundary_face = true;
++          }
++        } while ((l_iter = l_iter->next) != f->l_first && !boundary_face);
++
++        if (boundary_face) {
++          /* delete the face */
++          EDBM_op_callf(em, op, "delete geom=%e context=%i", f, DEL_FACES);
++        }
++      }
++    }
++  }
++}
++
++static void edbm_extrude_destructive_update_header(wmOperator *op, bContext *C)
++{
++  ExtrudeData *opdata = op->customdata;
++
++  const char *str = IFACE_(
++      "Confirm: Enter/LClick, Cancel: (Esc/RClick), "
++      "Depth: %s, Original Loop (D): (%s), Destroy End: (%s) Preserve Loops (E): (%s)");
++
++  char msg[UI_MAX_DRAW_STR];
++  ScrArea *sa = CTX_wm_area(C);
++  Scene *sce = CTX_data_scene(C);
++
++  if (sa) {
++    char flts_str[NUM_STR_REP_LEN * 2];
++    if (hasNumInput(&opdata->num_input)) {
++      outputNumInput(&opdata->num_input, flts_str, &sce->unit);
++    }
++    else {
++      BLI_snprintf(flts_str, NUM_STR_REP_LEN, "%f", RNA_float_get(op->ptr, "depth"));
++    }
++    BLI_snprintf(msg,
++                 sizeof(msg),
++                 str,
++                 flts_str,
++                 WM_bool_as_string(RNA_boolean_get(op->ptr, "original_loop")),
++                 WM_bool_as_string(RNA_boolean_get(op->ptr, "destroy_end")),
++                 WM_bool_as_string(RNA_boolean_get(op->ptr, "recurse_loops")));
++
++    ED_area_status_text(sa, msg);
++  }
++}
++
++static bool edbm_extrude_destructive_init(bContext *C, wmOperator *op, const bool is_modal)
++{
++  ExtrudeData *opdata;
++  Scene *scene = CTX_data_scene(C);
++  ViewLayer *view_layer = CTX_data_view_layer(C);
++  ARegion *ar = CTX_wm_region(C);
++
++  if (is_modal) {
++    RNA_float_set(op->ptr, "depth", 0.0f);
++  }
++
++  op->customdata = opdata = MEM_mallocN(sizeof(ExtrudeData), "inset_operator_data");
++
++  uint objects_used_len = 0;
++
++  opdata->max_obj_scale = FLT_MIN;
++
++  {
++    uint ob_store_len = 0;
++    Object **objects = BKE_view_layer_array_from_objects_in_edit_mode_unique_data(
++        view_layer, CTX_wm_view3d(C), &ob_store_len);
++    opdata->ob_store = MEM_malloc_arrayN(ob_store_len, sizeof(*opdata->ob_store), __func__);
++    for (uint ob_index = 0; ob_index < ob_store_len; ob_index++) {
++      Object *obedit = objects[ob_index];
++      float scale = mat4_to_scale(obedit->obmat);
++      opdata->max_obj_scale = max_ff(opdata->max_obj_scale, scale);
++      BMEditMesh *em = BKE_editmesh_from_object(obedit);
++      if (em->bm->totvertsel > 0) {
++        opdata->ob_store[objects_used_len].em = em;
++        objects_used_len++;
++      }
++    }
++    MEM_freeN(objects);
++    opdata->ob_store_len = objects_used_len;
++  }
++
++  /* Find the direction of the extrusion and the projection of it into screen space.*/
++
++  /* calculate combined normals of selected faces and average position*/
++  zero_v3(opdata->extrude_dir);
++  for (uint ob_index = 0; ob_index < opdata->ob_store_len; ob_index++) {
++    BMEditMesh *em = opdata->ob_store[ob_index].em;
++    BMFace *f;
++    BMIter iter;
++    BM_ITER_MESH (f, &iter, em->bm, BM_FACES_OF_MESH) {
++      if (BM_elem_flag_test(f, BM_ELEM_SELECT)) {
++        add_v3_v3(opdata->extrude_dir, f->no);
++      }
++    }
++  }
++  normalize_v3(opdata->extrude_dir);
++
++  float extrude_pos[3];
++  calculateTransformCenter(C, V3D_AROUND_CENTER_MEDIAN, extrude_pos, NULL);
++  float extrude_pos_offset[3];
++  add_v3_v3v3(extrude_pos_offset, extrude_pos, opdata->extrude_dir);
++
++  /* calculate direction of extrude_dir in screen space by projecting
++   * the position and the offset position then subtracting*/
++  float screen_pos[2];
++  float screen_pos_offset[2];
++
++  ED_view3d_project_float_global(ar, extrude_pos, screen_pos, V3D_PROJ_RET_OK);
++  ED_view3d_project_float_global(ar, extrude_pos_offset, screen_pos_offset, V3D_PROJ_RET_OK);
++  sub_v2_v2v2(opdata->screen_extrude_dir, screen_pos_offset, screen_pos);
++
++  normalize_v2(opdata->screen_extrude_dir);
++
++  opdata->shift = false;
++  opdata->shift_amount = 0.0f;
++  opdata->snap = false;
++  opdata->is_modal = is_modal;
++
++  initNumInput(&opdata->num_input);
++  opdata->num_input.idx_max = 1; /* Two elements. */
++  opdata->num_input.unit_sys = scene->unit.system;
++  opdata->num_input.unit_type[0] = B_UNIT_LENGTH;
++
++  if (is_modal) {
++    View3D *v3d = CTX_wm_view3d(C);
++
++    for (uint ob_index = 0; ob_index < opdata->ob_store_len; ob_index++) {
++      opdata->ob_store[ob_index].mesh_backup = EDBM_redo_state_store(
++          opdata->ob_store[ob_index].em);
++    }
++
++    G.moving = G_TRANSFORM_EDIT;
++    if (v3d) {
++      opdata->gizmo_flag = v3d->gizmo_flag;
++      v3d->gizmo_flag = V3D_GIZMO_HIDE;
++    }
++  }
++
++  return true;
++}
++
++static void edbm_extrude_destructive_exit(bContext *C, wmOperator *op)
++{
++  ExtrudeData *opdata;
++  ScrArea *sa = CTX_wm_area(C);
++
++  opdata = op->customdata;
++
++  if (opdata->is_modal) {
++    View3D *v3d = CTX_wm_view3d(C);
++    ARegion *ar = CTX_wm_region(C);
++    for (uint ob_index = 0; ob_index < opdata->ob_store_len; ob_index++) {
++      EDBM_redo_state_free(&opdata->ob_store[ob_index].mesh_backup, NULL, false);
++    }
++    ED_region_draw_cb_exit(ar->type, opdata->draw_handle_pixel);
++    if (v3d) {
++      v3d->gizmo_flag = opdata->gizmo_flag;
++    }
++    G.moving = 0;
++  }
++
++  if (sa) {
++    ED_area_status_text(sa, NULL);
++  }
++
++  MEM_SAFE_FREE(opdata->ob_store);
++  MEM_SAFE_FREE(op->customdata);
++}
++
++static void edbm_extrude_destructive_cancel(bContext *C, wmOperator *op)
++{
++  ExtrudeData *opdata;
++
++  opdata = op->customdata;
++  if (opdata->is_modal) {
++    for (uint ob_index = 0; ob_index < opdata->ob_store_len; ob_index++) {
++      EDBM_redo_state_free(
++          &opdata->ob_store[ob_index].mesh_backup, opdata->ob_store[ob_index].em, true);
++      EDBM_update_generic(opdata->ob_store[ob_index].em, false, true);
++    }
++  }
++
++  edbm_extrude_destructive_exit(C, op);
++
++  /* need to force redisplay or we may still view the modified result */
++  ED_region_tag_redraw(CTX_wm_region(C));
++}
++
++/* Disabling allow_snap is used after already calling this function with snapping. Snapping
++ * changes the rna depth to be within the margin, so otherwise the depth could continualy decrease. */
++static bool edbm_extrude_destructive_calc(wmOperator *op, const bool allow_snapping)
++{
++  ExtrudeData *opdata;
++  BMEditMesh *em;
++  BMOperator bmop;
++  bool changed = false;
++
++  float depth = RNA_float_get(op->ptr, "depth");
++  const bool original_loop = RNA_boolean_get(op->ptr, "original_loop");
++  /* not passed onto the BMO */
++  const bool destroy_end = RNA_boolean_get(op->ptr, "destroy_end");
++  const bool recurse_loops = RNA_boolean_get(op->ptr, "recurse_loops");
++  const bool keep_sides = RNA_boolean_get(op->ptr, "keep_sides");
++
++  opdata = op->customdata;
++  const bool snapping = opdata->snap && allow_snapping;
++  float extrude_dir[3];
++  copy_v3_v3(extrude_dir, opdata->extrude_dir);
++
++  for (uint ob_index = 0; ob_index < opdata->ob_store_len; ob_index++) {
++    em = opdata->ob_store[ob_index].em;
++
++    if (opdata->is_modal) {
++      EDBM_redo_state_restore(opdata->ob_store[ob_index].mesh_backup, em, false);
++    }
++
++    /* find snapping margin */
++    float snap_dist = snapping * opdata->pixel_size * 15.0f;
++    snap_dist = max_ff(0.001f, snap_dist);
++
++    if (fabs(depth) < snap_dist) {
++      /* snap to original location */
++      depth = 0.0f;
++    }
++
++    EDBM_op_init(
++            em,
++            &bmop,
++            op,
++            "extrude_destructive faces=%hf "
++            "depth=%f dir=%v original_loop=%b keep_sides=%b",
++            BM_ELEM_SELECT,
++            depth,
++            extrude_dir,
++            original_loop,
++            keep_sides);
++    BMO_op_exec(em->bm, &bmop);
++
++    EDBM_flag_disable_all(em, BM_ELEM_SELECT);
++    BMO_slot_buffer_hflag_enable(em->bm, bmop.slots_out, "geom.out", BM_FACE, BM_ELEM_SELECT, true);
++
++    /**
++     * Snapping and recursion
++     */
++    float limit = BMO_slot_float_get(bmop.slots_out, "depth_limit");
++
++    if (!EDBM_op_finish(em, &bmop, op, true)) {
++      continue;
++    }
++
++    float total_limit = limit;
++    /* check if recursions are needed */
++    if (fabs(depth) > fabs(total_limit) - snap_dist) {
++
++      if (fabs(depth) > fabs(total_limit) + snap_dist) {
++        int count = 0;
++        do {
++          edbm_weld_recursion(op, em, destroy_end);
++          if (BM_mesh_elem_hflag_count_enabled(em->bm, BM_FACE, BM_ELEM_SELECT, false) == 0) {
++            depth = total_limit;
++            break;
++          }
++
++          BMOperator recurse_op;
++          EDBM_op_init(
++                  em,
++                  &recurse_op,
++                  op,
++                  "extrude_destructive faces=%hf "
++                  "depth=%f dir=%v original_loop=%b keep_sides=%b",
++                  BM_ELEM_SELECT,
++                  depth - total_limit,
++                  extrude_dir,
++                  recurse_loops,
++                  keep_sides);
++          BMO_op_exec(em->bm, &recurse_op);
++
++          EDBM_flag_disable_all(em, BM_ELEM_SELECT);
++          BMO_slot_buffer_hflag_enable(
++                    em->bm, recurse_op.slots_out, "geom.out", BM_FACE, BM_ELEM_SELECT, true);
++
++          limit = BMO_slot_float_get(recurse_op.slots_out, "depth_limit");
++          total_limit += limit;
++          EDBM_op_finish(em, &recurse_op, op, true);
++
++          count++;
++        } while (fabs(depth) > fabs(total_limit) + snap_dist && count < 8);
++      }
++
++      if(fabs(depth) > fabs(total_limit)){
++        /* snap from farther */
++        depth = total_limit;
++        edbm_weld_recursion(op, em, destroy_end);
++      }
++      else if(fabs(depth) > fabs(total_limit) - snap_dist){
++        /* cheap way to snap from less depth by extruding again */
++        BMOperator snap_op;
++        EDBM_op_init(
++                em,
++                &snap_op,
++                op,
++                "extrude_destructive faces=%hf "
++                "depth=%f dir=%v original_loop=%b keep_sides=%b",
++                BM_ELEM_SELECT,
++                total_limit - depth,
++                extrude_dir,
++                false,
++                keep_sides);
++        BMO_op_exec(em->bm, &snap_op);
++        EDBM_flag_disable_all(em, BM_ELEM_SELECT);
++        BMO_slot_buffer_hflag_enable(
++                  em->bm, snap_op.slots_out, "geom.out", BM_FACE, BM_ELEM_SELECT, true);
++        EDBM_op_finish(em, &snap_op, op, true);
++        depth = total_limit;
++
++        edbm_weld_recursion(op, em, destroy_end);
++      }
++    }
++    /* update rna to depth, which may have been changed because for snapping or destroy_end */
++    RNA_float_set(op->ptr, "depth", depth);
++    /* end of recursion code */
++
++    EDBM_update_generic(em, true, true);
++    changed = true;
++  }
++  return changed;
++}
++
++static int edbm_extrude_destructive_exec(bContext *C, wmOperator *op)
++{
++  if (!edbm_extrude_destructive_init(C, op, false)) {
++    return OPERATOR_CANCELLED;
++  }
++
++  if (!edbm_extrude_destructive_calc(op, false)) {
++    edbm_extrude_destructive_exit(C, op);
++    return OPERATOR_CANCELLED;
++  }
++
++  edbm_extrude_destructive_exit(C, op);
++  return OPERATOR_FINISHED;
++}
++
++static int edbm_extrude_destructive_invoke(bContext *C, wmOperator *op, const wmEvent *event)
++{
++  RegionView3D *rv3d = CTX_wm_region_view3d(C);
++  ExtrudeData *opdata;
++  float center_3d[3];
++
++  if (!edbm_extrude_destructive_init(C, op, true)) {
++    return OPERATOR_CANCELLED;
++  }
++
++  opdata = op->customdata;
++
++  calculateTransformCenter(C, V3D_AROUND_CENTER_MEDIAN, center_3d, NULL);
++  float mval[2];
++  mval[0] = (float) event->mval[0];
++  mval[1] = (float) event->mval[1];
++  opdata->initial_val = dot_v2v2(mval, opdata->screen_extrude_dir);
++  opdata->pixel_size = rv3d ? ED_view3d_pixel_size(rv3d, center_3d) : 1.0f;
++
++  edbm_extrude_destructive_calc(op, false);
++
++  edbm_extrude_destructive_update_header(op, C);
++
++  WM_event_add_modal_handler(C, op);
++  return OPERATOR_RUNNING_MODAL;
++}
++
++static int edbm_extrude_destructive_modal(bContext *C, wmOperator *op, const wmEvent *event)
++{
++  ExtrudeData *opdata = op->customdata;
++  const bool has_numinput = hasNumInput(&opdata->num_input);
++
++  /* Modal numinput active, try to handle numeric inputs first... */
++  if (event->val == KM_PRESS && has_numinput && handleNumInput(C, &opdata->num_input, event)) {
++    float amounts[2] = {RNA_float_get(op->ptr, "depth"), 0};
++    applyNumInput(&opdata->num_input, amounts);
++    RNA_float_set(op->ptr, "depth", amounts[0]);
++
++    if (edbm_extrude_destructive_calc(op, false)) {
++      edbm_extrude_destructive_update_header(op, C);
++      return OPERATOR_RUNNING_MODAL;
++    }
++    else {
++      edbm_extrude_destructive_cancel(C, op);
++      return OPERATOR_CANCELLED;
++    }
++  }
++  else {
++    bool handled = false;
++    switch (event->type) {
++      case ESCKEY:
++      case RIGHTMOUSE:
++        edbm_extrude_destructive_cancel(C, op);
++        return OPERATOR_CANCELLED;
++
++      case MOUSEMOVE:
++        if (!has_numinput) {
++          float mval[2];
++          mval[0] = (float) event->mval[0];
++          mval[1] = (float) event->mval[1];
++
++          float amount;
++
++          float current_val = dot_v2v2(mval, opdata->screen_extrude_dir);
++          amount = ((current_val - opdata->initial_val) * opdata->pixel_size) /
++                         opdata->max_obj_scale;
++
++          /* Fake shift-transform... */
++          if (opdata->shift) {
++            amount = (amount - opdata->shift_amount) * 0.1f + opdata->shift_amount;
++          }
++
++          RNA_float_set(op->ptr, "depth", amount);
++
++          if (edbm_extrude_destructive_calc(op, true)) {
++            edbm_extrude_destructive_update_header(op, C);
++          }
++          else {
++            edbm_extrude_destructive_cancel(C, op);
++            return OPERATOR_CANCELLED;
++          }
++          handled = true;
++        }
++        break;
++
++      case LEFTMOUSE:
++      case PADENTER:
++      case RETKEY:
++        if ((event->val == KM_PRESS) ||
++            ((event->val == KM_RELEASE) && RNA_boolean_get(op->ptr, "release_confirm"))) {
++          edbm_extrude_destructive_calc(op, false);
++          edbm_extrude_destructive_exit(C, op);
++          return OPERATOR_FINISHED;
++        }
++        break;
++      case LEFTSHIFTKEY:
++      case RIGHTSHIFTKEY:
++        if (event->val == KM_PRESS) {
++          opdata->shift_amount = RNA_float_get(op->ptr, "depth");
++          opdata->shift = true;
++          handled = true;
++        }
++        else {
++          opdata->shift_amount = 0.0f;
++          opdata->shift = false;
++          handled = true;
++        }
++        break;
++      case DKEY:
++        if (event->val == KM_PRESS) {
++          const bool original_loop = RNA_boolean_get(op->ptr, "original_loop");
++          RNA_boolean_set(op->ptr, "original_loop", !original_loop);
++          if (edbm_extrude_destructive_calc(op, true)) {
++            edbm_extrude_destructive_update_header(op, C);
++          }
++          else {
++            edbm_extrude_destructive_cancel(C, op);
++            return OPERATOR_CANCELLED;
++          }
++          handled = true;
++        }
++        break;
++      case EKEY:
++        if (event->val == KM_PRESS) {
++          const bool loops = RNA_boolean_get(op->ptr, "recurse_loops");
++          RNA_boolean_set(op->ptr, "recurse_loops", !loops);
++          if (edbm_extrude_destructive_calc(op, true)) {
++            edbm_extrude_destructive_update_header(op, C);
++          }
++          else {
++            edbm_extrude_destructive_cancel(C, op);
++            return OPERATOR_CANCELLED;
++          }
++          handled = true;
++        }
++        break;
++      case LEFTCTRLKEY:
++      case RIGHTCTRLKEY:
++        if (event->val == KM_PRESS) {
++          opdata->snap = true;
++          handled = true;
++        }
++        else {
++          opdata->snap = false;
++          handled = true;
++        }
++        break;
++    }
++
++    /* Modal numinput inactive, try to handle numeric inputs last... */
++    if (!handled && event->val == KM_PRESS && handleNumInput(C, &opdata->num_input, event)) {
++      float amounts[2] = {RNA_float_get(op->ptr, "depth"), 0};
++      applyNumInput(&opdata->num_input, amounts);
++      RNA_float_set(op->ptr, "depth", amounts[0]);
++
++      if (edbm_extrude_destructive_calc(op, true)) {
++        edbm_extrude_destructive_update_header(op, C);
++        return OPERATOR_RUNNING_MODAL;
++      }
++      else {
++        edbm_extrude_destructive_cancel(C, op);
++        return OPERATOR_CANCELLED;
++      }
++    }
++  }
++
++  return OPERATOR_RUNNING_MODAL;
++}
++
++void MESH_OT_extrude_destructive(wmOperatorType *ot)
++{
++  PropertyRNA *prop;
++
++  /* identifiers */
++  ot->name = "Destructive Extrude";
++  ot->idname = "MESH_OT_extrude_destructive";
++  ot->description = "Destructively extrude faces";
++
++  /* api callbacks */
++  ot->invoke = edbm_extrude_destructive_invoke;
++  ot->modal = edbm_extrude_destructive_modal;
++  ot->exec = edbm_extrude_destructive_exec;
++  ot->cancel = edbm_extrude_destructive_cancel;
++  ot->poll = ED_operator_editmesh;
++
++  /* flags */
++  ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO | OPTYPE_GRAB_CURSOR_XY | OPTYPE_BLOCKING;
++
++  /* properties */
++  prop = RNA_def_float_distance(
++      ot->srna, "depth", 0.0f, -1e12f, 1e12f, "Depth", "", -10.0f, 10.0f);
++  RNA_def_property_ui_range(prop, -10.0f, 10.0f, 0.01, 4);
++
++  RNA_def_boolean(
++      ot->srna, "original_loop", true, "Original Loop", "Keep the loop of original edges");
++
++  RNA_def_boolean(
++      ot->srna, "recurse_loops", false, "Successive Loops", "Create a loops after passing edges");
++
++  RNA_def_boolean(
++      ot->srna, "destroy_end", true, "Destroy End", "Cut through outside mesh");
++
++  RNA_def_boolean(
++      ot->srna, "keep_sides", false, "Keep Sides", "Keep the quads formed from the extrusion. "
++      "Note that this creates non-manifold meshes");
++
++  prop = RNA_def_boolean(ot->srna, "release_confirm", 0, "Confirm on Release", "");
++  RNA_def_property_flag(prop, PROP_HIDDEN | PROP_SKIP_SAVE);
++}
+Index: source/blender/editors/mesh/mesh_intern.h
+===================================================================
+--- a/source/blender/editors/mesh/mesh_intern.h
++++ b/source/blender/editors/mesh/mesh_intern.h
+@@ -114,6 +114,9 @@
+ void MESH_OT_extrude_faces_indiv(struct wmOperatorType *ot);
+ void MESH_OT_dupli_extrude_cursor(struct wmOperatorType *ot);
+ 
++/*editmesh_extrude_destructive.c*/
++void MESH_OT_extrude_destructive(struct wmOperatorType *ot);
++
+ /* *** editmesh_extrude_screw.c *** */
+ void MESH_OT_screw(struct wmOperatorType *ot);
+ 
+Index: source/blender/editors/mesh/mesh_ops.c
+===================================================================
+--- a/source/blender/editors/mesh/mesh_ops.c
++++ b/source/blender/editors/mesh/mesh_ops.c
+@@ -79,6 +79,7 @@
+   WM_operatortype_append(MESH_OT_screw);
+ 
+   WM_operatortype_append(MESH_OT_extrude_region);
++  WM_operatortype_append(MESH_OT_extrude_destructive);
+   WM_operatortype_append(MESH_OT_extrude_context);
+   WM_operatortype_append(MESH_OT_extrude_faces_indiv);
+   WM_operatortype_append(MESH_OT_extrude_edges_indiv);
