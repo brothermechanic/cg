@@ -18,6 +18,12 @@ IUSE=""
 DEPEND=""
 RDEPEND="media-gfx/blender[addons]"
 
+src_prepare() {
+    default
+	cp ${FILESDIR}/*.png "${S}"/resources/bake_modes/
+	default
+}
+
 src_install() {
 	egit_clean
     insinto ${BLENDER_ADDONS_DIR}/addons/${PN}
