@@ -59,7 +59,7 @@
 			Build with DPX image format support.
 		</flag>
 		<flag name="fluid">
-			Adds surface fluid simulation to Blender using El'Beem library.
+			Enable Mantaflow Fluid Simulation Framework
 		</flag>
 		<flag name="freestyle">
 			FreeStyle is an edge- and line-based non-photorealistic rendering engine.

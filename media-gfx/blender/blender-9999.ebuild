@@ -24,7 +24,7 @@ IUSE_TEST="-valgrind -debug -doc"
 IUSE_IMAGE="-dpx -dds +openexr jpeg2k tiff +hdr"
 IUSE_CODEC="avi +ffmpeg -sndfile +quicktime"
 IUSE_COMPRESSION="-lzma +lzo"
-IUSE_MODIFIERS="+fluid +smoke +oceansim"
+IUSE_MODIFIERS="+fluid +smoke +oceansim +quadriflow"
 IUSE="${IUSE_DESKTOP} ${IUSE_GPU} ${IUSE_LIBS} ${IUSE_CPU} ${IUSE_TEST} ${IUSE_IMAGE} ${IUSE_CODEC} ${IUSE_COMPRESSION} ${IUSE_MODIFIERS}"
 
 REQUIRED_USE="${PYTHON_REQUIRED_USE}
@@ -257,7 +257,6 @@ src_configure() {
 		-DWITH_PYTHON_INSTALL_NUMPY=$(usex portable)
 		-DWITH_PYTHON_INSTALL_REQUESTS=$(usex portable)
 		-DWITH_PYTHON_MODULE=$(usex !X)
-		-DWITH_DRACO=OFF
 		-DWITH_HEADLESS=$(usex !X)
 		-DWITH_BLENDER=$(usex blender)
 		-DWITH_ALEMBIC=$(usex alembic)
@@ -271,7 +270,6 @@ src_configure() {
 		-DWITH_CYCLES_DEVICE_OPENCL=$(usex opencl)
 		-DWITH_CYCLES_EMBREE=$(usex embree)
 		-DWITH_CYCLES_NATIVE_ONLY=$(usex cycles)
-		-DWITH_CYCLES_NETWORK=OFF   
 		-DWITH_CYCLES_OSL=$(usex osl)
 		-DWITH_CYCLES_STANDALONE=OFF
 		-DWITH_CYCLES_STANDALONE_GUI=OFF
@@ -288,7 +286,6 @@ src_configure() {
 		-DWITH_INSTALL_PORTABLE=$(usex portable)
 		-DWITH_INTERNATIONAL=$(usex nls)
 		-DWITH_JACK=$(usex jack)
-		-DWITH_LLVM=$(usex osl)
 		-DWITH_LZMA=$(usex lzma)
 		-DWITH_LZO=$(usex lzo)
 		-DWITH_VALGRIND=$(usex valgrind)
@@ -299,25 +296,23 @@ src_configure() {
 		-DWITH_OPENCOLLADA=$(usex collada)
 		-DWITH_OPENCOLORIO=$(usex opencolorio)
 		-DWITH_OPENGL=$(usex opengl)
+		-DWITH_OPENIMAGEDENOISE=$(usex oidn)
 		-DWITH_OPENIMAGEIO=$(usex openimageio)
 		-DWITH_OPENMP=$(usex openmp)
 		-DWITH_OPENSUBDIV=$(usex opensubdiv)
 		-DWITH_OPENVDB=$(usex openvdb)
 		-DWITH_OPENVDB_BLOSC=$(usex openvdb)
 		-DWITH_RAYOPTIMIZATION=$(usex sse)
+		-DWITH_QUADRIFLOW=$(usex quadriflow)
 		-DWITH_SDL=$(usex sdl)
 		-DWITH_STATIC_LIBS=$(usex portable)
-		-DWITH_SYSTEM_BULLET=OFF
 		-DWITH_SYSTEM_EIGEN3=$(usex !portable)
 		-DWITH_SYSTEM_GLES=$(usex !portable)
 		-DWITH_SYSTEM_GLEW=$(usex !portable)
 		-DWITH_SYSTEM_LZO=$(usex !portable)
 		-DWITH_GHOST_DEBUG=$(usex debug)
 		-DWITH_CXX_GUARDEDALLOC=$(usex debug)
-		-DWITH_OPENIMAGEDENOISE=$(usex oidn)
-		-DWITH_C11=ON
-		-DWITH_CXX11=ON
-		-DWITH_BOOST=ON
+		-DWITH_USD=OFF
 	)
 
 	cmake-utils_src_configure
