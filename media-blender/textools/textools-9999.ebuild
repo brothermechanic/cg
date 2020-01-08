@@ -7,8 +7,8 @@ EAPI=6
 inherit git-r3 eutils
 
 DESCRIPTION="Blender addon. UV and Texture tool."
-HOMEPAGE="https://blenderartists.org/t/textools-for-blender/700811"
-EGIT_REPO_URI="https://github.com/drewcassidy/TexTools-Blender.git"
+HOMEPAGE="https://blenderartists.org/t/textools-for-blender"
+EGIT_REPO_URI="https://github.com/brothermechanic/textools.git"
 
 LICENSE="GPL-3"
 SLOT="0"
