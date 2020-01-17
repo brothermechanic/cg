@@ -9,7 +9,7 @@ DESCRIPTION="The hard dependency for most community plugins"
 HOMEPAGE="https://github.com/makehumancommunity/community-plugins-mhapi"
 EGIT_REPO_URI="https://github.com/makehumancommunity/community-plugins-mhapi.git"
 
-LICENSE="AGPL-3"
+LICENSE="AGPL-3.0"
 SLOT="0"
 KEYWORDS="~amd64 ~x86"
 IUSE=""
