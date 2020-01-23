@@ -128,10 +128,6 @@ src_prepare() {
     eapply_user
     epatch "${FILESDIR}"/blender-doxyfile.patch
 
-	#add custom matcap
-	rm "${S}"/release/datafiles/matcaps/mc10.jpg
-	cp "${FILESDIR}"/mc10.jpg "${S}"/release/datafiles/matcaps/
-
 	# remove some bundled deps
 	rm -r \
 		extern/glew \
