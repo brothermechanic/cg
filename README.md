@@ -12,11 +12,9 @@ To add overlay to your gentoo-based system run
 
 and select it
 
-# eselect repository add cg git https://github.com/brothermechanic/cg
-
-and update portage base
-
-# emerge --sync
+# eselect repository enable raiagent
+# sudo emerge --sync raiagent
+# sudo emerge --autounmask pyside2
 
 This blender addons installs to system subdirectory
 ${BLENDER_ADDONS_DIR}
