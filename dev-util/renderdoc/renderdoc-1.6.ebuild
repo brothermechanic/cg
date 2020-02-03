@@ -1,9 +1,9 @@
 # Copyright 1999-2019 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
 
-EAPI="6"
+EAPI="7"
 PYTHON_COMPAT=( python3_7 )
-inherit qmake-utils cmake-utils eutils python-single-r1
+inherit cmake-utils python-single-r1
 
 SWIG_VERSION="7"
 SWIG_ZIP_FILENAME="${PN}_swig_modified-${SWIG_VERSION}.zip"
@@ -53,9 +53,10 @@ src_configure() {
 		-DRENDERDOC_SWIG_PACKAGE="${DISTDIR}/${SWIG_ZIP_FILENAME}"
 		-DENABLE_QRENDERDOC=ON
 		-DENABLE_PYRENDERDOC=ON
-		-DPYSIDE2_PYTHON_PATH="$(python_get_sitedir)"
+		-DPYSIDE2_PYTHON_PATH="$(python_get_sitedir)/PySide2"
 		-DPYSIDE2_LIBRARY_DIR="/usr/lib64"
-		-DPYSIDE2_INCLUDE_DIR="/usr/include"
+		-DPYSIDE2_INCLUDE_DIR="/usr/include/PySide2"
+		-DPYSIDE2_FOUND=1
 	)
 	cmake-utils_src_configure
 }
