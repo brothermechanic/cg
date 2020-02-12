@@ -19,9 +19,9 @@ IUSE="+assets"
 REQUIRED_USE="${PYTHON_REQUIRED_USE}"
 
 RDEPEND="${PYTHON_DEPS}
-	dev-python/numpy[${PYTHON_USEDEP}]
-	dev-python/pyopengl[${PYTHON_USEDEP}]
-	dev-python/PyQt5[${PYTHON_USEDEP}]
+	dev-python/numpy
+	dev-python/pyopengl
+	dev-python/PyQt5
 	dev-qt/qtsvg"
 
 DEPEND="${RDEPEND}"
