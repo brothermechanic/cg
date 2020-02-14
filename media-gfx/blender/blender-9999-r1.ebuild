@@ -1,7 +1,7 @@
 # Copyright 1999-2017 Gentoo Foundation
 # Distributed under the terms of the GNU General Public License v2
 
-EAPI=7
+EAPI=6
 PYTHON_COMPAT=( python3_7 )
 
 inherit git-r3 check-reqs cmake-utils python-single-r1 gnome2-utils xdg-utils pax-utils toolchain-funcs flag-o-matic
@@ -18,7 +18,7 @@ KEYWORDS=""
 
 IUSE_DESKTOP="-portable +blender +X +addons +addons-contrib +nls -ndof -player"
 IUSE_GPU="+opengl cuda opencl -sm_30 -sm_35 -sm_50 -sm_52 -sm_61 -sm_70"
-IUSE_LIBS="+cycles -sdl jack openal freestyle -osl +openvdb +opensubdiv +opencolorio +openimageio +collada -alembic +fftw +oidn"
+IUSE_LIBS="+cycles -sdl jack openal freestyle -osl +openvdb +opensubdiv +opencolorio +openimageio +collada -alembic +fftw +oidn +usd"
 IUSE_CPU="openmp -embree +sse"
 IUSE_TEST="-valgrind -debug -doc"
 IUSE_IMAGE="-dpx -dds +openexr jpeg2k tiff +hdr"
@@ -50,6 +50,7 @@ RDEPEND="${PYTHON_DEPS}
 	dev-python/numpy
 	dev-python/requests
 	sys-libs/zlib
+	sci-libs/ceres-solver
 	smoke? ( sci-libs/fftw:3.0 )
 	media-libs/freetype
 	media-libs/libpng:0=
@@ -99,12 +100,18 @@ RDEPEND="${PYTHON_DEPS}
 
 DEPEND="${RDEPEND}
 	dev-cpp/eigen:3
+	>=dev-cpp/glog-0.4.0
+	>=dev-cpp/gflags-2.2.2
 	nls? ( sys-devel/gettext )
 	doc? (
 		dev-python/sphinx
 		app-doc/doxygen[-nodot(-),dot(+)]
 	)"
 
+#PATCHES=(
+#	"${FILESDIR}/blender-doxyfile.patch"
+#)
+	
 CMAKE_BUILD_TYPE="Release"
 
 blender_check_requirements() {
@@ -125,9 +132,7 @@ pkg_setup() {
 }
 
 src_prepare() {
-    eapply_user
-    epatch "${FILESDIR}"/blender-doxyfile.patch
-
+	default
 	# remove some bundled deps
 	rm -r \
 		extern/glew \
@@ -137,6 +142,7 @@ src_prepare() {
 		extern/lzo \
 		extern/gtest \
 		|| die
+    
 	if use addons ; then
 		ewarn "$(echo "Bundled addons")"
 	else
@@ -148,9 +154,7 @@ src_prepare() {
 		rm -r release/scripts/addons_contrib/*
 	fi
 
-	default
-
-	# we don't want static glew, but it's scattered across
+		# we don't want static glew, but it's scattered across
 	# multiple files that differ from version to version
 	# !!!CHECK THIS SED ON EVERY VERSION BUMP!!!
 	local file
@@ -177,10 +181,13 @@ src_prepare() {
 			done
 		fi
 	fi
+	cmake-utils_src_prepare
 }
 
 src_configure() {
 	append-flags -funsigned-char -fno-strict-aliasing
+	append-lfs-flags
+	append-cppflags -DOPENVDB_ABI_VERSION_NUMBER=6
 	local mycmakeargs=""
 	#CUDA Kernel Selection
 	local CUDA_ARCH=""
@@ -308,7 +315,7 @@ src_configure() {
 		-DWITH_SYSTEM_LZO=$(usex !portable)
 		-DWITH_GHOST_DEBUG=$(usex debug)
 		-DWITH_CXX_GUARDEDALLOC=$(usex debug)
-		-DWITH_USD=OFF
+		-DWITH_USD=$(usex usd)
 	)
 
 	cmake-utils_src_configure
