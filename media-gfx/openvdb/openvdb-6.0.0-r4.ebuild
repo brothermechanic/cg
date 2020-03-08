@@ -32,7 +32,10 @@ RDEPEND="
 	libglvnd? ( media-libs/libglvnd )
 	python? (
 		${PYTHON_DEPS}
-		dev-python/numpy
+		$(python_gen_cond_dep '
+			>=dev-libs/boost-1.70:=[python,${PYTHON_MULTI_USEDEP}]
+			dev-python/numpy[${PYTHON_MULTI_USEDEP}]
+		')
 	)"
 
 DEPEND="${RDEPEND}
