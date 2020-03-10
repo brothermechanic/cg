@@ -5,11 +5,11 @@ EAPI=6
 
 inherit git-r3 eutils
 
-DESCRIPTION="Blender addon. Set the Viewport Color based on a nodetree"
-HOMEPAGE="https://github.com/johnnygizmo/set_viewport_color"
-EGIT_REPO_URI="https://github.com/johnnygizmo/set_viewport_color.git"
+DESCRIPTION="Blender addon. The predefined ways of splitting the interface"
+HOMEPAGE="https://github.com/CreativeDesigner3D/InterfaceSplitter"
+EGIT_REPO_URI="https://github.com/CreativeDesigner3D/InterfaceSplitter.git"
 
-LICENSE="MIT"
+LICENSE="GPL-3.0"
 SLOT="0"
 KEYWORDS="~amd64 ~x86"
 IUSE=""
@@ -21,8 +21,8 @@ RDEPEND="media-gfx/blender[addons]
 
 src_install() {
 	egit_clean
-    insinto ${BLENDER_ADDONS_DIR}/addons/
-	doins -r "${S}"/*.py
+    insinto ${BLENDER_ADDONS_DIR}/addons/${PN}
+	doins -r "${S}"/*
 }
 
 pkg_postinst() {
