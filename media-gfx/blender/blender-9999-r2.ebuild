@@ -311,6 +311,7 @@ src_configure() {
 		-DWITH_RAYOPTIMIZATION=$(usex sse)
 		-DWITH_QUADRIFLOW=$(usex quadriflow)
 		-DWITH_SDL=$(usex sdl)
+		-DWITH_SDL_DYNLOAD=$(usex sdl)
 		-DWITH_STATIC_LIBS=$(usex portable)
 		-DWITH_SYSTEM_EIGEN3=$(usex !portable)
 		-DWITH_SYSTEM_GLES=$(usex !portable)
