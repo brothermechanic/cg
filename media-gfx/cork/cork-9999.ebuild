@@ -6,14 +6,15 @@ EAPI=6
 inherit eutils git-r3
 
 DESCRIPTION="Cork - a powerful standalone boolean calculations software"
-HOMEPAGE="http://djv.sf.net"
+HOMEPAGE="https://github.com/gilbo/cork"
 EGIT_REPO_URI="https://github.com/gilbo/cork.git"
 
 LICENSE="LGPL"
 SLOT="0"
 KEYWORDS="~amd64 ~x86"
 
-RDEPEND="sys-devel/llvm"
+RDEPEND="sys-devel/llvm
+        dev-libs/gmp[cxx]"
 
 DEPEND="${RDEPEND}"
 
