@@ -4,7 +4,7 @@
 EAPI=6
 PYTHON_COMPAT=( python3_7 )
 
-inherit git-r3 check-reqs cmake-utils python-single-r1 gnome2-utils xdg-utils pax-utils versionator toolchain-funcs flag-o-matic
+inherit git-r3 check-reqs cmake-utils python-single-r1 gnome2-utils xdg-utils pax-utils toolchain-funcs flag-o-matic
 
 DESCRIPTION="3D Creation/Animation/Publishing System"
 HOMEPAGE="http://www.blender.org/"
@@ -18,7 +18,7 @@ KEYWORDS=""
 
 IUSE_DESKTOP="-portable +blender +X +addons +addons-contrib +nls -ndof -player"
 IUSE_GPU="+opengl cuda opencl -sm_30 -sm_35 -sm_50 -sm_52 -sm_61 -sm_70"
-IUSE_LIBS="+cycles -sdl jack openal freestyle -osl +openvdb +opensubdiv +opencolorio +openimageio +collada -alembic +fftw +oidn"
+IUSE_LIBS="+cycles -sdl jack openal freestyle -osl +openvdb +opensubdiv +opencolorio +openimageio +collada -alembic +fftw +oidn +usd"
 IUSE_CPU="openmp -embree +sse"
 IUSE_TEST="-valgrind -debug -doc"
 IUSE_IMAGE="-dpx -dds +openexr jpeg2k tiff +hdr"
@@ -28,6 +28,7 @@ IUSE_MODIFIERS="+fluid +smoke +oceansim +quadriflow"
 IUSE="${IUSE_DESKTOP} ${IUSE_GPU} ${IUSE_LIBS} ${IUSE_CPU} ${IUSE_TEST} ${IUSE_IMAGE} ${IUSE_CODEC} ${IUSE_COMPRESSION} ${IUSE_MODIFIERS}"
 
 REQUIRED_USE="${PYTHON_REQUIRED_USE}
+	alembic? ( openexr )
 	fluid  ( fftw )
 	oceansim ( fftw )
 	smoke ( fftw )
@@ -46,10 +47,13 @@ for X in ${LANGS} ; do
 done
 
 RDEPEND="${PYTHON_DEPS}
-    dev-libs/jemalloc
-	dev-python/numpy[${PYTHON_USEDEP}]
-	dev-python/requests[${PYTHON_USEDEP}]
+	$(python_gen_cond_dep '
+		dev-python/numpy[${PYTHON_MULTI_USEDEP}]
+		dev-python/requests[${PYTHON_MULTI_USEDEP}]
+	')
+	dev-libs/jemalloc
 	sys-libs/zlib
+	sci-libs/ceres-solver
 	smoke? ( sci-libs/fftw:3.0 )
 	media-libs/freetype
 	media-libs/libpng:0=
@@ -71,8 +75,8 @@ RDEPEND="${PYTHON_DEPS}
 		openimageio? ( >=media-libs/openimageio-1.1.5 )
 		cuda? ( dev-util/nvidia-cuda-toolkit )
 		osl? ( media-libs/osl )
-		embree? ( media-libs/embree[static-libs,raymask] )
-		openvdb? ( media-gfx/openvdb[${PYTHON_USEDEP}]
+		embree? ( media-libs/embree[static-libs,raymask,tbb] )
+		openvdb? ( media-gfx/openvdb
 		dev-cpp/tbb )
 	)
 	sdl? ( media-libs/libsdl[sound,joystick] )
@@ -91,20 +95,26 @@ RDEPEND="${PYTHON_DEPS}
 	valgrind? ( dev-util/valgrind )
 	lzma? ( app-arch/lzma )
 	lzo? ( dev-libs/lzo )
-	alembic? ( media-gfx/alembic )
+	alembic? ( media-gfx/alembic[boost,-hdf] )
 	opencl? ( app-eselect/eselect-opencl )
-	opensubdiv? ( media-libs/opensubdiv[-opencl,-cuda] )
+	opensubdiv? ( media-libs/opensubdiv )
 	nls? ( virtual/libiconv )
 	oidn? ( media-libs/oidn )"
 
 DEPEND="${RDEPEND}
 	dev-cpp/eigen:3
+	>=dev-cpp/glog-0.4.0
+	>=dev-cpp/gflags-2.2.2
 	nls? ( sys-devel/gettext )
 	doc? (
 		dev-python/sphinx
 		app-doc/doxygen[-nodot(-),dot(+)]
 	)"
 
+#PATCHES=(
+#	"${FILESDIR}/blender-doxyfile.patch"
+#)
+	
 CMAKE_BUILD_TYPE="Release"
 
 blender_check_requirements() {
@@ -125,9 +135,7 @@ pkg_setup() {
 }
 
 src_prepare() {
-    eapply_user
-    epatch "${FILESDIR}"/blender-doxyfile.patch
-
+	default
 	# remove some bundled deps
 	rm -r \
 		extern/glew \
@@ -137,6 +145,7 @@ src_prepare() {
 		extern/lzo \
 		extern/gtest \
 		|| die
+    
 	if use addons ; then
 		ewarn "$(echo "Bundled addons")"
 	else
@@ -148,9 +157,7 @@ src_prepare() {
 		rm -r release/scripts/addons_contrib/*
 	fi
 
-	default
-
-	# we don't want static glew, but it's scattered across
+		# we don't want static glew, but it's scattered across
 	# multiple files that differ from version to version
 	# !!!CHECK THIS SED ON EVERY VERSION BUMP!!!
 	local file
@@ -177,56 +184,26 @@ src_prepare() {
 			done
 		fi
 	fi
+	cmake-utils_src_prepare
 }
 
 src_configure() {
 	append-flags -funsigned-char -fno-strict-aliasing
+	append-lfs-flags
+	append-cppflags -DOPENVDB_ABI_VERSION_NUMBER=6
 	local mycmakeargs=""
 	#CUDA Kernel Selection
 	local CUDA_ARCH=""
 	if use cuda; then
-		if use sm_30; then
-			if [[ -n "${CUDA_ARCH}" ]] ; then
-				CUDA_ARCH="${CUDA_ARCH};sm_30"
-			else
-				CUDA_ARCH="sm_30"
+		for CA in 30 35 50 52 61 70 75; do
+			if use sm_${CA}; then
+				if [[ -n "${CUDA_ARCH}" ]] ; then
+					CUDA_ARCH="${CUDA_ARCH};sm_${CA}"
+				else
+					CUDA_ARCH="sm_${CA}"
+				fi
 			fi
-		fi
-		if use sm_35; then
-			if [[ -n "${CUDA_ARCH}" ]] ; then
-				CUDA_ARCH="${CUDA_ARCH};sm_35"
-			else
-				CUDA_ARCH="sm_35"
-			fi
-		fi
-		if use sm_50; then
-			if [[ -n "${CUDA_ARCH}" ]] ; then
-				CUDA_ARCH="${CUDA_ARCH};sm_50"
-			else
-				CUDA_ARCH="sm_50"
-			fi
-		fi
-		if use sm_52; then
-			if [[ -n "${CUDA_ARCH}" ]] ; then
-				CUDA_ARCH="${CUDA_ARCH};sm_52"
-			else
-				CUDA_ARCH="sm_52"
-			fi
-		fi
-		if use sm_61; then
-			if [[ -n "${CUDA_ARCH}" ]] ; then
-				CUDA_ARCH="${CUDA_ARCH};sm_61"
-			else
-				CUDA_ARCH="sm_61"
-			fi
-		fi
-		if use sm_70; then
-			if [[ -n "${CUDA_ARCH}" ]] ; then
-				CUDA_ARCH="${CUDA_ARCH};sm_70"
-			else
-				CUDA_ARCH="sm_70"
-			fi
-		fi
+		done
 
 		#If a kernel isn't selected then all of them are built by default
 		if [ -n "${CUDA_ARCH}" ] ; then
@@ -241,6 +218,14 @@ src_configure() {
 			-DCUDA_LIBRARIES=/opt/cuda/lib64
 			-DCUDA_NVCC_EXECUDABLE=/opt/cuda/bin/nvcc
 			-DCUDA_NVCC_FLAGS=-std=c++11
+		)
+	fi
+	
+	if use optix; then
+		mycmakeargs+=(
+			-OPTIX_ROOT_DIR=/opt/optix
+			-DOPTIX_INCLUDE_DIR=/opt/optix/include
+			-DWITH_CYCLES_DEVICE_OPTIX=ON
 		)
 	fi
 
@@ -301,6 +286,7 @@ src_configure() {
 		-DWITH_RAYOPTIMIZATION=$(usex sse)
 		-DWITH_QUADRIFLOW=$(usex quadriflow)
 		-DWITH_SDL=$(usex sdl)
+		-DWITH_SDL_DYNLOAD=$(usex sdl)
 		-DWITH_STATIC_LIBS=$(usex portable)
 		-DWITH_SYSTEM_EIGEN3=$(usex !portable)
 		-DWITH_SYSTEM_GLES=$(usex !portable)
@@ -308,7 +294,8 @@ src_configure() {
 		-DWITH_SYSTEM_LZO=$(usex !portable)
 		-DWITH_GHOST_DEBUG=$(usex debug)
 		-DWITH_CXX_GUARDEDALLOC=$(usex debug)
-		-DWITH_USD=OFF
+		-DWITH_USD=$(usex usd)
+		-DWITH_TBB=ON
 	)
 
 	cmake-utils_src_configure
