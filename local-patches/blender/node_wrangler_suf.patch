@@ -1,6 +1,6 @@
 --- a/release/scripts/addons/node_wrangler.py	2020-01-21 15:05:01.804392686 +0300
 +++ b/release/scripts/addons/node_wrangler.py	2020-01-21 15:30:40.741064468 +0300
-@@ -999,7 +999,7 @@
+@@ -995,31 +995,31 @@
  class NWPrincipledPreferences(bpy.types.PropertyGroup):
      base_color: StringProperty(
          name='Base Color',
@@ -9,7 +9,8 @@
          description='Naming Components for Base Color maps')
      sss_color: StringProperty(
          name='Subsurface Color',
-@@ -1007,31 +1007,31 @@
+-        default='sss subsurface',
++        default='sub sss subsurface',
          description='Naming Components for Subsurface Color maps')
      metallic: StringProperty(
          name='Metallic',
@@ -34,17 +35,7 @@
      rough: StringProperty(
          name='Roughness',
 -        default='roughness rough rgh',
-+        default='r orm roughness rough rgh',
++        default='r roughness rough rgh',
          description='Naming Components for roughness maps')
      gloss: StringProperty(
          name='Gloss',
--        default='gloss glossy glossiness',
-+        default='g gloss glossy glossiness',
-         description='Naming Components for glossy maps')
-     displacement: StringProperty(
-         name='Displacement',
--        default='displacement displace disp dsp height heightmap',
-+        default='h displacement displace disp dsp height heightmap',
-         description='Naming Components for displacement maps')
- 
- # Addon prefs

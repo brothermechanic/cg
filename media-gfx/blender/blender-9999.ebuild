@@ -17,7 +17,7 @@ SLOT="28"
 KEYWORDS=""
 
 IUSE_DESKTOP="-portable +blender +X +addons +addons-contrib +nls -ndof -player"
-IUSE_GPU="+opengl cuda opencl -sm_30 -sm_35 -sm_50 -sm_52 -sm_61 -sm_70"
+IUSE_GPU="+opengl -optix cuda opencl -sm_30 -sm_35 -sm_50 -sm_52 -sm_61 -sm_70"
 IUSE_LIBS="+cycles -sdl jack openal freestyle -osl +openvdb +opensubdiv +opencolorio +openimageio +collada -alembic +fftw +oidn +usd"
 IUSE_CPU="openmp -embree +sse"
 IUSE_TEST="-valgrind -debug -doc"
@@ -79,6 +79,7 @@ RDEPEND="${PYTHON_DEPS}
 		openvdb? ( media-gfx/openvdb
 		dev-cpp/tbb )
 	)
+	optix? ( dev-libs/optix )
 	sdl? ( media-libs/libsdl[sound,joystick] )
 	tiff? ( media-libs/tiff:0 )
 	openexr? ( media-libs/openexr )
