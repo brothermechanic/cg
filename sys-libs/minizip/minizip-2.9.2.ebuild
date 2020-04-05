@@ -13,7 +13,7 @@ LICENSE="ZLIB"
 SLOT="0/2" # libminizip.so version
 
 KEYWORDS="~amd64 ~x86"
-IUSE="bzip2 libressl lzma ssl test +zlib"
+IUSE="bzip2 libressl lzma ssl test"
 
 RDEPEND="
 	bzip2? ( app-arch/bzip2 )
