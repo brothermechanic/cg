@@ -2,22 +2,23 @@
 # Distributed under the terms of the GNU General Public License v2
 
 EAPI=6
-PYTHON_COMPAT=( python3_7 )
+PYTHON_COMPAT=( python3_7 python3_8 )
 
 inherit git-r3 check-reqs cmake-utils python-single-r1 gnome2-utils xdg-utils pax-utils toolchain-funcs flag-o-matic
 
 DESCRIPTION="3D Creation/Animation/Publishing System"
 HOMEPAGE="http://www.blender.org/"
 
-EGIT_REPO_URI="http://git.blender.org/blender.git"
+EGIT_REPO_URI="https://git.blender.org/blender"
 #EGIT_BRANCH="master"
 
 LICENSE="|| ( GPL-2 BL )"
 SLOT="28"
 KEYWORDS=""
+MY_PV="2.83"
 
 IUSE_DESKTOP="-portable +blender +X +addons +addons-contrib +nls -ndof -player"
-IUSE_GPU="+opengl -optix cuda opencl -sm_30 -sm_35 -sm_50 -sm_52 -sm_61 -sm_70"
+IUSE_GPU="+opengl -optix cuda opencl -sm_30 -sm_35 -sm_50 -sm_52 -sm_61 -sm_70 -sm_75"
 IUSE_LIBS="+cycles -sdl jack openal freestyle -osl +openvdb +opensubdiv +opencolorio +openimageio +collada -alembic +fftw +oidn +usd"
 IUSE_CPU="openmp -embree +sse"
 IUSE_TEST="-valgrind -debug -doc"
