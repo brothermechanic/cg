@@ -101,7 +101,8 @@ RDEPEND="${PYTHON_DEPS}
 	opencl? ( app-eselect/eselect-opencl )
 	opensubdiv? ( media-libs/opensubdiv )
 	nls? ( virtual/libiconv )
-	oidn? ( media-libs/oidn )"
+	oidn? ( media-libs/oidn )
+	usd? ( media-libs/openusd )"
 
 DEPEND="${RDEPEND}
 	dev-cpp/eigen:3
