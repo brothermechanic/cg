@@ -297,6 +297,8 @@ src_configure() {
 		-DWITH_GHOST_DEBUG=$(usex debug)
 		-DWITH_CXX_GUARDEDALLOC=$(usex debug)
 		-DWITH_USD=$(usex usd)
+		-DUSD_ROOT_DIR=/usr/local
+		-DUSD_LIBRARY=/usr/local/lib/libusd_ms.so
 		-DWITH_TBB=ON
 	)
 
