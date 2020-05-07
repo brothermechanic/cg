@@ -17,6 +17,10 @@ IUSE=""
 DEPEND=""
 RDEPEND="media-gfx/blender[addons]"
 
+PATCHES=(
+	"${FILESDIR}/defaults.patch"
+)
+
 src_install() {
 	egit_clean
     insinto ${BLENDER_ADDONS_DIR}/addons/${PN}
