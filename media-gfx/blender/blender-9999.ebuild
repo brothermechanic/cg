@@ -98,7 +98,7 @@ RDEPEND="${PYTHON_DEPS}
 	lzma? ( app-arch/lzma )
 	lzo? ( dev-libs/lzo )
 	alembic? ( media-gfx/alembic[boost,-hdf] )
-	opencl? ( app-eselect/eselect-opencl )
+	opencl? ( virtual/opencl )
 	opensubdiv? ( media-libs/opensubdiv )
 	nls? ( virtual/libiconv )
 	oidn? ( media-libs/oidn )
