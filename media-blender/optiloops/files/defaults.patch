@@ -1,6 +1,6 @@
 --- a/__init__.py	2020-05-07 21:22:36.713244495 +0300
-+++ b/__init__.py	2020-05-07 21:25:03.459911683 +0300
-@@ -277,7 +277,7 @@
++++ b/__init__.py	2020-05-07 21:35:46.463247320 +0300
+@@ -277,12 +277,12 @@
          name="Max angle",
          description="loops containing only lower angles will be removed",
          min=0.01, max=180.0,
@@ -9,6 +9,12 @@
      )
  
      only_closed = BoolProperty(
+         name="Remove only closed loops",
+-        default=False,
++        default=True,
+     )
+     keep_subsurf_influencing_loops = BoolProperty(
+         name="Keep loops defining subsurf creases",
 @@ -292,12 +292,12 @@
      keep_seams = BoolProperty(
          name="Keep uv seams",
