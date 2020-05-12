@@ -19,7 +19,7 @@ IUSE="python"
 REQUIRED_USE="python? ( ${PYTHON_REQUIRED_USE} )"
 
 RDEPEND="
-	>=dev-libs/boost-1.72:=
+	dev-libs/boost
 	python? (
 		${PYTHON_DEPS}
 		$(python_gen_cond_dep '
