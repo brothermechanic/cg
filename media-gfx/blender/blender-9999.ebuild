@@ -4,7 +4,7 @@
 EAPI=6
 PYTHON_COMPAT=( python3_7 python3_8 )
 
-inherit git-r3 check-reqs cmake-utils python-single-r1 gnome2-utils xdg-utils pax-utils toolchain-funcs flag-o-matic
+inherit git-r3 check-reqs cmake-utils python-single-r1 xdg-utils pax-utils toolchain-funcs flag-o-matic
 
 DESCRIPTION="3D Creation/Animation/Publishing System"
 HOMEPAGE="http://www.blender.org/"
@@ -30,16 +30,16 @@ IUSE="${IUSE_DESKTOP} ${IUSE_GPU} ${IUSE_LIBS} ${IUSE_CPU} ${IUSE_TEST} ${IUSE_I
 
 REQUIRED_USE="${PYTHON_REQUIRED_USE}
 	alembic? ( openexr )
-	fluid  ( fftw )
-	oceansim ( fftw )
-	smoke ( fftw )
-	tiff ( openimageio )
-	openexr ( openimageio )
+	fluid?  ( fftw )
+	oceansim? ( fftw )
+	smoke? ( fftw )
+	tiff? ( openimageio )
+	openexr? ( openimageio )
 	cuda? ( cycles openimageio )
 	cycles? ( openexr tiff openimageio opencolorio )
 	osl? ( cycles )
 	embree? ( cycles )
-	oidn? ( cycles )"
+	oidn? ( cycles tbb )"
 
 LANGS="en ar bg ca cs de el es es_ES fa fi fr he hr hu id it ja ky ne nl pl pt pt_BR ru sr sr@latin sv tr uk zh_CN zh_TW"
 for X in ${LANGS} ; do
@@ -349,10 +349,6 @@ src_install() {
 	python_optimize "${ED%/}/usr/share/blender/${MY_PV}/scripts"
 }
 
-pkg_preinst() {
-	gnome2_icon_savelist
-}
-
 pkg_postinst() {
 	elog
 	elog "Blender compiles from master thunk by default"
@@ -363,13 +359,15 @@ pkg_postinst() {
 	elog "/etc/portage/patches/media-gfx/blender/"
 	elog "or create simlink"
 	elog
-	gnome2_icon_cache_update
+	xdg_icon_cache_update
 	xdg_mimeinfo_database_update
+	xdg_desktop_database_update
 }
 
 pkg_postrm() {
-	gnome2_icon_cache_update
+	xdg_icon_cache_update
 	xdg_mimeinfo_database_update
+	xdg_desktop_database_update
 
 	ewarn ""
 	ewarn "You may want to remove the following directory."
