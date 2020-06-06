@@ -73,6 +73,7 @@ src_configure() {
 		-DOPENVDB_ENABLE_RPATH=ON
 		-DTBB_LOCATION="${myprefix}"
 		-DUSE_GLFW3=ON
+		-DUSE_BLOSC=ON
 		-DBoost_PYTHON_LIBRARY="/usr/lib64/libboost_python37.so.1.71.0"
 		-DBoost_NUMPY_LIBRARY="/usr/lib64/libboost_numpy37.so.1.71.0"
 	)

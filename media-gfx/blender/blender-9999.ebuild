@@ -19,13 +19,13 @@ MY_PV="2.83"
 
 IUSE_DESKTOP="-portable +blender +X +addons +addons-contrib +nls -ndof -player"
 IUSE_GPU="+opengl -optix cuda opencl -sm_30 -sm_35 -sm_50 -sm_52 -sm_61 -sm_70 -sm_75"
-IUSE_LIBS="+cycles -sdl jack openal freestyle -osl +openvdb +opensubdiv +opencolorio +openimageio +collada -alembic +fftw +oidn +usd"
-IUSE_CPU="openmp -embree +sse"
-IUSE_TEST="-valgrind -debug -doc"
+IUSE_LIBS="+cycles -sdl jack openal freestyle -osl +openvdb +opensubdiv +opencolorio +openimageio +collada -alembic +fftw +oidn +quadriflow +usd"
+IUSE_CPU="openmp -embree +sse +tbb"
+IUSE_TEST="-debug -doc"
 IUSE_IMAGE="-dpx -dds +openexr jpeg2k tiff +hdr"
 IUSE_CODEC="avi +ffmpeg -sndfile +quicktime"
-IUSE_COMPRESSION="-lzma +lzo"
-IUSE_MODIFIERS="+fluid +smoke +oceansim +quadriflow"
+IUSE_COMPRESSION="+lzma -lzo"
+IUSE_MODIFIERS="+fluid +smoke +oceansim"
 IUSE="${IUSE_DESKTOP} ${IUSE_GPU} ${IUSE_LIBS} ${IUSE_CPU} ${IUSE_TEST} ${IUSE_IMAGE} ${IUSE_CODEC} ${IUSE_COMPRESSION} ${IUSE_MODIFIERS}"
 
 REQUIRED_USE="${PYTHON_REQUIRED_USE}
@@ -94,7 +94,6 @@ RDEPEND="${PYTHON_DEPS}
 		dev-libs/libspnav
 	)
 	quicktime? ( media-libs/libquicktime )
-	valgrind? ( dev-util/valgrind )
 	lzma? ( app-arch/lzma )
 	lzo? ( dev-libs/lzo )
 	alembic? ( media-gfx/alembic[boost,-hdf] )
@@ -106,7 +105,6 @@ RDEPEND="${PYTHON_DEPS}
 
 DEPEND="${RDEPEND}
 	dev-cpp/eigen:3
-	>=dev-cpp/glog-0.4.0
 	>=dev-cpp/gflags-2.2.2
 	nls? ( sys-devel/gettext )
 	doc? (
@@ -144,9 +142,9 @@ src_prepare() {
 		extern/glew \
 		extern/glew-es \
 		extern/Eigen3 \
-		extern/lzma \
 		extern/lzo \
 		extern/gtest \
+		extern/gflags \
 		|| die
     
 	if use addons ; then
@@ -251,6 +249,8 @@ src_configure() {
 		-DWITH_CPU_SSE=$(usex sse)
 		-DWITH_CYCLES=$(usex cycles)
 		-DWITH_CYCLES_DEVICE_CUDA=$(usex cuda)
+		-DWITH_CYCLES_DEVICE_OPTIX=OFF
+		-DWITH_CYCLES_CUBIN_COMPILER=OFF
 		-DWITH_CYCLES_DEVICE_OPENCL=$(usex opencl)
 		-DWITH_CYCLES_EMBREE=$(usex embree)
 		-DWITH_CYCLES_NATIVE_ONLY=$(usex cycles)
@@ -258,7 +258,6 @@ src_configure() {
 		-DWITH_CYCLES_STANDALONE=OFF
 		-DWITH_CYCLES_STANDALONE_GUI=OFF
 		-DWITH_FREESTYLE=$(usex freestyle)
-		-DWITH_X11=$(usex X)
 		-DWITH_GHOST_XDND=$(usex X)
 		-DWITH_IMAGE_CINEON=$(usex dpx)
 		-DWITH_IMAGE_DDS=$(usex dds)
@@ -272,13 +271,13 @@ src_configure() {
 		-DWITH_JACK=$(usex jack)
 		-DWITH_LZMA=$(usex lzma)
 		-DWITH_LZO=$(usex lzo)
-		-DWITH_VALGRIND=$(usex valgrind)
+		-DWITH_MEM_JEMALLOC=ON
 		-DWITH_MOD_FLUID=$(usex fluid)
 		-DWITH_MOD_OCEANSIM=$(usex oceansim)
-		-DWITH_MOD_SMOKE=$(usex smoke)
 		-DWITH_OPENAL=$(usex openal)
 		-DWITH_OPENCOLLADA=$(usex collada)
 		-DWITH_OPENCOLORIO=$(usex opencolorio)
+		-DWITH_XR_OPENXR=OFF
 		-DWITH_OPENGL=$(usex opengl)
 		-DWITH_OPENIMAGEDENOISE=$(usex oidn)
 		-DWITH_OPENIMAGEIO=$(usex openimageio)
@@ -286,7 +285,6 @@ src_configure() {
 		-DWITH_OPENSUBDIV=$(usex opensubdiv)
 		-DWITH_OPENVDB=$(usex openvdb)
 		-DWITH_OPENVDB_BLOSC=$(usex openvdb)
-		-DWITH_RAYOPTIMIZATION=$(usex sse)
 		-DWITH_QUADRIFLOW=$(usex quadriflow)
 		-DWITH_SDL=$(usex sdl)
 		-DWITH_SDL_DYNLOAD=$(usex sdl)
@@ -295,12 +293,15 @@ src_configure() {
 		-DWITH_SYSTEM_GLES=$(usex !portable)
 		-DWITH_SYSTEM_GLEW=$(usex !portable)
 		-DWITH_SYSTEM_LZO=$(usex !portable)
+		-DWITH_SYSTEM_GFLAGS=$(usex !portable)
 		-DWITH_GHOST_DEBUG=$(usex debug)
 		-DWITH_CXX_GUARDEDALLOC=$(usex debug)
 		-DWITH_USD=$(usex usd)
 		-DUSD_ROOT_DIR=/usr/local
 		-DUSD_LIBRARY=/usr/local/lib/libusd_ms.so
-		-DWITH_TBB=ON
+		-DWITH_TBB=$(usex tbb)
+		-DWITH_NINJA_POOL_JOBS=ON
+		-Wno-dev
 	)
 
 	cmake-utils_src_configure
