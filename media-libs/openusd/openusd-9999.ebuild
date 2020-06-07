@@ -39,6 +39,7 @@ pkg_setup() {
 src_configure() {
 	default
 	eapply "${FILESDIR}"/usd.diff
+	eapply "${FILESDIR}"/packageUtils.cpp.patch
 	local mycmakeargs=(
 		-DCMAKE_INSTALL_PREFIX=/usr/local
 		-DPXR_SET_INTERNAL_NAMESPACE=usdBlender
