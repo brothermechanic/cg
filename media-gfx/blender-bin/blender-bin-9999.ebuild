@@ -26,7 +26,7 @@ S="${WORKDIR}/${PACKAGE}"
 
 src_prepare() {
     default
-    sed -e 's|Exec=blender|Exec=blender-bin|' -i ${S}/blender.desktop || die
+    sed -e 's|Exec=blender|Exec=/opt/blender-bin|' -i ${S}/blender.desktop || die
     sed -e 's|Icon=blender|Icon=blender-symbolic.svg|' -i ${S}/blender.desktop || die
     mv ${S}/blender ${S}/blender-bin
     mv ${S}/blender.desktop ${S}/blender-bin.desktop
