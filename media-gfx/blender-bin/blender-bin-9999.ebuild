@@ -9,7 +9,7 @@ DESCRIPTION="3D Creation/Animation/Publishing System"
 HOMEPAGE="http://www.blender.org/"
 
 VERSION="2.90.0"
-COMMIT="4db63b648643"
+COMMIT="51bf04383aa0"
 PACKAGE="blender-${VERSION}-${COMMIT}-linux64"
 
 SRC_URI="https://builder.blender.org/download/${PACKAGE}.tar.xz -> ${P}.tar.xz"
@@ -43,9 +43,9 @@ src_install() {
 
 pkg_postinst() {
     elog
-    elog "set latest COMMIT of Blender to portage settings"
-    elog "for ex., my setup is in "
-    elog "/etc/portage/env/blender file"
+    elog "this build updates very often"
+    elog "for getting new versions"
+    elog "you must change"
     elog "COMMIT="4db63b648643""
     elog
 }
