@@ -9,7 +9,7 @@ DESCRIPTION="3D Creation/Animation/Publishing System"
 HOMEPAGE="http://www.blender.org/"
 
 VERSION="2.90.0"
-COMMIT="51bf04383aa0"
+COMMIT="62aa103d485f"
 PACKAGE="blender-${VERSION}-${COMMIT}-linux64"
 
 SRC_URI="https://builder.blender.org/download/${PACKAGE}.tar.xz -> ${P}.tar.xz"
