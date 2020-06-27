@@ -349,7 +349,7 @@ src_install() {
 	rm "${ED%/}/usr/bin/blender-thumbnailer.py"
 	rm -r "${ED%/}/usr/share/icons"
 	python_optimize "${ED%/}/usr/share/blender/${MY_PV}/scripts"
-	mv "${ED%/}/usr/bin/blender" "${ED%/}/usr/bin/blender27" || die
+	mv "${ED%/}/usr/bin/blender" "${ED%/}/usr/bin/blender29" || die
 	mv "${ED%/}/usr/share/applications/blender.desktop" "${ED%/}/usr/share/applications/blender29.desktop" || die
 	sed -i -e "s|^Exec.*|Exec=blender29 %f|" "${ED%/}/usr/share/applications/blender29.desktop"
 	sed -i -e "s|^Name.*|Name=Blender29 %f|" "${ED%/}/usr/share/applications/blender29.desktop"
