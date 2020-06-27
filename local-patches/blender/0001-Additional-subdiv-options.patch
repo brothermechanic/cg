@@ -1,0 +1,227 @@
+From 4f441aaa8f82e0b3d1d2d6f2e1643356dad30445 Mon Sep 17 00:00:00 2001
+From: Piotr Ostrowski <piotr.ostrowski@ardentcode.com>
+Date: Wed, 3 Jun 2020 19:50:50 +0200
+Subject: [PATCH] Additional subdiv options
+
+---
+ .../startup/bl_ui/properties_data_modifier.py |  5 +++-
+ source/blender/blenkernel/BKE_subdiv.h        |  3 +++
+ source/blender/blenkernel/intern/subdiv.c     | 16 +++++++++++-
+ source/blender/makesdna/DNA_modifier_types.h  | 10 ++++++-
+ source/blender/makesrna/intern/rna_modifier.c | 26 +++++++++++++++++++
+ source/blender/modifiers/intern/MOD_subsurf.c | 24 +++++++++++------
+ 6 files changed, 73 insertions(+), 11 deletions(-)
+
+diff --git a/release/scripts/startup/bl_ui/properties_data_modifier.py b/release/scripts/startup/bl_ui/properties_data_modifier.py
+index d58dec211be..1c7a2283c0d 100644
+--- a/release/scripts/startup/bl_ui/properties_data_modifier.py
++++ b/release/scripts/startup/bl_ui/properties_data_modifier.py
+@@ -1143,15 +1143,18 @@ class DATA_PT_modifiers(ModifierButtonsPanel, Panel):
+             sub.prop(md, "render_levels", text="Render")
+             sub.prop(md, "levels", text="Viewport")
+ 
+-            col.prop(md, "quality")
++            if md.feature_adaptive:
++                col.prop(md, "quality")
+ 
+         col = split.column()
+         col.label(text="Options:")
++        col.prop(md, "feature_adaptive")
+ 
+         sub = col.column()
+         sub.active = (not show_adaptive_options) or (not ob.cycles.use_adaptive_subdivision)
+         sub.prop(md, "uv_smooth", text="")
+ 
++        col.prop(md, "boundary_interpolation", text="")
+         col.prop(md, "show_only_control_edges")
+         col.prop(md, "use_creases")
+ 
+diff --git a/source/blender/blenkernel/BKE_subdiv.h b/source/blender/blenkernel/BKE_subdiv.h
+index 1323938e479..4cc0a3c1359 100644
+--- a/source/blender/blenkernel/BKE_subdiv.h
++++ b/source/blender/blenkernel/BKE_subdiv.h
+@@ -205,6 +205,9 @@ void BKE_subdiv_exit(void);
+ /* NOTE: uv_smooth is eSubsurfUVSmooth. */
+ eSubdivFVarLinearInterpolation BKE_subdiv_fvar_interpolation_from_uv_smooth(int uv_smooth);
+ 
++eSubdivVtxBoundaryInterpolation BKE_subdiv_vtx_boundary_interpolation_from_bi(
++    int boundary_interpolation);
++
+ /* =============================== STATISTICS =============================== */
+ 
+ void BKE_subdiv_stats_init(SubdivStats *stats);
+diff --git a/source/blender/blenkernel/intern/subdiv.c b/source/blender/blenkernel/intern/subdiv.c
+index fe1dd3835fd..f2b0d5c6edb 100644
+--- a/source/blender/blenkernel/intern/subdiv.c
++++ b/source/blender/blenkernel/intern/subdiv.c
+@@ -72,7 +72,21 @@ eSubdivFVarLinearInterpolation BKE_subdiv_fvar_interpolation_from_uv_smooth(int
+   return SUBDIV_FVAR_LINEAR_INTERPOLATION_ALL;
+ }
+ 
+-/* ================================ SETTINGS ================================ */
++eSubdivVtxBoundaryInterpolation BKE_subdiv_vtx_boundary_interpolation_from_bi(
++    int boundary_interpolation)
++{
++  switch (boundary_interpolation) {
++    case SUBSURF_BOUNDARY_INTERPOLATION_NONE:
++      return SUBDIV_VTX_BOUNDARY_NONE;
++    case SUBSURF_BOUNDARY_INTERPOLATION_EDGE_ONLY:
++      return SUBDIV_VTX_BOUNDARY_EDGE_ONLY;
++    case SUBSURF_BOUNDARY_INTERPOLATION_EDGE_AND_CORNER:
++      return SUBDIV_VTX_BOUNDARY_EDGE_AND_CORNER;
++  }
++  BLI_assert(!"Unknown boundary interpolation flag");
++  return SUBDIV_VTX_BOUNDARY_EDGE_ONLY;
++}
++    /* ================================ SETTINGS ================================ */
+ 
+ static bool check_mesh_has_non_quad(const Mesh *mesh)
+ {
+diff --git a/source/blender/makesdna/DNA_modifier_types.h b/source/blender/makesdna/DNA_modifier_types.h
+index 13972ae032d..7d2ae610c96 100644
+--- a/source/blender/makesdna/DNA_modifier_types.h
++++ b/source/blender/makesdna/DNA_modifier_types.h
+@@ -153,6 +153,7 @@ typedef enum {
+   /* DEPRECATED, ONLY USED FOR DO-VERSIONS */
+   eSubsurfModifierFlag_SubsurfUv_DEPRECATED = (1 << 3),
+   eSubsurfModifierFlag_UseCrease = (1 << 4),
++  eSubsurfModifierFlag_FeatureAdaptive = (1 << 5),
+ } SubsurfModifierFlag;
+ 
+ typedef enum {
+@@ -169,13 +170,20 @@ typedef enum {
+   SUBSURF_UV_SMOOTH_ALL = 5,
+ } eSubsurfUVSmooth;
+ 
++typedef enum {
++  SUBSURF_BOUNDARY_INTERPOLATION_NONE = 0,
++  SUBSURF_BOUNDARY_INTERPOLATION_EDGE_ONLY = 1,
++  SUBSURF_BOUNDARY_INTERPOLATION_EDGE_AND_CORNER = 2,
++} eSubsurfBoundaryInterpolation;
++
+ typedef struct SubsurfModifierData {
+   ModifierData modifier;
+ 
+   short subdivType, levels, renderLevels, flags;
+   short uv_smooth;
+   short quality;
+-  char _pad[4];
++  short boundary_interpolation;
++  char _pad[2];
+ 
+   /* TODO(sergey): Get rid of those with the old CCG subdivision code. */
+   void *emCache, *mCache;
+diff --git a/source/blender/makesrna/intern/rna_modifier.c b/source/blender/makesrna/intern/rna_modifier.c
+index f5a437b7892..05e1fb0c623 100644
+--- a/source/blender/makesrna/intern/rna_modifier.c
++++ b/source/blender/makesrna/intern/rna_modifier.c
+@@ -1707,6 +1707,20 @@ static PropertyRNA *rna_def_property_subdivision_common(StructRNA *srna, const c
+ 
+ static void rna_def_modifier_subsurf(BlenderRNA *brna)
+ {
++
++  static const EnumPropertyItem prop_boundary_interpolation_items[] = {
++    {SUBSURF_BOUNDARY_INTERPOLATION_EDGE_ONLY,
++     "EDGE",
++     0,
++     "Edges only",
++     ""},
++    {SUBSURF_BOUNDARY_INTERPOLATION_EDGE_AND_CORNER,
++     "EDGE_AND_CORNER",
++     0,
++     "Edges and vertices",
++     ""},
++    {0, NULL, 0, NULL, NULL},
++  };
+   StructRNA *srna;
+   PropertyRNA *prop;
+ 
+@@ -1743,6 +1757,18 @@ static void rna_def_modifier_subsurf(BlenderRNA *brna)
+   RNA_def_property_ui_text(
+       prop, "Use Creases", "Use mesh edge crease information to sharpen edges");
+   RNA_def_property_update(prop, 0, "rna_Modifier_update");
++
++  prop = RNA_def_property(srna, "feature_adaptive", PROP_BOOLEAN, PROP_NONE);
++  RNA_def_property_boolean_sdna(prop, NULL, "flags", eSubsurfModifierFlag_FeatureAdaptive);
++  RNA_def_property_ui_text(
++      prop, "Feature Adaptive", "");
++  RNA_def_property_update(prop, 0, "rna_Modifier_update");
++
++  prop = RNA_def_property(srna, "boundary_interpolation", PROP_ENUM, PROP_NONE);
++  RNA_def_property_enum_sdna(prop, NULL, "boundary_interpolation");
++  RNA_def_property_enum_items(prop, prop_boundary_interpolation_items);
++  RNA_def_property_ui_text(prop, "Boundary interpolation", "Controls how subdivision and the limit surface behave for faces adjacent to boundary edges and vertices");
++  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+ }
+ 
+ static void rna_def_modifier_generic_map_info(StructRNA *srna)
+diff --git a/source/blender/modifiers/intern/MOD_subsurf.c b/source/blender/modifiers/intern/MOD_subsurf.c
+index e054e3478ea..78cdf19c39d 100644
+--- a/source/blender/modifiers/intern/MOD_subsurf.c
++++ b/source/blender/modifiers/intern/MOD_subsurf.c
+@@ -57,8 +57,10 @@ static void initData(ModifierData *md)
+   smd->levels = 1;
+   smd->renderLevels = 2;
+   smd->uv_smooth = SUBSURF_UV_SMOOTH_PRESERVE_CORNERS;
++  smd->boundary_interpolation = SUBSURF_BOUNDARY_INTERPOLATION_EDGE_ONLY;
+   smd->quality = 3;
+-  smd->flags |= (eSubsurfModifierFlag_UseCrease | eSubsurfModifierFlag_ControlEdges);
++  smd->flags |= (eSubsurfModifierFlag_UseCrease | eSubsurfModifierFlag_ControlEdges |
++                 eSubsurfModifierFlag_FeatureAdaptive);
+ }
+ 
+ static void copyData(const ModifierData *md, ModifierData *target, const int flag)
+@@ -117,13 +119,19 @@ static int subdiv_levels_for_modifier_get(const SubsurfModifierData *smd,
+   return get_render_subsurf_level(&scene->r, requested_levels, use_render_params);
+ }
+ 
+-static void subdiv_settings_init(SubdivSettings *settings, const SubsurfModifierData *smd)
++static void subdiv_settings_init(SubdivSettings *settings,
++                                 const SubsurfModifierData *smd,
++                                 const ModifierEvalContext *ctx)
+ {
++  const bool use_render_params = (ctx->flag & MOD_APPLY_RENDER);
++  const int requested_levels = (use_render_params) ? smd->renderLevels : smd->levels;
++
+   settings->is_simple = (smd->subdivType == SUBSURF_TYPE_SIMPLE);
+-  settings->is_adaptive = true;
+-  settings->level = settings->is_simple ? 1 : smd->quality;
++  settings->is_adaptive = (smd->flags & eSubsurfModifierFlag_FeatureAdaptive);
++  settings->level = settings->is_simple ? 1 : (settings->is_adaptive ? smd->quality : requested_levels);
+   settings->use_creases = (smd->flags & eSubsurfModifierFlag_UseCrease);
+-  settings->vtx_boundary_interpolation = SUBDIV_VTX_BOUNDARY_EDGE_ONLY;
++  settings->vtx_boundary_interpolation = BKE_subdiv_vtx_boundary_interpolation_from_bi(
++      smd->boundary_interpolation);
+   settings->fvar_linear_interpolation = BKE_subdiv_fvar_interpolation_from_uv_smooth(
+       smd->uv_smooth);
+ }
+@@ -215,7 +223,7 @@ static Mesh *modifyMesh(ModifierData *md, const ModifierEvalContext *ctx, Mesh *
+ #endif
+   SubsurfModifierData *smd = (SubsurfModifierData *)md;
+   SubdivSettings subdiv_settings;
+-  subdiv_settings_init(&subdiv_settings, smd);
++  subdiv_settings_init(&subdiv_settings, smd, ctx);
+   if (subdiv_settings.level == 0) {
+     return result;
+   }
+@@ -242,7 +250,7 @@ static Mesh *modifyMesh(ModifierData *md, const ModifierEvalContext *ctx, Mesh *
+ }
+ 
+ static void deformMatrices(ModifierData *md,
+-                           const ModifierEvalContext *UNUSED(ctx),
++                           const ModifierEvalContext *ctx,
+                            Mesh *mesh,
+                            float (*vertex_cos)[3],
+                            float (*deform_matrices)[3][3],
+@@ -258,7 +266,7 @@ static void deformMatrices(ModifierData *md,
+ 
+   SubsurfModifierData *smd = (SubsurfModifierData *)md;
+   SubdivSettings subdiv_settings;
+-  subdiv_settings_init(&subdiv_settings, smd);
++  subdiv_settings_init(&subdiv_settings, smd, ctx);
+   if (subdiv_settings.level == 0) {
+     return;
+   }
+-- 
+2.20.1.windows.1
+
