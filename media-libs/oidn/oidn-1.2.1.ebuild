@@ -1,9 +1,9 @@
-# Copyright 1999-2017 Gentoo Foundation
+# Copyright 1999-2020 Gentoo Foundation
 # Distributed under the terms of the GNU General Public License v2
 
-EAPI=6
+EAPI=7
 
-PYTHON_COMPAT=( python2_7 python3_{5,6,7} )
+PYTHON_COMPAT=( python2_7 python3_{6,7,8} )
 
 inherit cmake-utils python-single-r1 eutils
 
@@ -22,12 +22,14 @@ fi
 
 LICENSE="Apache-2.0"
 SLOT="0"
+KEYWORDS="~amd64 ~x86"
 IUSE=""
 REQUIRED_USE="${PYTHON_REQUIRED_USE}"
 
 RDEPEND="
 	${PYTHON_DEPS}
-	dev-cpp/tbb"
+	dev-cpp/tbb
+	dev-lang/ispc"
 DEPEND="
 	${RDEPEND}
 	dev-util/cmake"
