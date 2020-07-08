@@ -10,7 +10,7 @@ DESCRIPTION="3D Creation/Animation/Publishing System"
 HOMEPAGE="http://www.blender.org/"
 
 EGIT_REPO_URI="https://git.blender.org/blender"
-EGIT_BRANCH="blender-v2.83-release"
+#EGIT_BRANCH="blender-v2.83-release"
 
 LICENSE="|| ( GPL-2 BL )"
 SLOT="28"
