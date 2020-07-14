@@ -20,8 +20,8 @@ RDEPEND="media-gfx/blender[addons]"
 
 src_install() {
 	egit_clean
-    insinto ${BLENDER_ADDONS_DIR}/addons/
-	doins -r "${S}"/src/${PN}
+    insinto ${BLENDER_ADDONS_DIR}/addons/${PN}
+	doins -r "${S}"/src/screencast_keys/*
 }
 
 pkg_postinst() {

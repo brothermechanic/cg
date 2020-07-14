@@ -3,11 +3,11 @@
 
 EAPI=6
 
-inherit mercurial
+inherit mercurial git-r3
 
 DESCRIPTION="MHX2 - MakeHuman eXchange format 2"
 HOMEPAGE="https://bitbucket.org/Diffeomorphic/mhx2-makehuman-exchange/overview"
-EHG_REPO_URI="https://bitbucket.org/Aranuvir/mhx2-makehuman-exchange"
+EGIT_REPO_URI="https://github.com/makehumancommunity/mhx2-makehuman-exchange.git"
 LICENSE="AGPL-3.0"
 SLOT="0"
 KEYWORDS="~amd64 ~x86"
