@@ -113,7 +113,7 @@ DEPEND="${RDEPEND}
 	)"
 
 #PATCHES=(
-#	"${FILESDIR}/blender-doxyfile.patch"
+#	"${FILESDIR}/blender.patch"
 #)
 	
 CMAKE_BUILD_TYPE="Release"
@@ -138,14 +138,7 @@ pkg_setup() {
 src_prepare() {
 	default
 	# remove some bundled deps
-	rm -r \
-		extern/glew \
-		extern/glew-es \
-		extern/Eigen3 \
-		extern/lzo \
-		extern/gtest \
-		extern/gflags \
-		|| die
+	rm -rf extern/{Eigen3,glew-es,lzo,gtest,gflags} || die
     
 	if use addons ; then
 		ewarn "$(echo "Bundled addons")"

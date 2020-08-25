@@ -5,25 +5,22 @@ EAPI=6
 
 inherit git-r3 eutils
 
-DESCRIPTION="Blender addon. Sverchok is a powerful parametric tool for architects"
-HOMEPAGE="http://nikitron.cc.ua/sverchok_en.html"
-EGIT_REPO_URI="https://github.com/nortikin/sverchok.git"
-#EGIT_BRANCH="b28_prelease_master"
+DESCRIPTION="Blender addon for easiest, fastest and most advanced lighting setup."
+HOMEPAGE="https://blendermarket.com/products/leomoon-lightstudio"
+EGIT_REPO_URI="https://github.com/leomoon-studios/leomoon-lightstudio.git"
 
-LICENSE="GPL-3"
+LICENSE="GPL-2"
 SLOT="0"
 KEYWORDS="~amd64 ~x86"
 IUSE=""
 
 DEPEND=""
-RDEPEND="media-gfx/blender[addons]
-        dev-python/numpy
-        "
+RDEPEND="media-gfx/blender[addons]"
 
 src_install() {
 	egit_clean
     insinto ${BLENDER_ADDONS_DIR}/addons/${PN}
-	doins -r "${S}"/*
+	doins -r "${S}"/src/*
 }
 
 pkg_postinst() {
