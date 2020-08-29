@@ -1,0 +1,55 @@
+From 0913bf0b62cd90e4f8e165c8f9d2d16a1c9b9f59 Mon Sep 17 00:00:00 2001
+From: Bernd Waibel <waebbl@gmail.com>
+Date: Fri, 21 Feb 2020 18:22:11 +0100
+Subject: [PATCH] ng/Togl2.1/CMakeLists.txt: Gentoo specific fixes
+
+Fix private include directories, so internal togl can find them.
+
+Signed-off-by: Bernd Waibel <waebbl@gmail.com>
+---
+ ng/Togl2.1/CMakeLists.txt | 22 +++++++++++++++++-----
+ 1 file changed, 17 insertions(+), 5 deletions(-)
+
+diff --git a/ng/Togl2.1/CMakeLists.txt b/ng/Togl2.1/CMakeLists.txt
+index bcade1f..dbe23df 100644
+--- a/ng/Togl2.1/CMakeLists.txt
++++ b/ng/Togl2.1/CMakeLists.txt
+@@ -11,18 +11,30 @@ if(WIN32)
+   target_link_libraries(togl ${TCL_LIBRARY} ${TK_LIBRARY})
+ else(WIN32)
+   set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fomit-frame-pointer -Wno-implicit-int")
+-  add_definitions("-DPACKAGE_NAME=\"Togl\" -DPACKAGE_TARNAME=\"togl\" -DPACKAGE_VERSION=\"2.1\" -DPACKAGE_STRING=\"Togl\ 2.1\" -DPACKAGE_BUGREPORT=\"\" -DPACKAGE_URL=\"\" -DSTDC_HEADERS=1 -DHAVE_SYS_TYPES_H=1 -DHAVE_SYS_STAT_H=1 -DHAVE_STDLIB_H=1 -DHAVE_STRING_H=1 -DHAVE_MEMORY_H=1 -DHAVE_STRINGS_H=1 -DHAVE_INTTYPES_H=1 -DHAVE_STDINT_H=1 -DHAVE_UNISTD_H=0 -DHAVE_LIMITS_H=1 -DHAVE_SYS_PARAM_H=1 -DUSE_THREAD_ALLOC=1 -D_REENTRANT=1 -D_THREAD_SAFE=1 -DTCL_THREADS=1 -DMODULE_SCOPE=extern\ __attribute__\(\(__visibility__\(\"hidden\"\)\)\) -D_LARGEFILE64_SOURCE=1 -DTCL_WIDE_INT_IS_LONG=1 -DUSE_TCL_STUBS=1 -DUSE_TK_STUBS=1 -DAUTOSTEREOD=\"\"") 
++  add_definitions("-DPACKAGE_NAME=\"Togl\" -DPACKAGE_TARNAME=\"togl\" -DPACKAGE_VERSION=\"2.1\" -DPACKAGE_STRING=\"Togl\ 2.1\" -DPACKAGE_BUGREPORT=\"\" -DPACKAGE_URL=\"\" -DSTDC_HEADERS=1 -DHAVE_SYS_TYPES_H=1 -DHAVE_SYS_STAT_H=1 -DHAVE_STDLIB_H=1 -DHAVE_STRING_H=1 -DHAVE_MEMORY_H=1 -DHAVE_STRINGS_H=1 -DHAVE_INTTYPES_H=1 -DHAVE_STDINT_H=1 -DHAVE_UNISTD_H=0 -DHAVE_LIMITS_H=1 -DHAVE_SYS_PARAM_H=1 -DUSE_THREAD_ALLOC=1 -D_REENTRANT=1 -D_THREAD_SAFE=1 -DTCL_THREADS=1 -DMODULE_SCOPE=extern\ __attribute__\(\(__visibility__\(\"hidden\"\)\)\) -D_LARGEFILE64_SOURCE=1 -DTCL_WIDE_INT_IS_LONG=1 -DUSE_TCL_STUBS=1 -DUSE_TK_STUBS=1 -DAUTOSTEREOD=\"\"")
+ 
+   include_directories(BEFORE "${TCL_INCLUDE_PATH}/tcl-private/generic" "${TCL_INCLUDE_PATH}/tcl-private/unix")
+   include_directories(BEFORE "${TK_INCLUDE_PATH}/tk-private/generic" "${TK_INCLUDE_PATH}/tk-private/unix" "${TK_INCLUDE_PATH}/tk-private")
+-  include_directories(BEFORE "${TCL_INCLUDE_PATH}/tk-private/generic/ttk") 
+-  include_directories(BEFORE "${TK_INCLUDE_PATH}/../PrivateHeaders") 
+-  include_directories(BEFORE "${TCL_INCLUDE_PATH}") 
+-  include_directories(BEFORE "${TK_INCLUDE_PATH}") 
++  include_directories(BEFORE "${TCL_INCLUDE_PATH}/tk-private/generic/ttk")
++  include_directories(BEFORE "${TK_INCLUDE_PATH}/../PrivateHeaders")
++  include_directories(BEFORE "${TCL_INCLUDE_PATH}")
++  include_directories(BEFORE "${TK_INCLUDE_PATH}")
++  get_filename_component(TK_LIBRARY_PATH ${TK_LIBRARY} DIRECTORY)
++  set(TCLTK_POSSIBLE_INC_PATHS
++    "${TK_LIBRARY_PATH}/tcl8.6/include"
++    "${TK_LIBRARY_PATH}/tk8.6/include"
++    "${TK_LIBRARY_PATH}/tcl8.5/include"
++    "${TK_LIBRARY_PATH}/tk8.5/include"
++  )
++  find_path(TK_INCLUDE_PRIVATE_PATH
++    NAMES "generic/tkInt.h"
++    HINTS ${TCLTK_POSSIBLE_INC_PATHS})
++  include_directories(BEFORE "${TK_INCLUDE_PRIVATE_PATH}/generic" "${TK_INCLUDE_PRIVATE_PATH}/unix" "${TK_INCLUDE_PRIVATE_PATH}")
+ 
+   add_library(togl togl.c toglProcAddr.c toglStubInit.c)
+   target_link_libraries(togl -ldl)
+ endif(WIN32)
++install(TARGETS togl DESTINATION ${NG_INSTALL_DIR} COMPONENT netgen)
+ 
+ target_link_libraries(togl ${OPENGL_LIBRARIES})
+ set_target_properties(togl PROPERTIES POSITION_INDEPENDENT_CODE ON )
+-- 
+2.25.0
+

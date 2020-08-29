@@ -18,6 +18,11 @@ IUSE=""
 DEPEND=""
 RDEPEND="media-gfx/blender[addons]
         dev-python/numpy
+        dev-python/cython
+        sci-libs/scipy
+        sci-libs/scikits_image
+        dev-python/geomdl
+        dev-python/PyMCubes
         "
 
 src_install() {
