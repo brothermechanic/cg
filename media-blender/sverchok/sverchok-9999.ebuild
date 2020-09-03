@@ -8,7 +8,7 @@ inherit git-r3 eutils
 DESCRIPTION="Blender addon. Sverchok is a powerful parametric tool for architects"
 HOMEPAGE="http://nikitron.cc.ua/sverchok_en.html"
 EGIT_REPO_URI="https://github.com/nortikin/sverchok.git"
-#EGIT_BRANCH="b28_prelease_master"
+EGIT_BRANCH="master"
 
 LICENSE="GPL-3"
 SLOT="0"

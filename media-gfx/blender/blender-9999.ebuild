@@ -217,8 +217,8 @@ src_configure() {
 	
 	if use optix; then
 		mycmakeargs+=(
-			-OPTIX_ROOT_DIR=/opt/optix
-			-DOPTIX_INCLUDE_DIR=/opt/optix/include
+			-OPTIX_ROOT_DIR=/usr
+			-DOPTIX_INCLUDE_DIR=/usr/include/optix
 			-DWITH_CYCLES_DEVICE_OPTIX=ON
 		)
 	fi
@@ -242,7 +242,6 @@ src_configure() {
 		-DWITH_CPU_SSE=$(usex sse)
 		-DWITH_CYCLES=$(usex cycles)
 		-DWITH_CYCLES_DEVICE_CUDA=$(usex cuda)
-		-DWITH_CYCLES_DEVICE_OPTIX=OFF
 		-DWITH_CYCLES_CUBIN_COMPILER=OFF
 		-DWITH_CYCLES_DEVICE_OPENCL=$(usex opencl)
 		-DWITH_CYCLES_EMBREE=$(usex embree)
