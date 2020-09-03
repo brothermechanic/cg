@@ -1,20 +1,20 @@
 # cg
-CG ebuilds for media packages
+Computer Graphics ebuilds for media packages
 
 This page has user manual for gentoo beginners 
 https://blendersworks.wordpress.com/
 
-To add overlay to your gentoo-based system run
+How add overlay to your gentoo-based
 
+1 update external overlays list 
 # eselect repository list
 
 [68]  cg # (https://github.com/brothermechanic/cg)
 
-and select it
+and select "cg"
 
-# eselect repository enable raiagent
-# sudo emerge --sync raiagent
-# sudo emerge --autounmask pyside2
+# eselect repository add cg git https://github.com/brothermechanic/cg
+# emerge --sync cg
 
 This blender addons installs to system subdirectory
 ${BLENDER_ADDONS_DIR}
