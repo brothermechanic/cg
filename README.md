@@ -1,11 +1,11 @@
 ### CG Overlay
-Computer Graphics ebuilds for media packages
+Computer Graphics ebuilds for media packages  
 
-This page has user manual for gentoo beginners 
+This page has user manual for gentoo beginners  
 https://blendersworks.wordpress.com/
 
 
-### How add overlay to your gentoo-based:  
+### How add CG Overlay to your gentoo-based:  
 
     update external overlays list  
     # eselect repository list  
@@ -15,14 +15,14 @@ https://blendersworks.wordpress.com/
     update cg  
     # emerge --sync cg  
 
-This blender addons installs to system subdirectory
-${BLENDER_ADDONS_DIR}
-You can set it to make.conf before
-Please, set it to PreferencesFilePaths.scripts_directory
-More info you can find at page
-https://docs.blender.org/manual/en/latest/preferences/file.html#scripts-path
+This blender addons installs to system subdirectory  
+${BLENDER_ADDONS_DIR}  
+You can set it to make.conf before  
+Please, set it to PreferencesFilePaths.scripts_directory  
+More info you can find at page  
+https://docs.blender.org/manual/en/latest/preferences/file.html#scripts-path  
 
-you can support me by
-paypal      brothermechanic@gmail.com
-yandexmoney 410013585907940
-thank you!
+you can support me by  
+paypal      brothermechanic@gmail.com  
+yandexmoney 410013585907940  
+thank you!  
