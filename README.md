@@ -7,13 +7,13 @@ https://blendersworks.wordpress.com/
 
 ### How add overlay to your gentoo-based:  
 
-    - update external overlays list  
-    - # eselect repository list  
-    - [68]  cg # (https://github.com/brothermechanic/cg)  
-    - select "cg"  
-    - # eselect repository add cg git https://github.com/brothermechanic/cg  
-    - update cg  
-    - # emerge --sync cg  
+    update external overlays list  
+    # eselect repository list  
+    [68]  cg # (https://github.com/brothermechanic/cg)  
+    select "cg"  
+    # eselect repository add cg git https://github.com/brothermechanic/cg  
+    update cg  
+    # emerge --sync cg  
 
 This blender addons installs to system subdirectory
 ${BLENDER_ADDONS_DIR}
