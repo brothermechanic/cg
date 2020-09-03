@@ -52,6 +52,7 @@ src_configure() {
 		-DPXR_BUILD_USD_TOOLS=OFF
 		-DPXR_ENABLE_PTEX_SUPPORT=OFF
 		-DCMAKE_DEBUG_POSTFIX=_d
+		-DPXR_BUILD_USDVIEW=ON
 	)
 	cmake-utils_src_configure
 }

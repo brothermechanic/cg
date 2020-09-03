@@ -96,7 +96,7 @@ RDEPEND="${PYTHON_DEPS}
 	quicktime? ( media-libs/libquicktime )
 	lzma? ( app-arch/lzma )
 	lzo? ( dev-libs/lzo )
-	alembic? ( media-gfx/alembic[boost,-hdf] )
+	alembic? ( media-gfx/alembic[boost,-hdf5] )
 	opencl? ( virtual/opencl )
 	opensubdiv? ( media-libs/opensubdiv )
 	nls? ( virtual/libiconv )
