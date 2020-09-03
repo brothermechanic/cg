@@ -4,7 +4,8 @@ Computer Graphics ebuilds for media packages
 This page has user manual for gentoo beginners 
 https://blendersworks.wordpress.com/
 
-How add overlay to your gentoo-based
+
+How add overlay to your gentoo-based:
 
 1) update external overlays list 
 # eselect repository list
