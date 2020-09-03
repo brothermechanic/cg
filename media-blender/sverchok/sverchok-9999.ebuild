@@ -13,22 +13,26 @@ EGIT_BRANCH="master"
 LICENSE="GPL-3"
 SLOT="0"
 KEYWORDS="~amd64 ~x86"
-IUSE=""
+IUSE="freecad"
 
 DEPEND=""
 RDEPEND="media-gfx/blender[addons]
         dev-python/numpy
         dev-python/cython
         sci-libs/scipy
-        sci-libs/scikits_image
         dev-python/geomdl
         dev-python/PyMCubes
+        freecad? ( media-gfx/freecad )
         "
 
 src_install() {
 	egit_clean
     insinto ${BLENDER_ADDONS_DIR}/addons/${PN}
 	doins -r "${S}"/*
+    if use freecad ; then
+        insinto /usr/lib/python3.7/site-packages/
+        echo "/usr/lib64/freecad/lib64/" > ${D}/usr/lib/python3.7/site-packages/freecad_path.pth || die
+    fi
 }
 
 pkg_postinst() {
