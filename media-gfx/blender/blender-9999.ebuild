@@ -19,7 +19,7 @@ MY_PV="2.83"
 
 IUSE_DESKTOP="-portable +blender +X +addons +addons-contrib +nls -ndof -player"
 IUSE_GPU="+opengl -optix cuda opencl -sm_30 -sm_35 -sm_50 -sm_52 -sm_61 -sm_70 -sm_75"
-IUSE_LIBS="+cycles -sdl jack openal freestyle -osl +openvdb +opensubdiv +opencolorio +openimageio +collada -alembic +fftw +oidn +quadriflow +usd"
+IUSE_LIBS="+cycles -sdl jack openal freestyle -osl +openvdb +opensubdiv +opencolorio +openimageio +collada -alembic +fftw +oidn +quadriflow +usd +bullet"
 IUSE_CPU="openmp -embree +sse +tbb"
 IUSE_TEST="-debug -doc"
 IUSE_IMAGE="-dpx -dds +openexr jpeg2k tiff +hdr"
@@ -101,7 +101,8 @@ RDEPEND="${PYTHON_DEPS}
 	opensubdiv? ( media-libs/opensubdiv )
 	nls? ( virtual/libiconv )
 	oidn? ( media-libs/oidn )
-	usd? ( media-libs/openusd )"
+	usd? ( media-libs/openusd )
+	bullet? ( sci-physics/bullet )"
 
 DEPEND="${RDEPEND}
 	dev-cpp/eigen:3
@@ -235,6 +236,7 @@ src_configure() {
 		-DWITH_HEADLESS=$(usex !X)
 		-DWITH_BLENDER=$(usex blender)
 		-DWITH_ALEMBIC=$(usex alembic)
+		-DWITH_BULLET=$(usex bullet)
 		-DWITH_CODEC_AVI=$(usex avi)
 		-DWITH_CODEC_FFMPEG=$(usex ffmpeg)
 		-DWITH_CODEC_SNDFILE=$(usex sndfile)
