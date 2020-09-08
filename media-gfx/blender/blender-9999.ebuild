@@ -237,6 +237,7 @@ src_configure() {
 		-DWITH_BLENDER=$(usex blender)
 		-DWITH_ALEMBIC=$(usex alembic)
 		-DWITH_BULLET=$(usex bullet)
+		-DWITH_SYSTEM_BULLET=$(usex !portable)
 		-DWITH_CODEC_AVI=$(usex avi)
 		-DWITH_CODEC_FFMPEG=$(usex ffmpeg)
 		-DWITH_CODEC_SNDFILE=$(usex sndfile)
