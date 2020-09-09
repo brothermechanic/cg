@@ -1,25 +1,46 @@
-# Copyright 1999-2019 Gentoo Authors
-# Distributed under the terms of the GNU General Public License v2
+EAPI=6
 
-EAPI=7
+inherit cmake-utils
+
 DESCRIPTION="Continuous Collision Detection and Physics Library"
 HOMEPAGE="http://www.bulletphysics.com/"
+COMMIT="b44307a6ce3c1d07767c23fc20b129a7355da503"
+SRC_URI="https://github.com/bulletphysics/bullet3/archive/${COMMIT}.tar.gz -> ${P}.tar.gz"
+
 LICENSE="ZLIB"
-KEYWORDS="amd64 ~arm ~ppc ~ppc64 x86 ~amd64-linux ~x86-linux"
-inherit cmake-utils
-EGIT_COMMIT="b44307a6ce3c1d07767c23fc20b129a7355da503"
-SRC_URI="https://github.com/bulletphysics/bullet3/archive/${EGIT_COMMIT}.tar.gz -> ${P}.tar.gz"
 SLOT="0/${PV}"
+KEYWORDS="amd64"
 IUSE="+bullet3 doc double-precision examples extras test"
-RDEPEND="virtual/opengl
-	 media-libs/freeglut"
-DEPEND="${RDEPEND}
+
+RDEPEND="
+	virtual/opengl
+	media-libs/freeglut
+	dev-libs/tinyxml2
+	sys-libs/zlib"
+
+DEPEND="
+	${RDEPEND}
+	media-gfx/graphviz
 	doc? ( app-doc/doxygen[dot] )"
-# PATCHES=( "${FILESDIR}"/${PN}-2.85-soversion.patch )
+
+# python3,
+# python3-dev,
+
+# rdfind,
+# symlinks
+
+PATCHES=(
+	"${FILESDIR}"/${PN}-2.85-soversion.patch
+	"${FILESDIR}"/disable-Extra-2020-modules.patch
+	"${FILESDIR}"/do-not-build-with-embedded-tinyxml-library.patch
+)
+
 DOCS=( AUTHORS.txt LICENSE.txt README.md )
+
 # Building / linking of third Party library BussIK does not work out of the box
-RESTRICT="mirror test"
-S="${WORKDIR}/${PN}3-${EGIT_COMMIT}"
+RESTRICT="test"
+
+S="${WORKDIR}/${PN}3-${COMMIT}"
 
 src_prepare() {
 	cmake-utils_src_prepare

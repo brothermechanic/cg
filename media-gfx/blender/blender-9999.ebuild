@@ -113,10 +113,6 @@ DEPEND="${RDEPEND}
 		app-doc/doxygen[-nodot(-),dot(+)]
 	)"
 
-#PATCHES=(
-#	"${FILESDIR}/blender.patch"
-#)
-	
 CMAKE_BUILD_TYPE="Release"
 
 blender_check_requirements() {
@@ -138,6 +134,7 @@ pkg_setup() {
 
 src_prepare() {
 	default
+	eapply "${FILESDIR}"/bullet.patch
 	# remove some bundled deps
 	rm -rf extern/{Eigen3,glew-es,lzo,gtest,gflags} || die
     
