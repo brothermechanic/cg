@@ -15,16 +15,23 @@ X86_CPU_FLAGS=( sse2:sse2 sse4_2:sse4_2 avx:avx avx2:avx2 avx512knl:avx512knl av
 CPU_FLAGS=( ${X86_CPU_FLAGS[@]/#/cpu_flags_x86_} )
 IUSE="clang ispc raymask -ssp +tbb tutorial static-libs ${CPU_FLAGS[@]%:*}"
 REQUIRED_USE="clang? ( !tutorial )"
-BDEPEND="clang? ( sys-devel/clang )
-	 virtual/pkgconfig"
-RDEPEND="ispc? ( dev-lang/ispc )
-	 >=media-libs/glfw-3.2.1
-	 tbb? ( dev-cpp/tbb )
-	 tutorial? ( >=media-libs/libpng-1.6.34:0=
-		     >=media-libs/openimageio-1.8.7
-		       virtual/jpeg:0 )
-	 virtual/opengl"
+BDEPEND="
+	clang? ( sys-devel/clang )
+	virtual/pkgconfig
+"
+RDEPEND="
+	ispc? ( dev-lang/ispc )
+	>=media-libs/glfw-3.2.1
+	tbb? ( dev-cpp/tbb )
+	tutorial? (
+		>=media-libs/libpng-1.6.34:0=
+		>=media-libs/openimageio-1.8.7
+		virtual/jpeg:0 
+	)
+	virtual/opengl
+"
 DEPEND="${RDEPEND}"
+RESTRICT="mirror"
 DOCS=( CHANGELOG.md README.md readme.pdf )
 CMAKE_BUILD_TYPE=Release
 
