@@ -2,7 +2,7 @@
 # Distributed under the terms of the GNU General Public License v2
 
 EAPI=6
-PYTHON_COMPAT=( python3_7 python3_8 )
+PYTHON_COMPAT=( python3_{6..9} )
 
 inherit git-r3 check-reqs cmake-utils python-single-r1 xdg-utils pax-utils toolchain-funcs flag-o-matic
 
@@ -15,7 +15,7 @@ EGIT_REPO_URI="https://git.blender.org/blender"
 LICENSE="|| ( GPL-2 BL )"
 SLOT="28"
 KEYWORDS=""
-MY_PV="2.83"
+MY_PV=""
 
 IUSE_DESKTOP="-portable +blender +X +addons +addons-contrib +nls -ndof -player"
 IUSE_GPU="+opengl -optix cuda opencl -sm_30 -sm_35 -sm_50 -sm_52 -sm_61 -sm_70 -sm_75"
@@ -67,9 +67,9 @@ RDEPEND="${PYTHON_DEPS}
 		virtual/glu
 	)
 	X? (
-	   x11-libs/libXi
-	   x11-libs/libX11
-	   x11-libs/libXxf86vm
+		x11-libs/libXi
+		x11-libs/libX11
+		x11-libs/libXxf86vm
 	)
 	opencolorio? ( media-libs/opencolorio )
 	cycles? (
@@ -77,8 +77,10 @@ RDEPEND="${PYTHON_DEPS}
 		cuda? ( dev-util/nvidia-cuda-toolkit )
 		osl? ( media-libs/osl )
 		embree? ( media-libs/embree[static-libs,raymask,tbb] )
-		openvdb? ( media-gfx/openvdb
-		dev-cpp/tbb )
+		openvdb? (
+			>=media-gfx/openvdb-7.0.0
+			dev-cpp/tbb
+		)
 	)
 	optix? ( dev-libs/optix )
 	sdl? ( media-libs/libsdl[sound,joystick] )
@@ -137,14 +139,14 @@ src_prepare() {
 	eapply "${FILESDIR}"/bullet.patch
 	# remove some bundled deps
 	rm -rf extern/{Eigen3,glew-es,lzo,gtest,gflags} || die
-    
+
 	if use addons ; then
-		ewarn "$(echo "Bundled addons")"
+		ewarn "Bundled addons"
 	else
 		rm -r release/scripts/addons/*
 	fi
 	if use addons-contrib ; then
-		ewarn "$(echo "Bundled addons")"
+		ewarn "Bundled addons"
 	else
 		rm -r release/scripts/addons_contrib/*
 	fi
@@ -160,7 +162,7 @@ src_prepare() {
 	# Disable MS Windows help generation. The variable doesn't do what it
 	# it sounds like.
 	sed -e "s|GENERATE_HTMLHELP      = YES|GENERATE_HTMLHELP      = NO|" \
-	    -i doc/doxygen/Doxyfile || die
+			-i doc/doxygen/Doxyfile || die
 	ewarn "$(echo "Remaining bundled dependencies:";
 			( find extern -mindepth 1 -maxdepth 1 -type d; ) | sed 's|^|- |')"
 	# linguas cleanup
@@ -182,7 +184,7 @@ src_prepare() {
 src_configure() {
 	append-flags -funsigned-char -fno-strict-aliasing
 	append-lfs-flags
-	append-cppflags -DOPENVDB_ABI_VERSION_NUMBER=6
+	append-cppflags -DOPENVDB_ABI_VERSION_NUMBER=7
 	local mycmakeargs=""
 	#CUDA Kernel Selection
 	local CUDA_ARCH=""
@@ -212,7 +214,7 @@ src_configure() {
 			-DCUDA_NVCC_FLAGS=-std=c++11
 		)
 	fi
-	
+
 	if use optix; then
 		mycmakeargs+=(
 			-OPTIX_ROOT_DIR=/usr
@@ -338,6 +340,7 @@ src_install() {
 	dodoc "${CMAKE_USE_DIR}"/release/text/readme.html
 	rm -r "${ED%/}"/usr/share/doc/blender || die
 
+	MY_PV="$( grep -Po 'CPACK_PACKAGE_VERSION "\K[^"]...' ${CMAKE_BUILD_DIR}/CPackConfig.cmake )"
 	python_fix_shebang "${ED%/}/usr/bin/blender-thumbnailer.py"
 	python_optimize "${ED%/}/usr/share/blender/${MY_PV}/scripts"
 }
