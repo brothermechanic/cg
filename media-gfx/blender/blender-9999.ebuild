@@ -78,7 +78,7 @@ RDEPEND="${PYTHON_DEPS}
 		osl? ( media-libs/osl )
 		embree? ( media-libs/embree[static-libs,raymask,tbb] )
 		openvdb? (
-			>=media-gfx/openvdb-7.0.0
+			media-gfx/openvdb
 			dev-cpp/tbb
 		)
 	)
@@ -136,7 +136,7 @@ pkg_setup() {
 
 src_prepare() {
 	default
-	eapply "${FILESDIR}"/bullet.patch
+#	eapply "${FILESDIR}"/bullet.patch
 	# remove some bundled deps
 	rm -rf extern/{Eigen3,glew-es,lzo,gtest,gflags} || die
 
@@ -184,7 +184,7 @@ src_prepare() {
 src_configure() {
 	append-flags -funsigned-char -fno-strict-aliasing
 	append-lfs-flags
-	append-cppflags -DOPENVDB_ABI_VERSION_NUMBER=7
+	append-cppflags -DOPENVDB_ABI_VERSION_NUMBER=6
 	local mycmakeargs=""
 	#CUDA Kernel Selection
 	local CUDA_ARCH=""
@@ -236,7 +236,7 @@ src_configure() {
 		-DWITH_BLENDER=$(usex blender)
 		-DWITH_ALEMBIC=$(usex alembic)
 		-DWITH_BULLET=$(usex bullet)
-		-DWITH_SYSTEM_BULLET=$(usex !portable)
+		-DWITH_SYSTEM_BULLET=OFF
 		-DWITH_CODEC_AVI=$(usex avi)
 		-DWITH_CODEC_FFMPEG=$(usex ffmpeg)
 		-DWITH_CODEC_SNDFILE=$(usex sndfile)
