@@ -3,11 +3,9 @@
 <pkgmetadata>
 	<maintainer restrict="&gt;=media-gfx/blender-9999" type="person">
 		<email>brothermechanic@gmail.com</email>
-		<name>ILIA KUROCHKIN</name>
 	</maintainer>
 	<maintainer restrict="&gt;=media-gfx/blender-9999" type="person">
 		<email>perestoronin@gmail.com</email>
-		<name>VYACHESLAV PERESTORONIN</name>
 	</maintainer>
 
 	<longdescription>
