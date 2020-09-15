@@ -1,4 +1,4 @@
-# Copyright 1999-2017 Gentoo Foundation
+# Copyright 1999-2020 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
 
 EAPI=6
@@ -10,14 +10,14 @@ DESCRIPTION="3D Creation/Animation/Publishing System"
 HOMEPAGE="http://www.blender.org/"
 
 EGIT_REPO_URI="https://git.blender.org/blender"
-#EGIT_BRANCH="blender-v2.83-release"
+EGIT_SUBMODULES=( release/datafiles/locale )
 
 LICENSE="|| ( GPL-2 BL )"
-SLOT="28"
+SLOT="2.91"
 KEYWORDS=""
 MY_PV=""
 
-IUSE_DESKTOP="-portable +blender +X +addons +addons-contrib +nls -ndof -player"
+IUSE_DESKTOP="-portable +blender +X +addons +addons_contrib +nls -ndof -player"
 IUSE_GPU="+opengl -optix cuda opencl -sm_30 -sm_35 -sm_50 -sm_52 -sm_61 -sm_70 -sm_75"
 IUSE_LIBS="+cycles -sdl jack openal freestyle -osl +openvdb +opensubdiv +opencolorio +openimageio +collada -alembic +fftw +oidn +quadriflow +usd +bullet"
 IUSE_CPU="openmp -embree +sse +tbb"
@@ -104,7 +104,9 @@ RDEPEND="${PYTHON_DEPS}
 	nls? ( virtual/libiconv )
 	oidn? ( media-libs/oidn )
 	usd? ( media-libs/openusd )
-	bullet? ( sci-physics/bullet )"
+	bullet? ( sci-physics/bullet )
+	addons? ( media-blender/addons )
+	addons_contrib? ( media-blender/addons_contrib )"
 
 DEPEND="${RDEPEND}
 	dev-cpp/eigen:3
@@ -136,21 +138,12 @@ pkg_setup() {
 
 src_prepare() {
 	default
-#	eapply "${FILESDIR}"/bullet.patch
+	
+	#set cg overlay defaults
+	#sed -i -e "s|.pythondir = "",|.pythondir = "${BLENDER_ADDONS_DIR}",|" "${S}"/release/datafiles/userdef/userdef_default.c || die
+	
 	# remove some bundled deps
 	rm -rf extern/{Eigen3,glew-es,lzo,gtest,gflags} || die
-
-	if use addons ; then
-		ewarn "Bundled addons"
-	else
-		rm -r release/scripts/addons/*
-	fi
-	if use addons-contrib ; then
-		ewarn "Bundled addons"
-	else
-		rm -r release/scripts/addons_contrib/*
-	fi
-
 		# we don't want static glew, but it's scattered across
 	# multiple files that differ from version to version
 	# !!!CHECK THIS SED ON EVERY VERSION BUMP!!!
