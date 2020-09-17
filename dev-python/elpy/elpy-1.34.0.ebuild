@@ -2,10 +2,11 @@
 # Distributed under the terms of the GNU General Public License v2
 
 EAPI=7
+PYTHON_COMPAT=( python3_{6..9} )
 
-inherit
+inherit distutils-r1
 
-DESCRIPTION="An ntegrating Python development in Emacs. Lisp lib"
+DESCRIPTION="An ntegrating Python development in Emacs. Python lib"
 HOMEPAGE="http://github.com/jorgenschaefer/elpy"
 SRC_URI="https://github.com/jorgenschaefer/elpy/archive/${PV}.tar.gz -> ${P}.tar.gz"
 
@@ -14,12 +15,8 @@ LICENSE="GPL-3"
 SLOT="0"
 
 DEPEND="${RDEPEND}
-dev-python/elpy"
-
-src_install() {
-	defaults
-	insinto /usr/share/emacs/site-lisp/${PN}/
-	doins -r ${S}/*.el
-	insinto /usr/share/emacs/site-lisp/${PN}/snippets/
-	doins -r ${S}/snippets/python-mode
-}
+dev-python/coverage
+dev-python/jedi
+dev-python/mock
+dev-python/virtualenv
+dev-python/nose"
