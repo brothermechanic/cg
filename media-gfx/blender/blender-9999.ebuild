@@ -28,7 +28,7 @@ SLOT="${MY_PV}"
 
 IUSE_DESKTOP="-portable +blender +X +addons +addons_contrib +nls -ndof -player"
 IUSE_GPU="+opengl -optix cuda opencl llvm -sm_30 -sm_35 -sm_50 -sm_52 -sm_61 -sm_70 -sm_75"
-IUSE_LIBS="+cycles -sdl jack openal freestyle -osl +openvdb abi6-compat abi7-compat +opensubdiv +opencolorio +openimageio +collada -alembic +fftw +oidn +quadriflow +usd +bullet valgrind jemalloc"
+IUSE_LIBS="+cycles -sdl jack openal freestyle -osl +openvdb abi6-compat abi7-compat +opensubdiv +opencolorio +openimageio +collada -alembic +fftw +oidn +quadriflow +usd +bullet valgrind +jemalloc"
 IUSE_CPU="openmp -embree +sse +tbb"
 IUSE_TEST="-debug -doc -man"
 IUSE_IMAGE="-dpx -dds +openexr jpeg2k tiff +hdr"
@@ -116,7 +116,7 @@ RDEPEND="${PYTHON_DEPS}
 	lzo? ( dev-libs/lzo )
 	alembic? ( media-gfx/alembic[boost,-hdf5] )
 	opencl? ( virtual/opencl )
-	opensubdiv? ( media-libs/opensubdiv[openmp?,cuda?,tbb?] )
+	opensubdiv? ( media-libs/opensubdiv[openmp?,tbb?] )
 	nls? ( virtual/libiconv )
 	oidn? ( media-libs/oidn )
 	usd? ( media-libs/openusd )
