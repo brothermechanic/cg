@@ -1,27 +1,36 @@
 # Copyright 1999-2020 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
 
-EAPI=6
-PYTHON_COMPAT=( python3_{6..9} )
+EAPI=7
+PYTHON_COMPAT=( python3_{7..9} )
 
-inherit git-r3 check-reqs cmake-utils python-single-r1 xdg-utils pax-utils toolchain-funcs flag-o-matic
+inherit check-reqs cmake python-single-r1 xdg-utils pax-utils toolchain-funcs flag-o-matic
 
 DESCRIPTION="3D Creation/Animation/Publishing System"
 HOMEPAGE="http://www.blender.org/"
 
-EGIT_REPO_URI="https://git.blender.org/blender"
-EGIT_SUBMODULES=( release/datafiles/locale )
-
 LICENSE="|| ( GPL-2 BL )"
-SLOT="2.91"
-KEYWORDS=""
-MY_PV=""
+
+if [[ ${PV} == 9999 ]]; then
+	inherit git-r3
+	EGIT_REPO_URI="https://git.blender.org/blender"
+	EGIT_SUBMODULES=( release/datafiles/locale )
+	EGIT_BRANCH="master"
+	#EGIT_COMMIT=""
+    KEYWORDS=""
+	MY_PV="2.91"
+else
+	SRC_URI="https://download.blender.org/source/${P}.tar.xz"
+	KEYWORDS="~amd64 ~x86"
+	MY_PV="$(ver_cut 1-2)"
+fi
+SLOT="${MY_PV}"
 
 IUSE_DESKTOP="-portable +blender +X +addons +addons_contrib +nls -ndof -player"
-IUSE_GPU="+opengl -optix cuda opencl -sm_30 -sm_35 -sm_50 -sm_52 -sm_61 -sm_70 -sm_75"
-IUSE_LIBS="+cycles -sdl jack openal freestyle -osl +openvdb +opensubdiv +opencolorio +openimageio +collada -alembic +fftw +oidn +quadriflow +usd +bullet"
+IUSE_GPU="+opengl -optix cuda opencl llvm -sm_30 -sm_35 -sm_50 -sm_52 -sm_61 -sm_70 -sm_75"
+IUSE_LIBS="+cycles -sdl jack openal freestyle -osl +openvdb abi6-compat abi7-compat +opensubdiv +opencolorio +openimageio +collada -alembic +fftw +oidn +quadriflow +usd +bullet valgrind jemalloc"
 IUSE_CPU="openmp -embree +sse +tbb"
-IUSE_TEST="-debug -doc"
+IUSE_TEST="-debug -doc -man"
 IUSE_IMAGE="-dpx -dds +openexr jpeg2k tiff +hdr"
 IUSE_CODEC="avi +ffmpeg -sndfile +quicktime"
 IUSE_COMPRESSION="+lzma -lzo"
@@ -37,9 +46,14 @@ REQUIRED_USE="${PYTHON_REQUIRED_USE}
 	openexr? ( openimageio )
 	cuda? ( cycles openimageio )
 	cycles? ( openexr tiff openimageio opencolorio )
-	osl? ( cycles )
-	embree? ( cycles )
-	oidn? ( cycles tbb )"
+	osl? ( cycles llvm )
+	embree? ( cycles tbb )
+	oidn? ( cycles tbb )
+	openvdb? (
+		^^ ( abi6-compat abi7-compat )
+		tbb
+	)
+"
 
 LANGS="en ar bg ca cs de el es es_ES fa fi fr he hr hu id it ja ky ne nl pl pt pt_BR ru sr sr@latin sv tr uk zh_CN zh_TW"
 for X in ${LANGS} ; do
@@ -52,10 +66,9 @@ RDEPEND="${PYTHON_DEPS}
 		dev-python/numpy[${PYTHON_MULTI_USEDEP}]
 		dev-python/requests[${PYTHON_MULTI_USEDEP}]
 	')
-	dev-libs/jemalloc
 	sys-libs/zlib
 	sci-libs/ceres-solver
-	smoke? ( sci-libs/fftw:3.0 )
+	fftw? ( sci-libs/fftw:3.0[openmp?] )
 	media-libs/freetype
 	media-libs/libpng:0=
 	virtual/libintl
@@ -76,10 +89,12 @@ RDEPEND="${PYTHON_DEPS}
 		openimageio? ( >=media-libs/openimageio-1.1.5 )
 		cuda? ( dev-util/nvidia-cuda-toolkit )
 		osl? ( media-libs/osl )
-		embree? ( media-libs/embree[static-libs,raymask,tbb] )
+		embree? (
+			media-libs/embree[static-libs,raymask,tbb?]
+		)
 		openvdb? (
-			media-gfx/openvdb
-			dev-cpp/tbb
+			>media-gfx/openvdb-6.0.0[abi6-compat(-)?,abi7-compat(-)?]
+			dev-libs/c-blosc:=
 		)
 	)
 	optix? ( dev-libs/optix )
@@ -88,7 +103,8 @@ RDEPEND="${PYTHON_DEPS}
 	openexr? ( media-libs/openexr )
 	ffmpeg? ( >=media-video/ffmpeg-2.2[x264,xvid,mp3,encode,jpeg2k?] )
 	jpeg2k? ( media-libs/openjpeg:0 )
-	jack? ( media-sound/jack-audio-connection-kit )
+	jack? ( virtual/jack )
+	jemalloc? ( dev-libs/jemalloc:= )
 	sndfile? ( media-libs/libsndfile )
 	collada? ( media-libs/opencollada )
 	ndof? (
@@ -100,24 +116,33 @@ RDEPEND="${PYTHON_DEPS}
 	lzo? ( dev-libs/lzo )
 	alembic? ( media-gfx/alembic[boost,-hdf5] )
 	opencl? ( virtual/opencl )
-	opensubdiv? ( media-libs/opensubdiv )
+	opensubdiv? ( media-libs/opensubdiv[openmp?,cuda?,tbb?] )
 	nls? ( virtual/libiconv )
 	oidn? ( media-libs/oidn )
 	usd? ( media-libs/openusd )
 	bullet? ( sci-physics/bullet )
 	addons? ( media-blender/addons )
-	addons_contrib? ( media-blender/addons_contrib )"
+	addons_contrib? ( media-blender/addons_contrib )
+	llvm? ( sys-devel/llvm:= )
+	tbb? ( dev-cpp/tbb )
+	valgrind? ( dev-util/valgrind )
+"
 
 DEPEND="${RDEPEND}
 	dev-cpp/eigen:3
+"
+
+BDEPEND="
+	virtual/pkgconfig
 	>=dev-cpp/gflags-2.2.2
 	nls? ( sys-devel/gettext )
 	doc? (
 		dev-python/sphinx
 		app-doc/doxygen[-nodot(-),dot(+)]
-	)"
+	)
+"
 
-CMAKE_BUILD_TYPE="Release"
+#CMAKE_BUILD_TYPE="Release"
 
 blender_check_requirements() {
 	[[ ${MERGE_TYPE} != binary ]] && use openmp && tc-check-openmp
@@ -137,14 +162,15 @@ pkg_setup() {
 }
 
 src_prepare() {
-	default
-	
+	cmake_src_prepare
+
 	#set cg overlay defaults
 	#sed -i -e "s|.pythondir = "",|.pythondir = "${BLENDER_ADDONS_DIR}",|" "${S}"/release/datafiles/userdef/userdef_default.c || die
-	
+
 	# remove some bundled deps
 	rm -rf extern/{Eigen3,glew-es,lzo,gtest,gflags} || die
-		# we don't want static glew, but it's scattered across
+
+	# we don't want static glew, but it's scattered across
 	# multiple files that differ from version to version
 	# !!!CHECK THIS SED ON EVERY VERSION BUMP!!!
 	local file
@@ -171,14 +197,27 @@ src_prepare() {
 			done
 		fi
 	fi
-	cmake-utils_src_prepare
 }
 
 src_configure() {
+	# FIX: forcing '-funsigned-char' fixes an anti-aliasing issue with menu
+	# shadows, see bug #276338 for reference
 	append-flags -funsigned-char -fno-strict-aliasing
 	append-lfs-flags
-	append-cppflags -DOPENVDB_ABI_VERSION_NUMBER=6
-	local mycmakeargs=""
+
+	if use openvdb; then
+		local version
+		if use abi6-compat; then
+			version=6;
+		elif use abi7-compat; then
+			version=7;
+		else
+			die "Openvdb abi version not compatible"
+		fi
+		append-cppflags -DOPENVDB_ABI_VERSION_NUMBER=${version}
+	fi
+
+	local mycmakeargs=()
 	#CUDA Kernel Selection
 	local CUDA_ARCH=""
 	if use cuda; then
@@ -218,9 +257,10 @@ src_configure() {
 
 	mycmakeargs+=(
 		-DCMAKE_INSTALL_PREFIX=/usr
-		-DPYTHON_VERSION=${EPYTHON/python/}
-		-DPYTHON_LIBRARY=$(python_get_library_path)
-		-DPYTHON_INCLUDE_DIR=$(python_get_includedir)
+		-DBUILD_SHARED_LIBS=OFF
+		-DPYTHON_VERSION="${EPYTHON/python/}"
+		-DPYTHON_INCLUDE_DIR:PATH="$(python_get_includedir)"
+		-DPYTHON_LIBRARY:FILEPATH="$(python_get_library_path)"
 		-DWITH_PYTHON_INSTALL=$(usex portable)
 		-DWITH_PYTHON_INSTALL_NUMPY=$(usex portable)
 		-DWITH_PYTHON_INSTALL_REQUESTS=$(usex portable)
@@ -234,6 +274,7 @@ src_configure() {
 		-DWITH_CODEC_FFMPEG=$(usex ffmpeg)
 		-DWITH_CODEC_SNDFILE=$(usex sndfile)
 		-DWITH_FFTW3=$(usex fftw)
+		-DWITH_DOC_MANPAGE=$(usex man)
 		-DWITH_CPU_SSE=$(usex sse)
 		-DWITH_CYCLES=$(usex cycles)
 		-DWITH_CYCLES_DEVICE_CUDA=$(usex cuda)
@@ -258,7 +299,9 @@ src_configure() {
 		-DWITH_JACK=$(usex jack)
 		-DWITH_LZMA=$(usex lzma)
 		-DWITH_LZO=$(usex lzo)
-		-DWITH_MEM_JEMALLOC=ON
+		-DWITH_LLVM=$(usex llvm)
+		-DWITH_MEM_JEMALLOC=$(usex jemalloc)
+		-DWITH_MEM_VALGRIND=$(usex valgrind)
 		-DWITH_MOD_FLUID=$(usex fluid)
 		-DWITH_MOD_OCEANSIM=$(usex oceansim)
 		-DWITH_OPENAL=$(usex openal)
@@ -291,11 +334,11 @@ src_configure() {
 		-Wno-dev
 	)
 
-	cmake-utils_src_configure
+	cmake_src_configure
 }
 
 src_compile() {
-	cmake-utils_src_compile
+	cmake_src_compile
 
 	if use doc; then
 		einfo "Generating Blender C/C++ API docs ..."
@@ -326,7 +369,7 @@ src_install() {
 		dodoc -r "${CMAKE_USE_DIR}"/doc/doxygen/html/.
 	fi
 
-	cmake-utils_src_install
+	cmake_src_install
 
 	# fix doc installdir
 	docinto "html"
