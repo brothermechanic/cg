@@ -370,32 +370,32 @@
  
      /// @brief One iteration of a median-value filter
      ///
-@@ -198,12 +201,28 @@
+@@ -174,12 +174,28 @@ private:
          const float frac;
      };
  
-+	template<size_t Axis>
-+	struct AvgI {
-+		AvgI(const GridT* grid, Int32 w, float q) : acc(grid->tree()), width(w), sigma(q) {}
-+		inline ValueType operator()(Coord xyz);
-+		typename GridT::ConstAccessor acc;
-+		const Int32 width;
-+		const float sigma;
-+	};
++       template<size_t Axis>
++       struct AvgI {
++               AvgI(const GridT* grid, Int32 w, float q) : acc(grid->tree()), width(w), sigma(q) {}
++               inline ValueType operator()(Coord xyz);
++               typename GridT::ConstAccessor acc;
++               const Int32 width;
++               const float sigma;
++       };
 +
      // Private filter methods called by tbb::parallel_for threads
      template <typename AvgT>
      void doBox( const RangeType& r, Int32 w);
      void doBoxX(const RangeType& r, Int32 w) { this->doBox<Avg<0> >(r,w); }
-     void doBoxZ(const RangeType& r, Int32 w) { this->doBox<Avg<1> >(r,w); }
-     void doBoxY(const RangeType& r, Int32 w) { this->doBox<Avg<2> >(r,w); }
-+
-+	template <typename AvgT>
-+	void doBoxI(const RangeType& r, Int32 w, float q);
-+	void doBoxXI(const RangeType& r, Int32 w, float q) { this->doBoxI<AvgI<0> >(r, w, q); }
-+	void doBoxZI(const RangeType& r, Int32 w, float q) { this->doBoxI<AvgI<1> >(r, w, q); }
-+	void doBoxYI(const RangeType& r, Int32 w, float q) { this->doBoxI<AvgI<2> >(r, w, q); }
-+
+     void doBoxY(const RangeType& r, Int32 w) { this->doBox<Avg<1> >(r,w); }
+     void doBoxZ(const RangeType& r, Int32 w) { this->doBox<Avg<2> >(r,w); }
++    
++       template <typename AvgT>
++       void doBoxI(const RangeType& r, Int32 w, float q);
++       void doBoxXI(const RangeType& r, Int32 w, float q) { this->doBoxI<AvgI<0> >(r, w, q); }
++       void doBoxZI(const RangeType& r, Int32 w, float q) { this->doBoxI<AvgI<1> >(r, w, q); }
++       void doBoxYI(const RangeType& r, Int32 w, float q) { this->doBoxI<AvgI<2> >(r, w, q); }
++ 
      void doMedian(const RangeType&, int);
      void doOffset(const RangeType&, ValueType);
      /// @return true if the process was interrupted
@@ -434,7 +434,7 @@
  ////////////////////////////////////////
  
  
-@@ -274,27 +321,26 @@
+@@ -284,30 +300,29 @@ Filter<GridT, MaskT, InterruptT>::mean(int width, int iterations, const MaskType
  
  template<typename GridT, typename MaskT, typename InterruptT>
  inline void
@@ -446,8 +446,8 @@
      if (mInterrupter) mInterrupter->start("Applying Gaussian filter");
  
 -    const int w = std::max(1, width);
-+	const float q = std::max(0.1f, sigma);
-+	const int w = std::max(1, width);
++       const float q = std::max(0.1f, sigma);
++       const int w = std::max(1, width);
  
      LeafManagerType leafs(mGrid->tree(), 1, mGrainSize==0);
  
@@ -458,12 +458,15 @@
 +        mTask = std::bind(&Filter::doBoxXI, std::placeholders::_1, std::placeholders::_2, w, q);
 +        this->cook(leafs);
  
--            mTask = std::bind(&Filter::doBoxY, std::placeholders::_1, std::placeholders::_2, w);
--            this->cook(leafs);
-+        mTask = std::bind(&Filter::doBoxYI, std::placeholders::_1, std::placeholders::_2, w, q);
-+        this->cook(leafs);
+             // note that the order of the YZ passes are flipped to maintain backwards-compatibility
+             // with an indexing typo in the original logic
  
 -            mTask = std::bind(&Filter::doBoxZ, std::placeholders::_1, std::placeholders::_2, w);
+-            this->cook(leafs);
++        mTask = std::bind(&Filter::doBoxYI, std::placeholders::_1, std::placeholders::_2, w, q);
++        this->cook(leafs); 
+ 
+-            mTask = std::bind(&Filter::doBoxY, std::placeholders::_1, std::placeholders::_2, w);
 -            this->cook(leafs);
 -        }
 +        mTask = std::bind(&Filter::doBoxZI, std::placeholders::_1, std::placeholders::_2, w, q);
