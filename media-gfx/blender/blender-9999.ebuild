@@ -2,9 +2,10 @@
 # Distributed under the terms of the GNU General Public License v2
 
 EAPI=7
+CMAKE_ECLASS="cmake"
 PYTHON_COMPAT=( python3_{7..9} )
 
-inherit check-reqs cmake python-single-r1 xdg-utils pax-utils toolchain-funcs flag-o-matic
+inherit check-reqs cmake-utils python-single-r1 xdg-utils pax-utils toolchain-funcs flag-o-matic
 
 DESCRIPTION="3D Creation/Animation/Publishing System"
 HOMEPAGE="http://www.blender.org/"
@@ -162,7 +163,7 @@ pkg_setup() {
 }
 
 src_prepare() {
-	cmake_src_prepare
+	default
 
 	#set cg overlay defaults
 	#sed -i -e "s|.pythondir = "",|.pythondir = "${BLENDER_ADDONS_DIR}",|" "${S}"/release/datafiles/userdef/userdef_default.c || die
@@ -197,6 +198,7 @@ src_prepare() {
 			done
 		fi
 	fi
+	cmake-utils_src_prepare
 }
 
 src_configure() {
@@ -334,11 +336,11 @@ src_configure() {
 		-Wno-dev
 	)
 
-	cmake_src_configure
+	cmake-utils_src_configure
 }
 
 src_compile() {
-	cmake_src_compile
+	cmake-utils_src_compile
 
 	if use doc; then
 		einfo "Generating Blender C/C++ API docs ..."
@@ -369,14 +371,16 @@ src_install() {
 		dodoc -r "${CMAKE_USE_DIR}"/doc/doxygen/html/.
 	fi
 
-	cmake_src_install
+	cmake-utils_src_install
 
 	# fix doc installdir
 	docinto "html"
 	dodoc "${CMAKE_USE_DIR}"/release/text/readme.html
 	rm -r "${ED%/}"/usr/share/doc/blender || die
 
-	MY_PV="$( grep -Po 'CPACK_PACKAGE_VERSION "\K[^"]...' ${CMAKE_BUILD_DIR}/CPackConfig.cmake )"
+    #comment because I get error
+    #grep: /CPackConfig.cmake: No such file or directory
+    #MY_PV="$( grep -Po 'CPACK_PACKAGE_VERSION "\K[^"]...' ${CMAKE_BUILD_DIR}/CPackConfig.cmake )"
 	python_fix_shebang "${ED%/}/usr/bin/blender-thumbnailer.py"
 	python_optimize "${ED%/}/usr/share/blender/${MY_PV}/scripts"
 }
