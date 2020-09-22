@@ -142,7 +142,7 @@ BDEPEND="
 	)
 "
 
-#CMAKE_BUILD_TYPE="Release"
+CMAKE_BUILD_TYPE="Release"
 
 blender_check_requirements() {
 	[[ ${MERGE_TYPE} != binary ]] && use openmp && tc-check-openmp
@@ -162,7 +162,7 @@ pkg_setup() {
 }
 
 src_prepare() {
-	cmake_src_prepare
+	default
 
 	#set cg overlay defaults
 	#sed -i -e "s|.pythondir = "",|.pythondir = "${BLENDER_ADDONS_DIR}",|" "${S}"/release/datafiles/userdef/userdef_default.c || die
@@ -197,6 +197,7 @@ src_prepare() {
 			done
 		fi
 	fi
+	cmake_src_prepare
 }
 
 src_configure() {
@@ -359,7 +360,7 @@ src_test() { :; }
 
 src_install() {
 	# Pax mark blender for hardened support.
-	pax-mark m "${CMAKE_BUILD_DIR}"/bin/blender
+	pax-mark m "${BUILD_DIR}"/bin/blender
 
 	if use doc; then
 		docinto "html/API/python"
@@ -376,7 +377,7 @@ src_install() {
 	dodoc "${CMAKE_USE_DIR}"/release/text/readme.html
 	rm -r "${ED%/}"/usr/share/doc/blender || die
 
-	MY_PV="$( grep -Po 'CPACK_PACKAGE_VERSION "\K[^"]...' ${CMAKE_BUILD_DIR}/CPackConfig.cmake )"
+	MY_PV="$( grep -Po 'CPACK_PACKAGE_VERSION "\K[^"]...' ${BUILD_DIR}/CPackConfig.cmake )" || die
 	python_fix_shebang "${ED%/}/usr/bin/blender-thumbnailer.py"
 	python_optimize "${ED%/}/usr/share/blender/${MY_PV}/scripts"
 }
@@ -400,7 +401,6 @@ pkg_postrm() {
 	xdg_icon_cache_update
 	xdg_mimeinfo_database_update
 	xdg_desktop_database_update
-
 	ewarn ""
 	ewarn "You may want to remove the following directory."
 	ewarn "~/.config/${PN}/${MY_PV}/cache/"
