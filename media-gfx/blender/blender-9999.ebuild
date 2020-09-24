@@ -16,7 +16,6 @@ if [[ ${PV} == 9999 ]]; then
 	inherit git-r3
 	EGIT_REPO_URI="https://git.blender.org/blender"
 	EGIT_SUBMODULES=( release/datafiles/locale )
-	EGIT_BRANCH="master"
 	#EGIT_COMMIT=""
     KEYWORDS=""
 	MY_PV="2.91"
