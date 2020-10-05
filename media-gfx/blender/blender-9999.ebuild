@@ -5,7 +5,7 @@ EAPI=7
 CMAKE_ECLASS="cmake"
 PYTHON_COMPAT=( python3_{7..9} )
 
-inherit check-reqs cmake-utils python-single-r1 xdg-utils pax-utils toolchain-funcs flag-o-matic
+inherit check-reqs cmake python-single-r1 xdg-utils pax-utils toolchain-funcs flag-o-matic
 
 DESCRIPTION="3D Creation/Animation/Publishing System"
 HOMEPAGE="http://www.blender.org/"
@@ -142,7 +142,7 @@ BDEPEND="
 	)
 "
 
-#CMAKE_BUILD_TYPE="Release"
+CMAKE_BUILD_TYPE="Release"
 
 blender_check_requirements() {
 	[[ ${MERGE_TYPE} != binary ]] && use openmp && tc-check-openmp
@@ -197,7 +197,7 @@ src_prepare() {
 			done
 		fi
 	fi
-	cmake-utils_src_prepare
+	cmake_src_prepare
 }
 
 src_configure() {
@@ -335,11 +335,11 @@ src_configure() {
 		-Wno-dev
 	)
 
-	cmake-utils_src_configure
+	cmake_src_configure
 }
 
 src_compile() {
-	cmake-utils_src_compile
+	cmake_src_compile
 
 	if use doc; then
 		einfo "Generating Blender C/C++ API docs ..."
@@ -370,7 +370,7 @@ src_install() {
 		dodoc -r "${CMAKE_USE_DIR}"/doc/doxygen/html/.
 	fi
 
-	cmake-utils_src_install
+	cmake_src_install
 
 	# fix doc installdir
 	docinto "html"
