@@ -19,7 +19,7 @@ DEPEND=""
 RDEPEND="media-gfx/blender[addons]
         dev-python/numpy
         dev-python/cython
-        sci-libs/scipy
+        dev-python/scipy
         dev-python/geomdl
         dev-python/PyMCubes
         freecad? ( media-gfx/freecad )
