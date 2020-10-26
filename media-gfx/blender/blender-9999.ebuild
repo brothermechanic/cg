@@ -15,9 +15,10 @@ if [[ ${PV} == 9999 ]]; then
 	inherit git-r3
 	EGIT_REPO_URI="https://git.blender.org/blender"
 	EGIT_SUBMODULES=( release/datafiles/locale )
+	EGIT_BRANCH="master"
 	#EGIT_COMMIT=""
     KEYWORDS=""
-	MY_PV="2.91"
+	MY_PV="2.92"
 else
 	SRC_URI="https://download.blender.org/source/${P}.tar.xz"
 	KEYWORDS="~amd64 ~x86"
@@ -89,7 +90,7 @@ RDEPEND="${PYTHON_DEPS}
 		cuda? ( dev-util/nvidia-cuda-toolkit )
 		osl? ( media-libs/osl )
 		embree? (
-			media-libs/embree[static-libs,raymask,tbb?]
+			media-libs/embree[raymask,tbb?]
 		)
 		openvdb? (
 			>media-gfx/openvdb-6.0.0[abi6-compat(-)?,abi7-compat(-)?]
@@ -128,7 +129,7 @@ RDEPEND="${PYTHON_DEPS}
 "
 
 DEPEND="${RDEPEND}
-	dev-cpp/eigen:3
+	>=dev-cpp/eigen-3.3.8-r1
 "
 
 BDEPEND="
@@ -161,8 +162,7 @@ pkg_setup() {
 }
 
 src_prepare() {
-	default
-
+	cmake_src_prepare
 	#set cg overlay defaults
 	#sed -i -e "s|.pythondir = "",|.pythondir = "${BLENDER_ADDONS_DIR}",|" "${S}"/release/datafiles/userdef/userdef_default.c || die
 
@@ -196,7 +196,6 @@ src_prepare() {
 			done
 		fi
 	fi
-	cmake_src_prepare
 }
 
 src_configure() {
@@ -376,7 +375,7 @@ src_install() {
 	dodoc "${CMAKE_USE_DIR}"/release/text/readme.html
 	rm -r "${ED%/}"/usr/share/doc/blender || die
 
-	MY_PV="$( grep -Po 'CPACK_PACKAGE_VERSION "\K[^"]...' ${BUILD_DIR}/CPackConfig.cmake )" || die
+	einfo "Install blender version: $( grep -Po 'CPACK_PACKAGE_VERSION "\K[^"]...' ${BUILD_DIR}/CPackConfig.cmake )"
 	python_fix_shebang "${ED%/}/usr/bin/blender-thumbnailer.py"
 	python_optimize "${ED%/}/usr/share/blender/${MY_PV}/scripts"
 }
