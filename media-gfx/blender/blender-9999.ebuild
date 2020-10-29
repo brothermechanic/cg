@@ -11,8 +11,9 @@ HOMEPAGE="http://www.blender.org/"
 
 LICENSE="|| ( GPL-2 BL )"
 
+inherit git-r3
 if [[ ${PV} == 9999 ]]; then
-	inherit git-r3
+	#inherit git-r3
 	EGIT_REPO_URI="https://git.blender.org/blender"
 	EGIT_SUBMODULES=( release/datafiles/locale )
 	EGIT_BRANCH="master"
@@ -20,9 +21,13 @@ if [[ ${PV} == 9999 ]]; then
     KEYWORDS=""
 	MY_PV="2.92"
 else
-	SRC_URI="https://download.blender.org/source/${P}.tar.xz"
-	KEYWORDS="~amd64 ~x86"
+	#SRC_URI="https://download.blender.org/source/${P}.tar.xz"
 	MY_PV="$(ver_cut 1-2)"
+	EGIT_REPO_URI="https://git.blender.org/blender"
+	EGIT_SUBMODULES=( release/datafiles/locale )
+	EGIT_BRANCH="blender-v${MY_PV}-release" 
+    #EGIT_COMMIT="3e85bb34d0d792b49cf4923f781d98791c5a161c"
+	KEYWORDS="~amd64 ~x86"
 fi
 SLOT="${MY_PV}"
 
