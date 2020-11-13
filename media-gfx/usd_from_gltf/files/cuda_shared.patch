@@ -1,0 +1,33 @@
+--- a/src/GpGpu.cmake
++++ b/src/GpGpu.cmake
+@@ -148,16 +148,16 @@
+     find_cuda_helper_libs(nvToolsExt)
+ endif()
+ 
+-cuda_add_library(${libStatGpGpuTools}  ${GpGpuTools_Src_Files} ${IncCudaFiles} STATIC OPTIONS ${GENCODE_SM})
++cuda_add_library(${libStatGpGpuTools}  ${GpGpuTools_Src_Files} ${IncCudaFiles} SHARED OPTIONS ${GENCODE_SM})
+ 
+ 
+ if(${CUDA_NVTOOLS})
+     target_link_libraries(${libStatGpGpuTools} ${CUDA_nvToolsExt_LIBRARY})
+ endif()
+ 
+-cuda_add_library(${libStatGpGpuInterfMicMac}  ${uti_phgrm_GpGpu_Src_Files} STATIC OPTIONS ${GENCODE_SM})
++cuda_add_library(${libStatGpGpuInterfMicMac}  ${uti_phgrm_GpGpu_Src_Files} SHARED OPTIONS ${GENCODE_SM})
+ 
+-cuda_add_library(${libStatGpGpuOpt}  ${uti_phgrm_Opt_GpGpu_Src_Files} ${IncCudaFiles} STATIC OPTIONS ${GENCODE_SM})
++cuda_add_library(${libStatGpGpuOpt}  ${uti_phgrm_Opt_GpGpu_Src_Files} ${IncCudaFiles} SHARED OPTIONS ${GENCODE_SM})
+ 
+ if(Boost_FOUND)
+     target_link_libraries(${libStatGpGpuInterfMicMac} ${libStatGpGpuTools} ${Boost_LIBRARIES} ${Boost_THREADAPI})
+--- a/src/CMakeLists.txt
++++ b/src/CMakeLists.txt
+@@ -155,7 +155,7 @@
+ if(${CUDA_ENABLED})
+     include(GpGpu.cmake)
+ 
+-    cuda_add_library( ${libElise} ${Elise_Src_Files} ${IncFiles} ${QT_ALLFILES} OPTIONS ${GENCODE_SM})
++    cuda_add_library( ${libElise} ${Elise_Src_Files} ${IncFiles} ${QT_ALLFILES} SHARED OPTIONS ${GENCODE_SM})
+ 
+ 	if(${CUDA_NVTOOLS})
+ 		target_link_libraries(${libElise} ${libStatGpGpuTools} ${libStatGpGpuInterfMicMac} ${libStatGpGpuOpt} ${CUDA_nvToolsExt_LIBRARY} ${OPENCL_LIBRARY})

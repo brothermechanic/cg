@@ -1,0 +1,12 @@
+--- a/src/CBinaires/CMakeLists.txt
++++ b/src/CBinaires/CMakeLists.txt
+@@ -73,6 +73,9 @@
+         add_executable(Apero2PMVS Apero2PMVS.c)
+         INSTALL(TARGETS Apero2PMVS RUNTIME DESTINATION ${Install_Dir})
+ 
++        add_executable(Apero2Meshlab Apero2Meshlab.c)
++        INSTALL(TARGETS Apero2Meshlab RUNTIME DESTINATION ${Install_Dir})
++
+         add_executable(mmxv mmxv.c)
+         INSTALL(TARGETS mmxv RUNTIME DESTINATION ${Install_Dir})
+ 

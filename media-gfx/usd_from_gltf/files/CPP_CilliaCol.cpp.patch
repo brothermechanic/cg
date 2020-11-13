@@ -1,0 +1,10 @@
+--- a/src/SamplesLibElise/CPP_CilliaCol.cpp
++++ b/src/SamplesLibElise/CPP_CilliaCol.cpp
+@@ -37,6 +37,7 @@
+     See below and http://www.cecill.info.
+ Header-MicMac-eLiSe-25/06/2007*/
+ 
++#include "StdAfx.h"
+ 
+ int ImgCol_main(int argc, char ** argv)
+ 

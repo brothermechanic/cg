@@ -1,0 +1,65 @@
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -278,31 +278,24 @@
+ 	include(FindCUDA)
+ 
+ 	if(CUDA_FOUND)
+-		set(Cuda_Sample_path_Windows_VISTA_7_8 "$ENV{AllUsersProfile}/NVIDIA Corporation/CUDA Samples/v${CUDA_VERSION}/")
+-		set(Cuda_Sample_path_Windows_XP "$ENV{AllUsersProfile}/Application Data/NVIDIA Corporation/CUDA Samples/v${CUDA_VERSION}/")
+-		set(Cuda_Sample_path_Apple "/Developer/NVIDIA/CUDA-${CUDA_VERSION}/samples/")
+-		set(Cuda_Sample_path_Linux "${CUDA_TOOLKIT_ROOT_DIR}/samples")
++		set(Cuda_Sample_path_Linux "${CUDA_TOOLKIT_ROOT_DIR}/sdk")
+ 
+-	    find_path(
++		find_path(
+ 			CUDA_SAMPLE_DIR
+ 			NAMES
+-			    common/inc/helper_cuda.h
++				common/inc/helper_cuda.h
+ 			PATHS
+-			    ${Cuda_Sample_path_Linux}
+-			    ${Cuda_Sample_path_Windows_VISTA_7_8}
+-							${Cuda_Sample_path_Windows_XP}
+-			    ${Cuda_Sample_path_Windows_Apple}
+-		     )
+-
+-			#message(${CUDA_SAMPLE_DIR})
+-
+-	    if(NOT CUDA_SAMPLE_DIR STREQUAL "CUDA_SAMPLE_DIR-NOTFOUND")
+-				#message("Cuda Samples Found")
+-		message("Cuda Samples Found: " ${CUDA_SAMPLE_DIR})
+-		include_directories(${CUDA_SAMPLE_DIR}/common/inc)
+-	    else()
+-		message("Cuda Samples Dir Not Found, install cuda samples or set CUDA_SAMPLE_DIR")
+-	    endif()
++				${Cuda_Sample_path_Linux}
++		)
++
++		#message(${CUDA_SAMPLE_DIR})
++
++		if(NOT CUDA_SAMPLE_DIR STREQUAL "CUDA_SAMPLE_DIR-NOTFOUND")
++			message("Cuda Samples Found: " ${CUDA_SAMPLE_DIR})
++			include_directories(${CUDA_SAMPLE_DIR}/common/inc)
++		else()
++			message("Cuda Samples Dir Not Found, install cuda samples or set CUDA_SAMPLE_DIR")
++		endif()
+ 	endif()
+ 
+ 	#IFNOT(${WITH_IGN_ORI})
+@@ -320,14 +313,14 @@
+ 		if(MSVC AND NOT MSVC12 )
+ 			message(FATAL_ERROR "This version of visual doesn't support c++11")
+ 		endif()
+-	    if(NOT ${WITH_CPP11})
++		if(NOT ${WITH_CPP11})
+ 			set(WITH_CPP11 ON CACHE BOOL "Compilateur C++11" FORCE)
+ 			if(NOT MSVC)
+ 				message("c++11")
+ 				# support c++11
+ 				add_definitions(-std=c++11) #+other flags? #TODO: check the precompiled header bug
+ 			endif()
+-	    endif()
++		endif()
+ 	endif()
+ endif()
+ 

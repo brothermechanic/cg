@@ -1,10 +1,10 @@
-# Copyright 1999-2015 Gentoo Foundation
+# Copyright 1999-2020 Gentoo Foundation
 # Distributed under the terms of the GNU General Public License v2
 # $Id$
 
 EAPI=6
 
-PYTHON_COMPAT=( python2_7 python3_6 )
+PYTHON_COMPAT=( python3_{7..9} )
 
 inherit git-r3 cmake-utils python-single-r1
 
@@ -17,25 +17,21 @@ LICENSE="MIT"
 
 SLOT="0"
 
-KEYWORDS=""
+KEYWORDS="~amd64"
 
-IUSE="python"
+IUSE=""
 
 DEPEND="
-	>dev-util/lemon-3.8.11
+	$(python_gen_cond_dep '
+    dev-libs/boost[${PYTHON_MULTI_USEDEP}]
+    ')
+	dev-util/lemon
 	sys-devel/flex
-	dev-libs/boost[python]
 	media-libs/libpng
 	dev-qt/qtcore:5
-	python? ( ${PYTHON_DEPS} )
 	"
 RDEPEND="${DEPEND}"
 
 pkg_setup() {
-	use python && python-single-r1_pkg_setup
-}
-
-src_prepare() {
-	epatch "${FILESDIR}/gentoo.patch"
-	default
+	python-single-r1_pkg_setup
 }

@@ -1,0 +1,31 @@
+--- a/src/util/cSysCoor.cpp
++++ b/src/util/cSysCoor.cpp
+@@ -359,11 +359,28 @@
+ {
+    return Chang(aV,true);
+ }
++
+ std::vector<Pt3dr> cProj4::FromGeoC(const std::vector<Pt3dr> & aV) const
+ {
+    return Chang(aV,false);
+ }
+ 
++Pt3dr cProj4::ToGeoC(const Pt3dr & aP) const
++{
++   std::vector<Pt3dr> aV;
++   aV.push_back(aP);
++   aV = ToGeoC(aV);
++   return aV[0];
++}
++
++Pt3dr cProj4::FromGeoC(const Pt3dr & aP) const
++{
++   std::vector<Pt3dr> aV;
++   aV.push_back(aP);
++   aV = FromGeoC(aV);
++   return aV[0];
++}
++
+ std::vector<Pt3dr> cProj4::Chang(const std::vector<Pt3dr> & aPtsIn, bool Sens2GeoC) const
+ {
+    cGeoc_WGS4 aWD(eUniteAngleDegre);
