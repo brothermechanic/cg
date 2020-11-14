@@ -10,7 +10,7 @@ inherit git-r3 cmake-utils python-single-r1 flag-o-matic
 DESCRIPTION="Universal Scene Description"
 HOMEPAGE="http://www.openusd.org"
 EGIT_REPO_URI="https://github.com/PixarAnimationStudios/USD.git"
-EGIT_COMMIT="4b11629"
+#EGIT_COMMIT="4b11629"
 LICENSE="Apache-2.0"
 SLOT="0"
 KEYWORDS="amd64"
@@ -38,8 +38,8 @@ pkg_setup() {
 
 src_configure() {
 	default
-	eapply "${FILESDIR}"/usd.diff
-	eapply "${FILESDIR}"/packageUtils.cpp.patch
+#	eapply "${FILESDIR}"/usd.diff
+#	eapply "${FILESDIR}"/packageUtils.cpp.patch
 	local mycmakeargs=(
 		-DCMAKE_INSTALL_PREFIX=/usr/local
 		-DPXR_SET_INTERNAL_NAMESPACE=usdBlender

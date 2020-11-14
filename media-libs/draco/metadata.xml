@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE pkgmetadata SYSTEM "http://www.gentoo.org/dtd/metadata.dtd">
+<pkgmetadata>
+<maintainer type="person">
+	<email>waebbl@gmail.com</email>
+	<name>Bernd Waibel</name>
+</maintainer>
+<longdescription>
+Library for compressing and decompressing 3D geometric meshes and point clouds.
+It is intended to improve the storage and transmission of 3D graphics.
+</longdescription>
+<use>
+	<flag name="compat">
+		Build in compatibility mode.
+	</flag>
+	<flag name="gltf">
+		Compile with support for glTF (GL Transmission Format) from
+		The Khronos Group Inc.
+	</flag>
+</use>
+<upstream>
+	<remote-id type="github">google/draco</remote-id>
+</upstream>
+</pkgmetadata>

@@ -15,6 +15,10 @@ IUSE=""
 DEPEND="${PYTHON_DEPS}"
 RDEPEND="${DEPEND}"
 
+PATCHES=(
+	"${FILESDIR}/gltf.patch"
+)
+
 src_install() {
 	egit_clean
     insinto /usr/share/blender/${SLOT}/scripts/${PN}/

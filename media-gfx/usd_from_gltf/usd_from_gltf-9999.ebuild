@@ -1,7 +1,8 @@
 # Copyright 1999-2020 Gentoo Foundation
 # Distributed under the terms of the GNU General Public License v2
-
 EAPI=6
+
+CMAKE_ECLASS="cmake"
 
 PYTHON_COMPAT=( python3_{7..9} )
 
@@ -22,19 +23,38 @@ RDEPEND="
     dev-lang/nasm
     dev-cpp/nlohmann_json
     media-libs/draco
-    media-libs/giflib"
+    media-libs/giflib
+    dev-libs/stb
+    media-libs/libpng
+    media-libs/libjpeg-turbo
+    dev-cpp/tclap
+    dev-libs/boost"
 
 DEPEND="${RDEPEND}"
+CMAKE_BUILD_TYPE=Release
 
 pkg_setup() {
     python-single-r1_pkg_setup
 }
 
+src_prepare() {
+	cmake-utils_src_prepare
+	sed -i '15,18d' gltf/CMakeLists.txt
+	sed -i '1,24d;66,104d' process/CMakeLists.txt
+	sed -i '15,18d' usd_from_gltf/CMakeLists.txt
+	sed -i '29,31d' CMakeLists.txt
+	sed -e '/${USD_LIBS}/a \  python3.7m' -e '/${USD_LIBS}/a \  boost_python37' -i usd_from_gltf/CMakeLists.txt
+}
+
 src_configure() {
     local mycmakeargs=(
-		-Djson_DIR="/usr/lib64/cmake/nlohmann_json"
-		-Ddraco_DIR="/usr/lib64/cmake/drako"
-		-Dgiflib_DIR="${S}/tools/ufginstall/patches/giflib"
+        -Djson_INCLUDE_DIR="/usr/include/nlohmann"
+        -Ddraco_INCLUDE_DIR="/usr/include/draco"
+        -DUSD_INCLUDE_DIRS="/usr/local/include"
+        -Dtclap_INCLUDE_DIR="/usr/include/tclap"
+		-DUSD_DIR="/usr/local/lib"
+		-DCMAKE_INSTALL_PREFIX=/usr
+		-DPython_INCLUDE_DIRS="$(python_get_includedir)"
         )
 	cmake-utils_src_configure
 }
