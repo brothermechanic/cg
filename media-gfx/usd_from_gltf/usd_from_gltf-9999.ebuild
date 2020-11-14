@@ -28,7 +28,8 @@ RDEPEND="
     media-libs/libpng
     media-libs/libjpeg-turbo
     dev-cpp/tclap
-    dev-libs/boost"
+    dev-libs/boost
+    media-libs/openusd"
 
 DEPEND="${RDEPEND}"
 CMAKE_BUILD_TYPE=Release
