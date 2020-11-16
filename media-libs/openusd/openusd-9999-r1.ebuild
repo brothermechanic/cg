@@ -13,7 +13,7 @@ EGIT_REPO_URI="https://github.com/PixarAnimationStudios/USD.git"
 LICENSE="Apache-2.0"
 SLOT="0"
 KEYWORDS="amd64"
-IUSE="alembic -doc +draco embree -imaging openimageio opencolorio -test -tools -hdf5 openvdb osl -ptex +jemalloc +python usdview opengl openexr opensubdiv"
+IUSE="alembic -doc +draco embree -imaging openimageio opencolorio -test -tools -hdf5 openvdb osl -ptex +jemalloc +python usdview opengl openexr opensubdiv monolithic"
 
 REQUIRED_USE="${PYTHON_REQUIRED_USE}
 	openimageio? ( imaging )
@@ -50,7 +50,7 @@ RDEPEND="
 	ptex? ( media-libs/ptex )
 	openvdb? ( media-gfx/openvdb )
 	doc? ( app-doc/doxygen[dot] )
-	embree? ( =media-libs/embree-2.16.4 )
+	embree? ( media-libs/embree )
 	alembic? ( media-gfx/alembic )
 	hdf5? (
 		media-gfx/alembic[hdf5]
@@ -88,7 +88,7 @@ src_configure() {
 		-DPXR_BUILD_EXAMPLES=$(usex test)
 		-DPXR_BUILD_IMAGING=$(usex imaging)
 		-DPXR_BUILD_MATERIALX_PLUGIN=OFF
-		-DPXR_BUILD_MONOLITHIC=OFF
+		-DPXR_BUILD_MONOLITHIC=$(usex monolithic)
 		-DPXR_BUILD_OPENCOLORIO_PLUGIN=$(usex opencolorio)
 		-DPXR_BUILD_OPENIMAGEIO_PLUGIN=$(usex openimageio)
 		-DPXR_BUILD_PRMAN_PLUGIN=OFF

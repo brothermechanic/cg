@@ -44,7 +44,7 @@ src_prepare() {
 	sed -i '1,24d;66,104d' process/CMakeLists.txt
 	sed -i '15,18d' usd_from_gltf/CMakeLists.txt
 	sed -i '29,31d' CMakeLists.txt
-	sed -e '/${USD_LIBS}/a \  python3.7m' -e '/${USD_LIBS}/a \  boost_python37' -i usd_from_gltf/CMakeLists.txt
+	sed -e '/${USD_LIBS}/a \  python3.7m' -e '/${USD_LIBS}/a \  boost_python37' -e '/${USD_LIBS}/a \  png' -e '/${USD_LIBS}/a \  turbojpeg' -e '/${USD_LIBS}/a \  draco' -e '/${USD_LIBS}/a \  gif' -e '/${USD_LIBS}/a \  stb_image' -i usd_from_gltf/CMakeLists.txt
 }
 
 src_configure() {

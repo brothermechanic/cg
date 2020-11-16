@@ -124,7 +124,7 @@ RDEPEND="${PYTHON_DEPS}
 	opensubdiv? ( media-libs/opensubdiv[openmp?,tbb?] )
 	nls? ( virtual/libiconv )
 	oidn? ( media-libs/oidn )
-	usd? ( media-libs/openusd )
+	usd? ( media-libs/openusd[monolithic] )
 	bullet? ( sci-physics/bullet )
 	addons? ( media-blender/addons )
 	addons_contrib? ( media-blender/addons_contrib )
