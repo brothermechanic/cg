@@ -168,8 +168,8 @@ pkg_setup() {
 
 src_prepare() {
 	cmake_src_prepare
-	#set cg overlay defaults
-	#sed -i -e "s|.pythondir = "",|.pythondir = "${BLENDER_ADDONS_DIR}",|" "${S}"/release/datafiles/userdef/userdef_default.c || die
+	#set BLENDER_ADDONS_DIR to userpref
+	sed -i -e "s|.pythondir.*|.pythondir = \"${BLENDER_ADDONS_DIR}\",|" "${S}"/release/datafiles/userdef/userdef_default.c || die
 
 	# remove some bundled deps
 	rm -rf extern/{Eigen3,glew-es,lzo,gtest,gflags} || die
