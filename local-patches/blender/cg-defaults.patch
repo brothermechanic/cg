@@ -1,6 +1,6 @@
 diff -Naur a/source/blender/makesdna/DNA_modifier_defaults.h b/source/blender/makesdna/DNA_modifier_defaults.h
 --- a/source/blender/makesdna/DNA_modifier_defaults.h	2020-12-24 20:07:32.000000000 +0300
-+++ b/source/blender/makesdna/DNA_modifier_defaults.h	2020-12-27 22:40:05.237453473 +0300
++++ b/source/blender/makesdna/DNA_modifier_defaults.h	2020-12-28 00:11:53.397550988 +0300
 @@ -43,7 +43,7 @@
      .length = 0.0f, \
      .merge_dist = 0.01f, \
@@ -10,7 +10,7 @@ diff -Naur a/source/blender/makesdna/DNA_modifier_defaults.h b/source/blender/ma
      .flags = 0, \
      .count = 2, \
      .uv_offset = {0.0f, 0.0f}, \
-@@ -51,12 +51,12 @@
+@@ -51,8 +51,8 @@
  
  #define _DNA_DEFAULT_BevelModifierData \
    { \
@@ -21,11 +21,6 @@ diff -Naur a/source/blender/makesdna/DNA_modifier_defaults.h b/source/blender/ma
      .flags = 0, \
      .val_flags = MOD_BEVEL_AMT_OFFSET, \
      .profile_type = MOD_BEVEL_PROFILE_SUPERELLIPSE, \
--    .lim_flags = 0, \
-+    .lim_flags = 3, \
-     .e_flags = 0, \
-     .mat = -1, \
-     .edge_flags = 0, \
 @@ -93,7 +93,7 @@
  #define _DNA_DEFAULT_CastModifierData \
    { \
