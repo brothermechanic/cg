@@ -65,14 +65,17 @@ DEPEND="${RDEPEND}
 
 CMAKE_BUILD_TYPE=Release
 
+PATCHES=(
+	"${FILESDIR}/algorithm.patch"
+)
+
 pkg_setup() {
 	use python && python-single-r1_pkg_setup
 }
 
 src_configure() {
-	default
-    local mycmakeargs=()
-    if use jemalloc; then
+	local mycmakeargs=()
+	if use jemalloc; then
 		mycmakeargs+=( 
             -DPXR_MALLOC_LIBRARY:path=/usr/lib64/libjemalloc.so
 		)
