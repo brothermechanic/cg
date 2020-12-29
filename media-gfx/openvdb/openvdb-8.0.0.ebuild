@@ -11,10 +11,10 @@ SRC_URI="https://github.com/AcademySoftwareFoundation/${PN}/archive/v${PV}.tar.g
 LICENSE="MPL-2.0"
 SLOT="0"
 KEYWORDS="~amd64 ~x86"
-IUSE="cpu_flags_x86_avx cpu_flags_x86_sse4_2 doc libglvnd numpy python static-libs test utils abi6-compat abi7-compat"
+IUSE="cpu_flags_x86_avx cpu_flags_x86_sse4_2 doc libglvnd numpy python static-libs test utils abi6-compat abi7-compat abi8-compat"
 REQUIRED_USE="
 	numpy? ( python )
-	^^ ( abi6-compat abi7-compat )
+	^^ ( abi6-compat abi7-compat abi8-compat )
 	python? ( ${PYTHON_REQUIRED_USE} )
 "
 
@@ -55,8 +55,8 @@ DEPEND="${RDEPEND}
 	test? ( dev-util/cppunit )"
 
 PATCHES=(
-	"${FILESDIR}/${P}-0001-Fix-multilib-header-source.patch"
-	"${FILESDIR}/${PN}-7.0.0-remesh.patch"
+	"${FILESDIR}/${PN}-7.1.0-0001-Fix-multilib-header-source.patch"
+	"${FILESDIR}/${PN}-8.0.0-remesh.patch"
 )
 
 pkg_setup() {
@@ -65,13 +65,13 @@ pkg_setup() {
 
 src_prepare() {
 	sed -i -e "s|DESTINATION doc|DESTINATION share/doc/${P}|g" doc/CMakeLists.txt || die
-	sed -i -e "s|DESTINATION lib|DESTINATION $(get_libdir)|g" {,openvdb/}CMakeLists.txt || die
-	sed -i -e "s|  lib|  $(get_libdir)|g" openvdb/CMakeLists.txt || die
+	sed -i -e "s|DESTINATION lib|DESTINATION $(get_libdir)|g" {,${PN}/${PN}/}CMakeLists.txt || die
+	sed -i -e "s|  lib|  $(get_libdir)|g" ${PN}/${PN}/CMakeLists.txt || die
 	sed -i -e "s/MINIMUM_PYTHON_VERSION 2.7/MINIMUM_PYTHON_VERSION 3.7/g" CMakeLists.txt || die
 	sed -i -e "s|PC_IlmBase QUIET IlmBase|PC_IlmBase REQUIRED IlmBase|g" cmake/FindIlmBase.cmake || die
 	sed -i -e "s|PC_OpenEXR QUIET OpenEXR|PC_OpenEXR REQUIRED OpenEXR|g" cmake/FindOpenEXR.cmake || die
 	# Use the selected version of python rather than the latest version installed
-	sed -i -e "s|find_package(Python QUIET|find_package(Python ${EPYTHON##python} EXACT REQUIRED QUIET|g" ${PN}/python/CMakeLists.txt || die
+	sed -i -e "s|find_package(Python QUIET|find_package(Python ${EPYTHON##python} EXACT REQUIRED QUIET|g" ${PN}/${PN}/CMakeLists.txt || die
 
 	cmake_src_prepare
 }
@@ -86,6 +86,8 @@ src_configure() {
 		version=6
 	elif use abi7-compat; then
 		version=7
+	elif use abi8-compat; then
+		version=8
 	else
 		die "Openvdb abi version is not compatible"
 	fi
