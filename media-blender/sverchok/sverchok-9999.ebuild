@@ -1,9 +1,9 @@
 # Copyright 1999-2017 Gentoo Foundation
 # Distributed under the terms of the GNU General Public License v2
 
-EAPI=6
-
-inherit git-r3 eutils
+EAPI=7
+PYTHON_COMPAT=( python3_{6..9} )
+inherit git-r3 python-single-r1
 
 DESCRIPTION="Blender addon. Sverchok is a powerful parametric tool for architects"
 HOMEPAGE="http://nikitron.cc.ua/sverchok_en.html"
@@ -33,6 +33,7 @@ src_install() {
         insinto /usr/lib/python3.7/site-packages/
         echo "/usr/lib64/freecad/lib64/" > ${D}/usr/lib/python3.7/site-packages/freecad_path.pth || die
     fi
+    python_optimize "${ED}/${BLENDER_ADDONS_DIR}/${PN}/"
 }
 
 pkg_postinst() {
