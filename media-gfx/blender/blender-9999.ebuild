@@ -31,7 +31,7 @@ else
 fi
 SLOT="${MY_PV}"
 
-IUSE_DESKTOP="-portable +X +addons +addons_contrib +nls -ndof"
+IUSE_DESKTOP="cg -portable +X +addons +addons_contrib +nls -ndof"
 IUSE_GPU="+opengl -optix cuda opencl llvm -sm_30 -sm_35 -sm_50 -sm_52 -sm_61 -sm_70 -sm_75"
 IUSE_LIBS="+cycles sdl jack openal +freestyle -osl +openvdb -nanovdb abi6-compat abi7-compat abi8-compat +opensubdiv +opencolorio +openimageio +collada -alembic +gltf-draco +fftw +oidn +quadriflow -usd +bullet -valgrind +jemalloc"
 IUSE_CPU="+openmp embree +sse +tbb"
@@ -213,7 +213,7 @@ src_prepare() {
 src_configure() {
     default
     #eapply "${FILESDIR}"/node_wrangler_suf.patch
-	if use addons_contrib; then
+	if use cg; then
         eapply "${FILESDIR}"/cg-addons.patch
         eapply "${FILESDIR}"/cg-defaults.patch
         eapply "${FILESDIR}"/cg-keymap.patch
