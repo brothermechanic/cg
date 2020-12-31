@@ -6,7 +6,7 @@ PYTHON_COMPAT=( python3_{7..9} )
 
 inherit check-reqs cmake python-single-r1 xdg-utils pax-utils toolchain-funcs flag-o-matic
 
-DESCRIPTION="3D Creation/Animation/Publishing System"
+DESCRIPTION="Blender is a free and open-source 3D creation suite."
 HOMEPAGE="http://www.blender.org/"
 
 LICENSE="|| ( GPL-2 BL )"
@@ -31,15 +31,15 @@ else
 fi
 SLOT="${MY_PV}"
 
-IUSE_DESKTOP="-portable +blender +X +addons +addons_contrib +nls -ndof -player"
+IUSE_DESKTOP="-portable +X +addons +addons_contrib +nls -ndof"
 IUSE_GPU="+opengl -optix cuda opencl llvm -sm_30 -sm_35 -sm_50 -sm_52 -sm_61 -sm_70 -sm_75"
-IUSE_LIBS="+cycles -sdl jack openal freestyle -osl +openvdb abi6-compat abi7-compat +opensubdiv +opencolorio +openimageio +collada -alembic +fftw +oidn +quadriflow +usd +bullet valgrind +jemalloc"
-IUSE_CPU="openmp -embree +sse +tbb"
+IUSE_LIBS="+cycles sdl jack openal +freestyle -osl +openvdb -nanovdb abi6-compat abi7-compat abi8-compat +opensubdiv +opencolorio +openimageio +collada -alembic +gltf-draco +fftw +oidn +quadriflow -usd +bullet -valgrind +jemalloc"
+IUSE_CPU="+openmp embree +sse +tbb"
 IUSE_TEST="-debug -doc -man"
 IUSE_IMAGE="-dpx -dds +openexr jpeg2k tiff +hdr"
 IUSE_CODEC="avi +ffmpeg -sndfile +quicktime"
 IUSE_COMPRESSION="+lzma -lzo"
-IUSE_MODIFIERS="+fluid +smoke +oceansim"
+IUSE_MODIFIERS="+fluid +smoke +oceansim +remesh"
 IUSE="${IUSE_DESKTOP} ${IUSE_GPU} ${IUSE_LIBS} ${IUSE_CPU} ${IUSE_TEST} ${IUSE_IMAGE} ${IUSE_CODEC} ${IUSE_COMPRESSION} ${IUSE_MODIFIERS}"
 
 REQUIRED_USE="${PYTHON_REQUIRED_USE}
@@ -49,13 +49,13 @@ REQUIRED_USE="${PYTHON_REQUIRED_USE}
 	smoke? ( fftw )
 	tiff? ( openimageio )
 	openexr? ( openimageio )
-	cuda? ( cycles openimageio )
+	cuda? ( cycles )
 	cycles? ( openexr tiff openimageio opencolorio )
-	osl? ( cycles llvm )
+	osl? ( cycles )
 	embree? ( cycles tbb )
 	oidn? ( cycles tbb )
 	openvdb? (
-		^^ ( abi6-compat abi7-compat )
+		^^ ( abi6-compat abi7-compat abi8-compat )
 		tbb
 	)
 "
@@ -79,6 +79,8 @@ RDEPEND="${PYTHON_DEPS}
 	virtual/libintl
 	virtual/jpeg:0=
 	dev-libs/boost[nls?,threads(+)]
+	dev-libs/gmp
+	media-gfx/potrace
 	opengl? (
 		virtual/opengl
 		media-libs/glew:*
@@ -92,18 +94,22 @@ RDEPEND="${PYTHON_DEPS}
 	opencolorio? ( media-libs/opencolorio )
 	cycles? (
 		openimageio? ( >=media-libs/openimageio-1.1.5 )
-		cuda? ( dev-util/nvidia-cuda-toolkit )
+		cuda? ( 
+			dev-util/nvidia-cuda-toolkit
+			nanovdb? ( media-libs/nanovdb )
+			)
 		osl? ( media-libs/osl )
 		embree? (
 			media-libs/embree[raymask,tbb?]
 		)
 		openvdb? (
-			>media-gfx/openvdb-6.0.0[abi6-compat(-)?,abi7-compat(-)?]
+			media-gfx/openvdb[abi6-compat(-)?,abi7-compat(-)?,abi8-compat(-)?]
 			dev-libs/c-blosc:=
 		)
 	)
 	optix? ( dev-libs/optix )
 	sdl? ( media-libs/libsdl[sound,joystick] )
+	openal? ( media-libs/openal )
 	tiff? ( media-libs/tiff:0 )
 	openexr? ( media-libs/openexr )
 	ffmpeg? ( >=media-video/ffmpeg-2.2[x264,xvid,mp3,encode,jpeg2k?] )
@@ -125,6 +131,7 @@ RDEPEND="${PYTHON_DEPS}
 	nls? ( virtual/libiconv )
 	oidn? ( media-libs/oidn )
 	usd? ( media-libs/openusd[monolithic] )
+	gltf-draco? ( media-libs/draco )
 	bullet? ( sci-physics/bullet )
 	addons? ( media-blender/addons )
 	addons_contrib? ( media-blender/addons_contrib )
@@ -134,12 +141,11 @@ RDEPEND="${PYTHON_DEPS}
 "
 
 DEPEND="${RDEPEND}
-	>=dev-cpp/eigen-3.3.8-r1
+	dev-cpp/eigen
 "
 
 BDEPEND="
 	virtual/pkgconfig
-	>=dev-cpp/gflags-2.2.2
 	nls? ( sys-devel/gettext )
 	doc? (
 		dev-python/sphinx
@@ -168,11 +174,12 @@ pkg_setup() {
 
 src_prepare() {
 	cmake_src_prepare
-	#set BLENDER_ADDONS_DIR to userpref
-	sed -i -e "s|.pythondir.*|.pythondir = \"${BLENDER_ADDONS_DIR}\",|" "${S}"/release/datafiles/userdef/userdef_default.c || die
-
+	if use addons_contrib; then
+        #set BLENDER_ADDONS_DIR to userpref
+        sed -i -e "s|.pythondir.*|.pythondir = \"${BLENDER_ADDONS_DIR}\",|" "${S}"/release/datafiles/userdef/userdef_default.c || die
+    fi
 	# remove some bundled deps
-	rm -rf extern/{Eigen3,glew-es,lzo,gtest,gflags} || die
+	rm -rf extern/{Eigen3,glew-es,lzo,gtest,gflags,draco} || die
 
 	# we don't want static glew, but it's scattered across
 	# multiple files that differ from version to version
@@ -204,6 +211,15 @@ src_prepare() {
 }
 
 src_configure() {
+    default
+    #eapply "${FILESDIR}"/node_wrangler_suf.patch
+	if use addons_contrib; then
+        eapply "${FILESDIR}"/cg-addons.patch
+        eapply "${FILESDIR}"/cg-defaults.patch
+        eapply "${FILESDIR}"/cg-keymap.patch
+        #eapply "${FILESDIR}"/cg-mesh.patch
+        eapply "${FILESDIR}"/cg-userdef.patch
+    fi
 	# FIX: forcing '-funsigned-char' fixes an anti-aliasing issue with menu
 	# shadows, see bug #276338 for reference
 	append-flags -funsigned-char -fno-strict-aliasing
@@ -215,6 +231,8 @@ src_configure() {
 			version=6;
 		elif use abi7-compat; then
 			version=7;
+        elif use abi8-compat; then
+			version=8;
 		else
 			die "Openvdb abi version not compatible"
 		fi
@@ -261,36 +279,33 @@ src_configure() {
 
 	mycmakeargs+=(
 		-DCMAKE_INSTALL_PREFIX=/usr
-		-DBUILD_SHARED_LIBS=OFF
 		-DPYTHON_VERSION="${EPYTHON/python/}"
-		-DPYTHON_INCLUDE_DIR:PATH="$(python_get_includedir)"
-		-DPYTHON_LIBRARY:FILEPATH="$(python_get_library_path)"
-		-DWITH_PYTHON_INSTALL=$(usex portable)
-		-DWITH_PYTHON_INSTALL_NUMPY=$(usex portable)
-		-DWITH_PYTHON_INSTALL_REQUESTS=$(usex portable)
-		-DWITH_PYTHON_MODULE=$(usex !X)
-		-DWITH_HEADLESS=$(usex !X)
-		-DWITH_BLENDER=$(usex blender)
-		-DWITH_ALEMBIC=$(usex alembic)
-		-DWITH_BULLET=$(usex bullet)
-		-DWITH_SYSTEM_BULLET=OFF
+		-DPYTHON_INCLUDE_DIR="$(python_get_includedir)"
+		-DPYTHON_LIBRARY="$(python_get_library_path)"
+		-DWITH_PYTHON_INSTALL=$(usex !portable OFF ON)        # Copy system python
+		-DWITH_PYTHON_INSTALL_NUMPY=$(usex !portable OFF ON)
+		-DWITH_PYTHON_MODULE=$(usex !X)                       # runs without a user interface
+		-DWITH_HEADLESS=$(usex !X)                            # server mode only
+		-DWITH_ALEMBIC=$(usex alembic)                        # export format support
+		-DWITH_BULLET=$(usex bullet)                          # Physics Engine
+		-DWITH_SYSTEM_BULLET=OFF                              # currently unsupported
 		-DWITH_CODEC_AVI=$(usex avi)
 		-DWITH_CODEC_FFMPEG=$(usex ffmpeg)
 		-DWITH_CODEC_SNDFILE=$(usex sndfile)
 		-DWITH_FFTW3=$(usex fftw)
 		-DWITH_DOC_MANPAGE=$(usex man)
-		-DWITH_CPU_SSE=$(usex sse)
-		-DWITH_CYCLES=$(usex cycles)
+		-DWITH_CPU_SSE=$(usex sse)                            # Enable SIMD instruction
+		-DWITH_CYCLES=$(usex cycles)                          # Enable Cycles Render Engine
 		-DWITH_CYCLES_DEVICE_CUDA=$(usex cuda)
-		-DWITH_CYCLES_CUBIN_COMPILER=OFF
-		-DWITH_CYCLES_DEVICE_OPENCL=$(usex opencl)
+		-DWITH_CYCLES_CUBIN_COMPILER=$(usex optix)            # nvrtc based compiler instead of nvcc
+		-DWITH_CYCLES_DEVICE_OPENCL=$(usex opencl)            # Enable Cycles OpenCL compute support
 		-DWITH_CYCLES_EMBREE=$(usex embree)
-		-DWITH_CYCLES_NATIVE_ONLY=$(usex cycles)
+		-DWITH_CYCLES_NATIVE_ONLY=$(usex cycles)              # for native kernel only
 		-DWITH_CYCLES_OSL=$(usex osl)
 		-DWITH_CYCLES_STANDALONE=OFF
 		-DWITH_CYCLES_STANDALONE_GUI=OFF
-		-DWITH_FREESTYLE=$(usex freestyle)
-		-DWITH_GHOST_XDND=$(usex X)
+		-DWITH_FREESTYLE=$(usex freestyle)                    # advanced edges rendering
+		-DWITH_GHOST_XDND=$(usex X)                           # drag-n-drop support on X11
 		-DWITH_IMAGE_CINEON=$(usex dpx)
 		-DWITH_IMAGE_DDS=$(usex dds)
 		-DWITH_IMAGE_HDR=$(usex hdr)
@@ -299,29 +314,31 @@ src_configure() {
 		-DWITH_IMAGE_TIFF=$(usex tiff)
 		-DWITH_INPUT_NDOF=$(usex ndof)
 		-DWITH_INSTALL_PORTABLE=$(usex portable)
-		-DWITH_INTERNATIONAL=$(usex nls)
+		-DWITH_INTERNATIONAL=$(usex nls)                      # I18N fonts and text
 		-DWITH_JACK=$(usex jack)
-		-DWITH_LZMA=$(usex lzma)
-		-DWITH_LZO=$(usex lzo)
+		-DWITH_LZMA=$(usex lzma)                              # used for pointcache only
+		-DWITH_LZO=$(usex lzo)                                # used for pointcache only
+		-DWITH_DRACO=$(usex gltf-draco)                       # gltf mesh compression
 		-DWITH_LLVM=$(usex llvm)
-		-DWITH_MEM_JEMALLOC=$(usex jemalloc)
+		-DWITH_MEM_JEMALLOC=$(usex jemalloc)                  # Enable malloc replacement
 		-DWITH_MEM_VALGRIND=$(usex valgrind)
-		-DWITH_MOD_FLUID=$(usex fluid)
-		-DWITH_MOD_OCEANSIM=$(usex oceansim)
+		-DWITH_MOD_FLUID=$(usex fluid)                        # Mantaflow Fluid Simulation Framework
+		-DWITH_MOD_REMESH=$(usex remesh)                      # Remesh Modifier
+		-DWITH_MOD_OCEANSIM=$(usex oceansim)                  # Ocean Modifier
 		-DWITH_OPENAL=$(usex openal)
-		-DWITH_OPENCOLLADA=$(usex collada)
+		-DWITH_OPENCOLLADA=$(usex collada)                    # export format support
 		-DWITH_OPENCOLORIO=$(usex opencolorio)
 		-DWITH_XR_OPENXR=OFF
 		-DWITH_OPENGL=$(usex opengl)
-		-DWITH_OPENIMAGEDENOISE=$(usex oidn)
+		-DWITH_OPENIMAGEDENOISE=$(usex oidn)                  # compositing node
 		-DWITH_OPENIMAGEIO=$(usex openimageio)
 		-DWITH_OPENMP=$(usex openmp)
-		-DWITH_OPENSUBDIV=$(usex opensubdiv)
-		-DWITH_OPENVDB=$(usex openvdb)
-		-DWITH_OPENVDB_BLOSC=$(usex openvdb)
-		-DWITH_QUADRIFLOW=$(usex quadriflow)
-		-DWITH_SDL=$(usex sdl)
-		-DWITH_SDL_DYNLOAD=$(usex sdl)
+		-DWITH_OPENSUBDIV=$(usex opensubdiv)                  # for surface subdivision
+		-DWITH_OPENVDB=$(usex openvdb)                        # advanced remesh and smoke
+		-DWITH_OPENVDB_BLOSC=$(usex openvdb)                  # compression for OpenVDB
+		-DWITH_NANOVDB=$(usex nanovdb)                           # OpenVDB for rendering on the GPU
+		-DWITH_QUADRIFLOW=$(usex quadriflow)                  # remesher
+		-DWITH_SDL=$(usex sdl)                                # for sound and joystick support
 		-DWITH_STATIC_LIBS=$(usex portable)
 		-DWITH_SYSTEM_EIGEN3=$(usex !portable)
 		-DWITH_SYSTEM_GLES=$(usex !portable)
@@ -330,11 +347,12 @@ src_configure() {
 		-DWITH_SYSTEM_GFLAGS=$(usex !portable)
 		-DWITH_GHOST_DEBUG=$(usex debug)
 		-DWITH_CXX_GUARDEDALLOC=$(usex debug)
-		-DWITH_USD=$(usex usd)
+		-DWITH_USD=$(usex usd)                                # export format support
 		-DUSD_ROOT_DIR=/usr/local
 		-DUSD_LIBRARY=/usr/local/lib/libusd_ms.so
 		-DWITH_TBB=$(usex tbb)
-		-DWITH_NINJA_POOL_JOBS=ON
+		-DWITH_NINJA_POOL_JOBS=OFF                            # for machines with 16GB of RAM or less
+		-DBUILD_SHARED_LIBS=OFF
 		-Wno-dev
 	)
 
@@ -359,7 +377,16 @@ src_compile() {
 	fi
 }
 
-src_test() { :; }
+src_test() {
+	if use test; then
+		einfo "Running Blender Unit Tests ..."
+		cd "${BUILD_DIR}"/bin/tests || die
+		local f
+		for f in *_test; do
+			./"${f}" || die
+		done
+	fi
+}
 
 src_install() {
 	# Pax mark blender for hardened support.
