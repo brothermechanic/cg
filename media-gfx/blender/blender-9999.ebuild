@@ -31,7 +31,7 @@ else
 fi
 SLOT="${MY_PV}"
 
-IUSE_DESKTOP="cg -portable +X +addons +addons_contrib +nls -ndof"
+IUSE_DESKTOP="+cg -portable +X +addons +addons_contrib +nls -ndof"
 IUSE_GPU="+opengl -optix cuda opencl llvm -sm_30 -sm_35 -sm_50 -sm_52 -sm_61 -sm_70 -sm_75"
 IUSE_LIBS="+cycles sdl jack openal +freestyle -osl +openvdb -nanovdb abi6-compat abi7-compat abi8-compat +opensubdiv +opencolorio +openimageio +collada -alembic +gltf-draco +fftw +oidn +quadriflow -usd +bullet -valgrind +jemalloc"
 IUSE_CPU="+openmp embree +sse +tbb"
@@ -71,8 +71,8 @@ RDEPEND="${PYTHON_DEPS}
 		dev-python/numpy[${PYTHON_MULTI_USEDEP}]
 		dev-python/requests[${PYTHON_MULTI_USEDEP}]
 	')
+	dev-cpp/gflags
 	sys-libs/zlib
-	sci-libs/ceres-solver
 	fftw? ( sci-libs/fftw:3.0[openmp?] )
 	media-libs/freetype
 	media-libs/libpng:0=
@@ -123,7 +123,6 @@ RDEPEND="${PYTHON_DEPS}
 		dev-libs/libspnav
 	)
 	quicktime? ( media-libs/libquicktime )
-	lzma? ( app-arch/lzma )
 	lzo? ( dev-libs/lzo )
 	alembic? ( media-gfx/alembic[boost,-hdf5] )
 	opencl? ( virtual/opencl )
@@ -179,7 +178,7 @@ src_prepare() {
         sed -i -e "s|.pythondir.*|.pythondir = \"${BLENDER_ADDONS_DIR}\",|" "${S}"/release/datafiles/userdef/userdef_default.c || die
     fi
 	# remove some bundled deps
-	rm -rf extern/{Eigen3,glew-es,lzo,gtest,gflags,draco} || die
+	rm -rf extern/{Eigen3,glew-es,lzo,gtest,gflags,draco,glew} || die
 
 	# we don't want static glew, but it's scattered across
 	# multiple files that differ from version to version
@@ -297,7 +296,6 @@ src_configure() {
 		-DWITH_CPU_SSE=$(usex sse)                            # Enable SIMD instruction
 		-DWITH_CYCLES=$(usex cycles)                          # Enable Cycles Render Engine
 		-DWITH_CYCLES_DEVICE_CUDA=$(usex cuda)
-		-DWITH_CYCLES_CUBIN_COMPILER=$(usex optix)            # nvrtc based compiler instead of nvcc
 		-DWITH_CYCLES_DEVICE_OPENCL=$(usex opencl)            # Enable Cycles OpenCL compute support
 		-DWITH_CYCLES_EMBREE=$(usex embree)
 		-DWITH_CYCLES_NATIVE_ONLY=$(usex cycles)              # for native kernel only
@@ -339,6 +337,7 @@ src_configure() {
 		-DWITH_NANOVDB=$(usex nanovdb)                           # OpenVDB for rendering on the GPU
 		-DWITH_QUADRIFLOW=$(usex quadriflow)                  # remesher
 		-DWITH_SDL=$(usex sdl)                                # for sound and joystick support
+		-DWITH_SDL_DYNLOAD=$(usex sdl)
 		-DWITH_STATIC_LIBS=$(usex portable)
 		-DWITH_SYSTEM_EIGEN3=$(usex !portable)
 		-DWITH_SYSTEM_GLES=$(usex !portable)
@@ -347,6 +346,7 @@ src_configure() {
 		-DWITH_SYSTEM_GFLAGS=$(usex !portable)
 		-DWITH_GHOST_DEBUG=$(usex debug)
 		-DWITH_CXX_GUARDEDALLOC=$(usex debug)
+		-DWITH_CXX11_ABI=ON
 		-DWITH_USD=$(usex usd)                                # export format support
 		-DUSD_ROOT_DIR=/usr/local
 		-DUSD_LIBRARY=/usr/local/lib/libusd_ms.so
