@@ -56,6 +56,7 @@ REQUIRED_USE="${PYTHON_REQUIRED_USE}
 	oidn? ( cycles tbb )
 	openvdb? (
 		^^ ( abi6-compat abi7-compat abi8-compat )
+		nanovdb? ( cuda )
 		tbb
 	)
 "
@@ -72,9 +73,9 @@ RDEPEND="${PYTHON_DEPS}
 		dev-python/requests[${PYTHON_MULTI_USEDEP}]
 	')
 	dev-cpp/gflags
-	sys-libs/zlib
+	sys-libs/zlib:=
 	fftw? ( sci-libs/fftw:3.0[openmp?] )
-	media-libs/freetype
+	media-libs/freetype:=
 	media-libs/libpng:0=
 	virtual/libintl
 	virtual/jpeg:0=
@@ -92,27 +93,24 @@ RDEPEND="${PYTHON_DEPS}
 		x11-libs/libXxf86vm
 	)
 	opencolorio? ( media-libs/opencolorio )
-	cycles? (
-		openimageio? ( >=media-libs/openimageio-1.1.5 )
-		cuda? ( 
-			dev-util/nvidia-cuda-toolkit
-			nanovdb? ( media-libs/nanovdb )
-			)
-		osl? ( media-libs/osl )
-		embree? (
-			media-libs/embree[raymask,tbb?]
-		)
-		openvdb? (
-			media-gfx/openvdb[abi6-compat(-)?,abi7-compat(-)?,abi8-compat(-)?]
-			dev-libs/c-blosc:=
-		)
+	cycles? ( media-libs/freeglut )
+	openimageio? ( media-libs/openimageio:= )
+	cuda? ( dev-util/nvidia-cuda-toolkit:= )
+	osl? ( media-libs/osl:= )
+	embree? ( media-libs/embree[raymask,tbb?] )
+	openvdb? (
+		media-gfx/openvdb[nanovdb?,abi6-compat(-)?,abi7-compat(-)?,abi8-compat(-)?]
+		dev-libs/c-blosc:=
 	)
 	optix? ( dev-libs/optix )
 	sdl? ( media-libs/libsdl[sound,joystick] )
 	openal? ( media-libs/openal )
-	tiff? ( media-libs/tiff:0 )
-	openexr? ( media-libs/openexr )
-	ffmpeg? ( >=media-video/ffmpeg-2.2[x264,xvid,mp3,encode,jpeg2k?] )
+	tiff? ( media-libs/tiff )
+	openexr? (
+		media-libs/openexr:=
+		media-libs/ilmbase:=
+	)
+	ffmpeg? ( media-video/ffmpeg:=[x264,xvid,mp3,encode,jpeg2k?] )
 	jpeg2k? ( media-libs/openjpeg:0 )
 	jack? ( virtual/jack )
 	jemalloc? ( dev-libs/jemalloc:= )
@@ -123,10 +121,10 @@ RDEPEND="${PYTHON_DEPS}
 		dev-libs/libspnav
 	)
 	quicktime? ( media-libs/libquicktime )
-	lzo? ( dev-libs/lzo )
-	alembic? ( media-gfx/alembic[boost,-hdf5] )
+	lzo? ( dev-libs/lzo:2= )
+	alembic? ( media-gfx/alembic:=[boost(+),-hdf5] )
 	opencl? ( virtual/opencl )
-	opensubdiv? ( media-libs/opensubdiv[openmp?,tbb?] )
+	opensubdiv? ( media-libs/opensubdiv[cuda?,opencl?,openmp?,tbb?] )
 	nls? ( virtual/libiconv )
 	oidn? ( media-libs/oidn )
 	usd? ( media-libs/openusd[monolithic] )
@@ -210,8 +208,6 @@ src_prepare() {
 }
 
 src_configure() {
-    default
-    #eapply "${FILESDIR}"/node_wrangler_suf.patch
 	if use cg; then
         eapply "${FILESDIR}"/cg-addons.patch
         eapply "${FILESDIR}"/cg-defaults.patch
@@ -261,8 +257,8 @@ src_configure() {
 		mycmakeargs+=(
 			-DWITH_CYCLES_CUDA=ON
 			-DWITH_CYCLES_CUDA_BINARIES=ON
-			-DCUDA_INCLUDES=/opt/cuda/include
-			-DCUDA_LIBRARIES=/opt/cuda/lib64
+			-DCUDA_INCLUDE_DIRS=/opt/cuda/include
+			-DCUDA_CUDART_LIBRARY=/opt/cuda/lib64
 			-DCUDA_NVCC_EXECUDABLE=/opt/cuda/bin/nvcc
 			-DCUDA_NVCC_FLAGS=-std=c++11
 		)
@@ -270,8 +266,8 @@ src_configure() {
 
 	if use optix; then
 		mycmakeargs+=(
-			-OPTIX_ROOT_DIR=/usr
-			-DOPTIX_INCLUDE_DIR=/usr/include/optix
+			-OPTIX_ROOT_DIR=/opt/optix
+			-DOPTIX_INCLUDE_DIR=/opt/optix/include
 			-DWITH_CYCLES_DEVICE_OPTIX=ON
 		)
 	fi
