@@ -99,9 +99,9 @@ src_configure() {
 		-DOPENVDB_BUILD_PYTHON_MODULE=$(usex python)
 		-DOPENVDB_BUILD_DOCS=$(usex doc)
 		-DOPENVDB_BUILD_UNITTESTS=$(usex test)
-		-DOPENVDB_BUILD_VDB_LOD=$(usex !utils)
-		-DOPENVDB_BUILD_VDB_RENDER=$(usex !utils)
-		-DOPENVDB_BUILD_VDB_VIEW=$(usex !utils)
+		-DOPENVDB_BUILD_VDB_LOD=$(usex utils)
+		-DOPENVDB_BUILD_VDB_RENDER=$(usex utils)
+		-DOPENVDB_BUILD_VDB_VIEW=$(usex utils)
 		-DOPENVDB_CORE_SHARED=ON
 		-DOPENVDB_CORE_STATIC=$(usex static-libs)
 		-DOPENVDB_ENABLE_RPATH=OFF

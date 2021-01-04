@@ -6,12 +6,14 @@ inherit cmake flag-o-matic python-single-r1
 
 DESCRIPTION="Libs for the efficient manipulation of volumetric data"
 HOMEPAGE="http://www.openvdb.org"
-SRC_URI="https://github.com/AcademySoftwareFoundation/${PN}/archive/v${PV}.tar.gz -> ${P}.tar.gz"
+IUSE="cpu_flags_x86_avx cpu_flags_x86_sse4_2 doc libglvnd nanovdb numpy python static-libs test utils abi6-compat abi7-compat"
+
+SRC_URI="https://github.com/AcademySoftwareFoundation/${PN}/archive/v${PV}.tar.gz -> ${P}.tar.gz
+nanovdb? ( https://github.com/AcademySoftwareFoundation/${PN}/archive/feature/nanovdb/v${PV}.tar.gz -> ${P}-nanovdb.tar.gz )"
 
 LICENSE="MPL-2.0"
 SLOT="0"
 KEYWORDS="~amd64 ~x86"
-IUSE="cpu_flags_x86_avx cpu_flags_x86_sse4_2 doc libglvnd numpy python static-libs test utils abi6-compat abi7-compat"
 REQUIRED_USE="
 	numpy? ( python )
 	^^ ( abi6-compat abi7-compat )
@@ -33,6 +35,7 @@ RDEPEND="
 	x11-libs/libXinerama
 	x11-libs/libXrandr
 	libglvnd? ( media-libs/libglvnd )
+	nanovdb? ( dev-util/nvidia-cuda-toolkit )
 	python? (
 		${PYTHON_DEPS}
 		$(python_gen_cond_dep '
@@ -54,24 +57,27 @@ DEPEND="${RDEPEND}
 	)
 	test? ( dev-util/cppunit )"
 
+
 PATCHES=(
-	"${FILESDIR}/${P}-0001-Fix-multilib-header-source.patch"
-	"${FILESDIR}/${PN}-7.0.0-remesh.patch"
+	"${FILESDIR}/${PN}-7.1.0-0001-Fix-multilib-header-source.patch"
+	"${FILESDIR}/${PN}-8.0.0-remesh.patch"
 )
 
 pkg_setup() {
+	usex nanovdb && S=${WORKDIR}/openvdb-feature-nanovdb
 	use python && python-single-r1_pkg_setup
 }
 
 src_prepare() {
 	sed -i -e "s|DESTINATION doc|DESTINATION share/doc/${P}|g" doc/CMakeLists.txt || die
-	sed -i -e "s|DESTINATION lib|DESTINATION $(get_libdir)|g" {,openvdb/}CMakeLists.txt || die
-	sed -i -e "s|  lib|  $(get_libdir)|g" openvdb/CMakeLists.txt || die
+	sed -i -e "s|DESTINATION lib|DESTINATION $(get_libdir)|g" {,${PN}/${PN}/}CMakeLists.txt || die
+	usex nanovdb && sed -i -e "s|DESTINATION lib|DESTINATION $(get_libdir)|g" {,nanovdb/}CMakeLists.txt || die
+	sed -i -e "s|  lib|  $(get_libdir)|g" ${PN}/${PN}/CMakeLists.txt || die
 	sed -i -e "s/MINIMUM_PYTHON_VERSION 2.7/MINIMUM_PYTHON_VERSION 3.7/g" CMakeLists.txt || die
 	sed -i -e "s|PC_IlmBase QUIET IlmBase|PC_IlmBase REQUIRED IlmBase|g" cmake/FindIlmBase.cmake || die
 	sed -i -e "s|PC_OpenEXR QUIET OpenEXR|PC_OpenEXR REQUIRED OpenEXR|g" cmake/FindOpenEXR.cmake || die
 	# Use the selected version of python rather than the latest version installed
-	sed -i -e "s|find_package(Python QUIET|find_package(Python ${EPYTHON##python} EXACT REQUIRED QUIET|g" ${PN}/python/CMakeLists.txt || die
+	sed -i -e "s|find_package(Python QUIET|find_package(Python ${EPYTHON##python} EXACT REQUIRED QUIET|g" ${PN}/${PN}/python/CMakeLists.txt || die
 
 	cmake_src_prepare
 }
@@ -97,9 +103,9 @@ src_configure() {
 		-DOPENVDB_BUILD_PYTHON_MODULE=$(usex python)
 		-DOPENVDB_BUILD_DOCS=$(usex doc)
 		-DOPENVDB_BUILD_UNITTESTS=$(usex test)
-		-DOPENVDB_BUILD_VDB_LOD=$(usex !utils)
-		-DOPENVDB_BUILD_VDB_RENDER=$(usex !utils)
-		-DOPENVDB_BUILD_VDB_VIEW=$(usex !utils)
+		-DOPENVDB_BUILD_VDB_LOD=$(usex utils)
+		-DOPENVDB_BUILD_VDB_RENDER=$(usex utils)
+		-DOPENVDB_BUILD_VDB_VIEW=$(usex utils)
 		-DOPENVDB_CORE_SHARED=ON
 		-DOPENVDB_CORE_STATIC=$(usex static-libs)
 		-DOPENVDB_ENABLE_RPATH=OFF
