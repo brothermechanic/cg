@@ -71,7 +71,7 @@ src_prepare() {
 	sed -i -e "s|PC_IlmBase QUIET IlmBase|PC_IlmBase REQUIRED IlmBase|g" cmake/FindIlmBase.cmake || die
 	sed -i -e "s|PC_OpenEXR QUIET OpenEXR|PC_OpenEXR REQUIRED OpenEXR|g" cmake/FindOpenEXR.cmake || die
 	# Use the selected version of python rather than the latest version installed
-	sed -i -e "s|find_package(Python QUIET|find_package(Python ${EPYTHON##python} EXACT REQUIRED QUIET|g" ${PN}/${PN}/CMakeLists.txt || die
+	sed -i -e "s|find_package(Python QUIET|find_package(Python ${EPYTHON##python} EXACT REQUIRED QUIET|g" ${PN}/${PN}/python/CMakeLists.txt || die
 
 	cmake_src_prepare
 }
