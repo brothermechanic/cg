@@ -344,8 +344,8 @@ src_configure() {
 		-DWITH_CXX_GUARDEDALLOC=$(usex debug)
 		-DWITH_CXX11_ABI=ON
 		-DWITH_USD=$(usex usd)                                # export format support
-		-DUSD_ROOT_DIR=/usr/local
-		-DUSD_LIBRARY=/usr/local/lib/libusd_ms.so
+		-DUSD_ROOT_DIR=/opt/openusd
+		-DUSD_LIBRARY=/opt/openusd/lib/libusd_ms.so
 		-DWITH_TBB=$(usex tbb)
 		-DWITH_NINJA_POOL_JOBS=OFF                            # for machines with 16GB of RAM or less
 		-DBUILD_SHARED_LIBS=OFF
