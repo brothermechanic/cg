@@ -71,6 +71,7 @@ RDEPEND="${PYTHON_DEPS}
 	$(python_gen_cond_dep '
 		dev-python/numpy[${PYTHON_MULTI_USEDEP}]
 		dev-python/requests[${PYTHON_MULTI_USEDEP}]
+        dev-libs/boost[python,nls?,threads(+),${PYTHON_MULTI_USEDEP}] 
 	')
 	dev-cpp/gflags
 	sys-libs/zlib:=
@@ -79,7 +80,6 @@ RDEPEND="${PYTHON_DEPS}
 	media-libs/libpng:0=
 	virtual/libintl
 	virtual/jpeg:0=
-	dev-libs/boost[nls?,threads(+)]
 	dev-libs/gmp
 	media-gfx/potrace
 	opengl? (
@@ -127,7 +127,7 @@ RDEPEND="${PYTHON_DEPS}
 	opensubdiv? ( media-libs/opensubdiv[cuda?,opencl?,openmp?,tbb?] )
 	nls? ( virtual/libiconv )
 	oidn? ( media-libs/oidn )
-	usd? ( media-libs/openusd[monolithic] )
+	usd? ( media-libs/openusd[monolithic,-python] )
 	gltf-draco? ( media-libs/draco )
 	bullet? ( sci-physics/bullet )
 	addons? ( media-blender/addons )
@@ -259,7 +259,7 @@ src_configure() {
 			-DWITH_CYCLES_CUDA_BINARIES=ON
 			-DCUDA_INCLUDE_DIRS=/opt/cuda/include
 			-DCUDA_CUDART_LIBRARY=/opt/cuda/lib64
-			-DCUDA_NVCC_EXECUDABLE=/opt/cuda/bin/nvcc
+			-DCUDA_NVCC_EXECUTABLE=/opt/cuda/bin/nvcc
 			-DCUDA_NVCC_FLAGS=-std=c++11
 		)
 	fi
