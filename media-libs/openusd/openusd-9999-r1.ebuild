@@ -67,6 +67,7 @@ CMAKE_BUILD_TYPE=Release
 
 PATCHES=(
 	"${FILESDIR}/algorithm.patch"
+	"${FILESDIR}/install.diff"
 )
 
 pkg_setup() {

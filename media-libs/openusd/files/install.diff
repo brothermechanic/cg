@@ -1,39 +1,39 @@
 --- a/cmake/macros/Public.cmake	2020-04-20 08:15:12.647935655 +0300
 +++ b/cmake/macros/Public.cmake	2020-04-20 08:20:55.517936523 +0300
-@@ -431,7 +431,7 @@
-         # Find libraries under the install prefix, which has the core USD
-         # libraries.
-         _pxr_init_rpath(rpath "tests/lib")
--        _pxr_add_rpath(rpath "${CMAKE_INSTALL_PREFIX}/lib")
-+        _pxr_add_rpath(rpath "${CMAKE_INSTALL_PREFIX}/lib64")
-         _pxr_install_rpath(rpath ${LIBRARY_NAME})
+@@ -458,7 +458,7 @@ function(pxr_build_test_shared_lib LIBRARY_NAME)
+     # Find libraries under the install prefix, which has the core USD
+     # libraries.
+     _pxr_init_rpath(rpath "tests/lib")
+-    _pxr_add_rpath(rpath "${CMAKE_INSTALL_PREFIX}/lib")
++    _pxr_add_rpath(rpath "${CMAKE_INSTALL_PREFIX}/lib64")
+     _pxr_install_rpath(rpath ${LIBRARY_NAME})
  
-         if (NOT bt_SOURCE_DIR)
-@@ -511,7 +511,7 @@
-         # Find libraries under the install prefix, which has the core USD
-         # libraries.
-         _pxr_init_rpath(rpath "tests")
--        _pxr_add_rpath(rpath "${CMAKE_INSTALL_PREFIX}/lib")
-+        _pxr_add_rpath(rpath "${CMAKE_INSTALL_PREFIX}/lib64")
-         _pxr_install_rpath(rpath ${TEST_NAME})
+     if (NOT bt_SOURCE_DIR)
+@@ -546,7 +546,7 @@ function(pxr_build_test TEST_NAME)
+     # Find libraries under the install prefix, which has the core USD
+     # libraries.
+     _pxr_init_rpath(rpath "tests")
+-    _pxr_add_rpath(rpath "${CMAKE_INSTALL_PREFIX}/lib")
++    _pxr_add_rpath(rpath "${CMAKE_INSTALL_PREFIX}/lib64")
+     _pxr_install_rpath(rpath ${TEST_NAME})
  
-         # XXX -- We shouldn't have to install to run tests.
-@@ -698,13 +698,13 @@
-                 set(_plugSearchPathEnvName ${PXR_OVERRIDE_PLUGINPATH_NAME})
-             endif()
+     # XXX -- We shouldn't have to install to run tests.
+@@ -752,13 +752,13 @@ function(pxr_register_test TEST_NAME)
+     # we set the PXR_PLUGINPATH_NAME env var to point to the "lib/usd"
+     # directory where these files are installed.
+     if (NOT TARGET shared_libs)
+-        set(testWrapperCmd ${testWrapperCmd} --env-var=${PXR_PLUGINPATH_NAME}=${CMAKE_INSTALL_PREFIX}/lib/usd)
++        set(testWrapperCmd ${testWrapperCmd} --env-var=${PXR_PLUGINPATH_NAME}=${CMAKE_INSTALL_PREFIX}/lib64/usd)
+     endif()
  
--            set(testWrapperCmd ${testWrapperCmd} --env-var=${_plugSearchPathEnvName}=${CMAKE_INSTALL_PREFIX}/lib/usd)
-+            set(testWrapperCmd ${testWrapperCmd} --env-var=${_plugSearchPathEnvName}=${CMAKE_INSTALL_PREFIX}/lib64/usd)
-         endif()
- 
-         # Ensure that Python imports the Python files built by this build.
-         # On Windows convert backslash to slash and don't change semicolons
-         # to colons.
--        set(_testPythonPath "${CMAKE_INSTALL_PREFIX}/lib/python;$ENV{PYTHONPATH}")
-+        set(_testPythonPath "${CMAKE_INSTALL_PREFIX}/lib64/python;$ENV{PYTHONPATH}")
-         if(WIN32)
-             string(REGEX REPLACE "\\\\" "/" _testPythonPath "${_testPythonPath}")
-         else()
+     # Ensure that Python imports the Python files built by this build.
+     # On Windows convert backslash to slash and don't change semicolons
+     # to colons.
+-    set(_testPythonPath "${CMAKE_INSTALL_PREFIX}/lib/python;$ENV{PYTHONPATH}")
++    set(_testPythonPath "${CMAKE_INSTALL_PREFIX}/lib64/python;$ENV{PYTHONPATH}")
+     if(WIN32)
+         string(REGEX REPLACE "\\\\" "/" _testPythonPath "${_testPythonPath}")
+     else()        
 @@ -746,7 +746,7 @@
      foreach(dirName ${PXR_EXTRA_PLUGINS})
          file(RELATIVE_PATH
