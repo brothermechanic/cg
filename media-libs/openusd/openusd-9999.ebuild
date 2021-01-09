@@ -3,7 +3,7 @@
 
 EAPI=7
 
-PYTHON_COMPAT=( python3_{7,8} )
+PYTHON_COMPAT=( python3_{7,9} )
 
 inherit git-r3 cmake python-single-r1 flag-o-matic
 
@@ -13,7 +13,7 @@ EGIT_REPO_URI="https://github.com/PixarAnimationStudios/USD.git"
 LICENSE="Apache-2.0"
 SLOT="0"
 KEYWORDS="amd64"
-IUSE="alembic -doc +draco embree -imaging openimageio opencolorio -test -tools -hdf5 openvdb osl -ptex +jemalloc +python usdview opengl openexr opensubdiv monolithic"
+IUSE="alembic -doc +draco embree -imaging openimageio opencolorio -test -tools -hdf5 openvdb osl -ptex +jemalloc python usdview opengl openexr opensubdiv monolithic"
 
 REQUIRED_USE="${PYTHON_REQUIRED_USE}
 	openimageio? ( imaging )
@@ -37,6 +37,7 @@ RDEPEND="
 			dev-libs/boost:=[python,${PYTHON_MULTI_USEDEP}]
 			usdview? (
 				dev-python/pyside2[${PYTHON_MULTI_USEDEP}]
+				dev-python/pyside2-tools[tools,${PYTHON_MULTI_USEDEP}]
 				opengl? ( dev-python/pyopengl[${PYTHON_MULTI_USEDEP}] )
 			)
 		')
@@ -69,6 +70,8 @@ PATCHES=(
 	"${FILESDIR}/algorithm.patch"
 )
 
+USD_PATH="/opt/${PN}"
+
 pkg_setup() {
 	use python && python-single-r1_pkg_setup
 }
@@ -77,12 +80,13 @@ src_configure() {
 	if use draco; then
 		append-cppflags -DDRACO_ATTRIBUTE_VALUES_DEDUPLICATION_SUPPORTED=ON
 		append-cppflags -DDRACO_ATTRIBUTE_INDICES_DEDUPLICATION_SUPPORTED=ON
+		append-cppflags -DTBB_SUPPRESS_DEPRECATED_MESSAGES=1
 	fi
 
 	mycmakeargs+=(
 		-DBUILD_SHARED_LIBS=ON
-		-DCMAKE_INSTALL_PREFIX="${EPREFIX}/opt/${PN}"
-		-DPXR_INSTALL_LOCATION="${EPREFIX}/opt/${PN}"
+		-DCMAKE_INSTALL_PREFIX="${EPREFIX}${USD_PATH}"
+		-DPXR_INSTALL_LOCATION="${EPREFIX}${USD_PATH}"
 		-DPXR_BUILD_ALEMBIC_PLUGIN=$(usex alembic ON OFF)
 		-DPXR_BUILD_DOCUMENTATION=$(usex doc ON OFF)
 		-DPXR_BUILD_DRACO_PLUGIN=$(usex draco ON OFF)
@@ -116,15 +120,15 @@ src_configure() {
 
 src_install() {
     cmake_src_install
+    
+    use usdview && dosym ${USD_PATH}/bin/usdview /usr/bin/usdview
+	dosym "${USD_PATH}"/include/pxr /usr/include/pxr
 
-    echo "/opt/${PN}/lib" >> 99-${PN}.conf
+    echo "${USD_PATH}"/lib >> 99-${PN}.conf
     insinto /etc/ld.so.conf.d/
     doins 99-${PN}.conf
 
-    insinto "/opt/${PN}/include"
-    dosym "/opt/${PN}/include/" "/opt/${PN}/include/${PN}"
-
-    chrpath --delete "${D}$/opt/${PN}/lib/*.so"
+    chrpath --delete "${D}$${USD_PATH}/lib/*.so"
 }
 
 
