@@ -53,7 +53,7 @@ src_configure() {
         -Ddraco_INCLUDE_DIR="/usr/include/draco"
         -DUSD_INCLUDE_DIRS="/usr/local/include"
         -Dtclap_INCLUDE_DIR="/usr/include/tclap"
-		-DUSD_DIR="/usr/local/lib"
+		-DUSD_DIR="/opt/openusd/lib"
 		-DCMAKE_INSTALL_PREFIX=/usr
 		-DPython_INCLUDE_DIRS="$(python_get_includedir)"
         )
