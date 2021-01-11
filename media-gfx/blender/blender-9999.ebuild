@@ -99,7 +99,7 @@ RDEPEND="${PYTHON_DEPS}
 	osl? ( media-libs/osl:= )
 	embree? ( media-libs/embree[raymask,tbb?] )
 	openvdb? (
-		media-gfx/openvdb[nanovdb?,abi6-compat(-)?,abi7-compat(-)?,abi8-compat(-)?]
+		media-gfx/openvdb[nanovdb(-)?,abi6-compat(-)?,abi7-compat(-)?,abi8-compat(-)?]
 		dev-libs/c-blosc:=
 	)
 	optix? ( dev-libs/optix )
