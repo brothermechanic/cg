@@ -3,7 +3,7 @@
 
 EAPI=7
 
-PYTHON_COMPAT=( python3_{7,9} )
+PYTHON_COMPAT=( python3_{7..9} )
 
 inherit git-r3 cmake python-single-r1 flag-o-matic
 
@@ -119,16 +119,16 @@ src_configure() {
 }
 
 src_install() {
-    cmake_src_install
-    
-    use usdview && dosym ${USD_PATH}/bin/usdview /usr/bin/usdview
+	cmake_src_install
+
+	use usdview && dosym ${USD_PATH}/bin/usdview /usr/bin/usdview
 	dosym "${USD_PATH}"/include/pxr /usr/include/pxr
 
-    echo "${USD_PATH}"/lib >> 99-${PN}.conf
-    insinto /etc/ld.so.conf.d/
-    doins 99-${PN}.conf
+	echo "${USD_PATH}"/lib >> 99-${PN}.conf
+	insinto /etc/ld.so.conf.d/
+	doins 99-${PN}.conf
 
-    chrpath --delete "${D}$${USD_PATH}/lib/*.so"
+	chrpath --delete "${D}$${USD_PATH}/lib/*.so"
 }
 
 
