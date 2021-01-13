@@ -50,6 +50,7 @@ REQUIRED_USE="${PYTHON_REQUIRED_USE}
 	tiff? ( openimageio )
 	openexr? ( openimageio )
 	cuda? ( cycles )
+	optix? ( cycles cuda opencl )
 	cycles? ( openexr tiff openimageio opencolorio )
 	osl? ( cycles )
 	embree? ( cycles tbb )
@@ -266,7 +267,7 @@ src_configure() {
 
 	if use optix; then
 		mycmakeargs+=(
-			-OPTIX_ROOT_DIR=/opt/optix
+			-DOPTIX_ROOT_DIR=/opt/optix/SDK
 			-DOPTIX_INCLUDE_DIR=/opt/optix/include
 			-DWITH_CYCLES_DEVICE_OPTIX=ON
 		)
@@ -277,29 +278,30 @@ src_configure() {
 		-DPYTHON_VERSION="${EPYTHON/python/}"
 		-DPYTHON_INCLUDE_DIR="$(python_get_includedir)"
 		-DPYTHON_LIBRARY="$(python_get_library_path)"
-		-DWITH_PYTHON_INSTALL=$(usex !portable OFF ON)        # Copy system python
+		-DWITH_PYTHON_INSTALL=$(usex !portable OFF ON)			# Copy system python
 		-DWITH_PYTHON_INSTALL_NUMPY=$(usex !portable OFF ON)
-		-DWITH_PYTHON_MODULE=$(usex !X)                       # runs without a user interface
-		-DWITH_HEADLESS=$(usex !X)                            # server mode only
-		-DWITH_ALEMBIC=$(usex alembic)                        # export format support
-		-DWITH_BULLET=$(usex bullet)                          # Physics Engine
-		-DWITH_SYSTEM_BULLET=OFF                              # currently unsupported
+		-DWITH_PYTHON_MODULE=$(usex !X)							# runs without a user interface
+		-DWITH_HEADLESS=$(usex !X)								# server mode only
+		-DWITH_ALEMBIC=$(usex alembic)							# export format support
+		-DWITH_BULLET=$(usex bullet)							# Physics Engine
+		-DWITH_SYSTEM_BULLET=OFF								# currently unsupported
 		-DWITH_CODEC_AVI=$(usex avi)
 		-DWITH_CODEC_FFMPEG=$(usex ffmpeg)
 		-DWITH_CODEC_SNDFILE=$(usex sndfile)
 		-DWITH_FFTW3=$(usex fftw)
 		-DWITH_DOC_MANPAGE=$(usex man)
-		-DWITH_CPU_SSE=$(usex sse)                            # Enable SIMD instruction
-		-DWITH_CYCLES=$(usex cycles)                          # Enable Cycles Render Engine
+		-DWITH_CPU_SSE=$(usex sse)								# Enable SIMD instruction
+		-DWITH_CYCLES=$(usex cycles)							# Enable Cycles Render Engine
 		-DWITH_CYCLES_DEVICE_CUDA=$(usex cuda)
-		-DWITH_CYCLES_DEVICE_OPENCL=$(usex opencl)            # Enable Cycles OpenCL compute support
+		-DWITH_CYCLES_CUDA_BUILD_SERIAL=$(usex cuda)			# Build cuda kernels in serial mode (if parallel build takes too much RAM or crash)
+		-DWITH_CYCLES_DEVICE_OPENCL=$(usex opencl)				# Enable Cycles OpenCL compute support
 		-DWITH_CYCLES_EMBREE=$(usex embree)
-		-DWITH_CYCLES_NATIVE_ONLY=$(usex cycles)              # for native kernel only
+		-DWITH_CYCLES_NATIVE_ONLY=$(usex cycles)				# for native kernel only
 		-DWITH_CYCLES_OSL=$(usex osl)
 		-DWITH_CYCLES_STANDALONE=OFF
 		-DWITH_CYCLES_STANDALONE_GUI=OFF
-		-DWITH_FREESTYLE=$(usex freestyle)                    # advanced edges rendering
-		-DWITH_GHOST_XDND=$(usex X)                           # drag-n-drop support on X11
+		-DWITH_FREESTYLE=$(usex freestyle)						# advanced edges rendering
+		-DWITH_GHOST_XDND=$(usex X)								# drag-n-drop support on X11
 		-DWITH_IMAGE_CINEON=$(usex dpx)
 		-DWITH_IMAGE_DDS=$(usex dds)
 		-DWITH_IMAGE_HDR=$(usex hdr)
@@ -308,31 +310,31 @@ src_configure() {
 		-DWITH_IMAGE_TIFF=$(usex tiff)
 		-DWITH_INPUT_NDOF=$(usex ndof)
 		-DWITH_INSTALL_PORTABLE=$(usex portable)
-		-DWITH_INTERNATIONAL=$(usex nls)                      # I18N fonts and text
+		-DWITH_INTERNATIONAL=$(usex nls)						# I18N fonts and text
 		-DWITH_JACK=$(usex jack)
-		-DWITH_LZMA=$(usex lzma)                              # used for pointcache only
-		-DWITH_LZO=$(usex lzo)                                # used for pointcache only
-		-DWITH_DRACO=$(usex gltf-draco)                       # gltf mesh compression
+		-DWITH_LZMA=$(usex lzma)								# used for pointcache only
+		-DWITH_LZO=$(usex lzo)									# used for pointcache only
+		-DWITH_DRACO=$(usex gltf-draco)							# gltf mesh compression
 		-DWITH_LLVM=$(usex llvm)
-		-DWITH_MEM_JEMALLOC=$(usex jemalloc)                  # Enable malloc replacement
+		-DWITH_MEM_JEMALLOC=$(usex jemalloc)					# Enable malloc replacement
 		-DWITH_MEM_VALGRIND=$(usex valgrind)
-		-DWITH_MOD_FLUID=$(usex fluid)                        # Mantaflow Fluid Simulation Framework
-		-DWITH_MOD_REMESH=$(usex remesh)                      # Remesh Modifier
-		-DWITH_MOD_OCEANSIM=$(usex oceansim)                  # Ocean Modifier
+		-DWITH_MOD_FLUID=$(usex fluid)							# Mantaflow Fluid Simulation Framework
+		-DWITH_MOD_REMESH=$(usex remesh)						# Remesh Modifier
+		-DWITH_MOD_OCEANSIM=$(usex oceansim)					# Ocean Modifier
 		-DWITH_OPENAL=$(usex openal)
-		-DWITH_OPENCOLLADA=$(usex collada)                    # export format support
+		-DWITH_OPENCOLLADA=$(usex collada)						# export format support
 		-DWITH_OPENCOLORIO=$(usex opencolorio)
 		-DWITH_XR_OPENXR=OFF
 		-DWITH_OPENGL=$(usex opengl)
-		-DWITH_OPENIMAGEDENOISE=$(usex oidn)                  # compositing node
+		-DWITH_OPENIMAGEDENOISE=$(usex oidn)					# compositing node
 		-DWITH_OPENIMAGEIO=$(usex openimageio)
 		-DWITH_OPENMP=$(usex openmp)
-		-DWITH_OPENSUBDIV=$(usex opensubdiv)                  # for surface subdivision
-		-DWITH_OPENVDB=$(usex openvdb)                        # advanced remesh and smoke
-		-DWITH_OPENVDB_BLOSC=$(usex openvdb)                  # compression for OpenVDB
-		-DWITH_NANOVDB=$(usex nanovdb)                           # OpenVDB for rendering on the GPU
-		-DWITH_QUADRIFLOW=$(usex quadriflow)                  # remesher
-		-DWITH_SDL=$(usex sdl)                                # for sound and joystick support
+		-DWITH_OPENSUBDIV=$(usex opensubdiv)					# for surface subdivision
+		-DWITH_OPENVDB=$(usex openvdb)							# advanced remesh and smoke
+		-DWITH_OPENVDB_BLOSC=$(usex openvdb)					# compression for OpenVDB
+		-DWITH_NANOVDB=$(usex nanovdb)							# OpenVDB for rendering on the GPU
+		-DWITH_QUADRIFLOW=$(usex quadriflow)					# remesher
+		-DWITH_SDL=$(usex sdl)									# for sound and joystick support
 		-DWITH_SDL_DYNLOAD=$(usex sdl)
 		-DWITH_STATIC_LIBS=$(usex portable)
 		-DWITH_SYSTEM_EIGEN3=$(usex !portable)
@@ -343,11 +345,11 @@ src_configure() {
 		-DWITH_GHOST_DEBUG=$(usex debug)
 		-DWITH_CXX_GUARDEDALLOC=$(usex debug)
 		-DWITH_CXX11_ABI=ON
-		-DWITH_USD=$(usex usd)                                # export format support
+		-DWITH_USD=$(usex usd)									# export format support
 		-DUSD_ROOT_DIR=/opt/openusd
 		-DUSD_LIBRARY=/opt/openusd/lib/libusd_ms.so
 		-DWITH_TBB=$(usex tbb)
-		-DWITH_NINJA_POOL_JOBS=OFF                            # for machines with 16GB of RAM or less
+		-DWITH_NINJA_POOL_JOBS=OFF								# for machines with 16GB of RAM or less
 		-DBUILD_SHARED_LIBS=OFF
 		-Wno-dev
 	)
