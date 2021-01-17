@@ -8,7 +8,7 @@ HOMEPAGE="https://git.blender.org/gitweb/gitweb.cgi/blender-addons-contrib.git"
 EGIT_REPO_URI="https://git.blender.org/blender-addons-contrib.git"
 
 LICENSE="GPL-2"
-SLOT="2.92"
+SLOT="2.93"
 KEYWORDS="~amd64 ~x86"
 IUSE=""
 
