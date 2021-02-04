@@ -1,6 +1,6 @@
 diff -Naur a/release/scripts/presets/keyconfig/blender.py b/release/scripts/presets/keyconfig/blender.py
---- a/release/scripts/presets/keyconfig/blender.py	2020-12-24 20:07:32.000000000 +0300
-+++ b/release/scripts/presets/keyconfig/blender.py	2020-12-27 20:56:46.597343465 +0300
+--- a/release/scripts/presets/keyconfig/Blender.py	2020-12-24 20:07:32.000000000 +0300
++++ b/release/scripts/presets/keyconfig/Blender.py	2020-12-27 20:56:46.597343465 +0300
 @@ -28,6 +28,7 @@
          description=(
              "Mouse button used for selection"
