@@ -3,7 +3,7 @@
 
 EAPI=7
 
-PYTHON_COMPAT=( python3_7 )
+PYTHON_COMPAT=( python3_9 )
 
 inherit cmake-utils flag-o-matic fortran-2 python-any-r1 toolchain-funcs
 

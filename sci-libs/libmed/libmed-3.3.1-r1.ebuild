@@ -5,7 +5,7 @@ EAPI=6
 
 FORTRAN_NEEDED=fortran
 # NOTE:The build for multiple python versions should be possible but complecated for the build system
-PYTHON_COMPAT=( python2_7 python3_{6,7} )
+PYTHON_COMPAT=( python2_7 python3_{6,9} )
 
 inherit eutils toolchain-funcs fortran-2 python-single-r1 cmake-utils
 

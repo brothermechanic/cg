@@ -3,7 +3,7 @@
 
 EAPI=6
 
-PYTHON_COMPAT=( python3_7 )
+PYTHON_COMPAT=( python3_9 )
 
 inherit cmake-multilib eutils python-any-r1 toolchain-funcs
 

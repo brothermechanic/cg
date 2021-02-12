@@ -3,7 +3,7 @@
 
 EAPI=6
 
-PYTHON_COMPAT=( python2_7 python3_{4,5,6} )
+PYTHON_COMPAT=( python2_7 python3_{4,5,9} )
 inherit distutils-r1 udev user linux-info gnome2-utils git-r3
 
 DESCRIPTION="A Linux device manager for Logitech's Unifying Receiver peripherals"

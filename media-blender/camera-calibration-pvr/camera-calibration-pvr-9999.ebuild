@@ -2,7 +2,7 @@
 # Distributed under the terms of the GNU General Public License v2
 
 EAPI=6
-PYTHON_COMPAT=( python3_7 ) 
+PYTHON_COMPAT=( python3_9 ) 
 inherit git-r3 distutils-r1 
 
 DESCRIPTION="Blender addon. Camera Calibration using Perspective Views of Rectangles"
