@@ -19,7 +19,7 @@ if [[ ${PV} == 9999 ]]; then
 	EGIT_BRANCH="master"
 	#EGIT_COMMIT=""
     KEYWORDS=""
-	MY_PV="2.92"
+	MY_PV="2.93"
 else
 	#SRC_URI="https://download.blender.org/source/${P}.tar.xz"
 	MY_PV="$(ver_cut 1-2)"

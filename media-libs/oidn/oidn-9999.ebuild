@@ -3,9 +3,9 @@
 
 EAPI=7
 
-PYTHON_COMPAT=( python2_7 python3_{6,7,9} )
+PYTHON_COMPAT=( python3_{7..9} )
 
-inherit cmake-utils python-single-r1 eutils
+inherit cmake python-single-r1 eutils
 
 DESCRIPTION="Intel(R) Open Image Denoise library"
 HOMEPAGE="http://www.openimagedenoise.org/"
@@ -22,7 +22,7 @@ fi
 
 LICENSE="Apache-2.0"
 SLOT="0"
-IUSE=""
+IUSE="static-libs"
 REQUIRED_USE="${PYTHON_REQUIRED_USE}"
 
 RDEPEND="
@@ -31,10 +31,22 @@ RDEPEND="
 	dev-lang/ispc"
 DEPEND="
 	${RDEPEND}
-	dev-util/cmake"
+	>=dev-util/cmake-3.1.0"
+
+BDEPEND="
+	virtual/pkgconfig
+"
 
 CMAKE_BUILD_TYPE=Release
 
 pkg_setup() {
 	python-single-r1_pkg_setup
+}
+
+src_configure() {
+	local mycmakeargs=(
+		-DOIDN_APPS=OFF
+		-DOIDN_STATIC_LIB=$(usex static-libs ON OFF)
+	)
+	cmake_src_configure
 }

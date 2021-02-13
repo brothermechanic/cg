@@ -64,14 +64,14 @@ PATCHES=(
 )
 
 pkg_setup() {
-	usex nanovdb && S=${WORKDIR}/openvdb-feature-nanovdb
+	use nanovdb && S=${WORKDIR}/openvdb-feature-nanovdb
 	use python && python-single-r1_pkg_setup
 }
 
 src_prepare() {
 	sed -i -e "s|DESTINATION doc|DESTINATION share/doc/${P}|g" doc/CMakeLists.txt || die
 	sed -i -e "s|DESTINATION lib|DESTINATION $(get_libdir)|g" {,${PN}/${PN}/}CMakeLists.txt || die
-	usex nanovdb && sed -i -e "s|DESTINATION lib|DESTINATION $(get_libdir)|g" {,nanovdb/}CMakeLists.txt || die
+	use nanovdb && ( sed -i -e "s|DESTINATION lib|DESTINATION $(get_libdir)|g" {,nanovdb/}CMakeLists.txt || die )
 	sed -i -e "s|  lib|  $(get_libdir)|g" ${PN}/${PN}/CMakeLists.txt || die
 	sed -i -e "s/MINIMUM_PYTHON_VERSION 2.7/MINIMUM_PYTHON_VERSION 3.7/g" CMakeLists.txt || die
 	sed -i -e "s|PC_IlmBase QUIET IlmBase|PC_IlmBase REQUIRED IlmBase|g" cmake/FindIlmBase.cmake || die

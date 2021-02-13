@@ -3,7 +3,8 @@
 
 EAPI=7
 
-inherit cmake-utils
+CMAKE_ECLASS=cmake
+inherit cmake-multilib flag-o-matic
 
 DESCRIPTION="OpenEXR ILM Base libraries"
 HOMEPAGE="http://openexr.com/"
@@ -13,40 +14,42 @@ MY_P="${MY_PN}-${PV}"
 SRC_URI="mirror://githubcl/AcademySoftwareFoundation/${MY_PN}/tar.gz/v${PV} -> ${MY_P}.tar.gz"
 
 LICENSE="BSD"
-SLOT="0/24" # based on SONAME
+SLOT="0/$(ver_cut 1)$(ver_cut 2)" # based on SONAME
 
-KEYWORDS="amd64"
+KEYWORDS="~amd64 ~arm ~arm64 hppa ~ia64 ~mips ~ppc ~ppc64 sparc ~x86 ~amd64-linux ~x86-linux ~x64-macos ~x86-solaris"
 
-IUSE="static-libs test"
+IUSE="large-stack static-libs test"
+
+RESTRICT="!test? ( test )"
+
+BDEPEND="virtual/pkgconfig"
 
 DOCS=( README.md )
+
+MULTILIB_WRAPPED_HEADERS=( /usr/include/OpenEXR/IlmBaseConfig.h )
+
+CMAKE_BUILD_TYPE=Release
 
 S="${WORKDIR}/${MY_P}/IlmBase"
 
 src_prepare() {
-	cmake-utils_src_prepare
+	if use abi_x86_32; then
+		eapply "${FILESDIR}"/${P}-0001-disable-failing-test-on-x86_32.patch
+	fi
 	sed -i -e "/symlink/d" config/LibraryDefine.cmake || die
+	multilib_foreach_abi cmake_src_prepare
 }
 
 src_configure() {
 	local mycmakeargs=(
-		-DCMAKE_BUILD_TYPE=Release
 		-DCMAKE_INSTALL_INCLUDEDIR=/usr/include
 		-DCMAKE_INSTALL_LIBDIR=/usr/$(get_libdir)
 		-DBUILD_SHARED_LIBS=ON
 		-DILMBASE_BUILD_BOTH_STATIC_SHARED=$(usex static-libs)
 		-DBUILD_TESTING=$(usex test)
+		-DILMBASE_INSTALL_PKG_CONFIG=ON
+		-DILMBASE_ENABLE_LARGE_STACK=$(usex large-stack)
 	)
-	cmake-utils_src_configure
+	multilib_foreach_abi cmake_src_configure
 }
 
-src_install() {
-	cmake-utils_src_install
-
-	into /usr/$(get_libdir)
-	dosym libHalf-2_4.so		/usr/$(get_libdir)/libHalf.so
-	dosym libIex-2_4.so		/usr/$(get_libdir)/libIex.so
-	dosym libIexMath-2_4.so		/usr/$(get_libdir)/libIexMath.so
-	dosym libIlmThread-2_4.so	/usr/$(get_libdir)/libIlmThread.so
-	dosym libImath-2_4.so		/usr/$(get_libdir)/libImath.so
-}

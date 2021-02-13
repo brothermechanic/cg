@@ -6,12 +6,15 @@ inherit cmake flag-o-matic python-single-r1
 
 DESCRIPTION="Libs for the efficient manipulation of volumetric data"
 HOMEPAGE="http://www.openvdb.org"
-SRC_URI="https://github.com/AcademySoftwareFoundation/${PN}/archive/v${PV}.tar.gz -> ${P}.tar.gz"
+IUSE="cpu_flags_x86_avx cpu_flags_x86_sse4_2 doc libglvnd nanovdb numpy python static-libs test utils abi6-compat abi7-compat abi8-compat"
+
+SRC_URI="https://github.com/AcademySoftwareFoundation/${PN}/archive/v${PV}.tar.gz -> ${P}.tar.gz
+nanovdb? ( https://github.com/AcademySoftwareFoundation/${PN}/archive/feature/nanovdb/v${PV}.tar.gz -> ${P}-nanovdb.tar.gz )"
 
 LICENSE="MPL-2.0"
 SLOT="0"
 KEYWORDS="~amd64 ~x86"
-IUSE="cpu_flags_x86_avx cpu_flags_x86_sse4_2 doc libglvnd numpy python static-libs test utils abi6-compat abi7-compat abi8-compat"
+RESTRICT="mirror"
 REQUIRED_USE="
 	numpy? ( python )
 	^^ ( abi6-compat abi7-compat abi8-compat )
@@ -19,6 +22,7 @@ REQUIRED_USE="
 "
 
 RDEPEND="
+	dev-cpp/tbb
 	>=dev-libs/boost-1.70.0
 	>=dev-libs/c-blosc-1.5.0
 	dev-libs/jemalloc
@@ -33,6 +37,7 @@ RDEPEND="
 	x11-libs/libXinerama
 	x11-libs/libXrandr
 	libglvnd? ( media-libs/libglvnd )
+	nanovdb? ( dev-util/nvidia-cuda-toolkit )
 	python? (
 		${PYTHON_DEPS}
 		$(python_gen_cond_dep '
@@ -41,8 +46,10 @@ RDEPEND="
 		')
 	)"
 
-DEPEND="${RDEPEND}
-	dev-cpp/tbb
+DEPEND="${RDEPEND}"
+
+BDEPEND="
+	>=dev-util/cmake-3.16.2-r1
 	virtual/pkgconfig
 	doc? (
 		app-doc/doxygen
@@ -52,20 +59,28 @@ DEPEND="${RDEPEND}
 		dev-texlive/texlive-latex
 		dev-texlive/texlive-latexextra
 	)
-	test? ( dev-util/cppunit )"
+	test? ( dev-util/cppunit )
+"
+
 
 PATCHES=(
 	"${FILESDIR}/${PN}-7.1.0-0001-Fix-multilib-header-source.patch"
 	"${FILESDIR}/${PN}-8.0.0-remesh.patch"
 )
 
+CMAKE_BUILD_TYPE=Release
+
+S=${WORKDIR}/${PN}-${PV}
+
 pkg_setup() {
+	use nanovdb && S=${WORKDIR}/openvdb-feature-nanovdb
 	use python && python-single-r1_pkg_setup
 }
 
 src_prepare() {
 	sed -i -e "s|DESTINATION doc|DESTINATION share/doc/${P}|g" doc/CMakeLists.txt || die
 	sed -i -e "s|DESTINATION lib|DESTINATION $(get_libdir)|g" {,${PN}/${PN}/}CMakeLists.txt || die
+	use nanovdb && ( sed -i -e "s|DESTINATION lib|DESTINATION $(get_libdir)|g" {,nanovdb/}CMakeLists.txt || die )
 	sed -i -e "s|  lib|  $(get_libdir)|g" ${PN}/${PN}/CMakeLists.txt || die
 	sed -i -e "s/MINIMUM_PYTHON_VERSION 2.7/MINIMUM_PYTHON_VERSION 3.7/g" CMakeLists.txt || die
 	sed -i -e "s|PC_IlmBase QUIET IlmBase|PC_IlmBase REQUIRED IlmBase|g" cmake/FindIlmBase.cmake || die
