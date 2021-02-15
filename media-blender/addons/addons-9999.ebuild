@@ -7,9 +7,18 @@ DESCRIPTION="A central repository of Blender addons"
 HOMEPAGE="https://git.blender.org/gitweb/gitweb.cgi/blender-addons.git"
 EGIT_REPO_URI="https://git.blender.org/blender-addons.git"
 
+if [[ ${PV} == 9999 ]]; then
+        EGIT_BRANCH="master"
+	KEYWORDS=""
+        MY_PV="2.93"
+else
+        MY_PV="$(ver_cut 1-2)"
+        EGIT_BRANCH="blender-v${MY_PV}-release" 
+        KEYWORDS="~amd64 ~x86"
+fi
+SLOT="${MY_PV}"
+
 LICENSE="GPL-2"
-SLOT="2.93"
-KEYWORDS="~amd64 ~x86"
 IUSE=""
 
 DEPEND="${PYTHON_DEPS}"
@@ -21,7 +30,7 @@ RDEPEND="${DEPEND}"
 
 src_install() {
 	egit_clean
-    insinto /usr/share/blender/${SLOT}/scripts/${PN}/
+	insinto /usr/share/blender/${SLOT}/scripts/${PN}/
 	doins -r "${S}"/*
 	python_optimize "${ED}/usr/share/blender/${SLOT}/scripts/${PN}/"
 }
