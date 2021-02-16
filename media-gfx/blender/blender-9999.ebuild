@@ -93,7 +93,7 @@ RDEPEND="${PYTHON_DEPS}
 		x11-libs/libX11
 		x11-libs/libXxf86vm
 	)
-	opencolorio? ( media-libs/opencolorio )
+	opencolorio? ( =media-libs/opencolorio-2* )
 	cycles? ( media-libs/freeglut )
 	openimageio? ( media-libs/openimageio:= )
 	cuda? ( dev-util/nvidia-cuda-toolkit:= )

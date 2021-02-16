@@ -8,7 +8,7 @@ inherit git-r3 distutils-r1
 DESCRIPTION="Blender addon. Camera Calibration using Perspective Views of Rectangles"
 HOMEPAGE="https://blenderartists.org/forum/showthread.php?414359-Add-on-Camera-Calibration-using-Perspective-Views-of-Rectangles"
 EGIT_REPO_URI="https://github.com/mrossini-ethz/camera-calibration-pvr.git"
-EGIT_BRANCH="blender-2.8"
+EGIT_BRANCH="blender-2-80"
 LICENSE="GPL-2"
 SLOT="0"
 KEYWORDS="~amd64 ~x86"
