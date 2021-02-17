@@ -23,6 +23,7 @@ REQUIRED_USE="
 RDEPEND="
 	dev-cpp/pystring
 	dev-python/pybind11
+	media-libs/ilmbase
 	>=dev-cpp/yaml-cpp-0.5
 	dev-libs/tinyxml
 	opengl? (
@@ -72,7 +73,7 @@ src_configure() {
 	# - OpenImageIO is required for building ociodisplay and ocioconvert (USE opengl)
 	# - OpenGL, GLUT and GLEW is required for building ociodisplay (USE opengl)
 	local mycmakeargs=(
-                -DCMAKE_INSTALL_PREFIX="${EPREFIX}/usr/"
+		-DCMAKE_INSTALL_PREFIX="${EPREFIX}/usr/"
 		-DOCIO_BUILD_NUKE=OFF
 		-DBUILD_SHARED_LIBS=ON
 		-DOCIO_BUILD_STATIC=$(usex static-libs)

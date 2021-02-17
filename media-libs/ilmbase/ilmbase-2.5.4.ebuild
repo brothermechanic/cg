@@ -1,4 +1,4 @@
-# Copyright 1999-2020 Gentoo Authors
+# Copyright 1999-2021 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
 
 EAPI=7
@@ -7,11 +7,11 @@ CMAKE_ECLASS=cmake
 inherit cmake-multilib flag-o-matic
 
 DESCRIPTION="OpenEXR ILM Base libraries"
-HOMEPAGE="http://openexr.com/"
+HOMEPAGE="https://www.openexr.com/"
 
 MY_PN="openexr"
 MY_P="${MY_PN}-${PV}"
-SRC_URI="mirror://githubcl/AcademySoftwareFoundation/${MY_PN}/tar.gz/v${PV} -> ${MY_P}.tar.gz"
+SRC_URI="https://github.com/AcademySoftwareFoundation/openexr/archive/v${PV}.tar.gz -> ${P}.tar.gz"
 
 LICENSE="BSD"
 SLOT="0/$(ver_cut 1)$(ver_cut 2)" # based on SONAME
@@ -36,20 +36,17 @@ src_prepare() {
 	if use abi_x86_32; then
 		eapply "${FILESDIR}"/${P}-0001-disable-failing-test-on-x86_32.patch
 	fi
-	sed -i -e "/symlink/d" config/LibraryDefine.cmake || die
 	multilib_foreach_abi cmake_src_prepare
 }
 
-src_configure() {
+multilib_src_configure() {
 	local mycmakeargs=(
-		-DCMAKE_INSTALL_INCLUDEDIR=/usr/include
-		-DCMAKE_INSTALL_LIBDIR=/usr/$(get_libdir)
 		-DBUILD_SHARED_LIBS=ON
 		-DILMBASE_BUILD_BOTH_STATIC_SHARED=$(usex static-libs)
 		-DBUILD_TESTING=$(usex test)
-		-DILMBASE_INSTALL_PKG_CONFIG=ON
 		-DILMBASE_ENABLE_LARGE_STACK=$(usex large-stack)
+		-DILMBASE_INSTALL_PKG_CONFIG=ON
 	)
-	multilib_foreach_abi cmake_src_configure
+	cmake_src_configure
 }
 
