@@ -129,7 +129,7 @@ RDEPEND="${PYTHON_DEPS}
 	nls? ( virtual/libiconv )
 	oidn? ( media-libs/oidn )
 	usd? ( media-libs/openusd[monolithic,-python] )
-	gltf-draco? ( media-libs/draco )
+	gltf-draco? ( media-libs/draco[gltf] )
 	addons? ( media-blender/addons )
 	addons_contrib? ( media-blender/addons_contrib )
 	llvm? ( sys-devel/llvm:= )
