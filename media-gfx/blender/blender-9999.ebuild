@@ -25,7 +25,7 @@ else
 	MY_PV="$(ver_cut 1-2)"
 	EGIT_REPO_URI="https://git.blender.org/blender"
 	EGIT_SUBMODULES=( release/datafiles/locale )
-	EGIT_BRANCH="blender-v${MY_PV}-release" 
+	EGIT_BRANCH="blender-v${MY_PV}-release"
     #EGIT_COMMIT="3e85bb34d0d792b49cf4923f781d98791c5a161c"
 	KEYWORDS="~amd64 ~x86"
 fi
@@ -33,7 +33,7 @@ SLOT="${MY_PV}"
 
 IUSE_DESKTOP="+cg -portable +X +addons +addons_contrib +nls -ndof"
 IUSE_GPU="+opengl -optix cuda opencl llvm -sm_30 -sm_35 -sm_50 -sm_52 -sm_61 -sm_70 -sm_75"
-IUSE_LIBS="+cycles sdl jack openal +freestyle -osl +openvdb -nanovdb abi6-compat abi7-compat abi8-compat +opensubdiv +opencolorio +openimageio +collada -alembic +gltf-draco +fftw +oidn +quadriflow -usd +bullet -valgrind +jemalloc"
+IUSE_LIBS="+cycles sdl jack openal +freestyle -osl +openvdb nanovdb abi6-compat abi7-compat abi8-compat +opensubdiv +opencolorio +openimageio +collada -alembic +gltf-draco +fftw +oidn +quadriflow -usd +bullet -valgrind +jemalloc"
 IUSE_CPU="+openmp embree +sse +tbb"
 IUSE_TEST="-debug -doc -man"
 IUSE_IMAGE="-dpx -dds +openexr jpeg2k tiff +hdr"
@@ -57,8 +57,7 @@ REQUIRED_USE="${PYTHON_REQUIRED_USE}
 	oidn? ( cycles tbb )
 	openvdb? (
 		^^ ( abi6-compat abi7-compat abi8-compat )
-		nanovdb? ( cuda )
-		tbb
+		cycles tbb
 	)
 "
 
@@ -72,7 +71,7 @@ RDEPEND="${PYTHON_DEPS}
 	$(python_gen_cond_dep '
 		dev-python/numpy[${PYTHON_MULTI_USEDEP}]
 		dev-python/requests[${PYTHON_MULTI_USEDEP}]
-        dev-libs/boost[python,nls?,threads(+),${PYTHON_MULTI_USEDEP}] 
+        dev-libs/boost[python,nls?,threads(+),${PYTHON_MULTI_USEDEP}]
 	')
 	dev-cpp/gflags
 	sys-libs/zlib:=
@@ -100,8 +99,11 @@ RDEPEND="${PYTHON_DEPS}
 	osl? ( media-libs/osl:= )
 	embree? ( media-libs/embree[raymask,tbb?] )
 	openvdb? (
-		media-gfx/openvdb[nanovdb(-)?,abi6-compat(-)?,abi7-compat(-)?,abi8-compat(-)?]
+		media-gfx/openvdb[abi6-compat(-)?,abi7-compat(-)?,abi8-compat(-)?]
 		dev-libs/c-blosc:=
+	)
+	nanovdb? (
+		media-libs/nanovdb[cuda?,openvdb?]
 	)
 	optix? ( dev-libs/optix )
 	sdl? ( media-libs/libsdl[sound,joystick] )
@@ -170,6 +172,7 @@ pkg_setup() {
 }
 
 src_prepare() {
+	python_setup
 	cmake_src_prepare
 	if use addons_contrib; then
         #set BLENDER_ADDONS_DIR to userpref
@@ -208,6 +211,7 @@ src_prepare() {
 }
 
 src_configure() {
+	python_setup
 	if use cg; then
         eapply "${FILESDIR}"/cg-addons.patch
         eapply "${FILESDIR}"/cg-defaults.patch
@@ -332,6 +336,7 @@ src_configure() {
 		-DWITH_OPENVDB=$(usex openvdb)							# advanced remesh and smoke
 		-DWITH_OPENVDB_BLOSC=$(usex openvdb)					# compression for OpenVDB
 		-DWITH_NANOVDB=$(usex nanovdb)							# OpenVDB for rendering on the GPU
+		-DNANOVDB_INCLUDE_DIR=/usr/include
 		-DWITH_QUADRIFLOW=$(usex quadriflow)					# remesher
 		-DWITH_SDL=$(usex sdl)									# for sound and joystick support
 		-DWITH_SDL_DYNLOAD=$(usex sdl)
