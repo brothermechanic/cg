@@ -24,9 +24,9 @@ IUSE=""
 DEPEND="${PYTHON_DEPS}"
 RDEPEND="${DEPEND}"
 
-#PATCHES=(
-#	"${FILESDIR}/gltf.patch"
-#)
+PATCHES=(
+	"${FILESDIR}/node_wrangler.patch"
+)
 
 src_install() {
 	egit_clean
