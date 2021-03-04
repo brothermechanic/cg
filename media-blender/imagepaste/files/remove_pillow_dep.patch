@@ -1,0 +1,36 @@
+diff --git a/__init__.py b/__init__.py
+index 02fac82..761dc6f 100644
+--- a/__init__.py
++++ b/__init__.py
+@@ -29,8 +29,9 @@ bl_info = {
+ import bpy
+ from bpy.types import Operator, AddonPreferences
+ from bpy.props import StringProperty, BoolProperty
+-from .PIL import ImageGrab
+-import os
++from PIL import Image
++import os, io
++import subprocess
+ 
+ #todo
+ #copy to clipboard - not viable
+@@ -43,7 +44,9 @@ times_executed = 0
+ def grabImage():
+     global times_executed
+ 
+-    img = ImageGrab.grabclipboard()
++    p = subprocess.Popen(['xclip','-selection', 'clipboard', '-o'], stdout=subprocess.PIPE)
++    data = p.stdout.read()
++    img = Image.open(io.BytesIO(data))
+ 
+     if img == None:
+         return 0
+@@ -61,7 +64,7 @@ def grabImage():
+         # just use the default location otherwise
+         Directory = bpy.context.preferences.addons[__name__].preferences.default_img_dir
+ 
+-    img_dir = Directory + '\\' + img_name
++    img_dir = Directory + '/' + img_name
+ 
+     try:
+         img.save(img_dir) 
