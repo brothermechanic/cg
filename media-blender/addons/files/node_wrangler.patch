@@ -32,7 +32,7 @@
      rough: StringProperty(
          name='Roughness',
 -        default='roughness rough rgh',
-+        default='roughness rough rgh r R',
++        default='roughness rough rgh r R orm ORM',
          description='Naming Components for roughness maps')
      gloss: StringProperty(
          name='Gloss',
