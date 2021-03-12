@@ -8,7 +8,7 @@ inherit eutils
 
 DESCRIPTION="Lightworks is the fastest, most accessible and focused NLE in the industry"
 HOMEPAGE="http://www.lwks.com/"
-SRC_URI="https://cdn.lwks.com/releases/lightworks-2020.1-r122068-amd64.deb"
+SRC_URI="https://cdn.lwks.com/releases/2021.1/lightworks_2021.1_r126716.deb"
 
 LICENSE="EditShare"
 SLOT="0"
@@ -87,7 +87,6 @@ src_install() {
 	doins -r usr/lib/${PN}/* || die "doins lib failed"
 
 	exeinto /usr/lib64/${PN}
-	doexe usr/lib/${PN}/spawn || die "doins lib-exe failed"
 	doexe usr/lib/${PN}/ntcardvt || die "doins lib-exe failed"
 
 	fperms a+rw "usr/share/lightworks/Preferences"
