@@ -3,6 +3,8 @@
 
 EAPI=7
 
+inherit flag-o-matic
+
 DESCRIPTION="C++ functions matching the interface and behavior of python string methods"
 HOMEPAGE="https://github.com/imageworks/pystring"
 
@@ -14,10 +16,17 @@ else
 	KEYWORDS="~amd64"
 fi
 
+BDEPEND="
+	virtual/libc
+	sys-devel/libtool
+"
+RESTRICT="mirror"
+
 LICENSE="all-rights-reserved"
 SLOT="0"
 
 src_compile() {
+	sed -i -e "s|-O3|${CXXFLAGS}|g" Makefile || die
 	emake LIBDIR="${S}" install
 	mkdir pystring || die
 	mv pystring.h pystring || die
