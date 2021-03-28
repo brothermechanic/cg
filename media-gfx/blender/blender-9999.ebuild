@@ -50,7 +50,7 @@ REQUIRED_USE="${PYTHON_REQUIRED_USE}
 	tiff? ( openimageio )
 	openexr? ( openimageio )
 	cuda? ( cycles )
-	optix? ( cycles cuda opencl )
+	optix? ( cycles cuda )
 	cycles? ( openexr tiff openimageio opencolorio )
 	osl? ( cycles )
 	embree? ( cycles tbb )
