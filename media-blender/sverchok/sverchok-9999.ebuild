@@ -30,8 +30,8 @@ src_install() {
     insinto ${BLENDER_ADDONS_DIR}/addons/${PN}
 	doins -r "${S}"/*
     if use freecad ; then
-        insinto /usr/lib/python3.7/site-packages/
-        echo "/usr/lib64/freecad/lib64/" > ${D}/usr/lib/python3.7/site-packages/freecad_path.pth || die
+        insinto $(python_get_sitedir)/
+        echo "/usr/lib64/freecad/lib64/" > ${D}/$(python_get_sitedir)/freecad_path.pth || die
     fi
     python_optimize "${ED}/${BLENDER_ADDONS_DIR}/${PN}/"
 }
