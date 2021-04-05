@@ -15,7 +15,7 @@ SRC_URI="http://ceres-solver.org/${P}.tar.gz"
 LICENSE="sparse? ( BSD ) !sparse? ( LGPL-2.1 ) cxsparse? ( BSD )"
 SLOT="0/1"
 KEYWORDS="amd64 ~x86 ~amd64-linux ~x86-linux"
-IUSE="cxsparse c++11 doc examples gflags lapack openmp +schur sparse test"
+IUSE="cxsparse doc examples gflags lapack openmp +schur sparse test"
 RESTRICT="
 	mirror
 	!test? ( test )
@@ -83,7 +83,6 @@ src_configure() {
 		-DBUILD_BENCHMARKS=OFF
 		-DBUILD_EXAMPLES=OFF
 		-DENABLE_TESTING="$(usex test)"
-		-DCXX11="$(usex c++11)"
 		-DBUILD_DOCUMENTATION="$(usex doc)"
 		-DGFLAGS="$(usex gflags)"
 		-DLAPACK="$(usex lapack)"
