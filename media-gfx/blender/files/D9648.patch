@@ -1,0 +1,109 @@
+Index: source/blender/makesdna/DNA_modifier_types.h
+===================================================================
+--- a/source/blender/makesdna/DNA_modifier_types.h
++++ b/source/blender/makesdna/DNA_modifier_types.h
+@@ -1200,6 +1200,7 @@
+   MOD_SIMPLEDEFORM_MODE_BEND = 2,
+   MOD_SIMPLEDEFORM_MODE_TAPER = 3,
+   MOD_SIMPLEDEFORM_MODE_STRETCH = 4,
++  MOD_SIMPLEDEFORM_MODE_SHEAR = 5,
+ };
+ 
+ enum {
+Index: source/blender/makesrna/intern/rna_modifier.c
+===================================================================
+--- a/source/blender/makesrna/intern/rna_modifier.c
++++ b/source/blender/makesrna/intern/rna_modifier.c
+@@ -245,7 +245,7 @@
+      "SIMPLE_DEFORM",
+      ICON_MOD_SIMPLEDEFORM,
+      "Simple Deform",
+-     "Deform the shape by twisting, bending, tapering or stretching"},
++     "Deform the shape by twisting, bending, tapering, stretching or shearing"},
+     {eModifierType_Smooth,
+      "SMOOTH",
+      ICON_MOD_SMOOTH,
+@@ -4416,6 +4416,11 @@
+        0,
+        "Stretch",
+        "Stretch the object along the Z axis of the modifier space"},
++      {MOD_SIMPLEDEFORM_MODE_SHEAR,
++       "SHEAR",
++       0,
++       "Shear",
++       "Shear the object along the Z axis of the modifier space"},
+       {0, NULL, 0, NULL, NULL},
+   };
+ 
+Index: source/blender/modifiers/intern/MOD_simpledeform.c
+===================================================================
+--- a/source/blender/modifiers/intern/MOD_simpledeform.c
++++ b/source/blender/modifiers/intern/MOD_simpledeform.c
+@@ -203,6 +203,25 @@
+   }
+ }
+ 
++static void simpleDeform_shear(const float factor,
++                              const int axis,
++                              const float dcut[3],
++                              float r_co[3])
++{
++  float x = r_co[0], y = r_co[1], z = r_co[2];
++
++  /* Check for deform_axis.x so we can deform the x-coordinates 'Along the z-axis', rather than along the y-axis.
++   * For consistency with other deform modes and as stated by the modifier tooltip. */
++  if (axis == 0) {
++    r_co[2] = z + y * factor;
++  }
++  else {
++    r_co[2] = z + x * factor;
++  }
++
++  add_v3_v3(r_co, dcut);
++}
++
+ /* simple deform modifier */
+ static void SimpleDeformModifier_do(SimpleDeformModifierData *smd,
+                                     const ModifierEvalContext *UNUSED(ctx),
+@@ -225,7 +244,7 @@
+   /* This is historically the lock axis, _not_ the deform axis as the name would imply */
+   const int deform_axis = smd->deform_axis;
+   int lock_axis = smd->axis;
+-  if (smd->mode == MOD_SIMPLEDEFORM_MODE_BEND) { /* Bend mode shouldn't have any lock axis */
++  if (smd->mode == MOD_SIMPLEDEFORM_MODE_BEND || smd->mode == MOD_SIMPLEDEFORM_MODE_SHEAR) { /* Bend and Shear mode shouldn't have any lock axis. */
+     lock_axis = 0;
+   }
+   else {
+@@ -264,8 +283,8 @@
+ 
+   /* Update limits if needed */
+   int limit_axis = deform_axis;
+-  if (smd->mode == MOD_SIMPLEDEFORM_MODE_BEND) {
+-    /* Bend is a special case. */
++  if (smd->mode == MOD_SIMPLEDEFORM_MODE_BEND || smd->mode == MOD_SIMPLEDEFORM_MODE_SHEAR) {
++    /* Bend and Shear are special cases. */
+     switch (deform_axis) {
+       case 0:
+         ATTR_FALLTHROUGH;
+@@ -313,6 +332,9 @@
+     case MOD_SIMPLEDEFORM_MODE_STRETCH:
+       simpleDeform_callback = simpleDeform_stretch;
+       break;
++    case MOD_SIMPLEDEFORM_MODE_SHEAR:
++      simpleDeform_callback = simpleDeform_shear;
++      break;
+     default:
+       return; /* No simpledeform mode? */
+   }
+@@ -475,7 +497,10 @@
+ 
+   uiLayoutSetPropSep(layout, true);
+ 
+-  if (ELEM(deform_method, MOD_SIMPLEDEFORM_MODE_TAPER, MOD_SIMPLEDEFORM_MODE_STRETCH)) {
++  if (ELEM(deform_method,
++           MOD_SIMPLEDEFORM_MODE_TAPER,
++           MOD_SIMPLEDEFORM_MODE_STRETCH,
++           MOD_SIMPLEDEFORM_MODE_SHEAR)) {
+     uiItemR(layout, ptr, "factor", 0, NULL, ICON_NONE);
+   }
+   else {

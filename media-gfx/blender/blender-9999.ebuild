@@ -176,6 +176,9 @@ src_prepare() {
 	cmake_src_prepare
 	if use addons_contrib; then
         #set BLENDER_ADDONS_DIR to userpref
+        if ! [ -d "${BLENDER_ADDONS_DIR}" ]; then
+        	BLENDER_ADDONS_DIR="/usr/share/blender/${SLOT}/scripts/addons/"
+        fi
         sed -i -e "s|.pythondir.*|.pythondir = \"${BLENDER_ADDONS_DIR}\",|" "${S}"/release/datafiles/userdef/userdef_default.c || die
     fi
 	# remove some bundled deps
@@ -212,6 +215,12 @@ src_prepare() {
 
 src_configure() {
 	python_setup
+	if [[ ${PV} != 9999 ]] ; then
+		eapply "${FILESDIR}/ociio_2.0.0.patch"
+    fi
+	eapply "${FILESDIR}/x112.patch"
+	eapply "${FILESDIR}/D9648.patch"
+
 	if use cg; then
         eapply "${FILESDIR}"/cg-addons.patch
         eapply "${FILESDIR}"/cg-defaults.patch
@@ -350,8 +359,8 @@ src_configure() {
 		-DWITH_CXX_GUARDEDALLOC=$(usex debug)
 		-DWITH_CXX11_ABI=ON
 		-DWITH_USD=$(usex usd)									# export format support
-		-DUSD_ROOT_DIR=/opt/openusd
-		-DUSD_LIBRARY=/opt/openusd/lib/libusd_ms.so
+		#-DUSD_ROOT_DIR=/opt/openusd
+		#-DUSD_LIBRARY=/opt/openusd/lib/libusd_ms.so
 		-DWITH_TBB=$(usex tbb)
 		-DWITH_NINJA_POOL_JOBS=OFF								# for machines with 16GB of RAM or less
 		-DBUILD_SHARED_LIBS=OFF
