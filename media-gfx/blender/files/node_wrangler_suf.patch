@@ -5,7 +5,7 @@
      base_color: StringProperty(
          name='Base Color',
 -        default='diffuse diff albedo base col color',
-+        default='d diffuse diff albedo base col color',
++        default='d D diffuse diff albedo base col color',
          description='Naming Components for Base Color maps')
      sss_color: StringProperty(
          name='Subsurface Color',
@@ -15,7 +15,7 @@
      metallic: StringProperty(
          name='Metallic',
 -        default='metallic metalness metal mtl',
-+        default='m metallic metalness metal mtl',
++        default='m M metallic metalness metal mtl',
          description='Naming Components for metallness maps')
      specular: StringProperty(
          name='Specular',
@@ -25,7 +25,7 @@
      normal: StringProperty(
          name='Normal',
 -        default='normal nor nrm nrml norm',
-+        default='n normal nor nrm nrml norm',
++        default='n N normal nor nrm nrml norm',
          description='Naming Components for Normal maps')
      bump: StringProperty(
          name='Bump',
@@ -35,7 +35,7 @@
      rough: StringProperty(
          name='Roughness',
 -        default='roughness rough rgh',
-+        default='r roughness rough rgh',
++        default='r R orm ORM roughness rough rgh',
          description='Naming Components for roughness maps')
      gloss: StringProperty(
          name='Gloss',

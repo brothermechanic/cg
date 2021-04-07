@@ -219,7 +219,6 @@ src_configure() {
 		eapply "${FILESDIR}/ociio_2.0.0.patch"
     fi
 	eapply "${FILESDIR}/x112.patch"
-	eapply "${FILESDIR}/D9648.patch"
 
 	if use cg; then
         eapply "${FILESDIR}"/cg-addons.patch
