@@ -7,13 +7,13 @@ HOMEPAGE="https://gumroad.com/l/BmQWu"
 EGIT_REPO_URI="https://github.com/Yeetus3141/ImagePaste"
 
 LICENSE="GPL-3"
-SLOT="0"
 KEYWORDS="~amd64 ~x86"
 IUSE=""
+SLOT="0"
 
 DEPEND=""
 RDEPEND="
-		media-gfx/blender[addons]
+		media-gfx/blender:=[addons]
 		>=dev-python/pillow-6.0.0[xcb]
 "
 
@@ -23,9 +23,9 @@ PATCHES=(
 
 src_prepare() {
 	default
-	local MY_PV=$(has_version -r "media-gfx/blender:2.93[addons]" && echo 2.93 || echo 2.92)
+	local MY_BV="$(has_version -r "media-gfx/blender:2.93[addons]" && echo 2.93 || echo 2.92)"
 	if [[ -z ${BLENDER_ADDONS_DIR} ]]; then
-		BLENDER_ADDONS_DIR="/usr/share/blender/${MY_PV}/scripts"
+		BLENDER_ADDONS_DIR="/usr/share/blender/${MY_BV}/scripts"
 	fi
 }
 

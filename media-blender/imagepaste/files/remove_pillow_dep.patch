@@ -2,18 +2,16 @@ diff --git a/__init__.py b/__init__.py
 index 02fac82..761dc6f 100644
 --- a/__init__.py
 +++ b/__init__.py
-@@ -29,8 +29,9 @@ bl_info = {
- import bpy
- from bpy.types import Operator, AddonPreferences
- from bpy.props import StringProperty, BoolProperty
--from .PIL import ImageGrab
--import os
+@@ -33,7 +33,8 @@ import addon_utils
+
+ from io import BytesIO
+ from .win32 import win32clipboard
+-from .PIL import ImageGrab, Image
 +from PIL import Image
-+import os, io
 +import subprocess
- 
- #todo
- #copy to clipboard - not viable
+ import os
+ import random
+
 @@ -43,7 +44,9 @@ times_executed = 0
  def grabImage():
      global times_executed
