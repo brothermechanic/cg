@@ -215,7 +215,7 @@ src_prepare() {
 
 src_configure() {
 	python_setup
-	if [[ ${PV} = 2.92 ]] ; then
+	if [[ ${SLOT} == "2.92" ]] ; then
 		eapply "${FILESDIR}/ociio_2.0.0.patch"
     fi
 	eapply "${FILESDIR}/x112.patch"
