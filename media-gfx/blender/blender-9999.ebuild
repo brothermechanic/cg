@@ -19,7 +19,7 @@ if [[ ${PV} == 9999 ]]; then
 	EGIT_BRANCH="master"
 	#EGIT_COMMIT=""
     KEYWORDS=""
-	MY_PV="2.93"
+	MY_PV="3.0"
 else
 	#SRC_URI="https://download.blender.org/source/${P}.tar.xz"
 	MY_PV="$(ver_cut 1-2)"
@@ -215,7 +215,7 @@ src_prepare() {
 
 src_configure() {
 	python_setup
-	if [[ ${PV} != 9999 ]] ; then
+	if [[ ${PV} = 2.92 ]] ; then
 		eapply "${FILESDIR}/ociio_2.0.0.patch"
     fi
 	eapply "${FILESDIR}/x112.patch"
