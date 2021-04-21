@@ -7,7 +7,7 @@ inherit cmake-utils eutils
 
 DOCV="31342a59eac40f7c24e59c4e8aec6ce46269f169"
 
-DESCRIPTION="Photorgammetry (SFM) software"
+DESCRIPTION="Photogrammetry (SFM) software"
 HOMEPAGE="http://logiciels.ign.fr/?-Micmac,3- https://github.com/micmacIGN/micmac/"
 SRC_URI="https://github.com/micmacIGN/micmac/archive/MMASTER_v${PV}.tar.gz -> ${P}.tar.gz"
 
@@ -43,6 +43,8 @@ PATCHES=(
 	"${FILESDIR}"/cParamNewRechPH.h.patch
 	"${FILESDIR}"/ptxd_h.patch
 	"${FILESDIR}"/cSysCoor.cpp.patch
+	"${FILESDIR}"/0001-Dont-build-ELISE_X11-stuff-when-its-disabled.patch
+	"${FILESDIR}"/0002-Unused-variables.patch
 )
 
 
