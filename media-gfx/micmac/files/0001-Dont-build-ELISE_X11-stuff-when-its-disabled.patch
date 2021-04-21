@@ -1,0 +1,35 @@
+From e077f047b0e1a7908e3c36994c82aedf38ed9600 Mon Sep 17 00:00:00 2001
+From: Dirk Tilger <dirk@systemication.com>
+Date: Wed, 21 Apr 2021 15:25:34 +0000
+Subject: [PATCH 1/2] Dont build ELISE_X11 stuff when its disabled
+
+---
+ src/uti_phgrm/CPP_MM2DPostSism.cpp | 5 ++---
+ 1 file changed, 2 insertions(+), 3 deletions(-)
+
+diff --git a/src/uti_phgrm/CPP_MM2DPostSism.cpp b/src/uti_phgrm/CPP_MM2DPostSism.cpp
+index 460b3a2f0..1b319eccd 100644
+--- a/src/uti_phgrm/CPP_MM2DPostSism.cpp
++++ b/src/uti_phgrm/CPP_MM2DPostSism.cpp
+@@ -775,8 +775,7 @@ int AnalysePxFrac_Main(int argc,char ** argv)
+     }
+     std::cout  << "NBTOT=" << NbTot << "\n";
+ 
+-    if (ELISE_X11)
+-    {
++    #if (ELISE_X11)
+         Pt2di aSzW(500,800);
+         int aBrd= 10;
+         double aRatX = (aSzW.x-2*aBrd) /aSzHist;
+@@ -801,7 +800,7 @@ int AnalysePxFrac_Main(int argc,char ** argv)
+ 
+ 
+         aW.clik_in();
+-    }
++    #endif
+ 
+     return EXIT_SUCCESS;
+ }
+-- 
+2.26.3
+

@@ -1,0 +1,29 @@
+From ad80732d9be8e94dd9b47c2f532880d267b975a8 Mon Sep 17 00:00:00 2001
+From: Dirk Tilger <dirk@systemication.com>
+Date: Wed, 21 Apr 2021 19:39:53 +0000
+Subject: [PATCH 2/2] Create static variables only #ifdef ELISE_X11
+
+Otherwise we have them lurking around as unused variables.
+---
+ src/uti_phgrm/MICMAC/MMMaskByTP.cpp | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/src/uti_phgrm/MICMAC/MMMaskByTP.cpp b/src/uti_phgrm/MICMAC/MMMaskByTP.cpp
+index cf51973e0..59c6b7569 100644
+--- a/src/uti_phgrm/MICMAC/MMMaskByTP.cpp
++++ b/src/uti_phgrm/MICMAC/MMMaskByTP.cpp
+@@ -52,9 +52,11 @@ extern Im2D_Bits<1>  TestLabel(Im2D_INT2 aILabel,INT aLabelOut);
+ 
+ //====================================================
+ 
++#ifdef ELISE_X11
+ static Video_Win *  TheWTiePCor = 0;
+ static double       TheScaleW = 1.0;
+ static Pt2di TheMaxSzW(1600,1200);
++#endif
+ 
+ void ShowPoint(Pt2dr aP,int aCoul,int aModeCoul,int aRab=0)
+ {
+-- 
+2.26.3
+
