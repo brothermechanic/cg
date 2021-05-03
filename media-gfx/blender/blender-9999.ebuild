@@ -82,6 +82,7 @@ RDEPEND="${PYTHON_DEPS}
 	virtual/jpeg:0=
 	dev-libs/gmp
 	media-gfx/potrace
+	media-libs/libharu
 	opengl? (
 		virtual/opengl
 		media-libs/glew:*
