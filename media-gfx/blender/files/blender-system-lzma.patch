@@ -2,7 +2,7 @@ diff --git a/CMakeLists.txt b/CMakeLists.txt
 index eb04da7..ae5bb9f 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
-@@ -314,6 +314,7 @@ option(WITH_LZO           "Enable fast LZO compression (used for pointcache)" ON
+@@ -331,6 +331,7 @@ option(WITH_LZO           "Enable fast LZO compression (used for pointcache)" ON
  option(WITH_LZMA          "Enable best LZMA compression, (used for pointcache)" ON)
  if(UNIX AND NOT APPLE)
    option(WITH_SYSTEM_LZO    "Use the system LZO library" OFF)
@@ -14,7 +14,7 @@ diff --git a/source/blender/blenkernel/CMakeLists.txt b/source/blender/blenkerne
 index f6df3f1..90335dd 100644
 --- a/source/blender/blenkernel/CMakeLists.txt
 +++ b/source/blender/blenkernel/CMakeLists.txt
-@@ -615,12 +616,22 @@ if(WITH_LZO)
+@@ -653,12 +653,22 @@ if(WITH_LZO)
  endif()
  
  if(WITH_LZMA)
@@ -31,7 +31,7 @@ index f6df3f1..90335dd 100644
 +    list(APPEND LIB
 +      ${LZMA_LIBRARIES}
 +    )
-+    add_definitions(-DWITH_SYSTEM_LZO)
++    add_definitions(-DWITH_SYSTEM_LZMA)
 +  else()  
 +    list(APPEND INC_SYS
 +      ../../../extern/lzma
@@ -122,3 +122,20 @@ index 0000000..ea844f7
 +  LZMA_INCLUDE_DIR
 +  LZMA_LIBRARY
 +)
+diff --git a/source/blender/blenkernel/intern/pointcache.c b/source/blender/blenkernel/intern/pointcache.c
+index be206f8..f0f277a 100644
+--- a/source/blender/blenkernel/intern/pointcache.c
++++ b/source/blender/blenkernel/intern/pointcache.c
+@@ -89,7 +89,11 @@
+ #define LZO_OUT_LEN(size) ((size) + (size) / 16 + 64 + 3)
+ 
+ #ifdef WITH_LZMA
+-#  include "LzmaLib.h"
++#  ifdef WITH_SYSTEM_LZMA
++#    include <LzmaLib.h>
++#  else
++#    include "LzmaLib.h"
++#  endif
+ #endif
+ 
+ /* needed for directory lookup */

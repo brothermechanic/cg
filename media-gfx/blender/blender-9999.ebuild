@@ -2,7 +2,7 @@
 # Distributed under the terms of the GNU General Public License v2
 
 EAPI=7
-PYTHON_COMPAT=( python3_{7..9} )
+PYTHON_COMPAT=( python3_{7..10} )
 
 inherit check-reqs cmake python-single-r1 xdg-utils pax-utils toolchain-funcs flag-o-matic
 
@@ -33,9 +33,9 @@ SLOT="${MY_PV}"
 
 IUSE_DESKTOP="+cg -portable +X +addons +addons_contrib +nls -ndof"
 IUSE_GPU="+opengl -optix cuda opencl llvm -sm_30 -sm_35 -sm_50 -sm_52 -sm_61 -sm_70 -sm_75"
-IUSE_LIBS="+cycles sdl jack openal +freestyle -osl +openvdb nanovdb abi6-compat abi7-compat abi8-compat +opensubdiv +opencolorio +openimageio +collada -alembic +gltf-draco +fftw +oidn +quadriflow -usd +bullet -valgrind +jemalloc"
-IUSE_CPU="+openmp embree +sse +tbb"
-IUSE_TEST="-debug -doc -man"
+IUSE_LIBS="+cycles sdl jack openal +freestyle -osl +openvdb nanovdb abi6-compat abi7-compat abi8-compat +opensubdiv +opencolorio +openimageio +collada -alembic +gltf-draco +fftw +oidn +quadriflow -usd +bullet -valgrind +jemalloc -libmv"
+IUSE_CPU="+openmp embree +sse +tbb +lld"
+IUSE_TEST="-debug -doc -man -gtests"
 IUSE_IMAGE="-dpx -dds +openexr jpeg2k tiff +hdr"
 IUSE_CODEC="avi +ffmpeg -sndfile +quicktime"
 IUSE_COMPRESSION="+lzma -lzo"
@@ -55,6 +55,7 @@ REQUIRED_USE="${PYTHON_REQUIRED_USE}
 	osl? ( cycles )
 	embree? ( cycles tbb )
 	oidn? ( cycles tbb )
+	libmv? ( gtests )
 	openvdb? (
 		^^ ( abi6-compat abi7-compat abi8-compat )
 		cycles tbb
@@ -74,6 +75,7 @@ RDEPEND="${PYTHON_DEPS}
         dev-libs/boost[python,nls?,threads(+),${PYTHON_MULTI_USEDEP}]
 	')
 	dev-cpp/gflags
+	dev-cpp/glog[gflags]
 	sys-libs/zlib:=
 	fftw? ( sci-libs/fftw:3.0[openmp?] )
 	media-libs/freetype:=
@@ -138,7 +140,10 @@ RDEPEND="${PYTHON_DEPS}
 	llvm? ( sys-devel/llvm:= )
 	tbb? ( dev-cpp/tbb )
 	valgrind? ( dev-util/valgrind )
+	lld? ( sys-devel/lld )
+	libmv? ( sci-libs/ceres-solver )
 "
+	#lzma? ( app-arch/lzma )
 
 DEPEND="${RDEPEND}
 	dev-cpp/eigen
@@ -183,7 +188,7 @@ src_prepare() {
         sed -i -e "s|.pythondir.*|.pythondir = \"${BLENDER_ADDONS_DIR}\",|" "${S}"/release/datafiles/userdef/userdef_default.c || die
     fi
 	# remove some bundled deps
-	rm -rf extern/{Eigen3,glew-es,lzo,gtest,gflags,draco,glew} || die
+	rm -rf extern/{Eigen3,glew-es,lzo,gtest,gflags,glog,draco,glew} || die
 
 	# we don't want static glew, but it's scattered across
 	# multiple files that differ from version to version
@@ -220,6 +225,7 @@ src_configure() {
 		eapply "${FILESDIR}/ociio_2.0.0.patch"
     fi
 	eapply "${FILESDIR}/x112.patch"
+	#eapply "${FILESDIR}/blender-system-lzma.patch"
 
 	if use cg; then
         eapply "${FILESDIR}"/cg-addons.patch
@@ -299,7 +305,7 @@ src_configure() {
 		-DWITH_SYSTEM_BULLET=OFF								# currently unsupported
 		-DWITH_CODEC_AVI=$(usex avi)
 		-DWITH_CODEC_FFMPEG=$(usex ffmpeg)
-		-DWITH_CODEC_SNDFILE=$(usex sndfile)
+		-DWITH_CODEC_SNDFILE=$(usex sndfile)                   # Enable libmv sfm camera tracking
 		-DWITH_FFTW3=$(usex fftw)
 		-DWITH_DOC_MANPAGE=$(usex man)
 		-DWITH_CPU_SSE=$(usex sse)								# Enable SIMD instruction
@@ -312,6 +318,7 @@ src_configure() {
 		-DWITH_CYCLES_OSL=$(usex osl)
 		-DWITH_CYCLES_STANDALONE=OFF
 		-DWITH_CYCLES_STANDALONE_GUI=OFF
+		-DWITH_CYCLES_LOGGING=$(usex gtests)
 		-DWITH_FREESTYLE=$(usex freestyle)						# advanced edges rendering
 		-DWITH_GHOST_XDND=$(usex X)								# drag-n-drop support on X11
 		-DWITH_IMAGE_CINEON=$(usex dpx)
@@ -328,6 +335,7 @@ src_configure() {
 		-DWITH_LZO=$(usex lzo)									# used for pointcache only
 		-DWITH_DRACO=$(usex gltf-draco)							# gltf mesh compression
 		-DWITH_LLVM=$(usex llvm)
+		-DWITH_LIBMV=$(usex libmv)                              # Enable libmv sfm camera tracking
 		-DWITH_MEM_JEMALLOC=$(usex jemalloc)					# Enable malloc replacement
 		-DWITH_MEM_VALGRIND=$(usex valgrind)
 		-DWITH_MOD_FLUID=$(usex fluid)							# Mantaflow Fluid Simulation Framework
@@ -354,7 +362,10 @@ src_configure() {
 		-DWITH_SYSTEM_GLES=$(usex !portable)
 		-DWITH_SYSTEM_GLEW=$(usex !portable)
 		-DWITH_SYSTEM_LZO=$(usex !portable)
+		#-DWITH_SYSTEM_LZMA=$(usex !portable)
 		-DWITH_SYSTEM_GFLAGS=$(usex !portable)
+		-DWITH_SYSTEM_GLOG=$(usex !portable)
+		-DWITH_GTESTS=$(usex gtests)
 		-DWITH_GHOST_DEBUG=$(usex debug)
 		-DWITH_CXX_GUARDEDALLOC=$(usex debug)
 		-DWITH_CXX11_ABI=ON
@@ -362,6 +373,7 @@ src_configure() {
 		#-DUSD_ROOT_DIR=/opt/openusd
 		#-DUSD_LIBRARY=/opt/openusd/lib/libusd_ms.so
 		-DWITH_TBB=$(usex tbb)
+		-DWITH_LINKER_LLD=$(usex lld)
 		-DWITH_NINJA_POOL_JOBS=OFF								# for machines with 16GB of RAM or less
 		-DBUILD_SHARED_LIBS=OFF
 		-Wno-dev
