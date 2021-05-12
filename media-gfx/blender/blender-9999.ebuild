@@ -378,9 +378,6 @@ src_configure() {
 		#-DWITH_SYSTEM_LZMA=$(usex !portable)
 		-DWITH_SYSTEM_GFLAGS=$(usex !portable)
 		-DWITH_SYSTEM_GLOG=$(usex !portable)
-		-DWITH_SYSTEM_GTEST=$(usex !portable)
-		-DGFLAGS_INCLUDE_DIRS="/usr/include/gflags"
-		#-DGLOG_INCLUDE_DIR=""
 		-DWITH_GTESTS=$(usex gtests)
 		-DWITH_GHOST_DEBUG=$(usex debug)
 		-DWITH_CXX_GUARDEDALLOC=$(usex debug)
