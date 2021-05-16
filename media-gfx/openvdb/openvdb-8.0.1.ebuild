@@ -118,6 +118,7 @@ src_configure() {
 		-DUSE_EXR=ON
 		-DUSE_LOG4CPLUS=ON
 		-DOPENVDB_BUILD_UNITTESTS=$(usex test)
+		-DCONCURRENT_MALLOC="Tbbmalloc"
 	)
 
 	use test && mycmakeargs+=( -DCPPUNIT_LOCATION="${myprefix}" )
