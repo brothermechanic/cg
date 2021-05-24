@@ -248,7 +248,7 @@ src_configure() {
 	python_setup
 	# FIX: forcing '-funsigned-char' fixes an anti-aliasing issue with menu
 	# shadows, see bug #276338 for reference
-	append-flags -funsigned-char -fno-strict-aliasing
+	append-flags -funsigned-char -fno-strict-aliasing -DNDEBUG
 	append-lfs-flags
 
 	if use openvdb; then

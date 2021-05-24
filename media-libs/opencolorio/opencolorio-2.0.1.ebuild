@@ -88,7 +88,7 @@ src_prepare() {
 src_configure() {
 	# Filter -ffp-contract=fast
 	# https://github.com/AcademySoftwareFoundation/OpenColorIO/issues/1361
-	filter-flags -ffp-contract=fast && append-flags -ffp-contract=on
+	filter-flags -ffp-contract=fast && append-flags -ffp-contract=on -DNDEBUG
 
 	local mycmakeargs=(
 		-DLIB_SUFFIX=""
