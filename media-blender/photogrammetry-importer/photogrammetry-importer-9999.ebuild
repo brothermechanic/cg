@@ -2,11 +2,11 @@ EAPI=7
 
 inherit git-r3 eutils
 
-DESCRIPTION="Blender addon for image pasting from system clipboard"
-HOMEPAGE="https://gumroad.com/l/BmQWu"
-EGIT_REPO_URI="https://github.com/Yeetus3141/ImagePaste"
+DESCRIPTION="Blender addon to import reconstruction results of several libraries"
+HOMEPAGE="https://github.com/SBCV/Blender-Addon-Photogrammetry-Importer"
+EGIT_REPO_URI="https://github.com/SBCV/Blender-Addon-Photogrammetry-Importer"
 
-LICENSE="GPL-3"
+LICENSE="MIT"
 KEYWORDS="~amd64 ~x86"
 IUSE=""
 SLOT="0"
@@ -14,18 +14,19 @@ SLOT="0"
 DEPEND=""
 RDEPEND="
 	media-gfx/blender:=[addons]
-	>=dev-python/pillow-6.0.0[xcb]
+	>=dev-python/pillow-6.0.0
+	dev-python/pylas
+	dev-python/pyntcloud
 "
 
 RESTRICT="mirror"
 
-PATCHES=(
-	${FILESDIR}/unbundle_bin.patch
-)
+#PATCHES=(
+#	${FILESDIR}/
+#)
 
 src_prepare() {
 	default
-	rm -r "${S}"/{bin,PIL,win32_py37,win32_py39}
 	if [[ -z ${BLENDER_ADDONS_DIR} ]]; then
 		local MY_BV
 		for i in "2.93" "3.0" ; do
@@ -36,8 +37,8 @@ src_prepare() {
 }
 
 src_install() {
-	insinto ${BLENDER_ADDONS_DIR}/addons/${PN}
-	doins -r "${S}"/*
+	insinto ${BLENDER_ADDONS_DIR}/addons
+	doins -r "${S}"/photogrammetry_importer
 }
 
 pkg_postinst() {

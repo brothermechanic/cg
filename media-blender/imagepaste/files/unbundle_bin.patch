@@ -1,0 +1,28 @@
+diff --git a/linux.py b/linux.py
+index af100c2..d5f4e2f 100644
+--- a/linux.py
++++ b/linux.py
+@@ -12,10 +12,8 @@ class ClipBoardTarget(Enum):
+ 
+ 
+ def xclip_out(target: ClipBoardTarget = ClipBoardTarget.ALL.value, path=None):
+-    script_file = os.path.realpath(__file__)
+-    directory = os.path.dirname(script_file)
+     args = (
+-        f"{directory}/bin/xclip",
++        f"/usr/bin/xclip",
+         "-selection",
+         "clipboard",
+         "-target",
+@@ -55,10 +53,8 @@ def GrabImage():
+ 
+ # function to copy image from given path to clipboard
+ def CopyImage(img_path):
+-    script_file = os.path.realpath(__file__)
+-    directory = os.path.dirname(script_file)
+     args = (
+-        f"{directory}/bin/xclip",
++        f"/usr/bin/xclip",
+         "-selection",
+         "clipboard",
+         "-target",
