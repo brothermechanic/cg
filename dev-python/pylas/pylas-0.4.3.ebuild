@@ -15,7 +15,7 @@ BDEPEND="
 "
 
 KEYWORDS="amd64 arm arm64 hppa ~ia64 ~mips x86"
-LICENSE="BSD-3"
+LICENSE="BSD"
 SLOT="0"
 
 RESTRICT="mirror test"
