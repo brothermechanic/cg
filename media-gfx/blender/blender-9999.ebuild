@@ -33,8 +33,8 @@ SLOT="${MY_PV}"
 
 IUSE_DESKTOP="+cg -portable +X +addons +addons_contrib +nls +icu -ndof"
 IUSE_GPU="+opengl -optix cuda opencl llvm -sm_30 -sm_35 -sm_50 -sm_52 -sm_61 -sm_70 -sm_75"
-IUSE_LIBS="+cycles sdl jack openal +freestyle -osl +openvdb nanovdb abi6-compat abi7-compat abi8-compat +opensubdiv +opencolorio +openimageio +collada -alembic +gltf-draco +fftw +oidn +quadriflow -usd +bullet -valgrind +jemalloc -libmv"
-IUSE_CPU="+openmp embree +sse +tbb +lld"
+IUSE_LIBS="+cycles sdl jack openal pulseaudio +freestyle -osl +openvdb nanovdb abi6-compat abi7-compat abi8-compat +opensubdiv +opencolorio +openimageio +collada -alembic +gltf-draco +fftw +oidn +quadriflow -usd +bullet -valgrind +jemalloc -libmv"
+IUSE_CPU="+openmp embree +sse +tbb +lld gold"
 IUSE_TEST="-debug -doc -man -gtests test"
 IUSE_IMAGE="-dpx -dds +openexr jpeg2k tiff +hdr"
 IUSE_CODEC="avi +ffmpeg -sndfile +quicktime"
@@ -43,6 +43,7 @@ IUSE_MODIFIERS="+fluid +smoke +oceansim +remesh"
 IUSE="${IUSE_DESKTOP} ${IUSE_GPU} ${IUSE_LIBS} ${IUSE_CPU} ${IUSE_TEST} ${IUSE_IMAGE} ${IUSE_CODEC} ${IUSE_COMPRESSION} ${IUSE_MODIFIERS}"
 
 REQUIRED_USE="${PYTHON_REQUIRED_USE}
+	|| ( gold lld )
 	alembic? ( openexr )
 	fluid?  ( fftw )
 	oceansim? ( fftw )
@@ -55,7 +56,6 @@ REQUIRED_USE="${PYTHON_REQUIRED_USE}
 	osl? ( cycles )
 	embree? ( cycles tbb )
 	oidn? ( cycles tbb )
-	libmv? ( gtests )
 	test? ( gtests )
 	openvdb? (
 		^^ ( abi6-compat abi7-compat abi8-compat )
@@ -122,6 +122,7 @@ RDEPEND="${PYTHON_DEPS}
 	ffmpeg? ( media-video/ffmpeg:=[x264,xvid,mp3,encode,jpeg2k?] )
 	jpeg2k? ( media-libs/openjpeg:0 )
 	jack? ( virtual/jack )
+	pulseaudio? ( media-sound/pulseaudio )
 	jemalloc? ( dev-libs/jemalloc:= )
 	sndfile? ( media-libs/libsndfile )
 	collada? ( media-libs/opencollada )
@@ -195,7 +196,7 @@ src_prepare() {
 	eapply "${FILESDIR}/x112.patch"
 	#eapply "${FILESDIR}/blender-system-lzma.patch"
 	eapply "${FILESDIR}/blender-system-glog-gflags.patch"
-
+	#eapply "${FILESDIR}/blender-system-ceres.patch"
 	if use cg; then
         eapply "${FILESDIR}"/cg-addons.patch
         eapply "${FILESDIR}"/cg-defaults.patch
@@ -248,7 +249,7 @@ src_configure() {
 	python_setup
 	# FIX: forcing '-funsigned-char' fixes an anti-aliasing issue with menu
 	# shadows, see bug #276338 for reference
-	append-flags -funsigned-char -fno-strict-aliasing -DNDEBUG
+	append-flags -funsigned-char -fno-strict-aliasing
 	append-lfs-flags
 
 	if use openvdb; then
@@ -344,6 +345,9 @@ src_configure() {
 		-DWITH_INSTALL_PORTABLE=$(usex portable)
 		-DWITH_INTERNATIONAL=$(usex nls)						# I18N fonts and text
 		-DWITH_JACK=$(usex jack)
+		-DWITH_JACK_DYNLOAD=$(usex jack)
+		-DWITH_PULSEAUDIO=$(usex pulseaudio)
+		-DWITH_PULSEAUDIO_DYNLOAD=$(usex pulseaudio)
 		-DWITH_LZMA=$(usex lzma)								# used for pointcache only
 		-DWITH_LZO=$(usex lzo)									# used for pointcache only
 		-DWITH_DRACO=$(usex gltf-draco)							# gltf mesh compression
@@ -378,6 +382,7 @@ src_configure() {
 		#-DWITH_SYSTEM_LZMA=$(usex !portable)
 		-DWITH_SYSTEM_GFLAGS=$(usex !portable)
 		-DWITH_SYSTEM_GLOG=$(usex !portable)
+		#-DWITH_SYSTEM_CERES=$(usex !portable)
 		-DWITH_GTESTS=$(usex gtests)
 		-DWITH_GHOST_DEBUG=$(usex debug)
 		-DWITH_CXX_GUARDEDALLOC=$(usex debug)
@@ -387,6 +392,7 @@ src_configure() {
 		#-DUSD_LIBRARY=/opt/openusd/lib/libusd_ms.so
 		-DWITH_TBB=$(usex tbb)
 		-DWITH_LINKER_LLD=$(usex lld)
+		-DWITH_LINKER_GOLD=$(usex gold)
 		-DWITH_NINJA_POOL_JOBS=OFF								# for machines with 16GB of RAM or less
 		-DBUILD_SHARED_LIBS=OFF
 		-Wno-dev
