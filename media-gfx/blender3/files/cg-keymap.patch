@@ -1,0 +1,121 @@
+diff -Naur a/release/scripts/presets/keyconfig/blender.py b/release/scripts/presets/keyconfig/blender.py
+--- a/release/scripts/presets/keyconfig/Blender.py	2020-12-24 20:07:32.000000000 +0300
++++ b/release/scripts/presets/keyconfig/Blender.py	2020-12-27 20:56:46.597343465 +0300
+@@ -28,6 +28,7 @@
+         description=(
+             "Mouse button used for selection"
+         ),
++        default='RIGHT',
+         update=update_fn,
+     )
+     spacebar_action: EnumProperty(
+@@ -51,7 +52,7 @@
+         description=(
+             "Action when 'Space' is pressed"
+         ),
+-        default='PLAY',
++        default='TOOL',
+         update=update_fn,
+     )
+     use_alt_click_leader: BoolProperty(
+diff -Naur a/release/scripts/presets/keyconfig/keymap_data/blender_default.py b/release/scripts/presets/keyconfig/keymap_data/blender_default.py
+--- a/release/scripts/presets/keyconfig/keymap_data/blender_default.py	2020-12-27 18:22:21.417182104 +0300
++++ b/release/scripts/presets/keyconfig/keymap_data/blender_default.py	2020-12-27 20:12:10.327299023 +0300
+@@ -229,7 +229,7 @@
+         ("object.subdivision_set",
+          {"type": NUMBERS_0[i], "value": 'PRESS', "ctrl": True},
+          {"properties": [("level", i), ("relative", False)]})
+-        for i in range(6)
++        for i in range(7)
+     ]
+ 
+ 
+@@ -261,11 +261,9 @@
+         return [
+             (
+                 "mesh.select_mode",
+-                {"type": k, "value": 'PRESS', **key_expand, **key_extend},
+-                {"properties": [*prop_extend, *prop_expand, ("type", e)]}
++                {"type": k, "value": 'PRESS'},
++                {"properties": [("type", e)]},
+             )
+-            for key_expand, prop_expand in (({}, ()), ({"ctrl": True}, (("use_expand", True),)))
+-            for key_extend, prop_extend in (({}, ()), ({"shift": True}, (("use_extend", True),)))
+             for k, e in (('ONE', 'VERT'), ('TWO', 'EDGE'), ('THREE', 'FACE'))
+         ]
+ 
+@@ -406,7 +404,8 @@
+         ("wm.open_mainfile", {"type": 'O', "value": 'PRESS', "ctrl": True}, None),
+         ("wm.save_mainfile", {"type": 'S', "value": 'PRESS', "ctrl": True}, None),
+         ("wm.save_as_mainfile", {"type": 'S', "value": 'PRESS', "shift": True, "ctrl": True}, None),
+-        ("wm.quit_blender", {"type": 'Q', "value": 'PRESS', "ctrl": True}, None),
++        ("wm.quit_blender", {"type": 'Q', "value": 'PRESS', "ctrl": True}, {"active":False,}, ),
++        ("wm.window_fullscreen_toggle", {"type": 'F11', "value": 'PRESS', "oskey": True}, None),
+ 
+         # Quick menu and toolbar
+         op_menu("SCREEN_MT_user_menu", {"type": 'Q', "value": 'PRESS'}),
+@@ -514,6 +513,7 @@
+         # Undo
+         ("ed.undo", {"type": 'Z', "value": 'PRESS', "ctrl": True, "repeat": True}, None),
+         ("ed.redo", {"type": 'Z', "value": 'PRESS', "shift": True, "ctrl": True, "repeat": True}, None),
++        ("ed.undo_history", {"type": 'Z', "value": 'PRESS', "ctrl": True, "alt": True}, None),
+         # Render
+         ("render.render", {"type": 'F12', "value": 'PRESS'},
+          {"properties": [("use_viewport", True)]}),
+@@ -924,6 +924,8 @@
+         ("transform.resize", {"type": 'S', "value": 'PRESS'}, None),
+         ("transform.shear", {"type": 'S', "value": 'PRESS', "shift": True, "ctrl": True, "alt": True}, None),
+         ("transform.mirror", {"type": 'M', "value": 'PRESS', "ctrl": True}, None),
++        ("uv.minimize_stretch", {"type": 'V', "value": 'PRESS', "ctrl": True}, None),
++        ("uv.pack_islands", {"type": 'P', "value": 'PRESS', "ctrl": True}, None),
+         ("wm.context_toggle", {"type": 'TAB', "value": 'PRESS', "shift": True},
+          {"properties": [("data_path", 'tool_settings.use_snap')]}),
+         ("wm.context_menu_enum", {"type": 'TAB', "value": 'PRESS', "shift": True, "ctrl": True},
+@@ -1952,7 +1954,7 @@
+          {"properties": [("open", True), ("deselect_all", not params.legacy)]}),
+         ("file.refresh", {"type": 'NUMPAD_PERIOD', "value": 'PRESS'}, None),
+         ("file.select", {"type": 'LEFTMOUSE', "value": 'PRESS'},
+-         {"properties": [("open", False), ("deselect_all", not params.legacy)]}),
++         {"properties": [("open", True), ("deselect_all", not params.legacy)]}),
+         ("file.select", {"type": 'LEFTMOUSE', "value": 'CLICK', "ctrl": True},
+          {"properties": [("extend", True), ("open", False)]}),
+         ("file.select", {"type": 'LEFTMOUSE', "value": 'CLICK', "shift": True},
+@@ -3976,7 +3978,7 @@
+             (("object.hide_collection",
+               {"type": NUMBERS_1[i], "value": 'PRESS', "any": True},
+               {"properties": [("collection_index", i + 1)]})
+-             for i in range(10)
++             for i in range(0)
+              )
+         ),
+         *_template_items_context_menu("VIEW3D_MT_pose_context_menu", params.context_menu_event),
+@@ -4032,6 +4034,9 @@
+         ("object.duplicate_move", {"type": 'D', "value": 'PRESS', "shift": True}, None),
+         ("object.duplicate_move_linked", {"type": 'D', "value": 'PRESS', "alt": True}, None),
+         ("object.join", {"type": 'J', "value": 'PRESS', "ctrl": True}, None),
++        ("object.origin_clear", {"type": 'O', "value": 'PRESS', "alt": True}, None),
++        ("object.convert", {"type": 'C', "value": 'PRESS', "alt": True}, None),
++        op_menu("VIEW3D_MT_make_single_user", {"type": 'U', "value": 'PRESS'}),
+         ("wm.context_toggle", {"type": 'PERIOD', "value": 'PRESS', "ctrl": True},
+          {"properties": [("data_path", 'tool_settings.use_transform_data_origin')]}),
+         ("anim.keyframe_insert_menu", {"type": 'I', "value": 'PRESS'}, None),
+@@ -4055,7 +4060,7 @@
+             (("object.hide_collection",
+               {"type": NUMBERS_1[i], "value": 'PRESS', "any": True},
+               {"properties": [("collection_index", i + 1)]})
+-             for i in range(10)
++             for i in range(0)
+              )
+         ),
+         *_template_items_context_menu("VIEW3D_MT_object_context_menu", params.context_menu_event),
+@@ -4587,6 +4592,10 @@
+         ("mesh.knife_tool", {"type": 'K', "value": 'PRESS', "shift": True},
+          {"properties": [("use_occlude_geometry", False), ("only_selected", True)]}),
+         ("object.vertex_parent_set", {"type": 'P', "value": 'PRESS', "ctrl": True}, None),
++        ("mesh.poke", {"type": 'P', "value": 'PRESS', "alt": True}, None),
++        ("mesh.select_non_manifold", {"type": 'M', "value": 'PRESS', "shift": True, "ctrl": True, "alt": True}, None),
++        ("object.subdivision_set", {"type": 'ZERO', "value": 'PRESS', "ctrl": True}, {"properties": [("level", 0), ("relative", False)]}),
++        ("object.subdivision_set", {"type": 'TWO', "value": 'PRESS', "ctrl": True}, {"properties": [("level", 2), ("relative", False)]}),
+         # Menus.
+         op_menu("VIEW3D_MT_edit_mesh_faces", {"type": 'F', "value": 'PRESS', "ctrl": True}),
+         op_menu("VIEW3D_MT_edit_mesh_edges", {"type": 'E', "value": 'PRESS', "ctrl": True}),

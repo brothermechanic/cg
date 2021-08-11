@@ -1,0 +1,67 @@
+--- a/release/datafiles/userdef/userdef_default.c	2020-12-24 20:07:32.000000000 +0300
++++ b/release/datafiles/userdef/userdef_default.c	2020-12-25 14:27:59.205246250 +0300
+@@ -34,14 +34,14 @@
+     .versionfile = BLENDER_FILE_VERSION,
+     .subversionfile = BLENDER_FILE_SUBVERSION,
+     .flag = (USER_AUTOSAVE | USER_TOOLTIPS | USER_SAVE_PREVIEWS | USER_RELPATHS |
+-             USER_RELEASECONFIRM | USER_SCRIPT_AUTOEXEC_DISABLE | USER_NONEGFRAMES),
++             USER_SCRIPT_AUTOEXEC_DISABLE | USER_NONEGFRAMES | USER_FILECOMPRESS),
+     .dupflag = USER_DUP_MESH | USER_DUP_CURVE | USER_DUP_SURF | USER_DUP_FONT | USER_DUP_MBALL |
+                USER_DUP_LAMP | USER_DUP_ARM | USER_DUP_ACT | USER_DUP_LIGHTPROBE |
+                USER_DUP_GPENCIL,
+     .pref_flag = USER_PREF_FLAG_SAVE,
+     .savetime = 2,
+     .tempdir = "",
+-    .fontdir = "//",
++    .fontdir = "/usr/share/fonts/",
+     .renderdir = "//",
+     .render_cachedir = "",
+     .textudir = "//",
+@@ -59,7 +59,7 @@
+     .uiflag = (USER_FILTERFILEEXTS | USER_DRAWVIEWINFO | USER_PLAINMENUS |
+                USER_LOCK_CURSOR_ADJUST | USER_DEPTH_CURSOR | USER_AUTOPERSP | USER_GLOBALUNDO |
+                USER_HIDE_DOT | USER_SHOW_GIZMO_NAVIGATE | USER_SHOW_VIEWPORTNAME | USER_SHOW_FPS |
+-               USER_CONTINUOUS_MOUSE | USER_SAVE_PROMPT),
++               USER_CONTINUOUS_MOUSE),
+     .uiflag2 = USER_REGION_OVERLAP,
+     .gpu_flag = USER_GPU_FLAG_OVERLAY_SMOOTH_WIRE,
+     .app_flag = 0,
+@@ -106,7 +106,7 @@
+     .user_menus = {NULL},
+ 
+     .keyconfigstr = "Blender",
+-    .undosteps = 32,
++    .undosteps = 64,
+     .undomemory = 0,
+     .gp_manhattandist = 1,
+     .gp_euclideandist = 2,
+@@ -140,7 +140,7 @@
+     .color_picker_type = USER_CP_CIRCLE_HSV,
+     .auto_smoothing_new = FCURVE_SMOOTH_CONT_ACCEL,
+     .ipo_new = BEZT_IPO_BEZ,
+-    .keyhandles_new = HD_AUTO_ANIM,
++    .keyhandles_new = HD_VECT,
+     .view_frame_type = ZOOM_FRAME_MODE_KEEP_RANGE,
+     .view_frame_keyframes = 0,
+     .view_frame_seconds = 0.0,
+@@ -189,8 +189,8 @@
+     .pie_menu_threshold = 12,
+     .opensubdiv_compute_type = 0,
+     .factor_display_type = USER_FACTOR_AS_FACTOR,
+-    .render_display_type = USER_RENDER_DISPLAY_WINDOW,
+-    .filebrowser_display_type = USER_TEMP_SPACE_DISPLAY_WINDOW,
++    .render_display_type = USER_RENDER_DISPLAY_AREA,
++    .filebrowser_display_type = USER_TEMP_SPACE_DISPLAY_FULLSCREEN,
+     .viewport_aa = 8,
+ 
+     .walk_navigation =
+@@ -229,7 +229,8 @@
+ 
+     .collection_instance_empty_size = 1.0f,
+ 
+-    .statusbar_flag = STATUSBAR_SHOW_VERSION,
++    .statusbar_flag = (STATUSBAR_SHOW_MEMORY | STATUSBAR_SHOW_VRAM | STATUSBAR_SHOW_STATS |
++             STATUSBAR_SHOW_VERSION),
+ 
+     .runtime =
+         {
