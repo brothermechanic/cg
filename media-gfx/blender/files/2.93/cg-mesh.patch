@@ -1,10 +1,10 @@
 diff -Naur a/source/blender/editors/mesh/editmesh_add.c b/source/blender/editors/mesh/editmesh_add.c
 --- a/source/blender/editors/mesh/editmesh_add.c	2020-12-24 20:07:32.000000000 +0300
 +++ b/source/blender/editors/mesh/editmesh_add.c	2020-12-29 00:55:03.937332739 +0300
-@@ -144,7 +144,7 @@
+@@ -144,7 +144,7 @@ static int add_primitive_plane_exec(bContext *C, wmOperator *op)
            "create_grid x_segments=%i y_segments=%i size=%f matrix=%m4 calc_uvs=%b",
-           1,
-           1,
+           0,
+           0,
 -          RNA_float_get(op->ptr, "size") / 2.0f,
 +          RNA_float_get(op->ptr, "size") / 0.2f,
            creation_data.mat,
