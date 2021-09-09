@@ -1,15 +1,15 @@
-# Copyright 1999-2020 Gentoo Authors
+# Copyright 1999-2021 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
 
 EAPI=7
+
 PYTHON_COMPAT=( python3_{7..10} )
 
-inherit check-reqs cmake python-single-r1 xdg-utils pax-utils toolchain-funcs flag-o-matic
+inherit check-reqs cmake flag-o-matic pax-utils python-single-r1 toolchain-funcs xdg-utils
 
 DESCRIPTION="Blender is a free and open-source 3D creation suite."
-HOMEPAGE="http://www.blender.org/"
+HOMEPAGE="https://www.blender.org"
 
-LICENSE="|| ( GPL-2 BL )"
 
 inherit git-r3
 if [[ ${PV} == 9999 ]]; then
@@ -22,6 +22,8 @@ if [[ ${PV} == 9999 ]]; then
 	MY_PV="3.0"
 else
 	#SRC_URI="https://download.blender.org/source/${P}.tar.xz"
+	TEST_TARBALL_VERSION=2.93.0
+	SRC_URI+=" test? ( https://dev.gentoo.org/~sam/distfiles/${CATEGORY}/${PN}/${PN}-${TEST_TARBALL_VERSION}-tests.tar.bz2 )"
 	MY_PV="$(ver_cut 1-2)"
 	EGIT_REPO_URI="https://git.blender.org/blender"
 	EGIT_SUBMODULES=( release/datafiles/locale )
@@ -29,11 +31,12 @@ else
     #EGIT_COMMIT="3e85bb34d0d792b49cf4923f781d98791c5a161c"
 	KEYWORDS="~amd64 ~x86"
 fi
-SLOT="${MY_PV}"
 
+SLOT="${MY_PV}"
+LICENSE="|| ( GPL-3 BL )"
 IUSE_DESKTOP="+cg -portable +X +addons +addons_contrib +nls +icu -ndof"
 IUSE_GPU="+opengl -optix cuda opencl llvm -sm_30 -sm_35 -sm_50 -sm_52 -sm_61 -sm_70 -sm_75"
-IUSE_LIBS="+cycles sdl jack openal pulseaudio +freestyle -osl +openvdb nanovdb abi6-compat abi7-compat abi8-compat +opensubdiv +opencolorio +openimageio +collada -alembic +gltf-draco +fftw +oidn +quadriflow -usd +bullet -valgrind +jemalloc -libmv"
+IUSE_LIBS="+cycles gmp sdl jack openal pulseaudio +freestyle -osl +openvdb nanovdb abi6-compat abi7-compat abi8-compat +opensubdiv +opencolorio +openimageio +pdf +pugixml +potrace +collada -alembic +gltf-draco +fftw +oidn +quadriflow -usd +bullet -valgrind +jemalloc libmv"
 IUSE_CPU="+openmp embree +sse +tbb +lld gold"
 IUSE_TEST="-debug -doc -man -gtests test"
 IUSE_IMAGE="-dpx -dds +openexr jpeg2k tiff +hdr"
@@ -45,22 +48,23 @@ IUSE="${IUSE_DESKTOP} ${IUSE_GPU} ${IUSE_LIBS} ${IUSE_CPU} ${IUSE_TEST} ${IUSE_I
 REQUIRED_USE="${PYTHON_REQUIRED_USE}
 	|| ( gold lld )
 	alembic? ( openexr )
-	fluid?  ( fftw )
-	oceansim? ( fftw )
-	smoke? ( fftw )
-	tiff? ( openimageio )
-	openexr? ( openimageio )
-	cuda? ( cycles )
-	optix? ( cycles cuda )
-	cycles? ( openexr tiff openimageio opencolorio )
-	osl? ( cycles )
 	embree? ( cycles tbb )
+	smoke? ( fftw )
+	cuda? ( cycles )
+	cycles? ( openexr tiff openimageio )
+	fluid?  ( fftw tbb )
+	oceansim? ( fftw )
 	oidn? ( cycles tbb )
-	test? ( gtests )
+	opencl? ( cycles )
+	openexr? ( openimageio )
+	optix? ( cycles cuda )
 	openvdb? (
 		^^ ( abi6-compat abi7-compat abi8-compat )
 		cycles tbb
 	)
+	osl? ( cycles )
+	test? ( gtests opencolorio )
+	tiff? ( openimageio )
 "
 
 LANGS="en ar bg ca cs de el es es_ES fa fi fr he hr hu id it ja ky ne nl pl pt pt_BR ru sr sr@latin sv tr uk zh_CN zh_TW"
@@ -75,82 +79,81 @@ RDEPEND="${PYTHON_DEPS}
 		dev-python/requests[${PYTHON_MULTI_USEDEP}]
         dev-libs/boost[python,nls?,icu?,threads(+),${PYTHON_MULTI_USEDEP}]
 	')
+	sys-libs/zlib:=
+	media-libs/freetype:=
+	media-libs/libpng:0=
+	virtual/jpeg
+	virtual/libintl
+	addons? ( media-blender/addons:${SLOT} )
+	addons_contrib? ( media-blender/addons_contrib:${SLOT} )
+	alembic? ( media-gfx/alembic:=[boost(+),-hdf5] )
+	collada? ( media-libs/opencollada )
+	cuda? ( dev-util/nvidia-cuda-toolkit:= )
+	cycles? ( media-libs/freeglut )
+	embree? ( media-libs/embree[raymask,tbb?] )
+	ffmpeg? ( media-video/ffmpeg:=[x264,mp3,encode,theora,jpeg2k,vpx,vorbis,opus,xvid] )
+	fftw? ( sci-libs/fftw:3.0=[openmp?] )
+	gltf-draco? ( media-libs/draco[gltf] )
+	gmp? ( dev-libs/gmp )
 	gtests? (
 		dev-cpp/gflags
 		dev-cpp/glog[gflags]
 	)
-	sys-libs/zlib:=
-	fftw? ( sci-libs/fftw:3.0[openmp?] )
-	media-libs/freetype:=
-	media-libs/libpng:0=
-	virtual/libintl
-	virtual/jpeg:0=
-	dev-libs/gmp
-	media-gfx/potrace
-	media-libs/libharu
+	X? (
+		x11-libs/libX11
+		x11-libs/libXi
+		x11-libs/libXxf86vm
+	)
+	jack? ( virtual/jack )
+	jemalloc? ( dev-libs/jemalloc:= )
+	jpeg2k? ( media-libs/openjpeg:2= )
+	libmv? ( sci-libs/ceres-solver )
+	lld? ( sys-devel/lld )
+	lzo? ( dev-libs/lzo:2= )
+	llvm? ( sys-devel/llvm:= )
+	ndof? (
+		app-misc/spacenavd
+		dev-libs/libspnav
+	)
+	nanovdb? ( media-libs/nanovdb[cuda?,openvdb?] )
+	nls? ( virtual/libiconv )
+	openal? ( media-libs/openal )
+	opencl? ( virtual/opencl )
 	opengl? (
 		virtual/opengl
 		media-libs/glew:*
 		virtual/glu
 	)
-	X? (
-		x11-libs/libXi
-		x11-libs/libX11
-		x11-libs/libXxf86vm
-	)
+	oidn? ( media-libs/oidn )
+	openimageio? ( =media-libs/openimageio-2* )
 	opencolorio? ( =media-libs/opencolorio-2* )
-	cycles? ( media-libs/freeglut )
-	openimageio? ( media-libs/openimageio:= )
-	cuda? ( dev-util/nvidia-cuda-toolkit:= )
-	osl? ( media-libs/osl:= )
-	embree? ( media-libs/embree[raymask,tbb?] )
+	openexr? (
+		media-libs/ilmbase:=
+		media-libs/openexr:=
+	)
+	opensubdiv? ( media-libs/opensubdiv[cuda?,opencl?,openmp?,tbb?] )
 	openvdb? (
-		media-gfx/openvdb[abi6-compat(-)?,abi7-compat(-)?,abi8-compat(-)?]
+		>=media-gfx/openvdb-7.1.0[abi6-compat(-)?,abi7-compat(-)?,abi8-compat(-)?]
 		dev-libs/c-blosc:=
 	)
-	nanovdb? (
-		media-libs/nanovdb[cuda?,openvdb?]
-	)
 	optix? ( dev-libs/optix )
-	sdl? ( media-libs/libsdl[sound,joystick] )
-	openal? ( media-libs/openal )
-	tiff? ( media-libs/tiff )
-	openexr? (
-		media-libs/openexr:=
-		media-libs/ilmbase:=
-	)
-	ffmpeg? ( media-video/ffmpeg:=[x264,xvid,mp3,encode,jpeg2k?] )
-	jpeg2k? ( media-libs/openjpeg:0 )
-	jack? ( virtual/jack )
+	osl? ( >=media-libs/osl-1.11.10.0 )
+	pdf? ( media-libs/libharu )
+	potrace? ( media-gfx/potrace )
+	pugixml? ( dev-libs/pugixml )
 	pulseaudio? ( media-sound/pulseaudio )
-	jemalloc? ( dev-libs/jemalloc:= )
-	sndfile? ( media-libs/libsndfile )
-	collada? ( media-libs/opencollada )
-	ndof? (
-		app-misc/spacenavd
-		dev-libs/libspnav
-	)
 	quicktime? ( media-libs/libquicktime )
-	lzo? ( dev-libs/lzo:2= )
-	alembic? ( media-gfx/alembic:=[boost(+),-hdf5] )
-	opencl? ( virtual/opencl )
-	opensubdiv? ( media-libs/opensubdiv[cuda?,opencl?,openmp?,tbb?] )
-	nls? ( virtual/libiconv )
-	oidn? ( media-libs/oidn )
-	usd? ( media-libs/openusd[monolithic,-python] )
-	gltf-draco? ( media-libs/draco[gltf] )
-	addons? ( media-blender/addons:${SLOT} )
-	addons_contrib? ( media-blender/addons_contrib:${SLOT} )
-	llvm? ( sys-devel/llvm:= )
+	sdl? ( media-libs/libsdl2[sound,joystick] )
+	sndfile? ( media-libs/libsndfile )
 	tbb? ( dev-cpp/tbb )
+	tiff? ( media-libs/tiff )
+	usd? ( media-libs/openusd[monolithic,-python] )
 	valgrind? ( dev-util/valgrind )
-	lld? ( sys-devel/lld )
-	libmv? ( sci-libs/ceres-solver )
 "
 	#lzma? ( app-arch/lzma )
 
 DEPEND="${RDEPEND}
-	dev-cpp/eigen
+	dev-cpp/eigen:=
 "
 
 BDEPEND="
@@ -167,13 +170,23 @@ RESTRICT="
 	!test? ( test )
 "
 
-CMAKE_BUILD_TYPE="Release"
-
 blender_check_requirements() {
 	[[ ${MERGE_TYPE} != binary ]] && use openmp && tc-check-openmp
 
 	if use doc; then
 		CHECKREQS_DISK_BUILD="4G" check-reqs_pkg_pretend
+	fi
+}
+
+blender_get_version() {
+	# Get blender version from blender itself.
+	BV=$(grep "BLENDER_VERSION " source/blender/blenkernel/BKE_blender_version.h | cut -d " " -f 3; assert)
+	if ((${BV:0:1} < 3)) ; then
+		# Add period (290 -> 2.90).
+		BV=${BV:0:1}.${BV:1}
+	else
+		# Add period and strip last number (300 -> 3.0)
+		BV=${BV:0:1}.${BV:1:1}
 	fi
 }
 
@@ -188,21 +201,21 @@ pkg_setup() {
 
 src_prepare() {
 	python_setup
+
 	cmake_src_prepare
 
-	if [[ ${SLOT} == "2.92" ]] ; then
-		eapply "${FILESDIR}/ociio_2.0.0.patch"
-    fi
+	blender_get_version
+
 	eapply "${FILESDIR}/x112.patch"
 	#eapply "${FILESDIR}/blender-system-lzma.patch"
 	eapply "${FILESDIR}/blender-system-glog-gflags.patch"
 	#eapply "${FILESDIR}/blender-system-ceres.patch"
 	if use cg; then
-        eapply "${FILESDIR}"/cg-addons.patch
-        eapply "${FILESDIR}"/cg-defaults.patch
-        eapply "${FILESDIR}"/cg-keymap.patch
-        #eapply "${FILESDIR}"/cg-mesh.patch
-        eapply "${FILESDIR}"/cg-userdef.patch
+        eapply "${FILESDIR}"/${SLOT}/cg-addons.patch
+        eapply "${FILESDIR}"/${SLOT}/cg-defaults.patch
+        eapply "${FILESDIR}"/${SLOT}/cg-keymap.patch
+        eapply "${FILESDIR}"/${SLOT}/cg-mesh.patch
+        eapply "${FILESDIR}"/${SLOT}/cg-userdef.patch
     fi
 
 	if use addons_contrib; then
@@ -226,7 +239,23 @@ src_prepare() {
 	# Disable MS Windows help generation. The variable doesn't do what it
 	# it sounds like.
 	sed -e "s|GENERATE_HTMLHELP      = YES|GENERATE_HTMLHELP      = NO|" \
-			-i doc/doxygen/Doxyfile || die
+		-i doc/doxygen/Doxyfile || die
+
+	# Prepare icons and .desktop files for slotting.
+	sed -e "s|blender.svg|blender-${BV}.svg|" -i source/creator/CMakeLists.txt || die
+	sed -e "s|blender-symbolic.svg|blender-${BV}-symbolic.svg|" -i source/creator/CMakeLists.txt || die
+	sed -e "s|blender.desktop|blender-${BV}.desktop|" -i source/creator/CMakeLists.txt || die
+	sed -e "s|blender-thumbnailer.py|blender-${BV}-thumbnailer.py|" -i source/creator/CMakeLists.txt || die
+
+	sed -e "s|Name=Blender|Name=Blender ${PV}|" -i release/freedesktop/blender.desktop || die
+	sed -e "s|Exec=blender|Exec=blender-${BV}|" -i release/freedesktop/blender.desktop || die
+	sed -e "s|Icon=blender|Icon=blender-${BV}|" -i release/freedesktop/blender.desktop || die
+
+	mv release/freedesktop/icons/scalable/apps/blender.svg release/freedesktop/icons/scalable/apps/blender-${BV}.svg || die
+	mv release/freedesktop/icons/symbolic/apps/blender-symbolic.svg release/freedesktop/icons/symbolic/apps/blender-${BV}-symbolic.svg || die
+	mv release/freedesktop/blender.desktop release/freedesktop/blender-${BV}.desktop || die
+	mv release/bin/blender-thumbnailer.py release/bin/blender-${BV}-thumbnailer.py || die
+
 	ewarn "$(echo "Remaining bundled dependencies:";
 			( find extern -mindepth 1 -maxdepth 1 -type d; ) | sed 's|^|- |')"
 	# linguas cleanup
@@ -246,6 +275,7 @@ src_prepare() {
 }
 
 src_configure() {
+	CMAKE_BUILD_TYPE="Release"
 	python_setup
 	# FIX: forcing '-funsigned-char' fixes an anti-aliasing issue with menu
 	# shadows, see bug #276338 for reference
@@ -321,7 +351,6 @@ src_configure() {
 		-DWITH_CODEC_FFMPEG=$(usex ffmpeg)
 		-DWITH_CODEC_SNDFILE=$(usex sndfile)
 		-DWITH_FFTW3=$(usex fftw)
-		-DWITH_DOC_MANPAGE=$(usex man)
 		-DWITH_CPU_SSE=$(usex sse)								# Enable SIMD instruction
 		-DWITH_CYCLES=$(usex cycles)							# Enable Cycles Render Engine
 		-DWITH_CYCLES_DEVICE_CUDA=$(usex cuda)
@@ -333,9 +362,11 @@ src_configure() {
 		-DWITH_CYCLES_STANDALONE=OFF
 		-DWITH_CYCLES_STANDALONE_GUI=OFF
 		-DWITH_CYCLES_LOGGING=$(usex gtests)
+		-DWITH_DOC_MANPAGE=$(usex man)
 		-DWITH_FREESTYLE=$(usex freestyle)						# advanced edges rendering
 		-DWITH_GHOST_XDND=$(usex X)								# drag-n-drop support on X11
 		-DWITH_IMAGE_CINEON=$(usex dpx)
+		-DWITH_HARU=$(usex pdf)
 		-DWITH_IMAGE_DDS=$(usex dds)
 		-DWITH_IMAGE_HDR=$(usex hdr)
 		-DWITH_IMAGE_OPENEXR=$(usex openexr)
@@ -361,7 +392,6 @@ src_configure() {
 		-DWITH_OPENAL=$(usex openal)
 		-DWITH_OPENCOLLADA=$(usex collada)						# export format support
 		-DWITH_OPENCOLORIO=$(usex opencolorio)
-		-DWITH_XR_OPENXR=OFF
 		-DWITH_OPENGL=$(usex opengl)
 		-DWITH_OPENIMAGEDENOISE=$(usex oidn)					# compositing node
 		-DWITH_OPENIMAGEIO=$(usex openimageio)
@@ -387,27 +417,36 @@ src_configure() {
 		-DWITH_GHOST_DEBUG=$(usex debug)
 		-DWITH_CXX_GUARDEDALLOC=$(usex debug)
 		-DWITH_CXX11_ABI=ON
+		-DWITH_TBB=$(usex tbb)
 		-DWITH_USD=$(usex usd)									# export format support
+		-DWITH_XR_OPENXR=OFF
 		#-DUSD_ROOT_DIR=/opt/openusd
 		#-DUSD_LIBRARY=/opt/openusd/lib/libusd_ms.so
-		-DWITH_TBB=$(usex tbb)
 		-DWITH_LINKER_LLD=$(usex lld)
 		-DWITH_LINKER_GOLD=$(usex gold)
 		-DWITH_NINJA_POOL_JOBS=OFF								# for machines with 16GB of RAM or less
 		-DBUILD_SHARED_LIBS=OFF
 		-Wno-dev
 	)
+	append-flags $(usex debug '-DDEBUG' '-DNDEBUG')
 
 	cmake_src_configure
 }
 
 src_compile() {
+	python_setup
+
 	cmake_src_compile
 
 	if use doc; then
+		# Workaround for binary drivers.
+		addpredict /dev/ati
+		addpredict /dev/dri
+		addpredict /dev/nvidiactl
+
 		einfo "Generating Blender C/C++ API docs ..."
 		cd "${CMAKE_USE_DIR}"/doc/doxygen || die
-		doxygen -u Doxyfile
+		doxygen -u Doxyfile || die
 		doxygen || die "doxygen failed to build API docs."
 
 		cd "${CMAKE_USE_DIR}" || die
@@ -420,17 +459,28 @@ src_compile() {
 }
 
 src_test() {
-	if use test; then
-		einfo "Running Blender Unit Tests ..."
-		cd "${BUILD_DIR}"/bin/tests || die
-		local f
-		for f in *_test; do
-			./"${f}" || die
-		done
-	fi
+	# A lot of tests needs to have access to the installed data files.
+	# So install them into the image directory now.
+	cmake_src_install
+
+	blender_get_version
+	# Define custom blender data/script file paths not be able to find them otherwise during testing.
+	# (Because the data is in the image directory and it will default to look in /usr/share)
+	export BLENDER_SYSTEM_SCRIPTS=${ED}/usr/share/blender/${BV}/scripts
+	export BLENDER_SYSTEM_DATAFILES=${ED}/usr/share/blender/${BV}/datafiles
+
+	cmake_src_test
+
+	# Clean up the image directory for src_install
+	rm -fr ${ED}/* || die
 }
 
+
 src_install() {
+	python_setup
+
+	blender_get_version
+
 	# Pax mark blender for hardened support.
 	pax-mark m "${BUILD_DIR}"/bin/blender
 
@@ -444,14 +494,22 @@ src_install() {
 
 	cmake_src_install
 
+	if use man; then
+		# Slot the man page
+		mv "${ED}/usr/share/man/man1/blender.1" "${ED}/usr/share/man/man1/blender-${BV}.1" || die
+	fi
+
 	# fix doc installdir
-	docinto "html"
+	docinto html
 	dodoc "${CMAKE_USE_DIR}"/release/text/readme.html
 	rm -r "${ED%/}"/usr/share/doc/blender || die
 
-	einfo "Install blender version: $( grep -Po 'CPACK_PACKAGE_VERSION "\K[^"]...' ${BUILD_DIR}/CPackConfig.cmake )"
-	python_fix_shebang "${ED%/}/usr/bin/blender-thumbnailer.py"
+	python_fix_shebang "${ED%/}/usr/bin/blender-${MY_PV}-thumbnailer.py"
 	python_optimize "${ED%/}/usr/share/blender/${MY_PV}/scripts"
+
+	mv "${ED}/usr/bin/blender" "${ED}/usr/bin/blender-${MY_PV}" || die
+
+	elog "Install blender version: $( grep -Po 'CPACK_PACKAGE_VERSION "\K[^"]...' ${BUILD_DIR}/CPackConfig.cmake )"
 }
 
 pkg_postinst() {
@@ -464,6 +522,12 @@ pkg_postinst() {
 	elog "/etc/portage/patches/media-gfx/blender/"
 	elog "or create simlink"
 	elog
+	elog "It is recommended to change your blender temp directory"
+	elog "from /tmp to /home/user/tmp or another tmp file under your"
+	elog "home directory. This can be done by starting blender, then"
+	elog "changing the 'Temporary Files' directory in Blender preferences."
+	elog
+
 	xdg_icon_cache_update
 	xdg_mimeinfo_database_update
 	xdg_desktop_database_update
@@ -473,9 +537,10 @@ pkg_postrm() {
 	xdg_icon_cache_update
 	xdg_mimeinfo_database_update
 	xdg_desktop_database_update
+
 	ewarn ""
 	ewarn "You may want to remove the following directory."
-	ewarn "~/.config/${PN}/${MY_PV}/cache/"
+	ewarn "~/.config/${PN}/${SLOT}/cache/"
 	ewarn "It may contain extra render kernels not tracked by portage"
 	ewarn ""
 }

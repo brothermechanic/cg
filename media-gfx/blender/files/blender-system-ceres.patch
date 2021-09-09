@@ -1,0 +1,79 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 0b9a808..ab02225
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -337,6 +337,7 @@ option(WITH_DRACO         "Enable Draco mesh compression Python module (used for
+ # Camera/motion tracking
+ option(WITH_LIBMV         "Enable Libmv structure from motion library" ON)
+ option(WITH_LIBMV_SCHUR_SPECIALIZATIONS "Enable fixed-size schur specializations." ON)
++option(WITH_SYSTEM_CERES  "Use system-wide ceres-solver instead of a bundled one" OFF)
+ mark_as_advanced(WITH_LIBMV_SCHUR_SPECIALIZATIONS)
+ 
+ # Logging/unbit test libraries.
+@@ -1380,8 +1381,15 @@ endif()
+ # Configure Ceres
+ 
+ if(WITH_LIBMV)
+-  # We always have C++11 which includes unordered_map.
+-  set(CERES_DEFINES "-DCERES_STD_UNORDERED_MAP;-DCERES_USE_CXX_THREADS")
++  if(NOT WITH_SYSTEM_CERES)
++    # We always have C++11 which includes unordered_map.
++    set(CERES_DEFINES "-DCERES_STD_UNORDERED_MAP;-DCERES_USE_CXX_THREADS")
++  else()
++    find_package(Ceres)
++    if(NOT GLOG_FOUND)
++        message(FATAL_ERROR "System wide Ceres is requested but was not found")
++    endif()  
++  endif()
+ endif()
+ 
+ #-----------------------------------------------------------------------------
+diff --git a/intern/libmv/CMakeLists.txt b/intern/libmv/CMakeLists.txt
+index e682136..2ecf872
+--- a/intern/libmv/CMakeLists.txt
++++ b/intern/libmv/CMakeLists.txt
+@@ -68,17 +68,21 @@ if(WITH_LIBMV)
+     ${EIGEN3_INCLUDE_DIRS}
+     ${PNG_INCLUDE_DIRS}
+     ${ZLIB_INCLUDE_DIRS}
+-    ../../extern/ceres/include
+-    ../../extern/ceres/config
+   )
+ 
+-  list(APPEND LIB
+-    extern_ceres
++  if(NOT ${WITH_SYSTEM_CERES})
++    list(APPEND INC_SYS 
++      ../../extern/ceres/include
++      ../../extern/ceres/config
++    )
++    list(APPEND LIB
++      extern_ceres
+ 
+-    ${GLOG_LIBRARIES}
+-    ${GFLAGS_LIBRARIES}
+-    ${PNG_LIBRARIES}
+-  )
++      ${GLOG_LIBRARIES}
++      ${GFLAGS_LIBRARIES}
++      ${PNG_LIBRARIES}
++    )
++  endif()
+ 
+   add_definitions(
+     -DWITH_LIBMV_GUARDED_ALLOC
+diff --git a/extern/CMakeLists.txt b/extern/CMakeLists.txt
+index 83bc99c..9c850fc 100644
+--- a/extern/CMakeLists.txt
++++ b/extern/CMakeLists.txt
+@@ -77,7 +77,9 @@ if(WITH_GHOST_X11 AND WITH_GHOST_XDND)
+ endif()
+ 
+ if(WITH_LIBMV)
+-  add_subdirectory(ceres)
++  if(NOT WITH_SYSTEM_CERES) 
++    add_subdirectory(ceres)
++  endif()
+ endif()
+ 
+ if(WITH_LIBMV OR WITH_GTESTS OR (WITH_CYCLES AND WITH_CYCLES_LOGGING))
