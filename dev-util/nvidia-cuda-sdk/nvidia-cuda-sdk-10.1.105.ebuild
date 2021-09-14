@@ -1,9 +1,9 @@
 # Copyright 1999-2019 Gentoo Foundation
 # Distributed under the terms of the GNU General Public License v2
 
-EAPI=6
+EAPI=7
 
-inherit cuda flag-o-matic portability toolchain-funcs unpacker versionator
+inherit cuda flag-o-matic portability toolchain-funcs unpacker
 
 MYD=$(ver_cut 1-2 ${PV})
 DRIVER_PV="418.39"
@@ -27,6 +27,7 @@ RDEPEND="
 		mpi? ( virtual/mpi )
 		)"
 DEPEND="${RDEPEND}"
+BDEPEND="virtual/pkgconfig"
 
 RESTRICT="test"
 
@@ -45,15 +46,10 @@ src_unpack() {
 	unpacker
 }
 
-pkg_setup() {
-	if use cuda || use opencl; then
-		cuda_pkg_setup
-	fi
-}
-
 src_prepare() {
+	cuda_src_prepare
+
 	export RAWLDFLAGS="$(raw-ldflags)"
-#	epatch "${FILESDIR}"/${P}-asneeded.patch
 
 	local file
 	while IFS="" read -d $'\0' -r file; do
@@ -109,12 +105,12 @@ src_install() {
 	if use doc; then
 		ebegin "Installing docs ..."
 			while IFS="" read -d $'\0' -r f; do
-				treecopy "${f}" "${ED%/}"/usr/share/doc/${PF}/
+				treecopy "${f}" "${ED}"/usr/share/doc/${PF}/
 			done < <(find -type f \( -name 'readme.txt' -o -name '*.pdf' \) -print0)
 
 			while IFS="" read -d $'\0' -r f; do
-				docompress -x "${f#${ED%/}}"
-			done < <(find "${ED%/}"/usr/share/doc/${PF}/ -type f -name 'readme.txt' -print0)
+				docompress -x "${f#${ED}}"
+			done < <(find "${ED}"/usr/share/doc/${PF}/ -type f -name 'readme.txt' -print0)
 		eend
 	fi
 
