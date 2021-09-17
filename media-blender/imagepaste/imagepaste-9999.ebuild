@@ -14,7 +14,6 @@ SLOT="0"
 DEPEND=""
 RDEPEND="
 	media-gfx/blender:=[addons]
-	>=dev-python/pillow-6.0.0[xcb]
 "
 
 RESTRICT="mirror"
@@ -25,7 +24,7 @@ PATCHES=(
 
 src_prepare() {
 	default
-	rm -r "${S}"/{bin,PIL,win32_py37,win32_py39}
+	rm -r "${S}"/imagepaste/clipboard/linux/bin/xclip
 	if [[ -z ${BLENDER_ADDONS_DIR} ]]; then
 		local MY_BV
 		for i in "2.93" "3.0" ; do

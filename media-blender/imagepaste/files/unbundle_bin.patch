@@ -1,28 +1,15 @@
-diff --git a/linux.py b/linux.py
-index af100c2..d5f4e2f 100644
---- a/linux.py
-+++ b/linux.py
-@@ -12,10 +12,8 @@ class ClipBoardTarget(Enum):
+diff --git a/imagepaste/clipboard/linux/linux.py b/imagepaste/clipboard/linux/linux.py
+index aa67bd5..7238ad0 100644
+--- a/imagepaste/clipboard/linux/linux.py
++++ b/imagepaste/clipboard/linux/linux.py
+@@ -117,9 +117,8 @@ class LinuxClipboard(Clipboard):
+         from os.path import realpath
+         from stat import S_IXUSR
  
- 
- def xclip_out(target: ClipBoardTarget = ClipBoardTarget.ALL.value, path=None):
--    script_file = os.path.realpath(__file__)
--    directory = os.path.dirname(script_file)
-     args = (
--        f"{directory}/bin/xclip",
-+        f"/usr/bin/xclip",
-         "-selection",
-         "clipboard",
-         "-target",
-@@ -55,10 +53,8 @@ def GrabImage():
- 
- # function to copy image from given path to clipboard
- def CopyImage(img_path):
--    script_file = os.path.realpath(__file__)
--    directory = os.path.dirname(script_file)
-     args = (
--        f"{directory}/bin/xclip",
-+        f"/usr/bin/xclip",
-         "-selection",
-         "clipboard",
-         "-target",
+-        XCLIP_PATH = f"{dirname(realpath(__file__))}/bin/xclip"
++        XCLIP_PATH = f"/usr/bin/xclip"
+         # TODO: Move to higher level
+-        chmod(XCLIP_PATH, S_IXUSR)
+         args = [
+             XCLIP_PATH,
+             "-rmlastnl",
