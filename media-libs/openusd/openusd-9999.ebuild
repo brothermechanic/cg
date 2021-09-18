@@ -68,6 +68,7 @@ CMAKE_BUILD_TYPE=Release
 
 PATCHES=(
 	"${FILESDIR}/algorithm.patch"
+	"${FILESDIR}/fix-size_t-in-singularTask.h.patch"
 )
 
 USD_PATH="/opt/${PN}"
