@@ -1,7 +1,7 @@
 # Copyright 1999-2012 Gentoo Foundation
 # Distributed under the terms of the GNU General Public License v2
 
-EAPI=4
+EAPI=7
 inherit eutils toolchain-funcs
 
 DEB_PATCH="${PN}_${PV}-2.diff"
