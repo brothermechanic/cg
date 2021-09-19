@@ -47,7 +47,6 @@ IUSE="${IUSE_DESKTOP} ${IUSE_GPU} ${IUSE_LIBS} ${IUSE_CPU} ${IUSE_TEST} ${IUSE_I
 
 REQUIRED_USE="${PYTHON_REQUIRED_USE}
 	|| ( gold lld )
-	alembic? ( openexr )
 	embree? ( cycles tbb )
 	smoke? ( fftw )
 	cuda? ( cycles )
@@ -128,15 +127,14 @@ RDEPEND="${PYTHON_DEPS}
 	openimageio? ( =media-libs/openimageio-2* )
 	opencolorio? ( =media-libs/opencolorio-2* )
 	openexr? (
-		media-libs/ilmbase:=
-		media-libs/openexr:=
+		media-libs/openexr:3=
 	)
 	opensubdiv? ( media-libs/opensubdiv[cuda?,opencl?,openmp?,tbb?] )
 	openvdb? (
 		>=media-gfx/openvdb-7.1.0[abi6-compat(-)?,abi7-compat(-)?,abi8-compat(-)?]
 		dev-libs/c-blosc:=
 	)
-	optix? ( dev-libs/optix )
+	optix? ( =dev-libs/optix-7.3.0 )
 	osl? ( >=media-libs/osl-1.11.10.0 )
 	pdf? ( media-libs/libharu )
 	potrace? ( media-gfx/potrace )
@@ -197,6 +195,16 @@ pkg_pretend() {
 pkg_setup() {
 	blender_check_requirements
 	python-single-r1_pkg_setup
+}
+
+src_unpack() {
+	git-r3_src_unpack
+
+	if use test; then
+		default
+		mkdir -p lib || die
+		mv "${WORKDIR}"/blender-${TEST_TARBALL_VERSION}-tests/tests lib || die
+	fi
 }
 
 src_prepare() {
