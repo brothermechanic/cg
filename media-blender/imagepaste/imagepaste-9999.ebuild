@@ -28,7 +28,7 @@ src_prepare() {
 	if [[ -z ${BLENDER_ADDONS_DIR} ]]; then
 		local MY_BV
 		for i in "2.93" "3.0" ; do
-			MY_BV="$( has_version -r media-gfx\/blender\:${i} && echo ${i} )"
+			has_version -r media-gfx\/blender\:${i} && MY_BV=${i}
 		done
 		BLENDER_ADDONS_DIR="/usr/share/blender/${MY_BV}/scripts"
 	fi
