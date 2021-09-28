@@ -56,7 +56,7 @@ diff -Naur a/release/scripts/presets/keyconfig/keymap_data/blender_default.py b/
          op_menu("SCREEN_MT_user_menu", {"type": 'Q', "value": 'PRESS'}),
 
 +        ("wm.context_menu_enum", {"type": 'ACCENT_GRAVE', "value": 'PRESS', "oskey": True, "repeat": True},
-+          {"properties":[("data_path", 'object.display_type')),
++         {"properties": [("data_path", 'object.display_type')]}),
 +
          # Fast editor switching
          *(
