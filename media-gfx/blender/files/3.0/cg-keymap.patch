@@ -44,16 +44,23 @@ diff -Naur a/release/scripts/presets/keyconfig/keymap_data/blender_default.py b/
              for k, e in (('ONE', 'VERT'), ('TWO', 'EDGE'), ('THREE', 'FACE'))
          ]
  
-@@ -406,7 +404,8 @@
+@@ -507,11 +507,15 @@
          ("wm.open_mainfile", {"type": 'O', "value": 'PRESS', "ctrl": True}, None),
          ("wm.save_mainfile", {"type": 'S', "value": 'PRESS', "ctrl": True}, None),
          ("wm.save_as_mainfile", {"type": 'S', "value": 'PRESS', "shift": True, "ctrl": True}, None),
 -        ("wm.quit_blender", {"type": 'Q', "value": 'PRESS', "ctrl": True}, None),
 +        ("wm.quit_blender", {"type": 'Q', "value": 'PRESS', "ctrl": True}, {"active":False,}, ),
 +        ("wm.window_fullscreen_toggle", {"type": 'F11', "value": 'PRESS', "oskey": True}, None),
- 
+
          # Quick menu and toolbar
          op_menu("SCREEN_MT_user_menu", {"type": 'Q', "value": 'PRESS'}),
+
++        ("wm.context_menu_enum", {"type": 'ACCENT_GRAVE', "value": 'PRESS', "oskey": True, "repeat": True},
++          {"properties":[("data_path", 'object.display_type')),
++
+         # Fast editor switching
+         *(
+             ("screen.space_type_set_or_cycle",
 @@ -514,6 +513,7 @@
          # Undo
          ("ed.undo", {"type": 'Z', "value": 'PRESS', "ctrl": True, "repeat": True}, None),
