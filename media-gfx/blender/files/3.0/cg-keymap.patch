@@ -18,6 +18,15 @@ diff -Naur a/release/scripts/presets/keyconfig/blender.py b/release/scripts/pres
          update=update_fn,
      )
      use_alt_click_leader: BoolProperty(
+@@ -222,7 +222,7 @@
+         description=(
+             "Navigate into folders by clicking on them once instead of twice"
+         ),
+-        default=False,
++        default=True,
+         update=update_fn,
+     )
+
 diff -Naur a/release/scripts/presets/keyconfig/keymap_data/blender_default.py b/release/scripts/presets/keyconfig/keymap_data/blender_default.py
 --- a/release/scripts/presets/keyconfig/keymap_data/blender_default.py	2020-12-27 18:22:21.417182104 +0300
 +++ b/release/scripts/presets/keyconfig/keymap_data/blender_default.py	2020-12-27 20:12:10.327299023 +0300
@@ -78,15 +87,6 @@ diff -Naur a/release/scripts/presets/keyconfig/keymap_data/blender_default.py b/
          ("wm.context_toggle", {"type": 'TAB', "value": 'PRESS', "shift": True},
           {"properties": [("data_path", 'tool_settings.use_snap')]}),
          ("wm.context_menu_enum", {"type": 'TAB', "value": 'PRESS', "shift": True, "ctrl": True},
-@@ -2168,7 +2168,7 @@
-         # needed to load files. The latter makes selection work if there's no
-         # operator (i.e. in regular editor mode).
-         ("file.select", {"type": 'LEFTMOUSE', "value": 'PRESS'},
--         {"properties": [("open", params.use_file_single_click), ("deselect_all", not params.legacy)]}),
-+         {"properties": [("open", True), ("deselect_all", not params.legacy)]}),
-         ("file.select", {"type": 'LEFTMOUSE', "value": 'CLICK', "ctrl": True},
-          {"properties": [("extend", True), ("open", False)]}),
-         ("file.select", {"type": 'LEFTMOUSE', "value": 'CLICK', "shift": True},
 @@ -3976,7 +3978,7 @@
              (("object.hide_collection",
                {"type": NUMBERS_1[i], "value": 'PRESS', "any": True},

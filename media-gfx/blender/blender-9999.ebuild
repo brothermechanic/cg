@@ -224,7 +224,7 @@ src_prepare() {
         eapply "${FILESDIR}"/${SLOT}/cg-keymap.patch
         eapply "${FILESDIR}"/${SLOT}/cg-mesh.patch
         eapply "${FILESDIR}"/${SLOT}/cg-userdef.patch
-        cp "${FILESDIR}"/${SLOT}/view_rotate_method.py "${S}"/release/scripts/startup/
+        cp "${FILESDIR}"/${SLOT}/cg-prefs.py "${S}"/release/scripts/startup/
     fi
 
 	if use addons_contrib; then
