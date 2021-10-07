@@ -218,6 +218,7 @@ src_prepare() {
 	#eapply "${FILESDIR}/blender-system-lzma.patch"
 	eapply "${FILESDIR}/blender-system-glog-gflags.patch"
 	#eapply "${FILESDIR}/blender-system-ceres.patch"
+	eapply "${FILESDIR}/${SLOT}/reversed-b8115f0.patch"
 	if use cg; then
         eapply "${FILESDIR}"/${SLOT}/cg-addons.patch
         eapply "${FILESDIR}"/${SLOT}/cg-defaults.patch
