@@ -35,9 +35,9 @@ fi
 SLOT="${MY_PV}"
 LICENSE="|| ( GPL-3 BL )"
 IUSE_DESKTOP="+cg -portable +X +addons +addons_contrib +nls +icu -ndof"
-IUSE_GPU="+opengl -optix cuda opencl llvm -sm_30 -sm_35 -sm_50 -sm_52 -sm_61 -sm_70 -sm_75"
+IUSE_GPU="+opengl -optix cuda opencl -sm_30 -sm_35 -sm_50 -sm_52 -sm_61 -sm_70 -sm_75"
 IUSE_LIBS="+cycles gmp sdl jack openal pulseaudio +freestyle -osl +openvdb nanovdb abi6-compat abi7-compat abi8-compat +opensubdiv +opencolorio +openimageio +pdf +pugixml +potrace +collada -alembic +gltf-draco +fftw +oidn +quadriflow -usd +bullet -valgrind +jemalloc libmv"
-IUSE_CPU="+openmp embree +sse +tbb +lld gold"
+IUSE_CPU="+openmp embree +sse +tbb +lld gold +llvm"
 IUSE_TEST="-debug -doc -man -gtests test"
 IUSE_IMAGE="-dpx -dds +openexr jpeg2k tiff +hdr"
 IUSE_CODEC="avi +ffmpeg -sndfile +quicktime"
@@ -61,7 +61,7 @@ REQUIRED_USE="${PYTHON_REQUIRED_USE}
 		^^ ( abi6-compat abi7-compat abi8-compat )
 		cycles tbb
 	)
-	osl? ( cycles )
+	osl? ( cycles llvm )
 	test? ( gtests opencolorio )
 	tiff? ( openimageio )
 "
@@ -109,7 +109,7 @@ RDEPEND="${PYTHON_DEPS}
 	libmv? ( sci-libs/ceres-solver )
 	lld? ( sys-devel/lld )
 	lzo? ( dev-libs/lzo:2= )
-	llvm? ( sys-devel/llvm:= )
+	llvm? ( <sys-devel/clang-13:= )
 	ndof? (
 		app-misc/spacenavd
 		dev-libs/libspnav
@@ -435,6 +435,11 @@ src_configure() {
 		-DWITH_LINKER_GOLD=$(usex gold)
 		-DWITH_NINJA_POOL_JOBS=OFF								# for machines with 16GB of RAM or less
 		-DBUILD_SHARED_LIBS=OFF
+		-DLLVM_VERSION=12
+		-DLLVM_LIBPATH="/usr/lib/llvm/12/lib64"
+		-DLLVM_LIBRARY="/usr/lib/llvm/12/lib64/libLLVM-12.so"
+		-DCLANG_INCLUDE_DIR="/usr/lib/llvm/12/include"
+		-DCLANG_LIBRARIES="/usr/lib/llvm/12/lib64/"
 		-Wno-dev
 	)
 	append-flags $(usex debug '-DDEBUG' '-DNDEBUG')
