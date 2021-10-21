@@ -250,6 +250,7 @@ src_prepare() {
 	sed -e "s|GENERATE_HTMLHELP      = YES|GENERATE_HTMLHELP      = NO|" \
 		-i doc/doxygen/Doxyfile || die
 
+	"""
 	# Prepare icons and .desktop files for slotting.
 	sed -e "s|blender.svg|blender-${BV}.svg|" -i source/creator/CMakeLists.txt || die
 	sed -e "s|blender-symbolic.svg|blender-${BV}-symbolic.svg|" -i source/creator/CMakeLists.txt || die
@@ -264,6 +265,7 @@ src_prepare() {
 	mv release/freedesktop/icons/symbolic/apps/blender-symbolic.svg release/freedesktop/icons/symbolic/apps/blender-${BV}-symbolic.svg || die
 	mv release/freedesktop/blender.desktop release/freedesktop/blender-${BV}.desktop || die
 	mv release/bin/blender-thumbnailer.py release/bin/blender-${BV}-thumbnailer.py || die
+	"""
 
 	ewarn "$(echo "Remaining bundled dependencies:";
 			( find extern -mindepth 1 -maxdepth 1 -type d; ) | sed 's|^|- |')"
@@ -518,10 +520,10 @@ src_install() {
 	dodoc "${CMAKE_USE_DIR}"/release/text/readme.html
 	rm -r "${ED%/}"/usr/share/doc/blender || die
 
-	python_fix_shebang "${ED%/}/usr/bin/blender-${MY_PV}-thumbnailer.py"
+	#python_fix_shebang "${ED%/}/usr/bin/blender-${MY_PV}-thumbnailer.py"
 	python_optimize "${ED%/}/usr/share/blender/${MY_PV}/scripts"
 
-	mv "${ED}/usr/bin/blender" "${ED}/usr/bin/blender-${MY_PV}" || die
+	#mv "${ED}/usr/bin/blender" "${ED}/usr/bin/blender-${MY_PV}" || die
 
 	elog "Install blender version: $( grep -Po 'CPACK_PACKAGE_VERSION "\K[^"]...' ${BUILD_DIR}/CPackConfig.cmake )"
 }
