@@ -8,9 +8,9 @@
 -             USER_SCRIPT_AUTOEXEC_DISABLE | USER_NONEGFRAMES),
 +    .flag = (USER_AUTOSAVE | USER_TOOLTIPS | USER_RELPATHS |
 +             USER_SCRIPT_AUTOEXEC_DISABLE | USER_NONEGFRAMES | USER_FILECOMPRESS),
-     .dupflag = USER_DUP_MESH | USER_DUP_CURVE | USER_DUP_SURF | USER_DUP_FONT | USER_DUP_MBALL |
-                USER_DUP_LAMP | USER_DUP_ARM | USER_DUP_ACT | USER_DUP_LIGHTPROBE |
-                USER_DUP_GPENCIL,
+     .dupflag = USER_DUP_MESH | USER_DUP_CURVE | USER_DUP_SURF | USER_DUP_LATTICE | USER_DUP_FONT |
+                USER_DUP_MBALL | USER_DUP_LAMP | USER_DUP_ARM | USER_DUP_CAMERA | USER_DUP_SPEAKER |
+                USER_DUP_ACT | USER_DUP_LIGHTPROBE | USER_DUP_GPENCIL,
      .pref_flag = USER_PREF_FLAG_SAVE,
      .savetime = 2,
      .tempdir = "",
@@ -32,7 +32,7 @@
      .app_flag = 0,
 @@ -106,7 +106,7 @@
      .user_menus = {NULL},
- 
+
      .keyconfigstr = "Blender",
 -    .undosteps = 32,
 +    .undosteps = 64,
@@ -57,7 +57,7 @@
 +    .render_display_type = USER_RENDER_DISPLAY_AREA,
 +    .filebrowser_display_type = USER_TEMP_SPACE_DISPLAY_FULLSCREEN,
      .viewport_aa = 8,
- 
+
      .walk_navigation =
 @@ -230,7 +230,8 @@ const UserDef U_default = {
 
