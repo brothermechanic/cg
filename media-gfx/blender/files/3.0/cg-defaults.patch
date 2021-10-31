@@ -57,6 +57,15 @@ diff -Naur a/source/blender/makesdna/DNA_modifier_defaults.h b/source/blender/ma
      .mat_ofs = 0, \
      .mat_ofs_rim = 0, \
      .merge_tolerance = 0.0001f, \
+@@ -619,7 +619,7 @@
+     .subdivType = 0, \
+     .levels = 1, \
+     .renderLevels = 2, \
+-    .flags = eSubsurfModifierFlag_UseCrease | eSubsurfModifierFlag_ControlEdges, \
++    .flags = eSubsurfModifierFlag_UseCrease | eSubsurfModifierFlag_ControlEdges | eSubsurfModifierFlag_UseRecursiveSubdivision, \
+     .uv_smooth = SUBSURF_UV_SMOOTH_PRESERVE_BOUNDARIES, \
+     .quality = 3, \
+     .boundary_smooth = SUBSURF_BOUNDARY_SMOOTH_ALL, \
 diff -Naur a/source/blender/makesdna/DNA_object_defaults.h b/source/blender/makesdna/DNA_object_defaults.h
 --- a/source/blender/makesdna/DNA_object_defaults.h	2020-12-24 20:07:32.000000000 +0300
 +++ b/source/blender/makesdna/DNA_object_defaults.h	2020-12-27 22:56:45.667471288 +0300

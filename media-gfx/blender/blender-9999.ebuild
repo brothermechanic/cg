@@ -4,6 +4,7 @@
 EAPI=7
 
 PYTHON_COMPAT=( python3_{7..10} )
+LLVM_SLOT="12"
 
 inherit check-reqs cmake flag-o-matic pax-utils python-single-r1 toolchain-funcs xdg-utils
 
@@ -109,7 +110,10 @@ RDEPEND="${PYTHON_DEPS}
 	libmv? ( sci-libs/ceres-solver )
 	lld? ( sys-devel/lld )
 	lzo? ( dev-libs/lzo:2= )
-	llvm? ( <sys-devel/clang-13:= )
+	llvm? (
+        sys-devel/llvm:${LLVM_SLOT}=
+        sys-devel/clang:${LLVM_SLOT}=
+    )
 	ndof? (
 		app-misc/spacenavd
 		dev-libs/libspnav
@@ -437,11 +441,8 @@ src_configure() {
 		-DWITH_LINKER_GOLD=$(usex gold)
 		-DWITH_NINJA_POOL_JOBS=OFF								# for machines with 16GB of RAM or less
 		-DBUILD_SHARED_LIBS=OFF
-		-DLLVM_VERSION=12
-		-DLLVM_LIBPATH="/usr/lib/llvm/12/lib64"
-		-DLLVM_LIBRARY="/usr/lib/llvm/12/lib64/libLLVM-12.so"
-		-DCLANG_INCLUDE_DIR="/usr/lib/llvm/12/include"
-		-DCLANG_LIBRARIES="/usr/lib/llvm/12/lib64/"
+		-DCLANG_ROOT_DIR=/usr/lib/llvm/${LLVM_SLOT}/$(get_libdir)
+		-DCLANG_INCLUDE_DIR=/usr/lib/llvm/${LLVM_SLOT}
 		-Wno-dev
 	)
 	append-flags $(usex debug '-DDEBUG' '-DNDEBUG')
