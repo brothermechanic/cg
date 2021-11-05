@@ -37,7 +37,6 @@ RDEPEND="
 DEPEND="${RDEPEND}"
 
 BDEPEND="
-	>=dev-util/cmake-3.11.4
 	virtual/pkgconfig
 	doc? (
 		app-doc/doxygen

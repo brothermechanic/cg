@@ -18,7 +18,7 @@ RESTRICT="
 "
 REQUIRED_USE="
 	numpy? ( python )
-	^^ ( abi6-compat abi7-compat abi8-compat abi9-compat )
+	^^ ( abi6-compat abi7-compat abi8-compat )
 	python? ( ${PYTHON_REQUIRED_USE} )
 "
 
