@@ -5,11 +5,11 @@ PYTHON_COMPAT=( python3_{8..10} )
 inherit cmake python-single-r1
 
 DESCRIPTION="Library for the efficient manipulation of volumetric data"
-HOMEPAGE="http://www.openvdb.org"
+HOMEPAGE="https://www.openvdb.org"
 SRC_URI="https://github.com/AcademySoftwareFoundation/${PN}/archive/v${PV}.tar.gz -> ${P}.tar.gz"
 
 LICENSE="MPL-2.0"
-SLOT="0"
+SLOT="0/9"
 KEYWORDS="~amd64 ~x86"
 IUSE="cpu_flags_x86_avx cpu_flags_x86_sse4_2 +blosc doc numpy python static-libs test utils zlib abi6-compat abi7-compat abi8-compat"
 RESTRICT="
@@ -27,11 +27,10 @@ RDEPEND="
 	>=dev-libs/boost-1.70.0:=
 	dev-libs/jemalloc:=
 	dev-libs/log4cplus:=
-	media-libs/imath:=
+	dev-libs/imath:=
 	media-libs/glfw
 	media-libs/glu
 	media-libs/openexr:3=
-	sys-libs/zlib:=
 	x11-libs/libXcursor
 	x11-libs/libXi
 	x11-libs/libXinerama
@@ -43,7 +42,9 @@ RDEPEND="
 			>=dev-libs/boost-1.70:=[python,${PYTHON_MULTI_USEDEP}]
 			dev-python/numpy[${PYTHON_MULTI_USEDEP}]
 		')
-	)"
+	)
+	zlib? ( sys-libs/zlib )
+"
 
 DEPEND="${RDEPEND}"
 
@@ -103,6 +104,7 @@ src_configure() {
 
 	local mycmakeargs=(
 		-DCMAKE_INSTALL_PREFIX="${myprefix}"
+		-DCMAKE_INSTALL_DOCDIR="share/doc/${PF}/"
 		-DOPENVDB_ABI_VERSION_NUMBER="${version}"
 		-DOPENVDB_BUILD_DOCS=$(usex doc)
 		-DOPENVDB_BUILD_UNITTESTS=$(usex test)
@@ -118,7 +120,7 @@ src_configure() {
 		-DUSE_COLORED_OUTPUT=ON
 		-DUSE_IMATH_HALF=ON
 		-DUSE_LOG4CPLUS=ON
-		-DCONCURRENT_MALLOC="Tbbmalloc"
+		#-DCONCURRENT_MALLOC="Tbbmalloc"
 	)
 
 	if use python; then

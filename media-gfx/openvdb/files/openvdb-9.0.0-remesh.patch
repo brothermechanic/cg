@@ -475,7 +475,7 @@
      void doMedian(const RangeType&, int);
      void doOffset(const RangeType&, ValueType);
      /// @return true if the process was interrupted
-@@ -498,6 +518,31 @@ inline void accum(bool& sum, bool addend
+@@ -498,6 +518,27 @@ inline void accum(bool& sum, bool addend
  
  ////////////////////////////////////////
  
