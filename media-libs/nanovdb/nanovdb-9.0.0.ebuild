@@ -93,8 +93,8 @@ src_configure() {
 		-DNANOVDB_USE_OPENCL=$(usex opencl ON OFF)
 		-DNANOVDB_USE_OPENGL=ON
 		-DNANOVDB_USE_OPENVDB=$(usex openvdb ON OFF)
-		-DNANOVDB_USE_OPTIX=$(usex optix ON)
-		#-DOptiX_INCLUDE_DIR=/opt/optix/include
+		-DNANOVDB_USE_OPTIX=$(usex optix ON OFF)
+		-DOptiX_INCLUDE_DIR=/opt/optix/include
 		-DNANOVDB_USE_MAGICAVOXEL=OFF
 		-DNANOVDB_USE_INTRINSICS=$(usex intrinsics ON OFF)
 		-DNANOVDB_USE_TBB=ON
