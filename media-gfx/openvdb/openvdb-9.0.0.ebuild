@@ -11,7 +11,7 @@ SRC_URI="https://github.com/AcademySoftwareFoundation/${PN}/archive/v${PV}.tar.g
 LICENSE="MPL-2.0"
 SLOT="0/9"
 KEYWORDS="~amd64 ~x86"
-IUSE="cpu_flags_x86_avx cpu_flags_x86_sse4_2 +blosc doc openexr numpy png python static-libs test utils zlib abi6-compat abi7-compat abi8-compat"
+IUSE="cpu_flags_x86_avx cpu_flags_x86_sse4_2 +blosc doc +openexr numpy +png python static-libs test utils zlib abi6-compat abi7-compat abi8-compat"
 RESTRICT="
 	!test? ( test )
 	mirror
