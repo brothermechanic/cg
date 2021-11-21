@@ -11,7 +11,7 @@ SRC_URI="https://github.com/AcademySoftwareFoundation/${PN}/archive/v${PV}.tar.g
 LICENSE="MPL-2.0"
 SLOT="0/9"
 KEYWORDS="~amd64 ~x86"
-IUSE="cpu_flags_x86_avx cpu_flags_x86_sse4_2 +blosc doc numpy python static-libs test utils zlib abi6-compat abi7-compat abi8-compat"
+IUSE="cpu_flags_x86_avx cpu_flags_x86_sse4_2 +blosc doc openexr numpy png python static-libs test utils zlib abi6-compat abi7-compat abi8-compat"
 RESTRICT="
 	!test? ( test )
 	mirror
@@ -27,10 +27,11 @@ RDEPEND="
 	>=dev-libs/boost-1.70.0:=
 	dev-libs/jemalloc:=
 	dev-libs/log4cplus:=
-	dev-libs/imath:=
+	dev-libs/imath:3=
 	media-libs/glfw
 	media-libs/glu
-	media-libs/openexr:3=
+	openexr? ( media-libs/openexr:3= )
+	png? ( media-libs/libpng:= )
 	x11-libs/libXcursor
 	x11-libs/libXi
 	x11-libs/libXinerama
@@ -67,6 +68,7 @@ PATCHES=(
 	"${FILESDIR}/${PN}-9.0.0-remesh.patch"
 	"${FILESDIR}/${PN}-8.1.0-glfw-libdir.patch"
 	"${FILESDIR}/${PN}-9.0.0-numpy.patch"
+	"${FILESDIR}/${PN}-9.0.0-imath-3.patch"
 )
 
 
@@ -77,10 +79,11 @@ pkg_setup() {
 src_prepare() {
 	# Make sure we find our renamed Imath headers
 	# bug #820929
-	sed -i -e 's:#include <Imath/half.h>:#include <Imath-3/half.h>:' openvdb/openvdb/Types.h || die
+	sed -i -e 's|#include <Imath/half.h>|#include <Imath-3/half.h>|' ${PN}/${PN}/Types.h || die
+	sed -i -e 's|#include <OpenEXR|#include <OpenEXR-3|' ${PN}/${PN}/Types.h || die
+	sed -i -e 's|#include <OpenEXR|#include <OpenEXR-3|' ${PN}/${PN}/cmd/openvdb_render.cc || die
 	sed -i -e "s|DESTINATION doc|DESTINATION share/doc/${P}|g" doc/CMakeLists.txt || die
 	sed -i -e "s|DESTINATION lib|DESTINATION $(get_libdir)|g" {,${PN}/${PN}/}CMakeLists.txt || die
-	sed -i -e "s|  lib|  $(get_libdir)|g" ${PN}/${PN}/CMakeLists.txt || die
 	# Use the selected version of python rather than the latest version installed
 #	sed -i -e "s|find_package(Python QUIET|find_package(Python ${EPYTHON##python} EXACT REQUIRED QUIET|g" ${PN}/${PN}/python/CMakeLists.txt || die
 
@@ -116,11 +119,13 @@ src_configure() {
 		-DOPENVDB_ENABLE_RPATH=OFF
 		-DUSE_BLOSC=$(usex blosc)
 		-DUSE_ZLIB=$(usex zlib)
+		-DUSE_EXR=$(usex openexr)
+		-DUSE_PNG=$(usex png)
 		-DUSE_CCACHE=OFF
 		-DUSE_COLORED_OUTPUT=ON
 		-DUSE_IMATH_HALF=ON
 		-DUSE_LOG4CPLUS=ON
-		#-DCONCURRENT_MALLOC="Tbbmalloc"
+		-DCONCURRENT_MALLOC="Tbbmalloc"
 	)
 
 	if use python; then

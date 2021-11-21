@@ -48,9 +48,14 @@ S=${WORKDIR}/openvdb-feature-${PN}/${PN}/${PN}
 
 src_prepare() {
 	sed -i -e "s|DESTINATION doc|DESTINATION share/doc/${P}|g" docs/CMakeLists.txt || die
-	sed -i -e "s|DESTINATION lib|DESTINATION $(get_libdir)|g" CMakeLists.txt || die
-	sed -i -e "s|  lib|  $(get_libdir)|g" CMakeLists.txt || die
+
 	cp ../../cmake/FindLog4cplus.cmake cmake/FindLog4cplus.cmake || die
+	cp ../../cmake/FindOpenVDB.cmake cmake/FindOpenVDB.cmake || die
+	cp ../../cmake/FindTBB.cmake cmake/FindTBB.cmake || die
+	cp ../../cmake/OpenVDBUtils.cmake cmake/OpenVDBUtils.cmake || die
+
+	sed -i -e "s|IlmBase REQUIRED COMPONENTS Half|Imath REQUIRED COMPONENTS Half|" cmake/FindOpenVDB.cmake || die
+	sed -i -e "s|_OPENVDB_VISIBLE_DEPENDENCIES IlmBase::Half|_OPENVDB_VISIBLE_DEPENDENCIES Imath::Half|" cmake/FindOpenVDB.cmake || die
 
 	cmake_src_prepare
 }

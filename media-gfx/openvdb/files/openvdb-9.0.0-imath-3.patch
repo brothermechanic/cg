@@ -1,0 +1,11 @@
+--- a/openvdb/openvdb/CMakeLists.txt	2021-11-21 03:46:15.286153573 -0000
++++ b/openvdb/openvdb/CMakeLists.txt	2021-11-21 04:16:05.104362526 -0000
+@@ -213,7 +213,7 @@ set(OPENVDB_CORE_DEPENDENT_LIBS "")
+ 
+ if(USE_IMATH_HALF)
+   list(APPEND OPENVDB_CORE_DEPENDENT_LIBS
+-    $<TARGET_NAME_IF_EXISTS:IlmBase::Half> $<TARGET_NAME_IF_EXISTS:Imath::Imath>)
++    $<TARGET_NAME_IF_EXISTS:Imath::Half> $<TARGET_NAME_IF_EXISTS:Imath::Imath>)
+ endif()
+ 
+ # We then choose to pull in TBB. If building aganst Houdini, TBB should
