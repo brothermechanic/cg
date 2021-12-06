@@ -1,66 +1,47 @@
-# Copyright 1999-2020 Gentoo Authors
+# Copyright 1999-2021 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
 
-EAPI=7
+EAPI=8
 
 CMAKE_MAKEFILE_GENERATOR=emake
-PYTHON_COMPAT=( python2_7 )
 
-inherit cmake python-utils-r1 toolchain-funcs
+inherit cmake cuda toolchain-funcs
 
 MY_PV="$(ver_rs "1-3" '_')"
 DESCRIPTION="An Open-Source subdivision surface library"
 HOMEPAGE="https://graphics.pixar.com/opensubdiv/docs/intro.html"
 SRC_URI="https://github.com/PixarAnimationStudios/OpenSubdiv/archive/v${MY_PV}.tar.gz -> ${P}.tar.gz"
+S="${WORKDIR}/OpenSubdiv-${MY_PV}"
 
 # Modfied Apache-2.0 license, where section 6 has been replaced.
 # See for example CMakeLists.txt for details.
 LICENSE="Apache-2.0"
 SLOT="0"
-KEYWORDS="~amd64 ~x86"
-IUSE="cuda doc examples opencl openmp ptex tbb test tutorials"
+KEYWORDS="~amd64 ~arm ~arm64 ~x86"
+IUSE="cuda examples opencl openmp ptex tbb test tutorials"
+RESTRICT="!test? ( test )"
 
 RDEPEND="
-	${PYTHON_DEPS}
 	media-libs/glew:=
-	>=media-libs/glfw-3.0.0:=
+	media-libs/glfw:=
 	x11-libs/libXinerama
-	cuda? ( dev-util/nvidia-cuda-toolkit:= )
+	cuda? ( dev-util/nvidia-cuda-toolkit:* )
 	opencl? ( virtual/opencl )
-	ptex? ( >=media-libs/ptex-2.3.2 )
+	ptex? ( media-libs/ptex )
 "
 DEPEND="
 	${RDEPEND}
-	tbb? ( >=dev-cpp/tbb-4.0.0 )
+	tbb? ( dev-cpp/tbb )
 "
-BDEPEND="
-	doc? (
-		app-doc/doxygen
-		dev-python/docutils
-	)
-	cuda? ( <sys-devel/gcc-11[cxx] )
-"
-
-S="${WORKDIR}/OpenSubdiv-${MY_PV}"
 
 PATCHES=(
 	"${FILESDIR}/${PN}-3.3.0-use-gnuinstalldirs.patch"
-	"${FILESDIR}/${PN}-3.4.3-add-CUDA11-compatibility.patch"
-	"${FILESDIR}/${PN}-3.4.0-0001-documentation-CMakeLists.txt-force-python2.patch"
 	"${FILESDIR}/${PN}-3.4.3-install-tutorials-into-bin.patch"
+	"${FILESDIR}/${P}-add-CUDA11-compatibility.patch"
+	"${FILESDIR}/support-oneTBB-2021.patch"
 )
 
-RESTRICT="
-	mirror
-	!test? ( test )
-"
-
 pkg_pretend() {
-#	if use cuda; then
-#		[[ $(gcc-major-version) -gt 10 ]] && \
-#		eerror "USE=cuda requires gcc < 11. Run gcc-config to switch your default compiler" && \
-#		die "Need gcc version earlier than 10"
-#	fi
 	[[ ${MERGE_TYPE} != binary ]] && use openmp && tc-check-openmp
 }
 
@@ -68,15 +49,23 @@ pkg_setup() {
 	[[ ${MERGE_TYPE} != binary ]] && use openmp && tc-check-openmp
 }
 
+src_prepare() {
+	cmake_src_prepare
+
+	use cuda && cuda_src_prepare
+}
+
 src_configure() {
 	# GLTESTS are disabled as portage is unable to open a display during test phase
-	CMAKE_BUILD_TYPE="Release"
+	# TODO: virtx work?
 	local mycmakeargs=(
-		-DGLEW_LOCATION="${EPREFIX}/usr/$(get_libdir)"
-		-DGLFW_LOCATION="${EPREFIX}/usr/$(get_libdir)"
+		-DGLEW_LOCATION="${ESYSROOT}/usr/$(get_libdir)"
+		-DGLFW_LOCATION="${ESYSROOT}/usr/$(get_libdir)"
 		-DNO_CLEW=ON
 		-DNO_CUDA=$(usex !cuda)
-		-DNO_DOC=$(usex !doc)
+		# Docs needed Python 2 so disabled
+		# bug #815172
+		-DNO_DOC=ON
 		-DNO_EXAMPLES=$(usex !examples)
 		-DNO_GLTESTS=ON
 		-DNO_OMP=$(usex !openmp)
@@ -88,7 +77,18 @@ src_configure() {
 		-DNO_TUTORIALS=$(usex !tutorials)
 	)
 
-	# fails with building cuda kernels when using multiple jobs
-	#export MAKEOPTS="-j1"
+	if use cuda; then
+		# old cmake CUDA module doesn't use environment variable to initialize flags
+		mycmakeargs+=( -DCUDA_NVCC_FLAGS="${NVCCFLAGS}" )
+
+		# check if user provided --gpu-architecture/-arch flag and prevent cmake from overriding it if so
+		for f in ${NVCCFLAGS}; do
+			if [[ ${f} == -arch* || ${f} == --gpu-architecture* ]]; then
+				mycmakeargs+=( -DOSD_CUDA_NVCC_FLAGS="" )
+				break
+			fi
+		done
+	fi
+
 	cmake_src_configure
 }
