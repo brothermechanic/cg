@@ -4,7 +4,7 @@ inherit cmake
 
 DESCRIPTION="A lightweight GPU friendly version of VDB"
 HOMEPAGE="http://www.openvdb.org"
-IUSE="abi6-compat abi7-compat abi8-compat benchmark +blosc +cuda doc examples +intrinsics opencl +openvdb optix static-libs test utils -sm_30 -sm_35 -sm_50 -sm_52 -sm_61 -sm_70 -sm_75"
+IUSE="abi6-compat abi7-compat abi8-compat benchmark +blosc +cuda doc examples +intrinsics opencl +openvdb optix static-libs test utils -sm_30 -sm_35 -sm_50 -sm_52 -sm_61 -sm_70 -sm_75 -sm_86"
 
 SRC_URI="https://github.com/AcademySoftwareFoundation/openvdb/archive/feature/${PN}/v${PV}.tar.gz -> ${P}.tar.gz"
 
@@ -78,14 +78,6 @@ src_configure() {
 		append-cppflags -DOPENVDB_ABI_VERSION_NUMBER=${version}
 	fi
 
-	local CUDA_ARCH=""
-	if use cuda; then
-		for CA in 30 35 50 52 61 70 75; do
-			use sm_${CA} && ( [[ -n "${CUDA_ARCH}" ]] && CUDA_ARCH="${CUDA_ARCH};${CA}" || CUDA_ARCH="${CA}" )
-		done
-		[ -n "${CUDA_ARCH}" ] && mycmakeargs+=( -DCMAKE_CUDA_ARCHITECTURES=${CUDA_ARCH} )
-	fi
-
 	local mycmakeargs=(
 		-DCMAKE_INSTALL_PREFIX="${myprefix}"
 		-DNANOVDB_BUILD_BENCHMARK=$(usex benchmark ON OFF)
@@ -106,6 +98,14 @@ src_configure() {
 		-DNANOVDB_USE_ZLIB=ON
 		-DNANOVDB_ALLOW_FETCHCONTENT=OFF
 	)
+
+	local CUDA_ARCH=""
+	if use cuda; then
+		for CA in 30 35 50 52 61 70 75 86; do
+			use sm_${CA} && CUDA_ARCH+="${CA},"
+		done
+		[ -n "${CUDA_ARCH}" ] && mycmakeargs+=( -DCMAKE_CUDA_ARCHITECTURES=${CUDA_ARCH::-1} )
+	fi
 
 	cmake_src_configure
 
