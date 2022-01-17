@@ -71,3 +71,13 @@ index 824b2fb..a3b0992 100644
  endif()
  
  if(WITH_GTESTS)
+--- a/extern/ceres/CMakeLists.txt	2022-01-17 21:08:16.021953666 +0300
++++ b/extern/ceres/CMakeLists.txt	2022-01-17 21:15:08.000702391 +0300
+@@ -27,7 +27,6 @@ set(INC
+   include
+   internal
+   config
+-  ../gflags/src
+ )
+ 
+ set(INC_SYS
