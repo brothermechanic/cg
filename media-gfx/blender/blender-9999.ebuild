@@ -35,7 +35,7 @@ fi
 
 SLOT="${MY_PV}"
 LICENSE="|| ( GPL-3 BL )"
-IUSE_DESKTOP="+cg -portable +X +addons +addons_contrib +nls +icu -ndof"
+IUSE_DESKTOP="cg -portable +X +addons +addons_contrib +nls +icu -ndof"
 IUSE_GPU="+opengl -optix cuda opencl -sm_30 -sm_35 -sm_50 -sm_52 -sm_61 -sm_70 -sm_75"
 IUSE_LIBS="+cycles gmp sdl jack openal pulseaudio +freestyle -osl +openvdb nanovdb abi6-compat abi7-compat abi8-compat +opensubdiv +opencolorio +openimageio +pdf +pugixml +potrace +collada -alembic +gltf-draco +fftw +oidn +quadriflow -usd +bullet -valgrind +jemalloc libmv"
 IUSE_CPU="+openmp embree +sse +tbb +lld gold +llvm"
@@ -223,11 +223,11 @@ src_prepare() {
 	eapply "${FILESDIR}/blender-system-glog-gflags.patch"
 	#eapply "${FILESDIR}/D13464.patch"
 	if use cg; then
-        eapply "${FILESDIR}"/${SLOT}/cg-addons.patch
         eapply "${FILESDIR}"/${SLOT}/cg-defaults.patch
-        eapply "${FILESDIR}"/${SLOT}/cg-keymap.patch
         eapply "${FILESDIR}"/${SLOT}/cg-mesh.patch
-        eapply "${FILESDIR}"/${SLOT}/cg-userdef.patch
+        #eapply "${FILESDIR}"/${SLOT}/cg-addons.patch
+        #eapply "${FILESDIR}"/${SLOT}/cg-keymap.patch
+        #eapply "${FILESDIR}"/${SLOT}/cg-userdef.patch
         cp "${FILESDIR}"/${SLOT}/cg-prefs.py "${S}"/release/scripts/startup/
     fi
 
