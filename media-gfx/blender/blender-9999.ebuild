@@ -4,13 +4,12 @@
 EAPI=7
 
 PYTHON_COMPAT=( python3_{9..10} )
-LLVM_SLOT="12"
+LLVM_MAX_SLOT="13"
 
 inherit check-reqs cmake flag-o-matic pax-utils python-single-r1 toolchain-funcs xdg-utils
 
 DESCRIPTION="Blender is a free and open-source 3D creation suite."
 HOMEPAGE="https://www.blender.org"
-
 
 inherit git-r3
 if [[ ${PV} == 9999 ]]; then
@@ -36,9 +35,9 @@ fi
 SLOT="${MY_PV}"
 LICENSE="|| ( GPL-3 BL )"
 IUSE_DESKTOP="cg -portable +X +addons +addons_contrib +nls +icu -ndof"
-IUSE_GPU="+opengl -optix cuda opencl -sm_30 -sm_35 -sm_50 -sm_52 -sm_61 -sm_70 -sm_75"
-IUSE_LIBS="+cycles gmp sdl jack openal pulseaudio +freestyle -osl +openvdb nanovdb abi6-compat abi7-compat abi8-compat +opensubdiv +opencolorio +openimageio +pdf +pugixml +potrace +collada -alembic +gltf-draco +fftw +oidn +quadriflow -usd +bullet -valgrind +jemalloc libmv"
-IUSE_CPU="+openmp embree +sse +tbb +lld gold +llvm"
+IUSE_GPU="+opengl -optix cuda opencl -sm_30 -sm_35 -sm_50 -sm_52 -sm_61 -sm_70 -sm_75 -sm_86"
+IUSE_LIBS="clang +cycles gmp sdl jack openal pulseaudio +freestyle -osl +openvdb nanovdb abi6-compat abi7-compat abi8-compat +opensubdiv +opencolorio +openimageio +pdf +pugixml +potrace +collada -alembic +gltf-draco +fftw +oidn +quadriflow -usd +bullet -valgrind +jemalloc libmv +llvm"
+IUSE_CPU="+openmp embree +sse +tbb +lld gold"
 IUSE_TEST="-debug -doc -man -gtests test"
 IUSE_IMAGE="-dpx -dds +openexr jpeg2k tiff +hdr"
 IUSE_CODEC="avi +ffmpeg -sndfile +quicktime"
@@ -48,6 +47,7 @@ IUSE="${IUSE_DESKTOP} ${IUSE_GPU} ${IUSE_LIBS} ${IUSE_CPU} ${IUSE_TEST} ${IUSE_I
 
 REQUIRED_USE="${PYTHON_REQUIRED_USE}
 	|| ( gold lld )
+	alembic? ( openexr )
 	embree? ( cycles tbb )
 	smoke? ( fftw )
 	cuda? ( cycles )
@@ -109,11 +109,10 @@ RDEPEND="${PYTHON_DEPS}
 	jpeg2k? ( media-libs/openjpeg:2= )
 	libmv? ( sci-libs/ceres-solver )
 	lld? ( sys-devel/lld )
+	lzma? ( >=app-arch/xz-utils-5.2.5 )
 	lzo? ( dev-libs/lzo:2= )
-	llvm? (
-        sys-devel/llvm:${LLVM_SLOT}=
-        sys-devel/clang:${LLVM_SLOT}=
-    )
+	llvm? ( <sys-devel/llvm-$((${LLVM_MAX_SLOT} + 1)):= )
+    clang? ( <sys-devel/clang-$((${LLVM_MAX_SLOT} + 1)):= )
 	ndof? (
 		app-misc/spacenavd
 		dev-libs/libspnav
@@ -128,7 +127,7 @@ RDEPEND="${PYTHON_DEPS}
 		virtual/glu
 	)
 	oidn? ( media-libs/oidn )
-	openimageio? ( =media-libs/openimageio-2* )
+	openimageio? ( =media-libs/openimageio-2.2* )
 	opencolorio? ( =media-libs/opencolorio-2* )
 	openexr? (
 		media-libs/openexr:3=
@@ -152,7 +151,6 @@ RDEPEND="${PYTHON_DEPS}
 	usd? ( media-libs/openusd[monolithic,-python] )
 	valgrind? ( dev-util/valgrind )
 "
-	#lzma? ( app-arch/lzma )
 
 DEPEND="${RDEPEND}
 	dev-cpp/eigen:=
@@ -171,6 +169,8 @@ RESTRICT="
 	mirror
 	!test? ( test )
 "
+QA_PREBUILT="/usr/share/blender/3.1/scripts/addons/cycles/lib/kernel_sm_*.cubin"
+QA_PRESTRIPPED="${QA_PREBUILT}"
 
 blender_check_requirements() {
 	[[ ${MERGE_TYPE} != binary ]] && use openmp && tc-check-openmp
@@ -221,13 +221,15 @@ src_prepare() {
 	eapply "${FILESDIR}/x112.patch"
 	#eapply "${FILESDIR}/blender-system-lzma.patch"
 	eapply "${FILESDIR}/blender-system-glog-gflags.patch"
+	eapply "${FILESDIR}/Fix-build-with-system-glew.patch"
+	eapply "${FILESDIR}/Fix-build-with-openexr-3.x.patch"
 	#eapply "${FILESDIR}/D13464.patch"
 	if use cg; then
+        eapply "${FILESDIR}"/${SLOT}/cg-addons.patch
         eapply "${FILESDIR}"/${SLOT}/cg-defaults.patch
+        eapply "${FILESDIR}"/${SLOT}/cg-keymap.patch
         eapply "${FILESDIR}"/${SLOT}/cg-mesh.patch
-        #eapply "${FILESDIR}"/${SLOT}/cg-addons.patch
-        #eapply "${FILESDIR}"/${SLOT}/cg-keymap.patch
-        #eapply "${FILESDIR}"/${SLOT}/cg-userdef.patch
+        eapply "${FILESDIR}"/${SLOT}/cg-userdef.patch
         cp "${FILESDIR}"/${SLOT}/cg-prefs.py "${S}"/release/scripts/startup/
     fi
 
@@ -239,7 +241,7 @@ src_prepare() {
         sed -i -e "s|.pythondir.*|.pythondir = \"${BLENDER_ADDONS_DIR}\",|" "${S}"/release/datafiles/userdef/userdef_default.c || die
     fi
 	# remove some bundled deps
-	rm -rf extern/{Eigen3,glew-es,lzo,gflags,glog,draco,glew} || die
+	rm -rf extern/{Eigen3,glew-es,lzma,lzo,gflags,glog,draco,glew} || die
 
 	# we don't want static glew, but it's scattered across
 	# multiple files that differ from version to version
@@ -254,7 +256,6 @@ src_prepare() {
 	sed -e "s|GENERATE_HTMLHELP      = YES|GENERATE_HTMLHELP      = NO|" \
 		-i doc/doxygen/Doxyfile || die
 
-	"""
 	# Prepare icons and .desktop files for slotting.
 	sed -e "s|blender.svg|blender-${BV}.svg|" -i source/creator/CMakeLists.txt || die
 	sed -e "s|blender-symbolic.svg|blender-${BV}-symbolic.svg|" -i source/creator/CMakeLists.txt || die
@@ -268,8 +269,14 @@ src_prepare() {
 	mv release/freedesktop/icons/scalable/apps/blender.svg release/freedesktop/icons/scalable/apps/blender-${BV}.svg || die
 	mv release/freedesktop/icons/symbolic/apps/blender-symbolic.svg release/freedesktop/icons/symbolic/apps/blender-${BV}-symbolic.svg || die
 	mv release/freedesktop/blender.desktop release/freedesktop/blender-${BV}.desktop || die
-	mv release/bin/blender-thumbnailer.py release/bin/blender-${BV}-thumbnailer.py || die
-	"""
+	#mv release/bin/blender-thumbnailer.py release/bin/blender-${BV}-thumbnailer.py || die
+
+	if use test; then
+		# Without this the tests will try to use /usr/bin/blender and /usr/share/blender/ to run the tests.
+		sed -e "s|string(REPLACE.*|set(TEST_INSTALL_DIR ${ED}/usr/)|g" -i tests/CMakeLists.txt || die
+		sed -e "s|string(REPLACE.*|set(TEST_INSTALL_DIR ${ED}/usr/)|g" -i build_files/cmake/Modules/GTestTesting.cmake || die
+	fi
+
 
 	ewarn "$(echo "Remaining bundled dependencies:";
 			( find extern -mindepth 1 -maxdepth 1 -type d; ) | sed 's|^|- |')"
@@ -290,8 +297,13 @@ src_prepare() {
 }
 
 src_configure() {
-	CMAKE_BUILD_TYPE="Release"
+	use debug && CMAKE_BUILD_TYPE="Debug" || CMAKE_BUILD_TYPE="Release"
+	for SLOT in 4..${LLVM_MAX_SLOT}; do
+		has_version "sys-devel/llvm:${SLOT}" && LLVM_SLOT="${SLOT}" && break
+	done
+
 	python_setup
+
 	# FIX: forcing '-funsigned-char' fixes an anti-aliasing issue with menu
 	# shadows, see bug #276338 for reference
 	append-flags -funsigned-char -fno-strict-aliasing
@@ -315,20 +327,14 @@ src_configure() {
 	#CUDA Kernel Selection
 	local CUDA_ARCH=""
 	if use cuda; then
-		for CA in 30 35 50 52 61 70 75; do
-			if use sm_${CA}; then
-				if [[ -n "${CUDA_ARCH}" ]] ; then
-					CUDA_ARCH="${CUDA_ARCH};sm_${CA}"
-				else
-					CUDA_ARCH="sm_${CA}"
-				fi
-			fi
+		for CA in 30 35 50 52 61 70 75 86; do
+			use sm_${CA} &&	CUDA_ARCH+="sm_${CA};"
 		done
 
 		#If a kernel isn't selected then all of them are built by default
 		if [ -n "${CUDA_ARCH}" ] ; then
 			mycmakeargs+=(
-				-DCYCLES_CUDA_BINARIES_ARCH=${CUDA_ARCH}
+				-DCYCLES_CUDA_BINARIES_ARCH=${CUDA_ARCH::-1}
 			)
 		fi
 		mycmakeargs+=(
@@ -441,8 +447,12 @@ src_configure() {
 		-DWITH_LINKER_GOLD=$(usex gold)
 		-DWITH_NINJA_POOL_JOBS=OFF								# for machines with 16GB of RAM or less
 		-DBUILD_SHARED_LIBS=OFF
-		-DCLANG_ROOT_DIR=/usr/lib/llvm/${LLVM_SLOT}/$(get_libdir)
-		-DCLANG_INCLUDE_DIR=/usr/lib/llvm/${LLVM_SLOT}
+		-DWITH_CLANG=$(usex clang)
+		-DCLANG_ROOT_DIR="/usr/lib/llvm/${LLVM_SLOT}/$(get_libdir)"
+		-DCLANG_INCLUDE_DIR="/usr/lib/llvm/${LLVM_SLOT}"
+		-DOPENEXR_INCLUDE_DIR="/usr/include/OpenEXR-3"
+		-DOPENEXR_ROOT_DIR="/usr/$(get_libdir)/OpenEXR-3"
+		-DOPENEXR_IMATH_LIBRARY="/usr/$(get_libdir)/Imath-3/libImath.so"
 		-Wno-dev
 	)
 	append-flags $(usex debug '-DDEBUG' '-DNDEBUG')
@@ -486,6 +496,11 @@ src_test() {
 	export BLENDER_SYSTEM_SCRIPTS=${ED}/usr/share/blender/${BV}/scripts
 	export BLENDER_SYSTEM_DATAFILES=${ED}/usr/share/blender/${BV}/datafiles
 
+	# Sanity check that the script and datafile path is valid.
+	# If they are not vaild, blender will fallback to the default path which is not what we want.
+	[ -d "$BLENDER_SYSTEM_SCRIPTS" ] || die "The custom script path is invalid, fix the ebuild!"
+	[ -d "$BLENDER_SYSTEM_DATAFILES" ] || die "The custom datafiles path is invalid, fix the ebuild!"
+
 	cmake_src_test
 
 	# Clean up the image directory for src_install
@@ -501,19 +516,42 @@ src_install() {
 	# Pax mark blender for hardened support.
 	pax-mark m "${BUILD_DIR}"/bin/blender
 
-	if use doc; then
-		docinto "html/API/python"
-		dodoc -r "${CMAKE_USE_DIR}"/doc/python_api/BPY_API/.
-
-		docinto "html/API/blender"
-		dodoc -r "${CMAKE_USE_DIR}"/doc/doxygen/html/.
-	fi
 
 	cmake_src_install
 
 	if use man; then
 		# Slot the man page
 		mv "${ED}/usr/share/man/man1/blender.1" "${ED}/usr/share/man/man1/blender-${BV}.1" || die
+	fi
+
+	if use doc; then
+		# Define custom blender data/script file paths. Otherwise Blender will not be able to find them during doc building.
+		# (Because the data is in the image directory and it will default to look in /usr/share)
+		export BLENDER_SYSTEM_SCRIPTS=${ED}/usr/share/blender/${BV}/scripts
+		export BLENDER_SYSTEM_DATAFILES=${ED}/usr/share/blender/${BV}/datafiles
+
+		# Workaround for binary drivers.
+		addpredict /dev/ati
+		addpredict /dev/dri
+		addpredict /dev/nvidiactl
+
+		einfo "Generating Blender C/C++ API docs ..."
+		cd "${CMAKE_USE_DIR}"/doc/doxygen || die
+		doxygen -u Doxyfile || die
+		doxygen || die "doxygen failed to build API docs."
+
+		cd "${CMAKE_USE_DIR}" || die
+		einfo "Generating (BPY) Blender Python API docs ..."
+		"${BUILD_DIR}"/bin/blender --background --python doc/python_api/sphinx_doc_gen.py -noaudio || die "sphinx failed."
+
+		cd "${CMAKE_USE_DIR}"/doc/python_api || die
+		sphinx-build sphinx-in BPY_API || die "sphinx failed."
+
+		docinto "html/API/python"
+		dodoc -r "${CMAKE_USE_DIR}"/doc/python_api/BPY_API/.
+
+		docinto "html/API/blender"
+		dodoc -r "${CMAKE_USE_DIR}"/doc/doxygen/html/.
 	fi
 
 	# fix doc installdir
@@ -524,7 +562,8 @@ src_install() {
 	#python_fix_shebang "${ED%/}/usr/bin/blender-${MY_PV}-thumbnailer.py"
 	python_optimize "${ED%/}/usr/share/blender/${MY_PV}/scripts"
 
-	#mv "${ED}/usr/bin/blender" "${ED}/usr/bin/blender-${MY_PV}" || die
+	mv "${ED}/usr/bin/blender" "${ED}/usr/bin/blender-${MY_PV}" || die
+	ln -s "${ED}/usr/bin/blender-${MY_PV}" "${ED}/usr/bin/blender"
 
 	elog "Install blender version: $( grep -Po 'CPACK_PACKAGE_VERSION "\K[^"]...' ${BUILD_DIR}/CPackConfig.cmake )"
 }
@@ -544,6 +583,14 @@ pkg_postinst() {
 	elog "home directory. This can be done by starting blender, then"
 	elog "changing the 'Temporary Files' directory in Blender preferences."
 	elog
+	if ! use python_single_target_python3_9; then
+		elog "You are building Blender with a newer python version than"
+		elog "supported by this version upstream."
+		elog "If you experience breakages with e.g. plugins, please switch to"
+		elog "python_single_target_python3_9 instead."
+		elog "Bug: https://bugs.gentoo.org/737388"
+		elog
+	fi
 
 	xdg_icon_cache_update
 	xdg_mimeinfo_database_update

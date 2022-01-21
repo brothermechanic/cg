@@ -27,7 +27,7 @@ RDEPEND="
 	>=dev-libs/boost-1.70.0:=
 	dev-libs/jemalloc:=
 	dev-libs/log4cplus:=
-	dev-libs/imath:3=
+	dev-libs/imath:3=[python?]
 	media-libs/glfw
 	media-libs/glu
 	openexr? ( media-libs/openexr:3= )
@@ -77,11 +77,12 @@ pkg_setup() {
 }
 
 src_prepare() {
-	# Make sure we find our renamed Imath headers
-	# bug #820929
-	sed -i -e 's|#include <Imath/half.h>|#include <Imath-3/half.h>|' ${PN}/${PN}/Types.h || die
-	sed -i -e 's|#include <OpenEXR|#include <OpenEXR-3|' ${PN}/${PN}/Types.h || die
-	sed -i -e 's|#include <OpenEXR|#include <OpenEXR-3|' ${PN}/${PN}/cmd/openvdb_render.cc || die
+	# Use for OpenEXR-2
+	# sed -i -e 's|#include <Imath/half.h>|#include <OpenEXR/half.h>|' ${PN}/${PN}/Types.h || die
+
+	# Fix use OpenEXR-3 & Imath-3
+	sed -i -e 's|#include <OpenEXR|#include <OpenEXR-3|' ${PN}/${PN}/{Types.h,cmd/openvdb_render.cc} || die
+	sed -i -e 's|#include <Imath|#include <Imath-3|' ${PN}/${PN}/{Types.h,cmd/openvdb_render.cc} || die
 	sed -i -e "s|DESTINATION doc|DESTINATION share/doc/${P}|g" doc/CMakeLists.txt || die
 	sed -i -e "s|DESTINATION lib|DESTINATION $(get_libdir)|g" {,${PN}/${PN}/}CMakeLists.txt || die
 	# Use the selected version of python rather than the latest version installed

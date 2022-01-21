@@ -1,0 +1,24 @@
+--- a/source/blender/freestyle/CMakeLists.txt	2022-01-17 21:51:20.998903620 +0300
++++ b/source/blender/freestyle/CMakeLists.txt	2022-01-20 11:33:41.742201661 +0300
+@@ -567,7 +567,6 @@ set(INC
+   ../python/intern
+   ../render
+   ../render/intern
+-  ../../../extern/glew/include
+   ../../../intern/guardedalloc
+ )
+ 
+@@ -576,6 +575,13 @@ set(INC_SYS
+   ${PNG_INC}
+ )
+ 
++if(WITH_SYSTEM_GLEW)
++  list(APPEND INC_SYS ${GLEW_INCLUDE_DIR})
++elseif()
++  list(APPEND INC ../../../extern/glew/include)
++endif()
++
++
+ add_definitions(-DWITH_FREESTYLE)
+ 
+ if(WITH_PYTHON_SAFETY)

@@ -87,7 +87,7 @@ index 0000000..ea844f7
 +  SET(LZMA_ROOT_DIR $ENV{LZMA_ROOT_DIR})
 +ENDIF()
 +
-+SET(_lzo_SEARCH_DIRS
++SET(_lzma_SEARCH_DIRS
 +  ${LZMA_ROOT_DIR}
 +)
 +
@@ -139,3 +139,18 @@ index be206f8..f0f277a 100644
  #endif
  
  /* needed for directory lookup */
+--- a/build_files/cmake/platform/platform_unix.cmake	2022-01-21 23:50:53.482827524 +0300
++++ b/build_files/cmake/platform/platform_unix.cmake	2022-01-21 23:54:40.722873726 +0300
+@@ -535,6 +535,12 @@ add_definitions(-D_LARGEFILE_SOURCE -D_F
+ # System Libraries
+ #
+ # Keep last, so indirectly linked libraries don't override our own pre-compiled libs.
++if(WITH_LZMA AND WITH_SYSTEM_LZMA)
++  find_package_wrapper(LZMA)
++  if(NOT LZMA_FOUND)
++    message(FATAL_ERROR "Failed finding system LZMA version!")
++  endif()
++endif()
+ 
+ if(WITH_LZO AND WITH_SYSTEM_LZO)
+   find_package_wrapper(LZO)

@@ -1,0 +1,74 @@
+diff --git a/lib/Alembic/Util/Foundation.h b/lib/Alembic/Util/Foundation.h
+index 0bc7af4..6240216 100644
+--- a/lib/Alembic/Util/Foundation.h
++++ b/lib/Alembic/Util/Foundation.h
+@@ -42,7 +42,7 @@
+ 
+ #include <memory>
+ 
+-#include <half.h>
++#include <Imath-3/half.h>
+ 
+ #include <iomanip>
+ #include <iostream>
+diff --git a/lib/Alembic/Abc/Foundation.h b/lib/Alembic/Abc/Foundation.h
+index 30e31a0..5129fe8 100644
+--- a/lib/Alembic/Abc/Foundation.h
++++ b/lib/Alembic/Abc/Foundation.h
+@@ -40,11 +40,11 @@
+ #include <Alembic/AbcCoreAbstract/All.h>
+ #include <Alembic/Util/All.h>
+ 
+-#include <ImathVec.h>
+-#include <ImathBox.h>
+-#include <ImathMatrix.h>
+-#include <ImathQuat.h>
+-#include <ImathColor.h>
++#include <Imath-3/ImathVec.h>
++#include <Imath-3/ImathBox.h>
++#include <Imath-3/ImathMatrix.h>
++#include <Imath-3/ImathQuat.h>
++#include <Imath-3/ImathColor.h>
+ 
+ #include <iostream>
+ #include <string>
+diff --git a/lib/Alembic/AbcGeom/Foundation.h b/lib/Alembic/AbcGeom/Foundation.h
+index 301efc3..5ac990f 100644
+--- a/lib/Alembic/AbcGeom/Foundation.h
++++ b/lib/Alembic/AbcGeom/Foundation.h
+@@ -39,8 +39,8 @@
+ 
+ #include <Alembic/Abc/All.h>
+ 
+-#include <ImathMatrixAlgo.h>
+-#include <ImathEuler.h>
++#include <Imath-3/ImathMatrixAlgo.h>
++#include <Imath-3/ImathEuler.h>
+ 
+ 
+ namespace Alembic {
+diff --git a/lib/Alembic/AbcCoreOgawa/ReadUtil.cpp b/lib/Alembic/AbcCoreOgawa/ReadUtil.cpp
+index fe35d13..bb12e43 100644
+--- a/lib/Alembic/AbcCoreOgawa/ReadUtil.cpp
++++ b/lib/Alembic/AbcCoreOgawa/ReadUtil.cpp
+@@ -45,7 +45,7 @@
+ #  endif
+ #endif
+ 
+-#include <halfLimits.h>
++#include <Imath-3/halfLimits.h>
+ 
+ namespace Alembic {
+ namespace AbcCoreOgawa {
+--- a/CMakeLists.txt	2022-01-18 22:13:18.162904768 +0300
++++ b/CMakeLists.txt	2022-01-18 22:15:46.807797760 +0300
+@@ -210,9 +210,6 @@ IF (DOCS_PATH)
+     FIND_PACKAGE(Doxygen)
+ ENDIF()
+ 
+-# IlmBase
+-INCLUDE("./cmake/AlembicIlmBase.cmake")
+-
+ # HDF5
+ IF (USE_HDF5)
+     FIND_PACKAGE(ZLIB REQUIRED)
