@@ -241,7 +241,7 @@ src_prepare() {
         sed -i -e "s|.pythondir.*|.pythondir = \"${BLENDER_ADDONS_DIR}\",|" "${S}"/release/datafiles/userdef/userdef_default.c || die
     fi
 	# remove some bundled deps
-	rm -rf extern/{Eigen3,glew-es,lzma,lzo,gflags,glog,draco,glew} || die
+	rm -rf extern/{Eigen3,glew-es,lzo,gflags,glog,draco,glew} || die
 
 	# we don't want static glew, but it's scattered across
 	# multiple files that differ from version to version
