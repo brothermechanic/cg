@@ -54,8 +54,9 @@ src_prepare() {
 	cp ../../cmake/FindTBB.cmake cmake/FindTBB.cmake || die
 	cp ../../cmake/OpenVDBUtils.cmake cmake/OpenVDBUtils.cmake || die
 
-	sed -i -e "s|IlmBase REQUIRED COMPONENTS Half|Imath REQUIRED COMPONENTS Half|" cmake/FindOpenVDB.cmake || die
-	sed -i -e "s|_OPENVDB_VISIBLE_DEPENDENCIES IlmBase::Half|_OPENVDB_VISIBLE_DEPENDENCIES Imath::Half|" cmake/FindOpenVDB.cmake || die
+	# USE when openvdb build with OpenEXR-3
+	#sed -i -e "s|IlmBase REQUIRED COMPONENTS Half|Imath REQUIRED COMPONENTS Half|" cmake/FindOpenVDB.cmake || die
+	#sed -i -e "s|_OPENVDB_VISIBLE_DEPENDENCIES IlmBase::Half|_OPENVDB_VISIBLE_DEPENDENCIES Imath::Half|" cmake/FindOpenVDB.cmake || die
 
 	cmake_src_prepare
 }
