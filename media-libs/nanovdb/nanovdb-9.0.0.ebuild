@@ -55,8 +55,8 @@ src_prepare() {
 	cp ../../cmake/OpenVDBUtils.cmake cmake/OpenVDBUtils.cmake || die
 
 	# USE when openvdb build with OpenEXR-3
-	#sed -i -e "s|IlmBase REQUIRED COMPONENTS Half|Imath REQUIRED COMPONENTS Half|" cmake/FindOpenVDB.cmake || die
-	#sed -i -e "s|_OPENVDB_VISIBLE_DEPENDENCIES IlmBase::Half|_OPENVDB_VISIBLE_DEPENDENCIES Imath::Half|" cmake/FindOpenVDB.cmake || die
+	sed -i -e "s|IlmBase REQUIRED COMPONENTS Half|Imath REQUIRED COMPONENTS Half|" cmake/FindOpenVDB.cmake || die
+	sed -i -e "s|_OPENVDB_VISIBLE_DEPENDENCIES IlmBase::Half|_OPENVDB_VISIBLE_DEPENDENCIES Imath::Half|" cmake/FindOpenVDB.cmake || die
 
 	cmake_src_prepare
 }
@@ -103,7 +103,7 @@ src_configure() {
 	local CUDA_ARCH=""
 	if use cuda; then
 		for CA in 30 35 50 52 61 70 75 86; do
-			use sm_${CA} && CUDA_ARCH+="${CA},"
+			use sm_${CA} && CUDA_ARCH+="${CA};"
 		done
 		[ -n "${CUDA_ARCH}" ] && mycmakeargs+=( -DCMAKE_CUDA_ARCHITECTURES=${CUDA_ARCH::-1} )
 	fi
