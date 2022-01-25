@@ -257,7 +257,6 @@ src_prepare() {
 	sed -e "s|blender.svg|blender-${MY_PV}.svg|" -i source/creator/CMakeLists.txt || die
 	sed -e "s|blender-symbolic.svg|blender-${MY_PV}-symbolic.svg|" -i source/creator/CMakeLists.txt || die
 	sed -e "s|blender.desktop|blender-${MY_PV}.desktop|" -i source/creator/CMakeLists.txt || die
-	sed -e "s|blender-thumbnailer.py|blender-${MY_PV}-thumbnailer.py|" -i source/creator/CMakeLists.txt || die
 
 	sed -e "s|Name=Blender|Name=Blender ${MY_PV}|" -i release/freedesktop/blender.desktop || die
 	sed -e "s|Exec=blender|Exec=blender-${MY_PV}|" -i release/freedesktop/blender.desktop || die
