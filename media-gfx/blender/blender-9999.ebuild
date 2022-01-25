@@ -81,6 +81,7 @@ RDEPEND="${PYTHON_DEPS}
 	')
 	sys-libs/zlib:=
 	media-libs/freetype:=
+	app-arch/brotli:=[static-libs]
 	media-libs/libpng:0=
 	virtual/jpeg
 	virtual/libintl
@@ -225,12 +226,8 @@ src_prepare() {
 	eapply "${FILESDIR}/Fix-build-with-openexr-3.x.patch"
 	#eapply "${FILESDIR}/D13464.patch"
 	if use cg; then
-        eapply "${FILESDIR}"/${SLOT}/cg-addons.patch
         eapply "${FILESDIR}"/${SLOT}/cg-defaults.patch
-        eapply "${FILESDIR}"/${SLOT}/cg-keymap.patch
         eapply "${FILESDIR}"/${SLOT}/cg-mesh.patch
-        eapply "${FILESDIR}"/${SLOT}/cg-userdef.patch
-        cp "${FILESDIR}"/${SLOT}/cg-prefs.py "${S}"/release/scripts/startup/
     fi
 
 	if use addons_contrib; then
@@ -257,19 +254,18 @@ src_prepare() {
 		-i doc/doxygen/Doxyfile || die
 
 	# Prepare icons and .desktop files for slotting.
-	sed -e "s|blender.svg|blender-${BV}.svg|" -i source/creator/CMakeLists.txt || die
-	sed -e "s|blender-symbolic.svg|blender-${BV}-symbolic.svg|" -i source/creator/CMakeLists.txt || die
-	sed -e "s|blender.desktop|blender-${BV}.desktop|" -i source/creator/CMakeLists.txt || die
-	sed -e "s|blender-thumbnailer.py|blender-${BV}-thumbnailer.py|" -i source/creator/CMakeLists.txt || die
+	sed -e "s|blender.svg|blender-${MY_PV}.svg|" -i source/creator/CMakeLists.txt || die
+	sed -e "s|blender-symbolic.svg|blender-${MY_PV}-symbolic.svg|" -i source/creator/CMakeLists.txt || die
+	sed -e "s|blender.desktop|blender-${MY_PV}.desktop|" -i source/creator/CMakeLists.txt || die
+	sed -e "s|blender-thumbnailer.py|blender-${MY_PV}-thumbnailer.py|" -i source/creator/CMakeLists.txt || die
 
-	sed -e "s|Name=Blender|Name=Blender ${PV}|" -i release/freedesktop/blender.desktop || die
-	sed -e "s|Exec=blender|Exec=blender-${BV}|" -i release/freedesktop/blender.desktop || die
-	sed -e "s|Icon=blender|Icon=blender-${BV}|" -i release/freedesktop/blender.desktop || die
+	sed -e "s|Name=Blender|Name=Blender ${MY_PV}|" -i release/freedesktop/blender.desktop || die
+	sed -e "s|Exec=blender|Exec=blender-${MY_PV}|" -i release/freedesktop/blender.desktop || die
+	sed -e "s|Icon=blender|Icon=blender-${MY_PV}|" -i release/freedesktop/blender.desktop || die
 
-	mv release/freedesktop/icons/scalable/apps/blender.svg release/freedesktop/icons/scalable/apps/blender-${BV}.svg || die
-	mv release/freedesktop/icons/symbolic/apps/blender-symbolic.svg release/freedesktop/icons/symbolic/apps/blender-${BV}-symbolic.svg || die
-	mv release/freedesktop/blender.desktop release/freedesktop/blender-${BV}.desktop || die
-	#mv release/bin/blender-thumbnailer.py release/bin/blender-${BV}-thumbnailer.py || die
+	mv release/freedesktop/icons/scalable/apps/blender.svg release/freedesktop/icons/scalable/apps/blender-${MY_PV}.svg || die
+	mv release/freedesktop/icons/symbolic/apps/blender-symbolic.svg release/freedesktop/icons/symbolic/apps/blender-${MY_PV}-symbolic.svg || die
+	mv release/freedesktop/blender.desktop release/freedesktop/blender-${MY_PV}.desktop || die
 
 	if use test; then
 		# Without this the tests will try to use /usr/bin/blender and /usr/share/blender/ to run the tests.
@@ -562,6 +558,7 @@ src_install() {
 	#python_fix_shebang "${ED%/}/usr/bin/blender-${MY_PV}-thumbnailer.py"
 	python_optimize "${ED%/}/usr/share/blender/${MY_PV}/scripts"
 
+	mv "${ED}/usr/bin/blender-thumbnailer" "${ED}/usr/bin/blender-${MY_PV}-thumbnailer" || die
 	mv "${ED}/usr/bin/blender" "${ED}/usr/bin/blender-${MY_PV}" || die
 	ln -s "${ED}/usr/bin/blender-${MY_PV}" "${ED}/usr/bin/blender"
 
