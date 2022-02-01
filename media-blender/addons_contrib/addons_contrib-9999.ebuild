@@ -10,7 +10,7 @@ EGIT_REPO_URI="https://git.blender.org/blender-addons-contrib.git"
 if [[ ${PV} == 9999 ]]; then
         EGIT_BRANCH="master"
         KEYWORDS=""
-        MY_PV="3.1"
+        MY_PV="3.2"
 else
     	MY_PV="$(ver_cut 1-2)"
         EGIT_BRANCH="blender-v${MY_PV}-release" 

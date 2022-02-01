@@ -19,7 +19,7 @@ if [[ ${PV} == 9999 ]]; then
 	EGIT_BRANCH="master"
 	#EGIT_COMMIT=""
     KEYWORDS=""
-	MY_PV="3.1"
+	MY_PV="3.2"
 else
 	#SRC_URI="https://download.blender.org/source/${P}.tar.xz"
 	TEST_TARBALL_VERSION=2.93.0
@@ -170,7 +170,7 @@ RESTRICT="
 	mirror
 	!test? ( test )
 "
-QA_PREBUILT="/usr/share/blender/3.1/scripts/addons/cycles/lib/kernel_sm_*.cubin"
+QA_PREBUILT="/usr/share/blender/3.2/scripts/addons/cycles/lib/kernel_sm_*.cubin"
 QA_PRESTRIPPED="${QA_PREBUILT}"
 
 blender_check_requirements() {
