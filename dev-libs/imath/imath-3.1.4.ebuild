@@ -22,7 +22,10 @@ LICENSE="BSD"
 SLOT="3/29"
 IUSE="doc large-stack python static-libs test"
 REQUIRED_USE="python? ( ${PYTHON_REQUIRED_USE} )"
-RESTRICT="!test? ( test )"
+RESTRICT="
+	mirror
+	!test? ( test )
+"
 
 # blocker due to file collision #803347
 RDEPEND="
@@ -43,7 +46,7 @@ BDEPEND="
 	python? ( ${PYTHON_DEPS} )
 "
 
-PATCHES=( "${FILESDIR}"/${PN}-3.1.1-0001-changes-needed-for-proper-slotting.patch )
+PATCHES=( "${FILESDIR}"/${P}-Gentoo-specific-changes-needed-for-slotting.patch )
 DOCS=( CHANGES.md CONTRIBUTORS.md README.md SECURITY.md docs/PortingGuide2-3.md )
 
 pkg_setup() {
@@ -51,6 +54,7 @@ pkg_setup() {
 }
 
 src_configure() {
+	CMAKE_BUILD_TYPE=Release
 	local majorver=$(ver_cut 1)
 
 	local mycmakeargs=(
@@ -66,7 +70,7 @@ src_configure() {
 	if use python; then
 		mycmakeargs+=(
 			# temp. disable for finding libboost_python310, #803032
-#			-DBoost_NO_BOOST_CMAKE=OFF
+			-DBoost_NO_BOOST_CMAKE=OFF
 			-DPYTHON=ON
 			-DPython3_EXECUTABLE="${PYTHON}"
 			-DPython3_INCLUDE_DIR=$(python_get_includedir)
