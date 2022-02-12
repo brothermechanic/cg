@@ -75,9 +75,9 @@ done
 
 RDEPEND="${PYTHON_DEPS}
 	$(python_gen_cond_dep '
-		dev-python/numpy[${PYTHON_MULTI_USEDEP}]
-		dev-python/requests[${PYTHON_MULTI_USEDEP}]
-        dev-libs/boost[python,nls?,icu?,threads(+),${PYTHON_MULTI_USEDEP}]
+		dev-python/numpy[${PYTHON_USEDEP}]
+		dev-python/requests[${PYTHON_USEDEP}]
+        dev-libs/boost[python,nls?,icu?,threads(+),${PYTHON_USEDEP}]
 	')
 	sys-libs/zlib:=
 	media-libs/freetype:=
