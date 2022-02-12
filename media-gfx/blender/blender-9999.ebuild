@@ -34,10 +34,10 @@ fi
 
 SLOT="${MY_PV}"
 LICENSE="|| ( GPL-3 BL )"
-IUSE_DESKTOP="cg -portable +X +addons +addons_contrib +nls +icu -ndof"
-IUSE_GPU="+opengl -optix cuda opencl -sm_30 -sm_35 -sm_50 -sm_52 -sm_61 -sm_70 -sm_75 -sm_86"
+IUSE_DESKTOP="cg -portable +X headless wayland +addons +addons_contrib +nls +icu -ndof"
+IUSE_GPU="+opengl -optix cuda -sm_30 -sm_35 -sm_50 -sm_52 -sm_61 -sm_70 -sm_75 -sm_86"
 IUSE_LIBS="clang +cycles gmp sdl jack openal pulseaudio +freestyle -osl +openvdb nanovdb abi6-compat abi7-compat abi8-compat +opensubdiv +opencolorio +openimageio +pdf +pugixml +potrace +collada -alembic +gltf-draco +fftw +oidn +quadriflow -usd +bullet -valgrind +jemalloc libmv +llvm"
-IUSE_CPU="+openmp embree +sse +tbb +lld gold"
+IUSE_CPU="+openmp embree +simd +tbb +lld gold"
 IUSE_TEST="-debug -doc -man -gtests test"
 IUSE_IMAGE="-dpx -dds +openexr jpeg2k tiff +hdr"
 IUSE_CODEC="avi +ffmpeg -sndfile +quicktime"
@@ -47,6 +47,7 @@ IUSE="${IUSE_DESKTOP} ${IUSE_GPU} ${IUSE_LIBS} ${IUSE_CPU} ${IUSE_TEST} ${IUSE_I
 
 REQUIRED_USE="${PYTHON_REQUIRED_USE}
 	|| ( gold lld )
+	|| ( headless wayland X )
 	alembic? ( openexr )
 	embree? ( cycles tbb )
 	smoke? ( fftw )
@@ -55,7 +56,6 @@ REQUIRED_USE="${PYTHON_REQUIRED_USE}
 	fluid?  ( fftw tbb )
 	oceansim? ( fftw )
 	oidn? ( cycles tbb )
-	opencl? ( cycles )
 	openexr? ( openimageio )
 	optix? ( cycles cuda )
 	openvdb? (
@@ -75,14 +75,14 @@ done
 
 RDEPEND="${PYTHON_DEPS}
 	$(python_gen_cond_dep '
-		dev-python/numpy[${PYTHON_MULTI_USEDEP}]
-		dev-python/requests[${PYTHON_MULTI_USEDEP}]
-        dev-libs/boost[python,nls?,icu?,threads(+),${PYTHON_MULTI_USEDEP}]
+		dev-python/numpy[${PYTHON_USEDEP}]
+		dev-python/requests[${PYTHON_USEDEP}]
+        dev-libs/boost[python,nls?,icu?,threads(+),${PYTHON_USEDEP}]
 	')
 	sys-libs/zlib:=
 	media-libs/freetype:=
 	app-arch/brotli:=[static-libs]
-	media-libs/libpng:0=
+	media-libs/libpng:=
 	virtual/jpeg
 	virtual/libintl
 	addons? ( media-blender/addons:${SLOT} )
@@ -90,7 +90,6 @@ RDEPEND="${PYTHON_DEPS}
 	alembic? ( media-gfx/alembic:=[boost(+),-hdf5] )
 	collada? ( media-libs/opencollada )
 	cuda? ( dev-util/nvidia-cuda-toolkit:= )
-	cycles? ( media-libs/freeglut )
 	embree? ( media-libs/embree[raymask,tbb?] )
 	ffmpeg? ( media-video/ffmpeg:=[x264,mp3,encode,theora,jpeg2k,vpx,vorbis,opus,xvid] )
 	fftw? ( sci-libs/fftw:3.0=[openmp?] )
@@ -105,12 +104,18 @@ RDEPEND="${PYTHON_DEPS}
 		x11-libs/libXi
 		x11-libs/libXxf86vm
 	)
+	wayland? (
+		dev-libs/wayland
+		gui-libs/egl-wayland
+		dev-util/wayland-scanner
+		x11-libs/libxkbcommon
+		sys-apps/dbus
+	)
 	jack? ( virtual/jack )
 	jemalloc? ( dev-libs/jemalloc:= )
 	jpeg2k? ( media-libs/openjpeg:2= )
 	libmv? ( sci-libs/ceres-solver )
 	lld? ( sys-devel/lld )
-	lzma? ( >=app-arch/xz-utils-5.2.5 )
 	lzo? ( dev-libs/lzo:2= )
 	llvm? ( <sys-devel/llvm-$((${LLVM_MAX_SLOT} + 1)):= )
     clang? ( <sys-devel/clang-$((${LLVM_MAX_SLOT} + 1)):= )
@@ -121,7 +126,6 @@ RDEPEND="${PYTHON_DEPS}
 	nanovdb? ( media-libs/nanovdb[cuda?,openvdb?] )
 	nls? ( virtual/libiconv )
 	openal? ( media-libs/openal )
-	opencl? ( virtual/opencl )
 	opengl? (
 		virtual/opengl
 		media-libs/glew:*
@@ -133,12 +137,12 @@ RDEPEND="${PYTHON_DEPS}
 	openexr? (
 		media-libs/openexr:3=
 	)
-	opensubdiv? ( media-libs/opensubdiv[cuda?,opencl?,openmp?,tbb?] )
+	opensubdiv? ( media-libs/opensubdiv[cuda?,openmp?,tbb?] )
 	openvdb? (
 		>=media-gfx/openvdb-7.1.0[abi6-compat(-)?,abi7-compat(-)?,abi8-compat(-)?]
 		dev-libs/c-blosc:=
 	)
-	optix? ( =dev-libs/optix-7.3.0 )
+	optix? ( >=dev-libs/optix-7.3.0 )
 	osl? ( >=media-libs/osl-1.11.10.0 )
 	pdf? ( media-libs/libharu )
 	potrace? ( media-gfx/potrace )
@@ -170,8 +174,8 @@ RESTRICT="
 	mirror
 	!test? ( test )
 "
-QA_PREBUILT="/usr/share/blender/3.2/scripts/addons/cycles/lib/kernel_sm_*.cubin"
-QA_PRESTRIPPED="${QA_PREBUILT}"
+
+QA_WX_LOAD="/usr/share/${PN}/${MY_PV}/scripts/addons/cycles/lib/kernel_sm_*.cubin"
 
 blender_check_requirements() {
 	[[ ${MERGE_TYPE} != binary ]] && use openmp && tc-check-openmp
@@ -189,7 +193,7 @@ blender_get_version() {
 		BV=${BV:0:1}.${BV:1}
 	else
 		# Add period and strip last number (300 -> 3.0)
-		BV=${BV:0:1}.${BV:1:1}
+		BV=${BV:0:1}.${BV:2}
 	fi
 }
 
@@ -293,8 +297,8 @@ src_prepare() {
 
 src_configure() {
 	use debug && CMAKE_BUILD_TYPE="Debug" || CMAKE_BUILD_TYPE="Release"
-	for SLOT in 4..${LLVM_MAX_SLOT}; do
-		has_version "sys-devel/llvm:${SLOT}" && LLVM_SLOT="${SLOT}" && break
+	for slot in $(seq 10 ${LLVM_MAX_SLOT}); do
+		has_version "sys-devel/llvm:${slot}" && LLVM_SLOT="${slot}"
 	done
 
 	python_setup
@@ -356,22 +360,24 @@ src_configure() {
 		-DPYTHON_INCLUDE_DIR="$(python_get_includedir)"
 		-DPYTHON_LIBRARY="$(python_get_library_path)"
 		-DWITH_BOOST_ICU=$(usex icu)
+		-DWITH_CPU_SIMD=$(usex simd)
+		-DWITH_ASSERT_ABORT=$(usex debug)
 		-DWITH_PYTHON_INSTALL=$(usex !portable OFF ON)			# Copy system python
 		-DWITH_PYTHON_INSTALL_NUMPY=$(usex !portable OFF ON)
 		-DWITH_PYTHON_MODULE=$(usex !X)							# runs without a user interface
-		-DWITH_HEADLESS=$(usex !X)								# server mode only
+		-DWITH_HEADLESS=$(usex headless)						# server mode only
 		-DWITH_ALEMBIC=$(usex alembic)							# export format support
+		-DWITH_ASSERT_ABORT=$(usex debug)
+		-DWITH_BOOST=ON
 		-DWITH_BULLET=$(usex bullet)							# Physics Engine
 		-DWITH_SYSTEM_BULLET=OFF								# currently unsupported
 		-DWITH_CODEC_AVI=$(usex avi)
 		-DWITH_CODEC_FFMPEG=$(usex ffmpeg)
 		-DWITH_CODEC_SNDFILE=$(usex sndfile)
 		-DWITH_FFTW3=$(usex fftw)
-		-DWITH_CPU_SSE=$(usex sse)								# Enable SIMD instruction
 		-DWITH_CYCLES=$(usex cycles)							# Enable Cycles Render Engine
 		-DWITH_CYCLES_DEVICE_CUDA=$(usex cuda)
 		-DWITH_CYCLES_CUDA_BUILD_SERIAL=$(usex cuda)			# Build cuda kernels in serial mode (if parallel build takes too much RAM or crash)
-		-DWITH_CYCLES_DEVICE_OPENCL=$(usex opencl)				# Enable Cycles OpenCL compute support
 		-DWITH_CYCLES_EMBREE=$(usex embree)
 		-DWITH_CYCLES_NATIVE_ONLY=$(usex cycles)				# for native kernel only
 		-DWITH_CYCLES_OSL=$(usex osl)
@@ -380,7 +386,9 @@ src_configure() {
 		-DWITH_CYCLES_LOGGING=$(usex gtests)
 		-DWITH_DOC_MANPAGE=$(usex man)
 		-DWITH_FREESTYLE=$(usex freestyle)						# advanced edges rendering
+		-WITH_GHOST_X11=$(usex X)
 		-DWITH_GHOST_XDND=$(usex X)								# drag-n-drop support on X11
+		-DWITH_GHOST_WAYLAND=$(usex wayland)
 		-DWITH_IMAGE_CINEON=$(usex dpx)
 		-DWITH_HARU=$(usex pdf)
 		-DWITH_IMAGE_DDS=$(usex dds)
@@ -416,7 +424,7 @@ src_configure() {
 		-DWITH_OPENVDB=$(usex openvdb)							# advanced remesh and smoke
 		-DWITH_OPENVDB_BLOSC=$(usex openvdb)					# compression for OpenVDB
 		-DWITH_NANOVDB=$(usex nanovdb)							# OpenVDB for rendering on the GPU
-		-DNANOVDB_INCLUDE_DIR=/usr/include
+		#-DNANOVDB_INCLUDE_DIR=/usr/include
 		-DWITH_QUADRIFLOW=$(usex quadriflow)					# remesher
 		-DWITH_SDL=$(usex sdl)									# for sound and joystick support
 		-DWITH_SDL_DYNLOAD=$(usex sdl)
@@ -438,19 +446,27 @@ src_configure() {
 		-DWITH_XR_OPENXR=OFF
 		#-DUSD_ROOT_DIR=/opt/openusd
 		#-DUSD_LIBRARY=/opt/openusd/lib/libusd_ms.so
-		-DWITH_LINKER_LLD=$(usex lld)
-		-DWITH_LINKER_GOLD=$(usex gold)
 		-DWITH_NINJA_POOL_JOBS=OFF								# for machines with 16GB of RAM or less
 		-DBUILD_SHARED_LIBS=OFF
 		-DWITH_CLANG=$(usex clang)
-		-DCLANG_ROOT_DIR="/usr/lib/llvm/${LLVM_SLOT}/$(get_libdir)"
-		-DCLANG_INCLUDE_DIR="/usr/lib/llvm/${LLVM_SLOT}"
+		#-DCLANG_ROOT_DIR="/usr/lib/llvm/${LLVM_SLOT}"
+		-DCLANG_INCLUDE_DIR="/usr/lib/llvm/${LLVM_SLOT}/include/clang"
 		-DOPENEXR_INCLUDE_DIR="/usr/include/OpenEXR-3"
 		-DOPENEXR_ROOT_DIR="/usr/$(get_libdir)/OpenEXR-3"
 		-DOPENEXR_IMATH_LIBRARY="/usr/$(get_libdir)/Imath-3/libImath.so"
-		-Wno-dev
+		#-Wno-dev
+		#-DCMAKE_FIND_DEBUG_MODE=ON
 	)
+
 	append-flags $(usex debug '-DDEBUG' '-DNDEBUG')
+
+	if tc-is-gcc ; then
+		# These options only exist when GCC is detected.
+		mycmakeargs+=(
+			-DWITH_LINKER_LLD=$(usex lld)
+			-DWITH_LINKER_GOLD=$(usex gold)
+		)
+	fi
 
 	cmake_src_configure
 }
@@ -502,7 +518,6 @@ src_test() {
 	rm -fr ${ED}/* || die
 }
 
-
 src_install() {
 	python_setup
 
@@ -510,7 +525,6 @@ src_install() {
 
 	# Pax mark blender for hardened support.
 	pax-mark m "${BUILD_DIR}"/bin/blender
-
 
 	cmake_src_install
 
@@ -549,7 +563,7 @@ src_install() {
 		dodoc -r "${CMAKE_USE_DIR}"/doc/doxygen/html/.
 	fi
 
-	# fix doc installdir
+	# Fix doc installdir
 	docinto html
 	dodoc "${CMAKE_USE_DIR}"/release/text/readme.html
 	rm -r "${ED%/}"/usr/share/doc/blender || die
