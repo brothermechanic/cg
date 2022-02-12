@@ -1,4 +1,4 @@
-EAPI=7
+EAPI=8
 
 PYTHON_COMPAT=( python3_{8..10} )
 
@@ -40,8 +40,8 @@ RDEPEND="
 	python? (
 		${PYTHON_DEPS}
 		$(python_gen_cond_dep '
-			>=dev-libs/boost-1.70:=[python,${PYTHON_MULTI_USEDEP}]
-			dev-python/numpy[${PYTHON_MULTI_USEDEP}]
+			>=dev-libs/boost-1.70:=[python,${PYTHON_USEDEP}]
+			dev-python/numpy[${PYTHON_USEDEP}]
 		')
 	)
 	zlib? ( sys-libs/zlib )
