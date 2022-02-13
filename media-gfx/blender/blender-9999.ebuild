@@ -361,7 +361,6 @@ src_configure() {
 		-DPYTHON_LIBRARY="$(python_get_library_path)"
 		-DWITH_BOOST_ICU=$(usex icu)
 		-DWITH_CPU_SIMD=$(usex simd)
-		-DWITH_ASSERT_ABORT=$(usex debug)
 		-DWITH_PYTHON_INSTALL=$(usex !portable OFF ON)			# Copy system python
 		-DWITH_PYTHON_INSTALL_NUMPY=$(usex !portable OFF ON)
 		-DWITH_PYTHON_MODULE=$(usex !X)							# runs without a user interface

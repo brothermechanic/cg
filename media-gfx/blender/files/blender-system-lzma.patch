@@ -65,7 +65,7 @@ index 0000000..ea844f7
 +# - Find LZMA library
 +# Find the native LZMA includes and library
 +# This module defines
-+#  LZMA_INCLUDE_DIRS, where to find lzo1x.h, Set when
++#  LZMA_INCLUDE_DIRS, where to find lzma.h, Set when
 +#                        LZMA_INCLUDE_DIR is found.
 +#  LZMA_LIBRARIES, libraries to link against to use LZMA.
 +#  LZMA_ROOT_DIR, The base directory to search for LZMA.
@@ -91,7 +91,7 @@ index 0000000..ea844f7
 +  ${LZMA_ROOT_DIR}
 +)
 +
-+FIND_PATH(LZMA_INCLUDE_DIR lzma/lzma12.h
++FIND_PATH(LZMA_INCLUDE_DIR lzma.h
 +  HINTS
 +    ${_lzma_SEARCH_DIRS}
 +  PATH_SUFFIXES
