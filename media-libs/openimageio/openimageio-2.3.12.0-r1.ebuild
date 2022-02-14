@@ -8,7 +8,7 @@ PYTHON_COMPAT=( python3_{8..10} )
 
 TEST_OIIO_IMAGE_COMMIT="b85d7a3a10a3256b50325ad310c33e7f7cf2c6cb"
 TEST_OEXR_IMAGE_COMMIT="f17e353fbfcde3406fe02675f4d92aeae422a560"
-inherit cmake font python-single-r1
+inherit cmake font python-single-r1 flag-o-matic
 
 DESCRIPTION="A library for reading and writing images"
 HOMEPAGE="https://sites.google.com/site/openimageio/ https://github.com/OpenImageIO"
@@ -20,7 +20,7 @@ SRC_URI+=" test? (
 S="${WORKDIR}/oiio-${PV}"
 
 LICENSE="BSD"
-SLOT="0/2.3"
+SLOT="0/$(ver_cut 1-2).1"
 KEYWORDS="~amd64 ~arm ~arm64 ~ppc64 ~x86"
 
 X86_CPU_FEATURES=(
@@ -50,11 +50,11 @@ RDEPEND="
 	dev-cpp/robin-map
 	dev-libs/libfmt:=
 	dev-libs/pugixml:=
-	dev-libs/imath:3=
 	>=media-libs/libheif-1.7.0:=
 	media-libs/libpng:0=
 	>=media-libs/libwebp-0.2.1:=
-	media-libs/opencolorio:=
+	dev-libs/imath:3=
+	>=media-libs/opencolorio-2.1.1-r3:=
 	media-libs/openexr:3=
 	!media-libs/openexr:0=
 	media-libs/tiff:0=
@@ -128,6 +128,8 @@ src_configure() {
 
 	# If no CPU SIMDs were used, completely disable them
 	[[ -z ${mysimd} ]] && mysimd=("0")
+
+	append-cppflags -DOIIO_USING_OPENEXR_3
 
 	local mycmakeargs=(
 		-DVERBOSE=ON

@@ -25,8 +25,8 @@ RDEPEND="
 	dev-cpp/pystring
 	dev-python/pybind11
 	>=dev-cpp/yaml-cpp-0.7.0:=
-	dev-libs/tinyxml
 	dev-libs/imath:3=
+	dev-libs/tinyxml
 	opengl? (
 		media-libs/lcms:2
 		media-libs/openimageio:=
@@ -49,7 +49,7 @@ BDEPEND="
 "
 
 # Restricting tests, bugs #439790 and #447908
-RESTRICT="test"
+RESTRICT="mirror test"
 
 pkg_setup() {
 	use python && python-single-r1_pkg_setup

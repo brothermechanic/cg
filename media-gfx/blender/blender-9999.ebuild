@@ -132,7 +132,7 @@ RDEPEND="${PYTHON_DEPS}
 		virtual/glu
 	)
 	oidn? ( media-libs/oidn )
-	openimageio? ( =media-libs/openimageio-2.2* )
+	openimageio? ( >=media-libs/openimageio-2.2.0 )
 	opencolorio? ( =media-libs/opencolorio-2* )
 	openexr? (
 		media-libs/openexr:3=
