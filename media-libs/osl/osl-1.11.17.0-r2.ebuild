@@ -79,6 +79,8 @@ pkg_setup() {
 
 src_prepare() {
 	cmake_src_prepare
+	# optix 7.4 build fix
+	sed -i -e 's/OPTIX_COMPILE_DEBUG_LEVEL_LINEINFO/OPTIX_COMPILE_DEBUG_LEVEL_MINIMAL/g' src/testshade/optixgridrender.cpp src/testrender/optixraytracer.cpp || die
 	#sed -i -e 's/include <Imath/include <Imath-3/' src/include/OSL/oslconfig.h.in src/liboslquery/py_osl.h || die
 	#sed -i -e 's/include <OpenEXR/include <OpenEXR-3/' src/liboslexec/shadingsys.cpp || die
 }
