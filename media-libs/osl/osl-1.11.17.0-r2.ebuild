@@ -36,7 +36,7 @@ RDEPEND="
 	dev-libs/pugixml
 	media-libs/openexr:=
 	dev-libs/imath:3=
-	>=media-libs/openimageio-2.3.12.0:=
+	media-libs/openimageio:=
 	<sys-devel/clang-$((${LLVM_MAX_SLOT} + 1)):=
 	sys-libs/zlib
 	optix? ( dev-libs/optix )

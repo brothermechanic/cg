@@ -35,7 +35,7 @@ index 090f80b..a2f7b4c 100644
    SET(OPENEXR_LIBRARIES ${_openexr_LIBRARIES})
    # Both include paths are needed because of dummy OSL headers mixing #include <OpenEXR/foo.h> and #include <foo.h> :(
 -  SET(OPENEXR_INCLUDE_DIRS ${OPENEXR_INCLUDE_DIR} ${OPENEXR_INCLUDE_DIR}/OpenEXR)
-+  SET(OPENEXR_INCLUDE_DIRS ${OPENEXR_INCLUDE_DIR} ${OPENEXR_INCLUDE_DIR}/../Imath-3)
++  SET(OPENEXR_INCLUDE_DIRS ${OPENEXR_INCLUDE_DIR} ${OPENEXR_INCLUDE_DIR}/Imath)
  ENDIF()
  
  MARK_AS_ADVANCED(
@@ -61,22 +61,22 @@ index 979e770..6b91dad 100644
 -#include <ImfStringAttribute.h>
 -#include <ImfVersion.h>
 -#include <half.h>
-+#include <OpenEXR-3/Iex.h>
-+#include <Imath-3/ImathBox.h>
-+#include <OpenEXR-3/ImfArray.h>
-+#include <OpenEXR-3/ImfChannelList.h>
-+#include <OpenEXR-3/ImfCompression.h>
-+#include <OpenEXR-3/ImfCompressionAttribute.h>
-+#include <OpenEXR-3/ImfFrameBuffer.h>
-+#include <OpenEXR-3/ImfIO.h>
-+#include <OpenEXR-3/ImfInputFile.h>
-+#include <OpenEXR-3/ImfInt64.h>
-+#include <OpenEXR-3/ImfOutputFile.h>
-+#include <OpenEXR-3/ImfPixelType.h>
-+#include <OpenEXR-3/ImfStandardAttributes.h>
-+#include <OpenEXR-3/ImfStringAttribute.h>
-+#include <OpenEXR-3/ImfVersion.h>
-+#include <Imath-3/half.h>
++#include <OpenEXR/Iex.h>
++#include <Imath/ImathBox.h>
++#include <OpenEXR/ImfArray.h>
++#include <OpenEXR/ImfChannelList.h>
++#include <OpenEXR/ImfCompression.h>
++#include <OpenEXR/ImfCompressionAttribute.h>
++#include <OpenEXR/ImfFrameBuffer.h>
++#include <OpenEXR/ImfIO.h>
++#include <OpenEXR/ImfInputFile.h>
++#include <OpenEXR/ImfInt64.h>
++#include <OpenEXR/ImfOutputFile.h>
++#include <OpenEXR/ImfPixelType.h>
++#include <OpenEXR/ImfStandardAttributes.h>
++#include <OpenEXR/ImfStringAttribute.h>
++#include <OpenEXR/ImfVersion.h>
++#include <Imath/half.h>
  
  /* multiview/multipart */
 -#include <ImfInputPart.h>
@@ -87,14 +87,14 @@ index 979e770..6b91dad 100644
 -#include <ImfPartHelper.h>
 -#include <ImfPartType.h>
 -#include <ImfTiledOutputPart.h>
-+#include <OpenEXR-3/ImfInputPart.h>
-+#include <OpenEXR-3/ImfMultiPartInputFile.h>
-+#include <OpenEXR-3/ImfMultiPartOutputFile.h>
-+#include <OpenEXR-3/ImfMultiView.h>
-+#include <OpenEXR-3/ImfOutputPart.h>
-+#include <OpenEXR-3/ImfPartHelper.h>
-+#include <OpenEXR-3/ImfPartType.h>
-+#include <OpenEXR-3/ImfTiledOutputPart.h>
++#include <OpenEXR/ImfInputPart.h>
++#include <OpenEXR/ImfMultiPartInputFile.h>
++#include <OpenEXR/ImfMultiPartOutputFile.h>
++#include <OpenEXR/ImfMultiView.h>
++#include <OpenEXR/ImfOutputPart.h>
++#include <OpenEXR/ImfPartHelper.h>
++#include <OpenEXR/ImfPartType.h>
++#include <OpenEXR/ImfTiledOutputPart.h>
  
  #include "DNA_scene_types.h" /* For OpenEXR compression constants */
  

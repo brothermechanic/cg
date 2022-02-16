@@ -12,15 +12,15 @@ inherit cmake font python-single-r1 flag-o-matic
 
 DESCRIPTION="A library for reading and writing images"
 HOMEPAGE="https://sites.google.com/site/openimageio/ https://github.com/OpenImageIO"
-SRC_URI="https://github.com/OpenImageIO/oiio/archive/v${PV}.tar.gz -> ${P}.tar.gz"
+SRC_URI="https://github.com/OpenImageIO/oiio/archive/Release-${PV}.tar.gz -> ${P}.tar.gz"
 SRC_URI+=" test? (
 		https://github.com/OpenImageIO/oiio-images/archive/${TEST_OIIO_IMAGE_COMMIT}.tar.gz -> ${PN}-oiio-test-image-${TEST_OIIO_IMAGE_COMMIT}.tar.gz
 		https://github.com/AcademySoftwareFoundation/openexr-images/archive/${TEST_OEXR_IMAGE_COMMIT}.tar.gz -> ${PN}-oexr-test-image-${TEST_OEXR_IMAGE_COMMIT}.tar.gz
 	)"
-S="${WORKDIR}/oiio-${PV}"
+S="${WORKDIR}/oiio-Release-${PV}"
 
 LICENSE="BSD"
-SLOT="0/$(ver_cut 1-2).1"
+SLOT="0/$(ver_cut 1-2)"
 KEYWORDS="~amd64 ~arm ~arm64 ~ppc64 ~x86"
 
 X86_CPU_FEATURES=(
@@ -29,10 +29,9 @@ X86_CPU_FEATURES=(
 )
 CPU_FEATURES=( ${X86_CPU_FEATURES[@]/#/cpu_flags_x86_} )
 
-IUSE="dicom doc ffmpeg field3d gif jpeg2k opencv opengl openvdb ptex python qt5 raw test +truetype ${CPU_FEATURES[@]%:*}"
+IUSE="dicom doc ffmpeg field3d gif jpeg2k opencv opengl openvdb ptex python qt5 raw +truetype test ${CPU_FEATURES[@]%:*}"
 REQUIRED_USE="python? ( ${PYTHON_REQUIRED_USE} )"
 
-# Not quite working yet
 RESTRICT="!test? ( test ) test"
 
 BDEPEND="
@@ -114,7 +113,6 @@ src_prepare() {
 
 src_configure() {
 	CMAKE_BUILD_TYPE=Release
-
 	# Build with SIMD support
 	local cpufeature
 	local mysimd=()

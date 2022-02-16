@@ -132,7 +132,7 @@ RDEPEND="${PYTHON_DEPS}
 		virtual/glu
 	)
 	oidn? ( media-libs/oidn )
-	openimageio? ( >=media-libs/openimageio-2.2.0 )
+	openimageio? ( =media-libs/openimageio-2.2* )
 	opencolorio? ( =media-libs/opencolorio-2* )
 	openexr? ( media-libs/openexr:= )
 	opensubdiv? ( media-libs/opensubdiv[cuda?,openmp?,tbb?] )
@@ -448,9 +448,9 @@ src_configure() {
 		-DWITH_CLANG=$(usex clang)
 		#-DCLANG_ROOT_DIR="/usr/lib/llvm/${LLVM_SLOT}"
 		-DCLANG_INCLUDE_DIR="/usr/lib/llvm/${LLVM_SLOT}/include/clang"
-		-DOPENEXR_INCLUDE_DIR="/usr/include/OpenEXR-3"
-		-DOPENEXR_ROOT_DIR="/usr/$(get_libdir)/OpenEXR-3"
-		-DOPENEXR_IMATH_LIBRARY="/usr/$(get_libdir)/Imath-3/libImath.so"
+		#-DOPENEXR_INCLUDE_DIR="/usr/include/OpenEXR"
+		#-DOPENEXR_ROOT_DIR="/usr/$(get_libdir)/OpenEXR"
+		#-DOPENEXR_IMATH_LIBRARY="/usr/$(get_libdir)/libImath.so"
 		#-Wno-dev
 		#-DCMAKE_FIND_DEBUG_MODE=ON
 	)
