@@ -13,7 +13,7 @@ SRC_URI="https://github.com/AcademySoftwareFoundation/OpenColorIO/archive/refs/t
 S="${WORKDIR}/OpenColorIO-${PV}"
 
 LICENSE="BSD"
-SLOT="0"
+SLOT="0/$(ver_cut 1-2).1"
 KEYWORDS="~amd64 ~arm ~arm64 ~ppc64 ~x86"
 IUSE="cpu_flags_x86_sse2 doc opengl python static-libs test"
 REQUIRED_USE="
@@ -57,8 +57,8 @@ pkg_setup() {
 
 src_prepare() {
 	cmake_src_prepare
-	sed -i -e 's/include <Imath/include <Imath-3/' src/utils/Half.h.in || die
-	sed -i -e 's/include <OpenEXR/include <OpenEXR-3/' src/utils/Half.h.in || die
+	#sed -i -e 's/include <Imath/include <Imath-3/' src/utils/Half.h.in || die
+	#sed -i -e 's/include <OpenEXR/include <OpenEXR-3/' src/utils/Half.h.in || die
 	sed -i -e "s|LIBRARY DESTINATION lib|LIBRARY DESTINATION $(get_libdir)|g" {,src/bindings/python/,src/OpenColorIO/,src/libutils/oiiohelpers/,src/libutils/oglapphelpers/}CMakeLists.txt || die
 	sed -i -e "s|ARCHIVE DESTINATION lib|ARCHIVE DESTINATION $(get_libdir)|g" {,src/bindings/python/,src/OpenColorIO/,src/libutils/oiiohelpers/,src/libutils/oglapphelpers/}CMakeLists.txt || die
 }

@@ -34,7 +34,7 @@ IUSE="doc optix partio qt5 test ${CPU_FEATURES[@]%:*} python"
 RDEPEND="
 	dev-libs/boost:=
 	dev-libs/pugixml
-	media-libs/openexr:3=
+	media-libs/openexr:=
 	dev-libs/imath:3=
 	>=media-libs/openimageio-2.3.12.0:=
 	<sys-devel/clang-$((${LLVM_MAX_SLOT} + 1)):=
@@ -79,8 +79,8 @@ pkg_setup() {
 
 src_prepare() {
 	cmake_src_prepare
-	sed -i -e 's/include <Imath/include <Imath-3/' src/include/OSL/oslconfig.h.in src/liboslquery/py_osl.h || die
-	sed -i -e 's/include <OpenEXR/include <OpenEXR-3/' src/liboslexec/shadingsys.cpp || die
+	#sed -i -e 's/include <Imath/include <Imath-3/' src/include/OSL/oslconfig.h.in src/liboslquery/py_osl.h || die
+	#sed -i -e 's/include <OpenEXR/include <OpenEXR-3/' src/liboslexec/shadingsys.cpp || die
 }
 
 src_configure() {

@@ -55,8 +55,7 @@ RDEPEND="
 	>=media-libs/libwebp-0.2.1:=
 	dev-libs/imath:3=
 	>=media-libs/opencolorio-2.1.1-r3:=
-	media-libs/openexr:3=
-	!media-libs/openexr:0=
+	media-libs/openexr:=
 	media-libs/tiff:0=
 	sys-libs/zlib:=
 	virtual/jpeg:0
@@ -101,10 +100,10 @@ pkg_setup() {
 }
 
 src_prepare() {
-	sed -i -e 's/include <Imath/include <Imath-3/' \
-		src/include/OpenImageIO/Imath.h.in src/libOpenImageIO/imagebufalgo_xform.cpp src/libutil/fmath_test.cpp || die
-	sed -i -e 's/include <OpenEXR/include <OpenEXR-3/' \
-		src/{dpx.imageio/dpxinput.cpp,openexr.imageio/exrinput.cpp,openexr.imageio/exroutput.cpp,openexr.imageio/exrinput_c.cpp,oiiotool/oiiotool.cpp} || die
+	#sed -i -e 's/include <Imath/include <Imath-3/' \
+	#	src/include/OpenImageIO/Imath.h.in src/libOpenImageIO/imagebufalgo_xform.cpp src/libutil/fmath_test.cpp || die
+	#sed -i -e 's/include <OpenEXR/include <OpenEXR-3/' \
+#		src/{dpx.imageio/dpxinput.cpp,openexr.imageio/exrinput.cpp,openexr.imageio/exroutput.cpp,openexr.imageio/exrinput_c.cpp,oiiotool/oiiotool.cpp} || die
 
 	cmake_src_prepare
 	cmake_comment_add_subdirectory src/fonts

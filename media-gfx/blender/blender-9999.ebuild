@@ -134,9 +134,7 @@ RDEPEND="${PYTHON_DEPS}
 	oidn? ( media-libs/oidn )
 	openimageio? ( >=media-libs/openimageio-2.2.0 )
 	opencolorio? ( =media-libs/opencolorio-2* )
-	openexr? (
-		media-libs/openexr:3=
-	)
+	openexr? ( media-libs/openexr:= )
 	opensubdiv? ( media-libs/opensubdiv[cuda?,openmp?,tbb?] )
 	openvdb? (
 		>=media-gfx/openvdb-7.1.0[abi6-compat(-)?,abi7-compat(-)?,abi8-compat(-)?]
