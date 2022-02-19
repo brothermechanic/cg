@@ -13,6 +13,8 @@ SRC_URI="https://github.com/AcademySoftwareFoundation/OpenColorIO/archive/refs/t
 S="${WORKDIR}/OpenColorIO-${PV}"
 
 LICENSE="BSD"
+# TODO: drop .1 on next SONAME bump (2.1 -> 2.2?) as we needed to nudge it
+# to force rebuild of consumers due to changing to openexr 3 changing API.
 SLOT="0/$(ver_cut 1-2).1"
 KEYWORDS="~amd64 ~arm ~arm64 ~ppc64 ~x86"
 IUSE="cpu_flags_x86_sse2 doc opengl python static-libs test"
@@ -25,11 +27,11 @@ RDEPEND="
 	dev-cpp/pystring
 	dev-python/pybind11
 	>=dev-cpp/yaml-cpp-0.7.0:=
-	dev-libs/imath:3=
+	>=dev-libs/imath-3.1.4-r2:=
 	dev-libs/tinyxml
 	opengl? (
 		media-libs/lcms:2
-		media-libs/openimageio:=
+		>=media-libs/openimageio-2.1.1-r4:=
 		media-libs/glew:=
 		media-libs/freeglut
 		virtual/opengl
@@ -49,7 +51,7 @@ BDEPEND="
 "
 
 # Restricting tests, bugs #439790 and #447908
-RESTRICT="mirror test"
+RESTRICT="test"
 
 pkg_setup() {
 	use python && python-single-r1_pkg_setup
@@ -57,8 +59,7 @@ pkg_setup() {
 
 src_prepare() {
 	cmake_src_prepare
-	#sed -i -e 's/include <Imath/include <Imath-3/' src/utils/Half.h.in || die
-	#sed -i -e 's/include <OpenEXR/include <OpenEXR-3/' src/utils/Half.h.in || die
+
 	sed -i -e "s|LIBRARY DESTINATION lib|LIBRARY DESTINATION $(get_libdir)|g" {,src/bindings/python/,src/OpenColorIO/,src/libutils/oiiohelpers/,src/libutils/oglapphelpers/}CMakeLists.txt || die
 	sed -i -e "s|ARCHIVE DESTINATION lib|ARCHIVE DESTINATION $(get_libdir)|g" {,src/bindings/python/,src/OpenColorIO/,src/libutils/oiiohelpers/,src/libutils/oglapphelpers/}CMakeLists.txt || die
 }
@@ -73,7 +74,7 @@ src_configure() {
 	CMAKE_BUILD_TYPE=Release
 	local mycmakeargs=(
 		-DOCIO_USE_ILMBASE=OFF
-		-DOCIO_USE_OPENEXR_HALF=OFF # OFF for using Imath-3
+		-DOCIO_USE_OPENEXR_HALF=OFF
 		-DBUILD_SHARED_LIBS=ON
 		-DOCIO_BUILD_STATIC=$(usex static-libs)
 		-DOCIO_BUILD_DOCS=$(usex doc)
