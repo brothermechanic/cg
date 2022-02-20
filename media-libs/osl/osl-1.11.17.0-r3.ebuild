@@ -1,4 +1,4 @@
-# Copyright 1999-2021 Gentoo Authors
+# Copyright 1999-2022 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
 
 EAPI=7
@@ -34,12 +34,12 @@ IUSE="doc optix partio qt5 test ${CPU_FEATURES[@]%:*} python"
 RDEPEND="
 	dev-libs/boost:=
 	dev-libs/pugixml
-	media-libs/openexr:=
-	dev-libs/imath:3=
-	media-libs/openimageio:=
+	>=media-libs/openexr-3:0=
+	>=dev-libs/imath-3.1.4-r2:=
+	>=media-libs/openimageio-2.2:=
 	<sys-devel/clang-$((${LLVM_MAX_SLOT} + 1)):=
 	sys-libs/zlib
-	optix? ( dev-libs/optix )
+	optix? ( >=dev-libs/optix-7.4.0 )
 	partio? ( media-libs/partio )
 	python? (
 		${PYTHON_DEPS}
