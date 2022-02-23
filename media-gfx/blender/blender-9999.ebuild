@@ -3,7 +3,7 @@
 
 EAPI=7
 
-PYTHON_COMPAT=( python3_{9..10} )
+PYTHON_COMPAT=( python3_10 )
 LLVM_MAX_SLOT="13"
 
 inherit check-reqs cmake flag-o-matic pax-utils python-single-r1 toolchain-funcs xdg-utils
@@ -36,7 +36,7 @@ SLOT="${MY_PV}"
 LICENSE="|| ( GPL-3 BL )"
 IUSE_DESKTOP="cg -portable +X headless wayland +addons +addons_contrib +nls +icu -ndof"
 IUSE_GPU="+opengl -optix cuda -sm_30 -sm_35 -sm_50 -sm_52 -sm_61 -sm_70 -sm_75 -sm_86"
-IUSE_LIBS="clang +cycles gmp sdl jack openal pulseaudio +freestyle -osl +openvdb nanovdb abi6-compat abi7-compat abi8-compat +opensubdiv +opencolorio +openimageio +pdf +pugixml +potrace +collada -alembic +gltf-draco +fftw +oidn +quadriflow -usd +bullet -valgrind +jemalloc libmv +llvm"
+IUSE_LIBS="clang +cycles gmp sdl jack openal pulseaudio +freestyle -osl +openvdb nanovdb abi6-compat abi7-compat abi8-compat abi9-compat +opensubdiv +opencolorio +openimageio +pdf +pugixml +potrace +collada -alembic +gltf-draco +fftw +oidn +quadriflow -usd +bullet -valgrind +jemalloc libmv +llvm"
 IUSE_CPU="+openmp embree +simd +tbb +lld gold"
 IUSE_TEST="-debug -doc -man -gtests test"
 IUSE_IMAGE="-dpx -dds +openexr jpeg2k tiff +hdr"
@@ -59,7 +59,7 @@ REQUIRED_USE="${PYTHON_REQUIRED_USE}
 	openexr? ( openimageio )
 	optix? ( cycles cuda )
 	openvdb? (
-		^^ ( abi6-compat abi7-compat abi8-compat )
+		^^ ( abi6-compat abi7-compat abi8-compat abi9-compat )
 		cycles tbb
 	)
 	osl? ( cycles llvm )
@@ -123,7 +123,7 @@ RDEPEND="${PYTHON_DEPS}
 		app-misc/spacenavd
 		dev-libs/libspnav
 	)
-	nanovdb? ( media-libs/nanovdb[cuda?,openvdb?] )
+	nanovdb? ( media-libs/openvdb[cuda?,nanovdb?] )
 	nls? ( virtual/libiconv )
 	openal? ( media-libs/openal )
 	opengl? (
@@ -137,7 +137,7 @@ RDEPEND="${PYTHON_DEPS}
 	openexr? ( media-libs/openexr:= )
 	opensubdiv? ( media-libs/opensubdiv[cuda?,openmp?,tbb?] )
 	openvdb? (
-		>=media-gfx/openvdb-7.1.0[abi6-compat(-)?,abi7-compat(-)?,abi8-compat(-)?]
+		>=media-gfx/openvdb-9.0.0[abi6-compat(-)?,abi7-compat(-)?,abi8-compat(-)?,abi9-compat(-)?]
 		dev-libs/c-blosc:=
 	)
 	optix? ( >=dev-libs/optix-7.3.0 )
@@ -225,7 +225,7 @@ src_prepare() {
 	#eapply "${FILESDIR}/blender-system-lzma.patch"
 	eapply "${FILESDIR}/blender-system-glog-gflags.patch"
 	eapply "${FILESDIR}/Fix-build-with-system-glew.patch"
-	eapply "${FILESDIR}/Fix-build-with-openexr-3.x.patch"
+	#eapply "${FILESDIR}/Fix-build-with-openexr-3.x.patch"
 	#eapply "${FILESDIR}/D13464.patch"
 	if use cg; then
         eapply "${FILESDIR}"/${SLOT}/cg-defaults.patch
@@ -314,6 +314,8 @@ src_configure() {
 			version=7;
         elif use abi8-compat; then
 			version=8;
+		elif use abi9-compat; then
+			version=9
 		else
 			die "Openvdb abi version not compatible"
 		fi
@@ -448,9 +450,6 @@ src_configure() {
 		-DWITH_CLANG=$(usex clang)
 		#-DCLANG_ROOT_DIR="/usr/lib/llvm/${LLVM_SLOT}"
 		-DCLANG_INCLUDE_DIR="/usr/lib/llvm/${LLVM_SLOT}/include/clang"
-		#-DOPENEXR_INCLUDE_DIR="/usr/include/OpenEXR"
-		#-DOPENEXR_ROOT_DIR="/usr/$(get_libdir)/OpenEXR"
-		#-DOPENEXR_IMATH_LIBRARY="/usr/$(get_libdir)/libImath.so"
 		#-Wno-dev
 		#-DCMAKE_FIND_DEBUG_MODE=ON
 	)
