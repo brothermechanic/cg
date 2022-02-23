@@ -225,7 +225,7 @@ src_prepare() {
 	#eapply "${FILESDIR}/blender-system-lzma.patch"
 	eapply "${FILESDIR}/blender-system-glog-gflags.patch"
 	eapply "${FILESDIR}/Fix-build-with-system-glew.patch"
-	eapply "${FILESDIR}/Fix-build-with-openexr-3.x.patch"
+	#eapply "${FILESDIR}/Fix-build-with-openexr-3.x.patch"
 	#eapply "${FILESDIR}/D13464.patch"
 	if use cg; then
         eapply "${FILESDIR}"/${SLOT}/cg-defaults.patch
