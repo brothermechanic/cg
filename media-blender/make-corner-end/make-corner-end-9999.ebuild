@@ -1,5 +1,5 @@
 EAPI=7
-PYTHON_COMPAT=( python3_{6..9} )
+PYTHON_COMPAT=( python3_{9..10} )
 inherit git-r3 python-single-r1
 
 DESCRIPTION="Blender addon for Make Corner and Make End"
