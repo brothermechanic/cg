@@ -12,8 +12,7 @@ KEYWORDS="~amd64 ~x86"
 IUSE=""
 
 DEPEND=""
-RDEPEND="media-gfx/blender[addons]
-        media-makehuman/community-plugins-socket"
+RDEPEND="media-gfx/blender[addons]"
 
 src_install() {
 	egit_clean
