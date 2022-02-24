@@ -123,7 +123,7 @@ RDEPEND="${PYTHON_DEPS}
 		app-misc/spacenavd
 		dev-libs/libspnav
 	)
-	nanovdb? ( media-libs/openvdb[cuda?,nanovdb?] )
+	nanovdb? ( media-gfx/openvdb[cuda?,nanovdb?] )
 	nls? ( virtual/libiconv )
 	openal? ( media-libs/openal )
 	opengl? (
