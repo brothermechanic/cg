@@ -589,6 +589,7 @@ pkg_postinst() {
 	elog "home directory. This can be done by starting blender, then"
 	elog "changing the 'Temporary Files' directory in Blender preferences."
 	elog
+"""
 	if ! use python_single_target_python3_9; then
 		elog "You are building Blender with a newer python version than"
 		elog "supported by this version upstream."
@@ -597,7 +598,7 @@ pkg_postinst() {
 		elog "Bug: https://bugs.gentoo.org/737388"
 		elog
 	fi
-
+"""
 	xdg_icon_cache_update
 	xdg_mimeinfo_database_update
 	xdg_desktop_database_update
