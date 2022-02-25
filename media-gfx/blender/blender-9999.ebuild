@@ -173,7 +173,9 @@ RESTRICT="
 	!test? ( test )
 "
 
-QA_WX_LOAD="/usr/share/${PN}/${MY_PV}/scripts/addons/cycles/lib/kernel_sm_*.cubin"
+QA_WX_LOAD="usr/share/${PN}/${MY_PV}/scripts/addons/cycles/lib/kernel_sm_*.cubin"
+QA_PRESTRIPPED="${QA_WX_LOAD}"
+QA_FLAGS_IGNORED="${QA_WX_LOAD}"
 
 blender_check_requirements() {
 	[[ ${MERGE_TYPE} != binary ]] && use openmp && tc-check-openmp
