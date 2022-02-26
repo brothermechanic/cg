@@ -18,10 +18,10 @@ IUSE="abi6-compat abi7-compat abi8-compat abi9-compat cpu_flags_x86_avx cpu_flag
 RESTRICT="!test? ( test )"
 
 REQUIRED_USE="
+	blosc? ( zlib )
 	numpy? ( python )
 	nanovdb? ( cuda )
 	intrinsics? ( nanovdb )
-
 	^^ ( abi6-compat abi7-compat abi8-compat abi9-compat )
 	python? ( ${PYTHON_REQUIRED_USE} )
 "
@@ -105,8 +105,6 @@ src_configure() {
 	else
 		die "OpenVDB ABI version is not compatible"
 	fi
-
-	append-cppflags -DOPENVDB_ABI_VERSION_NUMBER=${version}
 
 	local mycmakeargs=(
 		-DCMAKE_INSTALL_PREFIX="${myprefix}"
