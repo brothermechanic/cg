@@ -230,8 +230,7 @@ src_prepare() {
 	#eapply "${FILESDIR}/Fix-build-with-openexr-3.x.patch"
 	#eapply "${FILESDIR}/D13464.patch"
 	if use cg; then
-        eapply "${FILESDIR}"/${SLOT}/cg-defaults.patch
-        eapply "${FILESDIR}"/${SLOT}/cg-mesh.patch
+        eapply "${FILESDIR}"/cg-defaults.patch
     fi
 
 	if use addons_contrib; then
