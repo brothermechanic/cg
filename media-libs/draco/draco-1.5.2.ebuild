@@ -34,12 +34,11 @@ DEPEND="${RDEPEND}
 	virtual/pkgconfig"
 # Testing needs the dev-cpp/gtest source code to be available in a
 # side-directory of the draco sources, therefore we restrict test for now.
-RESTRICT="test"
-
+RESTRICT="test mirror"
 DOCS=( AUTHORS CONTRIBUTING.md README.md )
-CMAKE_BUILD_TYPE=Release
 
 src_configure() {
+	CMAKE_BUILD_TYPE=Release
 	local mycmakeargs=(
 		# currently only used for javascript/emscripten build
 		-DBUILD_ANIMATION_ENCODING=OFF # default
@@ -54,14 +53,14 @@ src_configure() {
 		# set to on with C/C++ build
 		-DENABLE_DECODER_ATTRIBUTE_DEDUPLICATION=OFF
 		-DENABLE_EXTRA_SPEED=OFF # don't use -O3 optimization
-		-DENABLE_EXTRA_WARNINGS=OFF
+		#-DENABLE_EXTRA_WARNINGS=OFF
 		-DENABLE_MESH_COMPRESSION=ON # default
 		-DENABLE_POINT_CLOUD_COMPRESSION=ON # default
 		-DENABLE_PREDICTIVE_EDGEBREAKER=ON # default
 		-DENABLE_STANDARD_EDGEBREAKER=ON # default
 		-DENABLE_TESTS=OFF
-		-DENABLE_WERROR=OFF # default
-		-DENABLE_WEXTRA=OFF # add extra compiler warnings
+		#-DENABLE_WERROR=OFF # default
+		#-DENABLE_WEXTRA=OFF # add extra compiler warnings
 	)
 
 	cmake_src_configure
