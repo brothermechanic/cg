@@ -39,7 +39,7 @@ IUSE_GPU="+opengl -optix cuda -sm_30 -sm_35 -sm_50 -sm_52 -sm_61 -sm_70 -sm_75 -
 IUSE_LIBS="clang +cycles gmp sdl jack openal pulseaudio +freestyle -osl +openvdb nanovdb abi6-compat abi7-compat abi8-compat abi9-compat +opensubdiv +opencolorio +openimageio +pdf +pugixml +potrace +collada -alembic +gltf-draco +fftw +oidn +quadriflow -usd +bullet -valgrind +jemalloc libmv +llvm"
 IUSE_CPU="+openmp embree +simd +tbb +lld gold"
 IUSE_TEST="-debug -doc -man -gtests test"
-IUSE_IMAGE="-dpx -dds +openexr jpeg2k tiff +hdr"
+IUSE_IMAGE="-dpx -dds +openexr jpeg2k tiff +hdr webp"
 IUSE_CODEC="avi +ffmpeg -sndfile +quicktime"
 IUSE_COMPRESSION="+lzma -lzo"
 IUSE_MODIFIERS="+fluid +smoke +oceansim +remesh"
@@ -153,6 +153,7 @@ RDEPEND="${PYTHON_DEPS}
 	tiff? ( media-libs/tiff )
 	usd? ( media-libs/openusd[monolithic,-python] )
 	valgrind? ( dev-util/valgrind )
+	webp? ( media-libs/libwebp )
 "
 
 DEPEND="${RDEPEND}
@@ -393,6 +394,7 @@ src_configure() {
 		-DWITH_HARU=$(usex pdf)
 		-DWITH_IMAGE_DDS=$(usex dds)
 		-DWITH_IMAGE_HDR=$(usex hdr)
+		-DWITH_IMAGE_WEBP=$(usex webp)
 		-DWITH_IMAGE_OPENEXR=$(usex openexr)
 		-DWITH_IMAGE_OPENJPEG=$(usex jpeg2k)
 		-DWITH_IMAGE_TIFF=$(usex tiff)
