@@ -4,7 +4,7 @@
 EAPI=7
 
 PYTHON_COMPAT=( python3_10 )
-LLVM_MAX_SLOT="13"
+LLVM_MAX_SLOT="14"
 
 inherit check-reqs cmake flag-o-matic pax-utils python-single-r1 toolchain-funcs xdg-utils
 
@@ -175,6 +175,7 @@ RESTRICT="
 "
 
 QA_WX_LOAD="usr/share/${PN}/${MY_PV}/scripts/addons/cycles/lib/kernel_sm_*.cubin"
+QA_PREBUILT="${QA_WX_LOAD}"
 QA_PRESTRIPPED="${QA_WX_LOAD}"
 QA_FLAGS_IGNORED="${QA_WX_LOAD}"
 
