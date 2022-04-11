@@ -1,6 +1,6 @@
-EAPI=7
+EAPI=8
 
-inherit git-r3 eutils
+inherit git-r3
 
 DESCRIPTION="Blender addon to import reconstruction results of several libraries"
 HOMEPAGE="https://github.com/SBCV/Blender-Addon-Photogrammetry-Importer"
@@ -29,7 +29,7 @@ src_prepare() {
 	default
 	if [[ -z ${BLENDER_ADDONS_DIR} ]]; then
 		local MY_BV
-		for i in "2.93" "3.0" ; do
+		for i in "2.93" "3.0" "3.2" ; do
 			has_version -r media-gfx\/blender\:${i} && MY_BV=${i}
 		done
 		BLENDER_ADDONS_DIR="/usr/share/blender/${MY_BV}/scripts"
