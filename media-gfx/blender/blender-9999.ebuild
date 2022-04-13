@@ -77,6 +77,7 @@ RDEPEND="${PYTHON_DEPS}
 	$(python_gen_cond_dep '
 		dev-python/numpy[${PYTHON_USEDEP}]
 		dev-python/requests[${PYTHON_USEDEP}]
+		dev-python/zstandard[${PYTHON_USEDEP}]
         dev-libs/boost[python,nls?,icu?,threads(+),${PYTHON_USEDEP}]
 	')
 	sys-libs/zlib:=
@@ -90,8 +91,8 @@ RDEPEND="${PYTHON_DEPS}
 	alembic? ( media-gfx/alembic:=[boost(+),-hdf5] )
 	collada? ( media-libs/opencollada )
 	cuda? ( dev-util/nvidia-cuda-toolkit:= )
-	embree? ( media-libs/embree[raymask,tbb?] )
-	ffmpeg? ( media-video/ffmpeg:=[x264,mp3,encode,theora,jpeg2k,vpx,vorbis,opus,xvid] )
+	embree? ( >=media-libs/embree-3.10.0[raymask,tbb?] )
+	ffmpeg? ( media-video/ffmpeg:=[x264,mp3,encode,theora,jpeg2k?,vpx,vorbis,opus,xvid] )
 	fftw? ( sci-libs/fftw:3.0=[openmp?] )
 	gltf-draco? ( media-libs/draco[gltf] )
 	gmp? ( dev-libs/gmp )
@@ -149,7 +150,7 @@ RDEPEND="${PYTHON_DEPS}
 	quicktime? ( media-libs/libquicktime )
 	sdl? ( media-libs/libsdl2[sound,joystick] )
 	sndfile? ( media-libs/libsndfile )
-	tbb? ( dev-cpp/tbb )
+	tbb? ( dev-cpp/tbb:= )
 	tiff? ( media-libs/tiff )
 	usd? ( media-libs/openusd[monolithic,-python] )
 	valgrind? ( dev-util/valgrind )
@@ -575,7 +576,7 @@ src_install() {
 	mv "${ED}/usr/bin/blender" "${ED}/usr/bin/blender-${MY_PV}" || die
 	ln -s "${ED}/usr/bin/blender-${MY_PV}" "${ED}/usr/bin/blender"
 
-	elog "Install blender version: $( grep -Po 'CPACK_PACKAGE_VERSION "\K[^"]...' ${BUILD_DIR}/CPackConfig.cmake )"
+	elog "${PN^}-$( grep -Po 'CPACK_PACKAGE_VERSION "\K[^"]...' ${BUILD_DIR}/CPackConfig.cmake ) has been installed."
 }
 
 pkg_postinst() {
@@ -593,16 +594,16 @@ pkg_postinst() {
 	elog "home directory. This can be done by starting blender, then"
 	elog "changing the 'Temporary Files' directory in Blender preferences."
 	elog
-"""
-	if ! use python_single_target_python3_9; then
+
+	if ! use python_single_target_python3_10; then
 		elog "You are building Blender with a newer python version than"
 		elog "supported by this version upstream."
 		elog "If you experience breakages with e.g. plugins, please switch to"
-		elog "python_single_target_python3_9 instead."
+		elog "python_single_target_python3_10 instead."
 		elog "Bug: https://bugs.gentoo.org/737388"
 		elog
 	fi
-"""
+
 	xdg_icon_cache_update
 	xdg_mimeinfo_database_update
 	xdg_desktop_database_update
