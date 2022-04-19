@@ -10,12 +10,13 @@ inherit cmake-multilib python-any-r1 toolchain-funcs
 
 DESCRIPTION="Nonlinear least-squares minimizer"
 HOMEPAGE="http://ceres-solver.org/"
-SRC_URI="http://ceres-solver.org/${P}.tar.gz"
+#SRC_URI="http://ceres-solver.org/${P}.tar.gz"
+SRC_URI="https://github.com/${PN}/${PN}/archive/${PV}.tar.gz"
 
 LICENSE="sparse? ( BSD ) !sparse? ( LGPL-2.1 ) cxsparse? ( BSD )"
 SLOT="0/1"
 KEYWORDS="amd64 ~x86 ~amd64-linux ~x86-linux"
-IUSE="cxsparse doc examples gflags lapack openmp +schur sparse test"
+IUSE="cxsparse cuda doc examples gflags lapack +schur sparse test"
 RESTRICT="
 	mirror
 	!test? ( test )
@@ -24,7 +25,8 @@ RESTRICT="
 REQUIRED_USE="test? ( gflags ) sparse? ( lapack ) abi_x86_32? ( !sparse !lapack )"
 
 BDEPEND="${PYTHON_DEPS}
-	>=dev-cpp/eigen-3.3.4:3
+	>=dev-cpp/eigen-3.3:=
+	cuda? ( dev-util/nvidia-cuda-toolkit:= )
 	doc? (
 		dev-python/sphinx
 		dev-python/sphinx_rtd_theme
@@ -46,7 +48,7 @@ RDEPEND="
 
 DEPEND="${RDEPEND}"
 
-DOCS=( README.md VERSION )
+DOCS=( README.md CONTRIBUTING.md )
 
 pkg_pretend() {
 	if [[ ${MERGE_TYPE} != binary ]] && use openmp; then
@@ -79,14 +81,16 @@ src_prepare() {
 
 src_configure() {
 	# CUSTOM_BLAS=OFF EIGENSPARSE=OFF MINIGLOG=OFF CXX11=OFF
+	CMAKE_BUILD_TYPE=Release
 	local mycmakeargs=(
 		-DBUILD_BENCHMARKS=OFF
 		-DBUILD_EXAMPLES=OFF
-		-DENABLE_TESTING="$(usex test)"
+		-DBUILD_TESTING="$(usex test)"
 		-DBUILD_DOCUMENTATION="$(usex doc)"
+		-DBUILD_SHARED_LIBS=ON
+		-DCUDA=$(usex cuda)
 		-DGFLAGS="$(usex gflags)"
 		-DLAPACK="$(usex lapack)"
-		-DOPENMP="$(usex openmp)"
 		-DSCHUR_SPECIALIZATIONS="$(usex schur)"
 		-DCXSPARSE="$(usex cxsparse)"
 		-DSUITESPARSE="$(usex sparse)"
