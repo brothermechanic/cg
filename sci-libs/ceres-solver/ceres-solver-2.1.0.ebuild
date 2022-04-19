@@ -50,15 +50,6 @@ DEPEND="${RDEPEND}"
 
 DOCS=( README.md CONTRIBUTING.md )
 
-pkg_pretend() {
-	if [[ ${MERGE_TYPE} != binary ]] && use openmp; then
-		if [[ $(tc-getCXX) == *g++* ]] && ! tc-has-openmp; then
-			ewarn "OpenMP is not available in your current selected gcc"
-			die "need openmp capable gcc"
-		fi
-	fi
-}
-
 pkg_setup() {
 	use doc && python-any-r1_pkg_setup
 }
