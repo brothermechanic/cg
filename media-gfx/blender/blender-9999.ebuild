@@ -231,7 +231,6 @@ src_prepare() {
 	eapply "${FILESDIR}/blender-system-glog-gflags.patch"
 	eapply "${FILESDIR}/Fix-build-with-system-glew.patch"
 	#eapply "${FILESDIR}/Fix-build-with-openexr-3.x.patch"
-	eapply "${FILESDIR}/reversed-869a46d.patch"
 	if use cg; then
         eapply "${FILESDIR}"/cg-defaults.patch
     fi
