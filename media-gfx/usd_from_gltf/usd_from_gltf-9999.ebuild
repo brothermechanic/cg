@@ -18,7 +18,7 @@ IUSE=""
 
 RDEPEND="
     $(python_gen_cond_dep '
-    dev-python/pillow[${PYTHON_MULTI_USEDEP}]
+    dev-python/pillow[${PYTHON_USEDEP}]
     ')
     dev-lang/nasm
     dev-cpp/nlohmann_json
