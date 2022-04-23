@@ -1,4 +1,4 @@
-# Copyright 1999-2021 Gentoo Authors
+# Copyright 1999-2022 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
 
 EAPI=7
@@ -80,10 +80,11 @@ RDEPEND="${PYTHON_DEPS}
 		dev-python/zstandard[${PYTHON_USEDEP}]
         dev-libs/boost[python,nls?,icu?,threads(+),${PYTHON_USEDEP}]
 	')
-	sys-libs/zlib:=
 	media-libs/freetype:=
 	app-arch/brotli:=[static-libs]
 	media-libs/libpng:=
+	media-libs/libsamplerate
+	sys-libs/zlib:=
 	virtual/jpeg
 	virtual/libintl
 	addons? ( media-blender/addons:${SLOT} )
@@ -116,10 +117,10 @@ RDEPEND="${PYTHON_DEPS}
 	jemalloc? ( dev-libs/jemalloc:= )
 	jpeg2k? ( media-libs/openjpeg:2= )
 	libmv? ( sci-libs/ceres-solver )
-	lld? ( sys-devel/lld )
-	lzo? ( dev-libs/lzo:2= )
+	lld? ( <sys-devel/lld-$((${LLVM_MAX_SLOT} + 1)):= )
 	llvm? ( <sys-devel/llvm-$((${LLVM_MAX_SLOT} + 1)):= )
     clang? ( <sys-devel/clang-$((${LLVM_MAX_SLOT} + 1)):= )
+	lzo? ( dev-libs/lzo:2= )
 	ndof? (
 		app-misc/spacenavd
 		dev-libs/libspnav
@@ -133,15 +134,15 @@ RDEPEND="${PYTHON_DEPS}
 		virtual/glu
 	)
 	oidn? ( media-libs/oidn )
-	openimageio? ( =media-libs/openimageio-2.3* )
-	opencolorio? ( =media-libs/opencolorio-2* )
+	openimageio? ( =media-libs/openimageio-2.3.12.0-r3:= )
+	opencolorio? ( =media-libs/opencolorio-2.1.1-r7:= )
 	openexr? ( media-libs/openexr:= )
 	opensubdiv? ( media-libs/opensubdiv[cuda?,openmp?,tbb?] )
 	openvdb? (
 		>=media-gfx/openvdb-9.0.0[abi6-compat(-)?,abi7-compat(-)?,abi8-compat(-)?,abi9-compat(-)?]
 		dev-libs/c-blosc:=
 	)
-	optix? ( >=dev-libs/optix-7.3.0 )
+	optix? ( =dev-libs/optix-7.4.0 )
 	osl? ( >=media-libs/osl-1.11.10.0 )
 	pdf? ( media-libs/libharu )
 	potrace? ( media-gfx/potrace )
@@ -277,9 +278,9 @@ src_prepare() {
 		sed -e "s|string(REPLACE.*|set(TEST_INSTALL_DIR ${ED}/usr/)|g" -i build_files/cmake/Modules/GTestTesting.cmake || die
 	fi
 
-
 	ewarn "$(echo "Remaining bundled dependencies:";
 			( find extern -mindepth 1 -maxdepth 1 -type d; ) | sed 's|^|- |')"
+
 	# linguas cleanup
 	local i
 	if ! use nls; then
@@ -427,7 +428,6 @@ src_configure() {
 		-DWITH_OPENVDB=$(usex openvdb)							# advanced remesh and smoke
 		-DWITH_OPENVDB_BLOSC=$(usex openvdb)					# compression for OpenVDB
 		-DWITH_NANOVDB=$(usex nanovdb)							# OpenVDB for rendering on the GPU
-		#-DNANOVDB_INCLUDE_DIR=/usr/include
 		-DWITH_QUADRIFLOW=$(usex quadriflow)					# remesher
 		-DWITH_SDL=$(usex sdl)									# for sound and joystick support
 		-DWITH_SDL_DYNLOAD=$(usex sdl)
@@ -471,31 +471,6 @@ src_configure() {
 	cmake_src_configure
 }
 
-src_compile() {
-	python_setup
-
-	cmake_src_compile
-
-	if use doc; then
-		# Workaround for binary drivers.
-		addpredict /dev/ati
-		addpredict /dev/dri
-		addpredict /dev/nvidiactl
-
-		einfo "Generating Blender C/C++ API docs ..."
-		cd "${CMAKE_USE_DIR}"/doc/doxygen || die
-		doxygen -u Doxyfile || die
-		doxygen || die "doxygen failed to build API docs."
-
-		cd "${CMAKE_USE_DIR}" || die
-		einfo "Generating (BPY) Blender Python API docs ..."
-		"${BUILD_DIR}"/bin/blender --background --python doc/python_api/sphinx_doc_gen.py -noaudio || die "blender failed."
-
-		cd "${CMAKE_USE_DIR}"/doc/python_api || die
-		sphinx-build sphinx-in BPY_API || die "sphinx failed."
-	fi
-}
-
 src_test() {
 	# A lot of tests needs to have access to the installed data files.
 	# So install them into the image directory now.
@@ -506,11 +481,6 @@ src_test() {
 	# (Because the data is in the image directory and it will default to look in /usr/share)
 	export BLENDER_SYSTEM_SCRIPTS=${ED}/usr/share/blender/${BV}/scripts
 	export BLENDER_SYSTEM_DATAFILES=${ED}/usr/share/blender/${BV}/datafiles
-
-	# Sanity check that the script and datafile path is valid.
-	# If they are not vaild, blender will fallback to the default path which is not what we want.
-	[ -d "$BLENDER_SYSTEM_SCRIPTS" ] || die "The custom script path is invalid, fix the ebuild!"
-	[ -d "$BLENDER_SYSTEM_DATAFILES" ] || die "The custom datafiles path is invalid, fix the ebuild!"
 
 	cmake_src_test
 
