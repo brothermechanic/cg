@@ -34,11 +34,11 @@ RDEPEND="
 	python? (
 		${PYTHON_DEPS}
 		$(python_gen_cond_dep '
-			dev-libs/boost:=[python,${PYTHON_MULTI_USEDEP}]
+			dev-libs/boost:=[python,${PYTHON_USEDEP}]
 			usdview? (
-				dev-python/pyside2[${PYTHON_MULTI_USEDEP}]
-				dev-python/pyside2-tools[tools,${PYTHON_MULTI_USEDEP}]
-				opengl? ( dev-python/pyopengl[${PYTHON_MULTI_USEDEP}] )
+				dev-python/pyside2[${PYTHON_USEDEP}]
+				dev-python/pyside2-tools[tools,${PYTHON_USEDEP}]
+				opengl? ( dev-python/pyopengl[${PYTHON_USEDEP}] )
 			)
 		')
 	)
