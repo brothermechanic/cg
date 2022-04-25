@@ -35,7 +35,7 @@ RDEPEND="
 	jpeg? ( virtual/jpeg:0= )
 	python? (
 		$(python_gen_cond_dep \
-			'dev-python/pybind11[${PYTHON_MULTI_USEDEP}]')
+			'dev-python/pybind11[${PYTHON_USEDEP}]')
 	)
 	mpi? (
 		>=sci-libs/parmetis-4.0.3:=[mpi?]

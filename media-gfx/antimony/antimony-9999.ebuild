@@ -23,7 +23,7 @@ IUSE=""
 
 DEPEND="
 	$(python_gen_cond_dep '
-    dev-libs/boost[${PYTHON_MULTI_USEDEP}]
+    dev-libs/boost[${PYTHON_USEDEP}]
     ')
 	dev-util/lemon
 	sys-devel/flex
