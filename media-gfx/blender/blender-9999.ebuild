@@ -22,14 +22,14 @@ if [[ ${PV} == 9999 ]]; then
 	MY_PV="3.2"
 else
 	#SRC_URI="https://download.blender.org/source/${P}.tar.xz"
-	TEST_TARBALL_VERSION=2.93.0
-	SRC_URI+=" test? ( https://dev.gentoo.org/~sam/distfiles/${CATEGORY}/${PN}/${PN}-${TEST_TARBALL_VERSION}-tests.tar.bz2 )"
+	#TEST_TARBALL_VERSION=2.93.0
+	#SRC_URI+=" test? ( https://dev.gentoo.org/~sam/distfiles/${CATEGORY}/${PN}/${PN}-${TEST_TARBALL_VERSION}-tests.tar.bz2 )"
 	MY_PV="$(ver_cut 1-2)"
 	EGIT_REPO_URI="https://git.blender.org/blender"
 	EGIT_SUBMODULES=( release/datafiles/locale )
 	EGIT_BRANCH="blender-v${MY_PV}-release"
     #EGIT_COMMIT="3e85bb34d0d792b49cf4923f781d98791c5a161c"
-	KEYWORDS="~amd64 ~x86"
+	KEYWORDS="~amd64 ~x86 ~arm64"
 fi
 
 SLOT="${MY_PV}"
@@ -134,8 +134,8 @@ RDEPEND="${PYTHON_DEPS}
 		virtual/glu
 	)
 	oidn? ( media-libs/oidn )
-	openimageio? ( =media-libs/openimageio-2.3.12.0-r3:= )
-	opencolorio? ( =media-libs/opencolorio-2.1.1-r7:= )
+	openimageio? ( >=media-libs/openimageio-2.3.12.0-r3:= )
+	opencolorio? ( >=media-libs/opencolorio-2.1.1-r7:= )
 	openexr? ( media-libs/openexr:= )
 	opensubdiv? ( media-libs/opensubdiv[cuda?,openmp?,tbb?] )
 	openvdb? (
