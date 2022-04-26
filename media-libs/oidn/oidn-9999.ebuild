@@ -1,11 +1,11 @@
 # Copyright 1999-2020 Gentoo Foundation
 # Distributed under the terms of the GNU General Public License v2
 
-EAPI=7
+EAPI=8
 
-PYTHON_COMPAT=( python3_{7..9} )
+PYTHON_COMPAT=( python3_{8..10} )
 
-inherit cmake python-single-r1 eutils
+inherit cmake python-single-r1
 
 DESCRIPTION="Intel(R) Open Image Denoise library"
 HOMEPAGE="http://www.openimagedenoise.org/"
@@ -14,6 +14,7 @@ if [[ ${PV} = *9999 ]]; then
 	inherit git-r3
 	EGIT_REPO_URI="https://github.com/OpenImageDenoise/oidn.git"
 	EGIT_BRANCH="master"
+	BDEPEND="dev-vcs/git-lfs"
 	KEYWORDS=""
 else
 	SRC_URI="https://github.com/OpenImageDenoise/${PN}/releases/download/v${PV}/${P}.src.tar.gz -> ${P}.tar.gz"
@@ -30,11 +31,9 @@ RDEPEND="
 	${PYTHON_DEPS}
 	dev-cpp/tbb
 	dev-lang/ispc"
-DEPEND="
-	${RDEPEND}
-	>=dev-util/cmake-3.1.0"
-
+DEPEND="${RDEPEND}"
 BDEPEND="
+	>=dev-util/cmake-3.1.0
 	virtual/pkgconfig
 "
 
