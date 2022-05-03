@@ -1,0 +1,26 @@
+--- kde5-thumbnailer-blender-9999/blendercreator.cpp	2022-05-04 01:04:21.397643620 +0300
++++ kde5-thumbnailer-blender-9999/blendercreator.cpp	2022-05-04 01:08:26.134315413 +0300
+@@ -35,18 +35,18 @@
+     qCDebug(LOG_KIO_BLEND) << "blend.open" << path << endl;
+     return false;
+   }
+-  KCompressionDevice * gz_file;
++  KCompressionDevice * z_file;
+   QDataStream in_data;
+   char zipmagick[2];
+   qint64 z = in_file.peek(zipmagick,2);
+   
+     unsigned char zm2 = zipmagick[1];
+     unsigned char zm1 = zipmagick[0];
+-  if(z && zm1==0x1f && zm2 == 0x8b) {
++  if(z && zm1==0xfd && zm2 == 0x28) {
+     in_file.close();
+-    gz_file = new KCompressionDevice(path, KCompressionDevice::GZip);
+-    gz_file->open(QIODevice::ReadOnly);
+-    in_data.setDevice(gz_file);
++    z_file = new KCompressionDevice(path, KCompressionDevice::Zstd);
++    z_file->open(QIODevice::ReadOnly);
++    in_data.setDevice(z_file);
+   } else {
+     in_data.setDevice(&in_file);
+   }

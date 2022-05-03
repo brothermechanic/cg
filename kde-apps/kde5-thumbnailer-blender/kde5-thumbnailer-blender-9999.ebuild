@@ -21,6 +21,13 @@ KEYWORDS="~x86 ~amd64"
 IUSE=""
 
 RDEPEND="
-	kde-frameworks/kio"
+	kde-frameworks/kio
+	!kde-apps/thumbnailers"
 DEPEND="${RDEPEND}
 	virtual/pkgconfig"
+
+CMAKE_BUILD_TYPE=Release
+
+PATCHES=(
+	"${FILESDIR}/zstandard.patch"
+	)
