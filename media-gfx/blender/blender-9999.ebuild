@@ -1,7 +1,7 @@
 # Copyright 1999-2022 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
 
-EAPI=7
+EAPI=8
 
 PYTHON_COMPAT=( python3_10 )
 LLVM_MAX_SLOT="14"
@@ -19,7 +19,7 @@ if [[ ${PV} == 9999 ]]; then
 	EGIT_BRANCH="master"
 	#EGIT_COMMIT=""
     KEYWORDS=""
-	MY_PV="3.2"
+	MY_PV="3.3"
 else
 	#SRC_URI="https://download.blender.org/source/${P}.tar.xz"
 	#TEST_TARBALL_VERSION=2.93.0
@@ -34,8 +34,9 @@ fi
 
 SLOT="${MY_PV}"
 LICENSE="|| ( GPL-3 BL )"
+CUDA_ARCHS="sm_30 sm_35 sm_50 sm_52 sm_61 sm_70 sm_75 sm_86"
 IUSE_DESKTOP="cg -portable +X headless wayland +addons +addons_contrib +nls +icu -ndof"
-IUSE_GPU="+opengl -optix cuda -sm_30 -sm_35 -sm_50 -sm_52 -sm_61 -sm_70 -sm_75 -sm_86"
+IUSE_GPU="+opengl -optix cuda ${CUDA_ARCHS}"
 IUSE_LIBS="clang +cycles gmp sdl jack openal pulseaudio +freestyle -osl +openvdb nanovdb abi6-compat abi7-compat abi8-compat abi9-compat +opensubdiv +opencolorio +openimageio +pdf +pugixml +potrace +collada -alembic +gltf-draco +fftw +oidn +quadriflow -usd +bullet -valgrind +jemalloc libmv +llvm"
 IUSE_CPU="+openmp embree +simd +tbb +lld gold"
 IUSE_TEST="-debug -doc -man -gtests test"
@@ -330,8 +331,8 @@ src_configure() {
 	#CUDA Kernel Selection
 	local CUDA_ARCH=""
 	if use cuda; then
-		for CA in 30 35 50 52 61 70 75 86; do
-			use sm_${CA} &&	CUDA_ARCH+="sm_${CA};"
+		for CA in ${CUDA_ARCHS}; do
+			use ${CA} && CUDA_ARCH+="${CA};"
 		done
 
 		#If a kernel isn't selected then all of them are built by default
@@ -542,10 +543,11 @@ src_install() {
 	python_optimize "${ED%/}/usr/share/blender/${MY_PV}/scripts"
 
 	mv "${ED}/usr/bin/blender-thumbnailer" "${ED}/usr/bin/blender-${MY_PV}-thumbnailer" || die
+	ln -s "${ED}/usr/bin/blender-${MY_PV}-thumbnailer" "${ED}/usr/bin/blender-thumbnailer"
 	mv "${ED}/usr/bin/blender" "${ED}/usr/bin/blender-${MY_PV}" || die
 	ln -s "${ED}/usr/bin/blender-${MY_PV}" "${ED}/usr/bin/blender"
 
-	elog "${PN^}-$( grep -Po 'CPACK_PACKAGE_VERSION "\K[^"]...' ${BUILD_DIR}/CPackConfig.cmake ) has been installed."
+	elog "${PN^}-$( grep -Po 'CPACK_PACKAGE_VERSION "\K[^"]..' ${BUILD_DIR}/CPackConfig.cmake ) has been installed."
 }
 
 pkg_postinst() {
