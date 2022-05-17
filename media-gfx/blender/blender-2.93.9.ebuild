@@ -1,7 +1,7 @@
 # Copyright 1999-2022 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
 
-EAPI=7
+EAPI=8
 
 PYTHON_COMPAT=( python3_{8..10} )
 LLVM_MAX_SLOT="14"
@@ -24,12 +24,13 @@ KEYWORDS="amd64 ~x86 ~arm64"
 
 SLOT="${MY_PV}"
 LICENSE="|| ( GPL-3 BL )"
+CUDA_ARCHS="sm_30 sm_35 sm_50 sm_52 sm_61 sm_70 sm_75 sm_86"
 IUSE_DESKTOP="cg -portable +X +addons +addons_contrib +nls +icu -ndof"
-IUSE_GPU="+opengl -optix cuda opencl -sm_30 -sm_35 -sm_50 -sm_52 -sm_61 -sm_70 -sm_75 -sm_86"
+IUSE_GPU="+opengl -optix cuda opencl ${CUDA_ARCHS}"
 IUSE_LIBS="+cycles gmp sdl jack openal pulseaudio +freestyle -osl +openvdb nanovdb abi6-compat abi7-compat abi8-compat abi9-compat +opensubdiv +opencolorio +openimageio +pdf +pugixml +potrace +collada -alembic +gltf-draco +fftw +oidn +quadriflow -usd +bullet -valgrind +jemalloc libmv +llvm"
 IUSE_CPU="+openmp embree +simd +tbb +lld gold"
 IUSE_TEST="-debug -doc -man -gtests test"
-IUSE_IMAGE="-dpx -dds +openexr jpeg2k tiff +hdr webp"
+IUSE_IMAGE="-dpx -dds +openexr jpeg2k tiff +hdr"
 IUSE_CODEC="avi +ffmpeg -sndfile +quicktime"
 IUSE_COMPRESSION="+lzma -lzo"
 IUSE_MODIFIERS="+fluid +smoke +oceansim +remesh"
@@ -80,7 +81,7 @@ RDEPEND="${PYTHON_DEPS}
 	addons_contrib? ( media-blender/addons_contrib:${SLOT} )
 	alembic? ( >=media-gfx/alembic-1.8.3-r2:=[boost(+),-hdf5] )
 	collada? ( >=media-libs/opencollada-1.6.68 )
-	cuda? ( dev-util/nvidia-cuda-toolkit:= )
+	cuda? ( <=dev-util/nvidia-cuda-toolkit-11.4:= )
 	embree? ( >=media-libs/embree-3.10.0[raymask,tbb?] )
 	ffmpeg? ( media-video/ffmpeg:=[x264,mp3,encode,theora,jpeg2k?,vpx,vorbis,opus,xvid] )
 	fftw? ( sci-libs/fftw:3.0= )
@@ -215,9 +216,8 @@ src_prepare() {
 	blender_get_version
 
 	eapply "${FILESDIR}/x112.patch"
-	#eapply "${FILESDIR}/blender-system-lzma.patch"
-	eapply "${FILESDIR}/blender-system-glog-gflags.patch"
-	#eapply "${FILESDIR}/blender-system-ceres.patch"
+	eapply "${FILESDIR}/${MY_PV}/blender-system-glog-gflags.patch"
+	eapply "${FILESDIR}/Fix-build-with-system-glew.patch"
 	if use cg; then
         eapply "${FILESDIR}"/${SLOT}/cg-addons.patch
         eapply "${FILESDIR}"/${SLOT}/cg-defaults.patch
@@ -322,8 +322,8 @@ src_configure() {
 	#CUDA Kernel Selection
 	local CUDA_ARCH=""
 	if use cuda; then
-		for CA in 30 35 50 52 61 70 75 86; do
-			use sm_${CA} &&	CUDA_ARCH+="sm_${CA};"
+		for CA in ${CUDA_ARCHS}; do
+			use ${CA} && CUDA_ARCH+="${CA};"
 		done
 
 		#If a kernel isn't selected then all of them are built by default
@@ -387,7 +387,6 @@ src_configure() {
 		-DWITH_HARU=$(usex pdf)
 		-DWITH_IMAGE_DDS=$(usex dds)
 		-DWITH_IMAGE_HDR=$(usex hdr)
-		-DWITH_IMAGE_WEBP=$(usex webp)
 		-DWITH_IMAGE_OPENEXR=$(usex openexr)
 		-DWITH_IMAGE_OPENJPEG=$(usex jpeg2k)
 		-DWITH_IMAGE_TIFF=$(usex tiff)

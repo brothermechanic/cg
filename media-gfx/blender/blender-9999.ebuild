@@ -229,10 +229,8 @@ src_prepare() {
 	blender_get_version
 
 	eapply "${FILESDIR}/x112.patch"
-	#eapply "${FILESDIR}/blender-system-lzma.patch"
-	eapply "${FILESDIR}/blender-system-glog-gflags.patch"
+	eapply "${FILESDIR}/${MY_PV}/blender-system-glog-gflags.patch"
 	eapply "${FILESDIR}/Fix-build-with-system-glew.patch"
-	#eapply "${FILESDIR}/Fix-build-with-openexr-3.x.patch"
 	if use cg; then
         eapply "${FILESDIR}"/cg-defaults.patch
     fi

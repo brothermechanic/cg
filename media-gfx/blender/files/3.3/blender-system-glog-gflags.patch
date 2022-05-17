@@ -1,0 +1,73 @@
+diff --git a/intern/libmv/CMakeLists.txt b/intern/libmv/CMakeLists.txt
+index 6fcf664..e682136 100644
+--- a/intern/libmv/CMakeLists.txt
++++ b/intern/libmv/CMakeLists.txt
+@@ -48,9 +48,19 @@ if(WITH_LIBMV)
+   add_definitions(${CERES_DEFINES})
+   add_definitions(-DLIBMV_GFLAGS_NAMESPACE=${GFLAGS_NAMESPACE})
+ 
++  if(${WITH_SYSTEM_GFLAGS})
++    list(APPEND INC_SYS ${GFLAGS_INCLUDE_DIRS})
++  else()
++    list(APPEND INC ${GFLAGS_INCLUDE_DIRS}) 
++  endif()
++
++  if(${WITH_SYSTEM_GLOG})
++      list(APPEND INC_SYS ${GLOG_INCLUDE_DIRS})
++  else()
++      list(APPEND INC ${GLOG_INCLUDE_DIRS}) 
++  endif() 
++    
+   list(APPEND INC
+-    ${GFLAGS_INCLUDE_DIRS}
+-    ${GLOG_INCLUDE_DIRS}
+     ../guardedalloc
+   )
+ 
+diff --git a/tests/gtests/testing/CMakeLists.txt b/tests/gtests/testing/CMakeLists.txt
+index d557b27..0601413 100644
+--- a/tests/gtests/testing/CMakeLists.txt
++++ b/tests/gtests/testing/CMakeLists.txt
+@@ -25,8 +25,6 @@ add_definitions(-DBLENDER_GFLAGS_NAMESPACE=${GFLAGS_NAMESPACE})
+ set(INC
+   .
+   ..
+-  ${GLOG_INCLUDE_DIRS}
+-  ${GFLAGS_INCLUDE_DIRS}
+   ../../../extern/gtest/include
+   ../../../intern/guardedalloc
+ )
+@@ -34,6 +32,18 @@ set(INC
+ set(INC_SYS
+ )
+ 
++if(${WITH_SYSTEM_GFLAGS})
++  list(APPEND INC_SYS ${GFLAGS_INCLUDE_DIRS})
++else()
++  list(APPEND INC ${GFLAGS_INCLUDE_DIRS})
++endif()
++
++if(${WITH_SYSTEM_GLOG})
++  list(APPEND INC_SYS ${GLOG_INCLUDE_DIRS})
++else()
++  list(APPEND INC ${GLOG_INCLUDE_DIRS})
++endif()
++
+ set(SRC
+   testing_main.cc
+ 
+diff --git a/extern/CMakeLists.txt b/extern/CMakeLists.txt
+index 824b2fb..a3b0992 100644
+--- a/extern/CMakeLists.txt
++++ b/extern/CMakeLists.txt
+@@ -84,7 +84,9 @@ if(WITH_LIBMV OR WITH_GTESTS OR (WITH_CYCLES AND WITH_CYCLES_LOGGING))
+   if(NOT WITH_SYSTEM_GFLAGS)
+     add_subdirectory(gflags)
+   endif()
+-  add_subdirectory(glog)
++  if(NOT WITH_SYSTEM_GLOG) 
++    add_subdirectory(glog)
++  endif()
+ endif()
+ 
+ if(WITH_GTESTS)
