@@ -1,26 +1,24 @@
- # Copyright 1999-2013 Gentoo Foundation
+# Copyright 1999-2013 Gentoo Foundation
 # Distributed under the terms of the GNU General Public License v2
 # $Id$
 
-EAPI="5"
+EAPI="7"
 
 inherit eutils
 
-MY_PV="12.6.0"
-
 DESCRIPTION="Lightworks is the fastest, most accessible and focused NLE in the industry"
 HOMEPAGE="http://www.lwks.com/"
-SRC_URI="http://downloads.lwks.com/Lightworks-14.6-Beta-116294-14.6.0.0.deb"
+SRC_URI="https://cdn.lwks.com/releases/2022.2/lightworks_2022.2_r135077.deb"
 
 LICENSE="EditShare"
 SLOT="0"
-KEYWORDS=""
+KEYWORDS="~amd64"
 RESTRICT=""
 IUSE=""
 
 RDEPEND="
-	=dev-libs/openssl-1.0*
-	dev-libs/glib:2
+	dev-libs/openssl
+	dev-libs/glib
 	dev-libs/libedit
 	dev-libs/atk
 	dev-libs/expat
@@ -31,11 +29,11 @@ RDEPEND="
 	x11-libs/gdk-pixbuf
 	x11-libs/cairo
 	x11-libs/pixman
-	x11-libs/gtk+:3
+	x11-libs/gtk+
 	media-libs/libjpeg-turbo
 	gnome-extra/libgsf
-	media-libs/libpng:0
-	media-libs/jpeg:8
+	media-libs/libpng
+	virtual/jpeg
 	media-libs/tiff
 	>=media-libs/freetype-2
 	media-libs/fontconfig
@@ -64,8 +62,7 @@ RDEPEND="
 
 DEPEND="${RDEPEND}
 	!app-arch/deb2targz
-	app-arch/unzip
-	x11-apps/mkfontdir"
+	app-arch/unzip"
 
 S="${WORKDIR}"
 
@@ -75,8 +72,10 @@ src_unpack() {
 }
 
 src_prepare() {
+    eapply_user
     sed -i -e "s|^GDK.*|GDK_BACKEND=x11 /usr/lib64/lightworks/ntcardvt|" usr/bin/lightworks || die
 }
+
 
 src_install() {
 	exeinto /usr/bin
@@ -84,14 +83,10 @@ src_install() {
 	domenu usr/share/applications/lightworks.desktop
 	doicon usr/share/lightworks/Icons/App.png
 	
-	insinto /lib/udev/rules.d/
-	doins lib/udev/rules.d/20-lightworks.rules
-	
 	insinto /usr/lib64/${PN}
 	doins -r usr/lib/${PN}/* || die "doins lib failed"
 
 	exeinto /usr/lib64/${PN}
-	doexe usr/lib/${PN}/spawn || die "doins lib-exe failed"
 	doexe usr/lib/${PN}/ntcardvt || die "doins lib-exe failed"
 
 	fperms a+rw "usr/share/lightworks/Preferences"
