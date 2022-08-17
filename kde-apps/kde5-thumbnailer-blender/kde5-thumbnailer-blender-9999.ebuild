@@ -2,11 +2,11 @@
 # Distributed under the terms of the GNU General Public License v2
 # $Id$
 
-EAPI=6
+EAPI=7
 
 
 
-inherit cmake-utils eutils git-r3
+inherit cmake eutils git-r3
 
 DESCRIPTION="Blender thumbnail generator for KDE"
 HOMEPAGE="https://github.com/kayosiii/kde-thumbnailer-blender"

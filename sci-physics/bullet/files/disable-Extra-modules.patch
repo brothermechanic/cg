@@ -1,8 +1,0 @@
---- a/Extras/CMakeLists.txt
-+++ b/Extras/CMakeLists.txt
-@@ -1,4 +1,4 @@
--SUBDIRS( InverseDynamics BulletRobotics obj2sdf Serialize ConvexDecomposition HACD GIMPACTUtils )
-+SUBDIRS( InverseDynamics Serialize ConvexDecomposition HACD GIMPACTUtils )
- 
- 
- 
