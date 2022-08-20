@@ -16,6 +16,7 @@ IUSE=""
 
 DEPEND="
 	!media-gfx/krita
+	sys-fs/fuse:0
 "
 RDEPEND="${DEPEND}"
 
