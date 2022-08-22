@@ -1,1 +1,1 @@
-BLENDER_ADDONS_DIR="/usr/share/blender/scripts"
+GENTOO_BLENDER_ADDONS_DIR="/usr/share/blender/scripts"

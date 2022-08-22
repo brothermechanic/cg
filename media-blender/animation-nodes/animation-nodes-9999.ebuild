@@ -6,7 +6,7 @@ EAPI=7
 DISTUTILS_SINGLE_IMPL=1
 PYTHON_COMPAT=( python3_{9..10} )
 
-inherit distutils-r1 git-r3 vcs-clean
+inherit distutils-r1 git-r3 vcs-clean blender-addons-dir
 
 DESCRIPTION="Blender addon. Node based visual scripting system designed for motion graphics in Blender."
 HOMEPAGE="https://github.com/JacquesLucke/animation_nodes"
@@ -23,16 +23,16 @@ RDEPEND="media-gfx/blender[addons]
 
 src_install() {
     egit_clean
-	echo "{\"Copy Target\" : \"${D}${BLENDER_ADDONS_DIR}/addons\"}" > conf.json
-    insinto ${BLENDER_ADDONS_DIR}/addons
+	echo "{\"Copy Target\" : \"${D}${GENTOO_BLENDER_ADDONS_DIR}/addons\"}" > conf.json
+    insinto ${GENTOO_BLENDER_ADDONS_DIR}/addons
 	esetup.py build --copy --noversioncheck
-	python_optimize "${D%/}${BLENDER_ADDONS_DIR%/}/addons/animation_nodes"
+	python_optimize "${D%/}${GENTOO_BLENDER_ADDONS_DIR%/}/addons/animation_nodes"
 }
 
 pkg_postinst() {
 	elog
 	elog "This blender addon installs to system subdirectory"
-	elog "${BLENDER_ADDONS_DIR}"
+	elog "${GENTOO_BLENDER_ADDONS_DIR}"
 	elog "You can set it to make.conf before"
 	elog "Please, set it to PreferencesFilePaths.scripts_directory"
 	elog "More info you can find at page "

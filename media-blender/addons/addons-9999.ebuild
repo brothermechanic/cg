@@ -1,7 +1,7 @@
 EAPI=8
 
 PYTHON_COMPAT=( python3_{9..10} )
-inherit git-r3 python-single-r1
+inherit git-r3 python-single-r1 blender-addons-dir
 
 DESCRIPTION="A central repository of Blender addons"
 HOMEPAGE="https://git.blender.org/gitweb/gitweb.cgi/blender-addons.git"
@@ -30,8 +30,8 @@ PATCHES=(
 
 src_install() {
 	egit_clean
-	insinto /usr/share/blender/${SLOT}/scripts/${PN}/
+	insinto GENTOO_BLENDER_ADDONS_DIR/${PN}/
 	doins -r "${S}"/*
-	python_optimize "${ED}/usr/share/blender/${SLOT}/scripts/${PN}/"
+	python_optimize "${ED}/GENTOO_BLENDER_ADDONS_DIR/${PN}/"
 }
 

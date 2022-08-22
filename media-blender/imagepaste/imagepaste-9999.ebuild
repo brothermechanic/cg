@@ -25,24 +25,24 @@ PATCHES=(
 src_prepare() {
 	default
 	rm -r "${S}"/imagepaste/clipboard/linux/bin/xclip
-	if [[ -z ${BLENDER_ADDONS_DIR} ]]; then
+	if [[ -z ${GENTOO_BLENDER_ADDONS_DIR} ]]; then
 		local MY_BV
 		for i in "2.93" "3.2" "3.3" "3.4" ; do
 			has_version -r media-gfx\/blender\:${i} && MY_BV=${i}
 		done
-		BLENDER_ADDONS_DIR="/usr/share/blender/${MY_BV}/scripts"
+		GENTOO_BLENDER_ADDONS_DIR="/usr/share/blender/${MY_BV}/scripts"
 	fi
 }
 
 src_install() {
-	insinto ${BLENDER_ADDONS_DIR}/addons/${PN}
+	insinto ${GENTOO_BLENDER_ADDONS_DIR}/addons/${PN}
 	doins -r "${S}"/*
 }
 
 pkg_postinst() {
 	elog
 	elog "This blender addon installs to system subdirectory"
-	elog "${BLENDER_ADDONS_DIR}"
+	elog "${GENTOO_BLENDER_ADDONS_DIR}"
 	elog "You can set it to make.conf before"
 	elog "Please, set it to PreferencesFilePaths.scripts_directory"
 	elog "More info you can find at page "

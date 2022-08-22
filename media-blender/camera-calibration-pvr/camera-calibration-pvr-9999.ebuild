@@ -3,7 +3,7 @@
 
 EAPI=6
 PYTHON_COMPAT=( python3_{9..10} )
-inherit git-r3 distutils-r1 
+inherit git-r3 distutils-r1 blender-addons-dir
 
 DESCRIPTION="Blender addon. Camera Calibration using Perspective Views of Rectangles"
 HOMEPAGE="https://blenderartists.org/forum/showthread.php?414359-Add-on-Camera-Calibration-using-Perspective-Views-of-Rectangles"
@@ -27,14 +27,14 @@ src_compile() {
 
 src_install() {
 	egit_clean
-    insinto ${BLENDER_ADDONS_DIR}/addons/${PN}
+    insinto ${GENTOO_BLENDER_ADDONS_DIR}/addons/${PN}
 	doins -r "${S}"/*
 }
 
 pkg_postinst() {
 	elog
 	elog "This blender addon installs to system subdirectory"
-	elog "${BLENDER_ADDONS_DIR}"
+	elog "${GENTOO_BLENDER_ADDONS_DIR}"
 	elog "You can set it to make.conf before"
 	elog "Please, set it to PreferencesFilePaths.scripts_directory"
 	elog "More info you can find at page "

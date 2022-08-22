@@ -6,7 +6,7 @@ EAPI=8
 PYTHON_COMPAT=( python3_10 )
 LLVM_MAX_SLOT="14"
 
-inherit check-reqs cmake flag-o-matic pax-utils python-single-r1 toolchain-funcs xdg-utils
+inherit check-reqs cmake flag-o-matic pax-utils python-single-r1 toolchain-funcs xdg-utils blender-addons-dir
 
 DESCRIPTION="Blender is a free and open-source 3D creation suite."
 HOMEPAGE="https://www.blender.org"
@@ -229,18 +229,15 @@ src_prepare() {
 	blender_get_version
 
 	eapply "${FILESDIR}/x112.patch"
-	#eapply "${FILESDIR}/${MY_PV}/blender-system-glog-gflags.patch"
+	eapply "${FILESDIR}/${MY_PV}/blender-system-glog-gflags.patch"
 	#eapply "${FILESDIR}/Fix-build-with-system-glew.patch"
 	if use cg; then
         eapply "${FILESDIR}"/cg-defaults.patch
     fi
 
 	if use addons_contrib; then
-        #set BLENDER_ADDONS_DIR to userpref
-        if ! [ -d "${BLENDER_ADDONS_DIR}" ]; then
-        	BLENDER_ADDONS_DIR="/usr/share/blender/${SLOT}/scripts/addons/"
-        fi
-        sed -i -e "s|.pythondir.*|.pythondir = \"${BLENDER_ADDONS_DIR}\",|" "${S}"/release/datafiles/userdef/userdef_default.c || die
+        #set GENTOO_BLENDER_ADDONS_DIR to userpref
+        sed -i -e "s|.pythondir.*|.pythondir = \"${GENTOO_BLENDER_ADDONS_DIR}\",|" "${S}"/release/datafiles/userdef/userdef_default.c || die
     fi
 	# remove some bundled deps
 	rm -rf extern/{Eigen3,glew-es,lzo,gflags,glog,draco,glew} || die
