@@ -233,6 +233,7 @@ src_prepare() {
 	#eapply "${FILESDIR}/Fix-build-with-system-glew.patch"
 	if use cg; then
         eapply "${FILESDIR}"/cg-defaults.patch
+        cp "${FILESDIR}"/splash.png release/datafiles/
     fi
 
 	if use addons_contrib; then
