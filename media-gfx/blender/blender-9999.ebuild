@@ -19,7 +19,7 @@ if [[ ${PV} == 9999 ]]; then
 	EGIT_BRANCH="master"
 	#EGIT_COMMIT=""
     KEYWORDS=""
-	MY_PV="3.3"
+	MY_PV="3.4"
 else
 	#SRC_URI="https://download.blender.org/source/${P}.tar.xz"
 	#TEST_TARBALL_VERSION=2.93.0
@@ -81,7 +81,7 @@ RDEPEND="${PYTHON_DEPS}
 		dev-python/zstandard[${PYTHON_USEDEP}]
         dev-libs/boost[python,nls?,icu?,threads(+),${PYTHON_USEDEP}]
 	')
-	media-libs/freetype:=
+	media-libs/freetype:=[brotli]
 	app-arch/brotli:=[static-libs]
 	media-libs/libpng:=
 	media-libs/libsamplerate
@@ -229,8 +229,8 @@ src_prepare() {
 	blender_get_version
 
 	eapply "${FILESDIR}/x112.patch"
-	eapply "${FILESDIR}/${MY_PV}/blender-system-glog-gflags.patch"
-	eapply "${FILESDIR}/Fix-build-with-system-glew.patch"
+	#eapply "${FILESDIR}/${MY_PV}/blender-system-glog-gflags.patch"
+	#eapply "${FILESDIR}/Fix-build-with-system-glew.patch"
 	if use cg; then
         eapply "${FILESDIR}"/cg-defaults.patch
     fi
@@ -244,6 +244,8 @@ src_prepare() {
     fi
 	# remove some bundled deps
 	rm -rf extern/{Eigen3,glew-es,lzo,gflags,glog,draco,glew} || die
+	#rm -rf intern/guardedalloc  || die
+	#sed -i '/add_subdirectory(guardedalloc)/d' intern/CMakeLists.txt || die
 
 	# we don't want static glew, but it's scattered across
 	# multiple files that differ from version to version
@@ -358,6 +360,7 @@ src_configure() {
 	fi
 
 	mycmakeargs+=(
+		-DSUPPORT_NEON_BUILD=0
 		-DCMAKE_INSTALL_PREFIX=/usr
 		-DPYTHON_VERSION="${EPYTHON/python/}"
 		-DPYTHON_INCLUDE_DIR="$(python_get_includedir)"
