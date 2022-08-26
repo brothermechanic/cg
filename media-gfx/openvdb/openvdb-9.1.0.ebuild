@@ -15,7 +15,10 @@ LICENSE="MPL-2.0"
 SLOT="0/9"
 KEYWORDS="~amd64 ~arm ~arm64 ~ppc64 ~x86"
 IUSE="abi6-compat abi7-compat abi8-compat abi9-compat cpu_flags_x86_avx cpu_flags_x86_sse4_2 benchmark +blosc cuda doc examples +intrinsics nanovdb +openexr numpy +png python static-libs test utils zlib utils -sm_30 -sm_35 -sm_50 -sm_52 -sm_61 -sm_70 -sm_75 -sm_86"
-RESTRICT="!test? ( test )"
+RESTRICT="
+	mirror
+	!test? ( test )
+"
 
 REQUIRED_USE="
 	blosc? ( zlib )
@@ -68,16 +71,15 @@ BDEPEND="
 
 PATCHES=(
 	"${FILESDIR}/${PN}-7.1.0-0001-Fix-multilib-header-source.patch"
-	"${FILESDIR}/${PN}-9.0.0-remesh.patch"
 	"${FILESDIR}/${PN}-8.1.0-glfw-libdir.patch"
 	"${FILESDIR}/${PN}-9.0.0-fix-atomic.patch"
-	"${FILESDIR}/${PN}-9.0.0-numpy.patch"
 	"${FILESDIR}/${PN}-9.0.0-imath-3.patch"
-	"${FILESDIR}/${PN}-9.0.0-unconditionally-search-Python-interpreter.patch"
+	"${FILESDIR}/${PN}-9.1.0-remesh.patch"
 )
 
 pkg_setup() {
 	use python && python-single-r1_pkg_setup
+	use cuda && addpredict /dev/nvidiactl
 }
 
 src_prepare() {
