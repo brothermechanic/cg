@@ -143,7 +143,7 @@ RDEPEND="${PYTHON_DEPS}
 		>=media-gfx/openvdb-9.0.0[abi6-compat(-)?,abi7-compat(-)?,abi8-compat(-)?,abi9-compat(-)?]
 		dev-libs/c-blosc:=
 	)
-	optix? ( =dev-libs/optix-7.4.0 )
+	optix? ( =dev-libs/optix-7.5.0 )
 	osl? ( >=media-libs/osl-1.11.10.0 )
 	pdf? ( media-libs/libharu )
 	potrace? ( media-gfx/potrace )
@@ -222,8 +222,6 @@ src_unpack() {
 }
 
 src_prepare() {
-	python_setup
-
 	cmake_src_prepare
 
 	blender_get_version
@@ -302,8 +300,6 @@ src_configure() {
 		has_version "sys-devel/llvm:${slot}" && LLVM_SLOT="${slot}"
 	done
 
-	python_setup
-
 	# FIX: forcing '-funsigned-char' fixes an anti-aliasing issue with menu
 	# shadows, see bug #276338 for reference
 	append-flags -funsigned-char -fno-strict-aliasing
@@ -345,7 +341,8 @@ src_configure() {
 			-DCUDA_INCLUDE_DIRS=/opt/cuda/include
 			-DCUDA_CUDART_LIBRARY=/opt/cuda/lib64
 			-DCUDA_NVCC_EXECUTABLE=/opt/cuda/bin/nvcc
-			-DCUDA_NVCC_FLAGS=-std=c++11
+			-DCUDA_NVCC_FLAGS="-std=c++14;${NVCCFLAGS}"
+			-DCUDA_HOST_COMPILER=""
 		)
 	fi
 
@@ -482,6 +479,11 @@ src_test() {
 	export BLENDER_SYSTEM_SCRIPTS=${ED}/usr/share/blender/${BV}/scripts
 	export BLENDER_SYSTEM_DATAFILES=${ED}/usr/share/blender/${BV}/datafiles
 
+	# Sanity check that the script and datafile path is valid.
+	# If they are not vaild, blender will fallback to the default path which is not what we want.
+	[ -d "$BLENDER_SYSTEM_SCRIPTS" ] || die "The custom script path is invalid, fix the ebuild!"
+	[ -d "$BLENDER_SYSTEM_DATAFILES" ] || die "The custom datafiles path is invalid, fix the ebuild!"
+
 	cmake_src_test
 
 	# Clean up the image directory for src_install
@@ -489,8 +491,6 @@ src_test() {
 }
 
 src_install() {
-	python_setup
-
 	blender_get_version
 
 	# Pax mark blender for hardened support.
