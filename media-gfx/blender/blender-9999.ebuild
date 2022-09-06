@@ -143,7 +143,7 @@ RDEPEND="${PYTHON_DEPS}
 		>=media-gfx/openvdb-9.0.0[abi6-compat(-)?,abi7-compat(-)?,abi8-compat(-)?,abi9-compat(-)?]
 		dev-libs/c-blosc:=
 	)
-	optix? ( =dev-libs/optix-7.5.0 )
+	optix? ( >=dev-libs/optix-7.4.0 )
 	osl? ( >=media-libs/osl-1.11.10.0 )
 	pdf? ( media-libs/libharu )
 	potrace? ( media-gfx/potrace )
