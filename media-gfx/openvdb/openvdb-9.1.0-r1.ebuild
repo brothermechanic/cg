@@ -3,9 +3,9 @@
 
 EAPI=8
 
-PYTHON_COMPAT=( python3_{8..10} )
+PYTHON_COMPAT=( python3_{8..11} )
 
-inherit cmake python-single-r1
+inherit cmake llvm python-single-r1
 
 DESCRIPTION="Library for the efficient manipulation of volumetric data"
 HOMEPAGE="https://www.openvdb.org"
@@ -14,18 +14,21 @@ SRC_URI="https://github.com/AcademySoftwareFoundation/${PN}/archive/v${PV}.tar.g
 LICENSE="MPL-2.0"
 SLOT="0/9"
 KEYWORDS="~amd64 ~arm ~arm64 ~ppc64 ~x86"
-IUSE="abi6-compat abi7-compat abi8-compat abi9-compat cpu_flags_x86_avx cpu_flags_x86_sse4_2 benchmark +blosc cuda doc examples +intrinsics nanovdb +openexr numpy +png python static-libs test utils zlib utils -sm_30 -sm_35 -sm_50 -sm_52 -sm_61 -sm_70 -sm_75 -sm_86"
+IUSE="abi7-compat abi8-compat abi9-compat ax cpu_flags_x86_avx cpu_flags_x86_sse4_2 benchmark +blosc cuda doc examples +intrinsics
+	nanovdb openexr numpy png python static-libs test utils zlib -sm_30 -sm_35 -sm_50 -sm_52 -sm_61 -sm_70 -sm_75 -sm_86"
 RESTRICT="
 	mirror
 	!test? ( test )
 "
 
-REQUIRED_USE="
+REQUIRED_USE="^^ ( abi7-compat abi8-compat abi9-compat )
+	cuda? ( nanovdb )
 	blosc? ( zlib )
+	ax? ( zlib )
 	numpy? ( python )
-	nanovdb? ( cuda )
-	intrinsics? ( nanovdb )
-	^^ ( abi6-compat abi7-compat abi8-compat abi9-compat )
+	openexr? ( utils )
+	png? ( utils )
+	intrinsics? ( nanovdb || ( cpu_flags_x86_avx cpu_flags_x86_sse4_2 ) )
 	python? ( ${PYTHON_REQUIRED_USE} )
 "
 RDEPEND="
@@ -42,6 +45,7 @@ RDEPEND="
 	x11-libs/libXi
 	x11-libs/libXinerama
 	x11-libs/libXrandr
+	ax? ( >=sys-devel/llvm-14:= )
 	blosc? ( dev-libs/c-blosc:= )
 	cuda? ( >=dev-util/nvidia-cuda-toolkit-11 )
 	python? (
@@ -69,24 +73,34 @@ BDEPEND="
 	test? ( dev-util/cppunit dev-cpp/gtest )
 "
 
+LLVM_MAX_SLOT=15
+
 PATCHES=(
 	"${FILESDIR}/${PN}-7.1.0-0001-Fix-multilib-header-source.patch"
 	"${FILESDIR}/${PN}-8.1.0-glfw-libdir.patch"
 	"${FILESDIR}/${PN}-9.0.0-fix-atomic.patch"
 	"${FILESDIR}/${PN}-9.0.0-imath-3.patch"
 	"${FILESDIR}/${PN}-9.1.0-remesh.patch"
+	"${FILESDIR}/${PN}-9.1.0-disable-failing-tests.patch"
 )
 
 pkg_setup() {
+	use ax && llvm_pkg_setup
 	use python && python-single-r1_pkg_setup
-	use cuda && addpredict /dev/nvidiactl
+	appredict nvidia-uvm
 }
 
 src_prepare() {
 	sed -i -e "s|DESTINATION doc|DESTINATION share/doc/${P}|g" doc/CMakeLists.txt || die
 	sed -i -e "s|DESTINATION lib|DESTINATION $(get_libdir)|g" {,${PN}/${PN}/}CMakeLists.txt || die
-	# Use the selected version of python rather than the latest version installed
-#	sed -i -e "s|find_package(Python QUIET|find_package(Python ${EPYTHON##python} EXACT REQUIRED QUIET|g" ${PN}/${PN}/python/CMakeLists.txt || die
+
+	# Bugs #569738 and #591214
+	local nv
+	for nv in /dev/nvidia-uvm /dev/nvidia-uvm-tools /dev/nvidiactl /dev/nvidia{0..9} ; do
+		# We do not check for existence as they may show up later
+		# https://bugs.gentoo.org/show_bug.cgi?id=569738#c21
+		addwrite "${nv}"
+	done
 
 	cmake_src_prepare
 }
@@ -96,9 +110,7 @@ src_configure() {
 	local myprefix="${EPREFIX}/usr/"
 
 	local version
-	if use abi6-compat; then
-		version=6
-	elif use abi7-compat; then
+	if use abi7-compat; then
 		version=7
 	elif use abi8-compat; then
 		version=8
@@ -112,6 +124,7 @@ src_configure() {
 		-DCMAKE_INSTALL_PREFIX="${myprefix}"
 		-DCMAKE_INSTALL_DOCDIR="share/doc/${PF}/"
 		-DOPENVDB_ABI_VERSION_NUMBER="${version}"
+		-DOPENVDB_BUILD_AX=$(usex ax)
 		-DOPENVDB_BUILD_DOCS=$(usex doc)
 		-DOPENVDB_BUILD_UNITTESTS=$(usex test)
 		-DOPENVDB_BUILD_VDB_LOD=$(usex utils)
@@ -132,6 +145,21 @@ src_configure() {
 		-DCONCURRENT_MALLOC="Tbbmalloc"
 	)
 
+	if use abi8-compat; then
+		mycmakeargs+=( -DOPENVDB_USE_DEPRECATED_ABI_8=ON )
+	elif use abi7-compat; then
+		mycmakeargs+=( -DOPENVDB_USE_DEPRECATED_ABI_7=ON )
+	fi
+
+	if use ax; then
+		mycmakeargs+=(
+			-DOPENVDB_AX_STATIC=OFF
+			-DOPENVDB_AX_TEST_CMD=OFF # fails
+			-DOPENVDB_BUILD_AX_UNITTESTS=$(usex test)
+			-DOPENVDB_BUILD_AX_BINARIES=$(usex utils)
+		)
+	fi
+
 	local CUDA_ARCH=""
 	if use cuda; then
 		for CA in 30 35 50 52 61 70 75 86; do
@@ -142,8 +170,8 @@ src_configure() {
 
 	if use nanovdb; then
 		mycmakeargs+=(
-			-DNANOVDB_BUILD_BENCHMARK=$(usex benchmark ON OFF)
 			-DNANOVDB_BUILD_UNITTESTS=$(usex test ON OFF)
+			-DNANOVDB_BUILD_BENCHMARK=$(usex benchmark ON OFF)
 			-DNANOVDB_BUILD_TOOLS=$(usex utils ON OFF)
 			-DNANOVDB_BUILD_EXAMPLES=$(usex examples ON OFF)
 			-DNANOVDB_USE_BLOSC=$(usex blosc ON OFF)
@@ -174,6 +202,4 @@ src_configure() {
 	fi
 
 	cmake_src_configure
-
-	#sed -i "s/isystem/I/g" $(find ${BUILD_DIR} -name flags.make) || die
 }

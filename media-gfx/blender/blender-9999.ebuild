@@ -3,8 +3,8 @@
 
 EAPI=8
 
-PYTHON_COMPAT=( python3_10 )
-LLVM_MAX_SLOT="14"
+PYTHON_COMPAT=( python3_{10..11} )
+LLVM_MAX_SLOT="15"
 
 inherit check-reqs cmake flag-o-matic pax-utils python-single-r1 toolchain-funcs xdg-utils blender-addons-dir
 
@@ -118,9 +118,6 @@ RDEPEND="${PYTHON_DEPS}
 	jemalloc? ( dev-libs/jemalloc:= )
 	jpeg2k? ( media-libs/openjpeg:2= )
 	libmv? ( sci-libs/ceres-solver )
-	lld? ( <sys-devel/lld-$((${LLVM_MAX_SLOT} + 1)):= )
-	llvm? ( <sys-devel/llvm-$((${LLVM_MAX_SLOT} + 1)):= )
-    clang? ( <sys-devel/clang-$((${LLVM_MAX_SLOT} + 1)):= )
 	lzo? ( dev-libs/lzo:2= )
 	ndof? (
 		app-misc/spacenavd
@@ -164,6 +161,9 @@ DEPEND="${RDEPEND}
 "
 
 BDEPEND="
+	lld? ( <sys-devel/lld-$((${LLVM_MAX_SLOT} + 1)):= )
+	llvm? ( <sys-devel/llvm-$((${LLVM_MAX_SLOT} + 1)):= )
+    clang? ( <sys-devel/clang-$((${LLVM_MAX_SLOT} + 1)):= )
 	virtual/pkgconfig
 	nls? ( sys-devel/gettext )
 	doc? (

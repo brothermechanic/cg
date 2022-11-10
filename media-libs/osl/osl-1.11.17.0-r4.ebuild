@@ -6,7 +6,7 @@ EAPI=8
 PYTHON_COMPAT=( python3_{8..10} )
 
 # Check this on updates
-LLVM_MAX_SLOT=14
+LLVM_MAX_SLOT=15
 
 inherit cmake llvm toolchain-funcs python-single-r1
 
