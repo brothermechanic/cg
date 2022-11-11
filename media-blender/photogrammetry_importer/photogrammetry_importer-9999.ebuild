@@ -15,3 +15,5 @@ RDEPEND="
 	dev-python/pylas
 	dev-python/pyntcloud
 "
+
+S="${WORKDIR}/${P}/${PN}"
