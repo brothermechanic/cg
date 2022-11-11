@@ -103,7 +103,7 @@ src_configure() {
 		#-DOSL_PTX_INSTALL_DIR="${EPREFIX}/usr/include/${PN^^}/ptx"
 		-DSTOP_ON_WARNING=OFF
 		-DUSE_OPTIX=$(usex optix)
-		#-DOPTIX_INCLUDE_DIR=/opt/optix/include
+		-DOPTIX_INCLUDE_DIR=/opt/optix/include
 		-DUSE_PARTIO=$(usex partio)
 		-DUSE_QT=$(usex qt5)
 		-DUSE_PYTHON=$(usex python)
