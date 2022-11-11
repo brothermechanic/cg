@@ -1,43 +1,28 @@
 # Copyright 1999-2017 Gentoo Foundation
 # Distributed under the terms of the GNU General Public License v2
 
-EAPI=6
-PYTHON_COMPAT=( python3_{9..10} )
-inherit git-r3 distutils-r1 blender-addons-dir
+EAPI=8
+
+PYTHON_COMPAT=( python3_{9..11} )
+
+BLENDER_COMPAT=( 2_93 3_{1..5} )
+
+DISTUTILS_SINGLE_IMPL=1
+
+inherit distutils-r1 blender-addon
 
 DESCRIPTION="Blender addon. Camera Calibration using Perspective Views of Rectangles"
 HOMEPAGE="https://blenderartists.org/forum/showthread.php?414359-Add-on-Camera-Calibration-using-Perspective-Views-of-Rectangles"
-EGIT_REPO_URI="https://github.com/mrossini-ethz/camera-calibration-pvr.git"
+EGIT_REPO_URI="https://github.com/mrossini-ethz/camera-calibration-pvr"
 EGIT_BRANCH="blender-2-80"
 LICENSE="GPL-2"
-SLOT="0"
-KEYWORDS="~amd64 ~x86"
-IUSE=""
 
-DEPEND=""
-RDEPEND="media-gfx/blender[addons]
-        dev-python/setuptools[${PYTHON_USEDEP}]
-        dev-python/pycairo[${PYTHON_USEDEP}]"
+RDEPEND="
+    dev-python/setuptools[${PYTHON_USEDEP}]
+    dev-python/pycairo[${PYTHON_USEDEP}]"
 
-src_compile() { 
+src_compile() {
    cd "${S}"/figures
-   python generate-figures.py
-} 
-
-
-src_install() {
-	egit_clean
-    insinto ${GENTOO_BLENDER_ADDONS_DIR}/addons/${PN}
-	doins -r "${S}"/*
+   ${EPYTHON} generate-figures.py
 }
 
-pkg_postinst() {
-	elog
-	elog "This blender addon installs to system subdirectory"
-	elog "${GENTOO_BLENDER_ADDONS_DIR}"
-	elog "You can set it to make.conf before"
-	elog "Please, set it to PreferencesFilePaths.scripts_directory"
-	elog "More info you can find at page "
-	elog "https://docs.blender.org/manual/en/latest/preferences/file.html#scripts-path"
-	elog
-}

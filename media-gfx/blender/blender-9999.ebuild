@@ -19,7 +19,7 @@ if [[ ${PV} == 9999 ]]; then
 	EGIT_BRANCH="master"
 	#EGIT_COMMIT=""
     KEYWORDS=""
-	MY_PV="3.4"
+	MY_PV="3.5"
 else
 	#SRC_URI="https://download.blender.org/source/${P}.tar.xz"
 	#TEST_TARBALL_VERSION=2.93.0
@@ -32,7 +32,7 @@ else
 	KEYWORDS="~amd64 ~x86 ~arm64"
 fi
 
-SLOT="${MY_PV}"
+SLOT="$MY_PV"
 LICENSE="|| ( GPL-3 BL )"
 CUDA_ARCHS="sm_30 sm_35 sm_50 sm_52 sm_61 sm_70 sm_75 sm_86"
 IUSE_DESKTOP="cg -portable +X headless wayland +addons +addons_contrib +nls +icu -ndof"
@@ -177,7 +177,7 @@ RESTRICT="
 	!test? ( test )
 "
 
-QA_WX_LOAD="usr/share/${PN}/${MY_PV}/scripts/addons/cycles/lib/kernel_sm_*.cubin"
+QA_WX_LOAD="usr/share/${PN}/${SLOT}/scripts/addons/cycles/lib/kernel_sm_*.cubin"
 QA_PREBUILT="${QA_WX_LOAD}"
 QA_PRESTRIPPED="${QA_WX_LOAD}"
 QA_FLAGS_IGNORED="${QA_WX_LOAD}"
@@ -227,7 +227,7 @@ src_prepare() {
 	blender_get_version
 
 	eapply "${FILESDIR}/x112.patch"
-	eapply "${FILESDIR}/${MY_PV}/blender-system-glog-gflags.patch"
+	eapply "${FILESDIR}/${SLOT}/blender-system-glog-gflags.patch"
 	#eapply "${FILESDIR}/Fix-build-with-system-glew.patch"
 	if use cg; then
         eapply "${FILESDIR}"/cg-defaults.patch
@@ -257,17 +257,17 @@ src_prepare() {
 		-i doc/doxygen/Doxyfile || die
 
 	# Prepare icons and .desktop files for slotting.
-	sed -e "s|blender.svg|blender-${MY_PV}.svg|" -i source/creator/CMakeLists.txt || die
-	sed -e "s|blender-symbolic.svg|blender-${MY_PV}-symbolic.svg|" -i source/creator/CMakeLists.txt || die
-	sed -e "s|blender.desktop|blender-${MY_PV}.desktop|" -i source/creator/CMakeLists.txt || die
+	sed -e "s|blender.svg|blender-${SLOT}.svg|" -i source/creator/CMakeLists.txt || die
+	sed -e "s|blender-symbolic.svg|blender-${SLOT}-symbolic.svg|" -i source/creator/CMakeLists.txt || die
+	sed -e "s|blender.desktop|blender-${SLOT}.desktop|" -i source/creator/CMakeLists.txt || die
 
-	sed -e "s|Name=Blender|Name=Blender ${MY_PV}|" -i release/freedesktop/blender.desktop || die
-	sed -e "s|Exec=blender|Exec=blender-${MY_PV}|" -i release/freedesktop/blender.desktop || die
-	sed -e "s|Icon=blender|Icon=blender-${MY_PV}|" -i release/freedesktop/blender.desktop || die
+	sed -e "s|Name=Blender|Name=Blender ${SLOT}|" -i release/freedesktop/blender.desktop || die
+	sed -e "s|Exec=blender|Exec=blender-${SLOT}|" -i release/freedesktop/blender.desktop || die
+	sed -e "s|Icon=blender|Icon=blender-${SLOT}|" -i release/freedesktop/blender.desktop || die
 
-	mv release/freedesktop/icons/scalable/apps/blender.svg release/freedesktop/icons/scalable/apps/blender-${MY_PV}.svg || die
-	mv release/freedesktop/icons/symbolic/apps/blender-symbolic.svg release/freedesktop/icons/symbolic/apps/blender-${MY_PV}-symbolic.svg || die
-	mv release/freedesktop/blender.desktop release/freedesktop/blender-${MY_PV}.desktop || die
+	mv release/freedesktop/icons/scalable/apps/blender.svg release/freedesktop/icons/scalable/apps/blender-${SLOT}.svg || die
+	mv release/freedesktop/icons/symbolic/apps/blender-symbolic.svg release/freedesktop/icons/symbolic/apps/blender-${SLOT}-symbolic.svg || die
+	mv release/freedesktop/blender.desktop release/freedesktop/blender-${SLOT}.desktop || die
 
 	if use test; then
 		# Without this the tests will try to use /usr/bin/blender and /usr/share/blender/ to run the tests.
@@ -539,12 +539,12 @@ src_install() {
 	rm -r "${ED%/}"/usr/share/doc/blender || die
 
 	#python_fix_shebang "${ED%/}/usr/bin/blender-${MY_PV}-thumbnailer.py"
-	python_optimize "${ED%/}/usr/share/blender/${MY_PV}/scripts"
+	#python_optimize "${ED%/}/usr/share/blender/${MY_PV}/scripts"
 
-	mv "${ED}/usr/bin/blender-thumbnailer" "${ED}/usr/bin/blender-${MY_PV}-thumbnailer" || die
-	ln -s "${ED}/usr/bin/blender-${MY_PV}-thumbnailer" "${ED}/usr/bin/blender-thumbnailer"
-	mv "${ED}/usr/bin/blender" "${ED}/usr/bin/blender-${MY_PV}" || die
-	ln -s "${ED}/usr/bin/blender-${MY_PV}" "${ED}/usr/bin/blender"
+	mv "${ED}/usr/bin/blender-thumbnailer" "${ED}/usr/bin/blender-${SLOT}-thumbnailer" || die
+	ln -s "${ED}/usr/bin/blender-${SLOT}-thumbnailer" "${ED}/usr/bin/blender-thumbnailer"
+	mv "${ED}/usr/bin/blender" "${ED}/usr/bin/blender-${SLOT}" || die
+	ln -s "${ED}/usr/bin/blender-${SLOT}" "${ED}/usr/bin/blender"
 
 	elog "${PN^}-$( grep -Po 'CPACK_PACKAGE_VERSION "\K[^"]..' ${BUILD_DIR}/CPackConfig.cmake ) has been installed."
 }
