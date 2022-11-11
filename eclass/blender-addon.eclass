@@ -56,7 +56,7 @@ _BLENDER_SEL_IMPL=
 : ${KEYWORDS:=alpha amd64 arm arm64 hppa ia64 ~loong m68k ~mips ppc ppc64 ~riscv s390 sparc x86 ~x64-cygwin ~amd64-linux ~x86-linux ~ppc-macos ~x64-macos ~sparc-solaris ~sparc64-solaris ~x64-solaris ~x86-solaris}
 : ${RESTRICT:="mirror"}
 #S="${WORKDIR}/"
-RDEPEND="media-gfx/blender:=[addons]"
+RDEPEND="media-gfx/blender:="
 
 # << Phase functions >>
 EXPORT_FUNCTIONS pkg_pretend src_install src_compile pkg_postinst pkg_postrm
