@@ -3,6 +3,8 @@
 
 EAPI=8
 
+BLENDER_COMPAT=( 2_93 3_{1..5} )
+
 inherit blender-addon
 
 DESCRIPTION="Blender addon.Bezier Curve CAD Tools for CNC."

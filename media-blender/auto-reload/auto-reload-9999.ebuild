@@ -5,7 +5,7 @@ EAPI=8
 
 BLENDER_COMPAT=( 2_93 3_{1..5} )
 
-inherit blender-addons-dir
+inherit blender-addon
 
 DESCRIPTION="Blender addon. Handy automatic reload for Image Textures"
 HOMEPAGE="https://github.com/samytichadou/Auto_Reload-Blender_addon"

@@ -1,5 +1,7 @@
 EAPI=8
 
+BLENDER_COMPAT=( 2_93 3_{1..5} )
+
 inherit blender-addon
 
 DESCRIPTION="A central repository of Blender addons"
@@ -30,5 +32,5 @@ src_install(){
     rm -r .{git,github}
     insinto ${GENTOO_BLENDER_ADDONS_DIR}/${PN}
     doins -r "${S}"/*
-    python_optimize "${ED}${GENTOO_BLENDER_ADDONS_DIR}/${PN}"
+    python_optimize "${D}${GENTOO_BLENDER_ADDONS_DIR}/${PN}"
 }

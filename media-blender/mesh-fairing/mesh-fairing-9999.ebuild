@@ -12,5 +12,5 @@ HOMEPAGE="https://github.com/fedackb/mesh-fairing"
 EGIT_REPO_URI="https://github.com/fedackb/mesh-fairing"
 
 LICENSE="GPL-3"
-RDEPEND="sci-libs/scipy"
+RDEPEND="dev-python/scipy"
 

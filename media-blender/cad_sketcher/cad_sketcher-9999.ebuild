@@ -10,5 +10,5 @@ EGIT_REPO_URI="https://github.com/hlorus/CAD_Sketcher"
 
 LICENSE="GPL-3"
 
-RDEPEND="dev-python/slvs_p"
+RDEPEND="dev-python/slvs_py"
 

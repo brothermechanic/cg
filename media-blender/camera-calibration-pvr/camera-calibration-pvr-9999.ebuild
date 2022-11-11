@@ -17,9 +17,10 @@ EGIT_REPO_URI="https://github.com/mrossini-ethz/camera-calibration-pvr"
 EGIT_BRANCH="blender-2-80"
 LICENSE="GPL-2"
 
-RDEPEND="
+RDEPEND="$(python_gen_cond_dep '
     dev-python/setuptools[${PYTHON_USEDEP}]
-    dev-python/pycairo[${PYTHON_USEDEP}]"
+    dev-python/pycairo[${PYTHON_USEDEP}]
+')"
 
 src_compile() {
    cd "${S}"/figures

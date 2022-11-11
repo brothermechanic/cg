@@ -5,7 +5,7 @@ EAPI=8
 
 BLENDER_COMPAT=( 2_93 3_{1..5} )
 
-inherit blender-addons
+inherit blender-addon
 
 DESCRIPTION="Blender addon for optimizing topology."
 HOMEPAGE="https://www.blenderkit.com/addons/"

@@ -15,7 +15,7 @@ DESCRIPTION="Blender addon. Node based visual scripting system designed for moti
 HOMEPAGE="https://github.com/JacquesLucke/animation_nodes"
 EGIT_REPO_URI="https://github.com/JacquesLucke/${PN}"
 
-LICENSE="GPL"
+LICENSE="GPL-2"
 
 RDEPEND="dev-python/numpy"
 
