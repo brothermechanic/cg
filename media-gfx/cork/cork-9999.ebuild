@@ -1,15 +1,15 @@
 # Copyright 1999-2017 Gentoo Foundation
 # Distributed under the terms of the GNU General Public License v2
 
-EAPI=6
+EAPI=8
 
-inherit eutils git-r3
+inherit git-r3
 
 DESCRIPTION="Cork - a powerful standalone boolean calculations software"
 HOMEPAGE="https://github.com/gilbo/cork"
-EGIT_REPO_URI="https://github.com/gilbo/cork.git"
+EGIT_REPO_URI="https://github.com/gilbo/cork"
 
-LICENSE="LGPL"
+LICENSE="LGPL-2"
 SLOT="0"
 KEYWORDS="~amd64 ~x86"
 
@@ -20,6 +20,6 @@ DEPEND="${RDEPEND}"
 
 src_install() {
 	dobin bin/*
-	dolib lib/*
+	dolib.so lib/*
 	doheader include/*
 }
