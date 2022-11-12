@@ -3,7 +3,7 @@
 
 # @ECLASS: blender-addon.eclass
 # @MAINTAINER:
-# cg <>
+# brothermechanic <brothermechanic@gmail.com>
 # anex5 <anex5.2008@gmail.com>
 # @AUTHOR:
 # anex5 <anex5.2008@gmail.com>
