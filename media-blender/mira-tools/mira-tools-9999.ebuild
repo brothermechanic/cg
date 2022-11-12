@@ -11,5 +11,5 @@ DESCRIPTION="Blender addon. Modeling/Retopo tools"
 HOMEPAGE="https://github.com/mifth/mifthtools"
 EGIT_REPO_URI="https://github.com/mifth/mifthtools"
 #EGIT_BRANCH="blender_28"
-LICENSE="BSD-3"
+LICENSE="BSD" #BSD-3-Clause
 
