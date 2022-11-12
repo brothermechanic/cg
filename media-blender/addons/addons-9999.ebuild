@@ -15,7 +15,6 @@ if [[ ${PV} == 9999 ]]; then
 else
     MY_PV="$(ver_cut 1-2)"
     EGIT_BRANCH="blender-v${MY_PV}-release"
-    KEYWORDS="~amd64 ~x86"
 fi
 SLOT=${MY_PV}
 
@@ -28,9 +27,6 @@ PATCHES=(
 )
 
 src_install(){
-    : ${GENTOO_BLENDER_ADDONS_DIR:="/usr/share/blender/$(get_blender_impl)/scripts"}
-    rm -r .{git,github}
-    insinto ${GENTOO_BLENDER_ADDONS_DIR}/${PN}
-    doins -r "${S}"/*
-    python_optimize "${D}${GENTOO_BLENDER_ADDONS_DIR}/${PN}"
+    : ${GENTOO_BLENDER_ADDONS_DIR:="/usr/share/blender/${SLOT}/scripts"}
+    blender-addon_src_install
 }

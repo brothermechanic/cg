@@ -6,7 +6,7 @@ inherit blender-addon
 
 DESCRIPTION="A central repository of Blender contrib addons"
 HOMEPAGE="https://git.blender.org/gitweb/gitweb.cgi/blender-addons-contrib.git"
-EGIT_REPO_URI="https://git.blender.org/blender-addons-contrib.git"
+EGIT_REPO_URI="https://git.blender.org/blender-addons-contrib"
 
 if [[ ${PV} == 9999 ]]; then
     EGIT_BRANCH="master"
@@ -24,9 +24,6 @@ LICENSE="GPL-2"
 DEPEND="${PYTHON_DEPS}"
 
 src_install(){
-    : ${GENTOO_BLENDER_ADDONS_DIR:="/usr/share/blender/$(get_blender_impl)/scripts"}
-    rm -r .{git,github}
-    insinto ${GENTOO_BLENDER_ADDONS_DIR}/${PN}
-    doins -r "${S}"/*
-    python_optimize "${ED}${GENTOO_BLENDER_ADDONS_DIR}/${PN}"
+    : ${GENTOO_BLENDER_ADDONS_DIR:="/usr/share/blender/${SLOT}/scripts"}
+    blender-addon_src_install
 }

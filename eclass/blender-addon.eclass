@@ -26,13 +26,22 @@ inherit git-r3 vcs-clean python-single-r1
 
 # << Eclass variables >>
 
+# @ECLASS_VARIABLE: _GENTOO_BLENDER_ADDONS_HOME
+# @DEFAULT_UNSET
+# @INTERNAL
+# @DESCRIPTION:
+# Each blender slot has it's own subdirectory for addons.
+_GENTOO_BLENDER_ADDONS_HOME=()
+
 # @ECLASS_VARIABLE: GENTOO_BLENDER_ADDONS_DIR
+# @USER_VARIABLE
 # @DEFAULT_UNSET
 # @DESCRIPTION:
-# Base directory for installing blender addons
+# Directory for installing blender addons.
 : ${GENTOO_BLENDER_ADDONS_DIR:=}
 
 # @ECLASS_VARIABLE: _BLENDER_ALL_IMPLS
+# @INTERNAL
 # @DESCRIPTION:
 # All possible implementations of blender
 _BLENDER_ALL_IMPLS=( 2_93 3_{1..6} )
@@ -40,8 +49,9 @@ readonly _BLENDER_ALL_IMPLS
 
 # @ECLASS_VARIABLE: _BLENDER_ALL_IMPLS
 # @DESCRIPTION:
+# @INTERNAL
 # All possible implementations of blender
-_BLENDER_SEL_IMPL=
+_BLENDER_SEL_IMPLS=()
 
 # @ECLASS_VARIABLE: BLENDER_COMPAT
 # @REQUIRED
@@ -56,21 +66,10 @@ _BLENDER_SEL_IMPL=
 : ${KEYWORDS:=alpha amd64 arm arm64 hppa ia64 ~loong m68k ~mips ppc ppc64 ~riscv s390 sparc x86 ~x64-cygwin ~amd64-linux ~x86-linux ~ppc-macos ~x64-macos ~sparc-solaris ~sparc64-solaris ~x64-solaris ~x86-solaris}
 : ${RESTRICT:="mirror"}
 #S="${WORKDIR}/"
-RDEPEND="media-gfx/blender:="
+RDEPEND+="media-gfx/blender:="
 
 # << Phase functions >>
-EXPORT_FUNCTIONS pkg_pretend src_install src_compile pkg_postinst pkg_postrm
-
-# @FUNCTION: get_blender_impl
-# @DESCRIPTION:
-get_blender_impl ()
-{
-	for i in "${BLENDER_COMPAT[@]}"; do
-		has_version -r media-gfx\/blender\:${i/_/\.} && _BLENDER_SEL_IMPL=${i/_/\.}
-	done
-
-    echo "${_BLENDER_SEL_IMPL}"
-}
+EXPORT_FUNCTIONS pkg_pretend pkg_setup src_install src_compile pkg_postinst pkg_postrm
 
 # @FUNCTION: blender-addon_pkg_pretend
 # @DESCRIPTION:
@@ -83,9 +82,23 @@ blender-addon_pkg_pretend() {
 			die "Invalid BLENDER_COMPAT : ${BLENDER_COMPAT[@]}"
 		fi
 	done
-
-	[[ -z $(get_blender_impl) ]] && eerror "Required Blender version is not installed BLENDER_COMPAT : ( ${BLENDER_COMPAT[@]} )" && die
 }
+
+# @FUNCTION: blender-addon_pkg_setup
+# @DESCRIPTION:
+# Performs some checks.
+blender-addon_pkg_setup() {
+	debug-print-function ${FUNCNAME} "${@}"
+
+	python-single-r1_pkg_setup
+
+	for i in "${BLENDER_COMPAT[@]}"; do
+		has_version -r media-gfx\/blender\:${i/_/\.} && _BLENDER_SEL_IMPLS+=( ${i/_/\.} )
+	done
+
+	[[ ${#_BLENDER_SEL_IMPLS[@]} -gt 0 ]] || die "Required Blender version is not installed BLENDER_COMPAT : ( ${BLENDER_COMPAT[@]} )"
+}
+
 
 # @FUNCTION: blender-addon_src_compile
 # @DESCRIPTION:
@@ -96,18 +109,27 @@ blender-addon_src_compile() {
 
 # @FUNCTION: blender-addon_src_install
 # @DESCRIPTION:
-# Installs an addon into the GENTOO_BLENDER_ADDONS_DIR directory
+# Installs an addon into the GENTOO_BLENDER_ADDONS_DIR of default directory
 blender-addon_src_install() {
 	debug-print-function ${FUNCNAME} "${@}"
 
-	: ${GENTOO_BLENDER_ADDONS_DIR:="/usr/share/blender/$(get_blender_impl)/scripts"}
-
 	egit_clean
-	[[ -a .github ]] && rm -r .{github}
-	insinto ${GENTOO_BLENDER_ADDONS_DIR}/addons/${PN}
-	diropts -g users -m0775
-	doins -r "${S}"/*
-	python_optimize "${D}${GENTOO_BLENDER_ADDONS_DIR}/addons/${PN}"
+	[[ -a .github ]] && rm -r .github
+
+	if [ ${GENTOO_BLENDER_ADDONS_DIR} ]; then
+		_GENTOO_BLENDER_ADDONS_HOME=( "${GENTOO_BLENDER_ADDONS_DIR}" )
+	else
+		for i in "${_BLENDER_SEL_IMPLS[@]}"; do
+			_GENTOO_BLENDER_ADDONS_HOME+=( "/usr/share/blender/${i/_/\.}/scripts/addons" )
+		done
+	fi
+
+	for (( i = ${#_GENTOO_BLENDER_ADDONS_HOME[@]} - 1; i >= 0; i-- )); do
+		insinto ${_GENTOO_BLENDER_ADDONS_HOME[i]}/${PN}
+		diropts -g users -m0775
+		doins -r "${S}"/*
+		python_optimize "${D}${_GENTOO_BLENDER_ADDONS_HOME[i]}/${PN}"
+	done
 }
 
 # @FUNCTION: blender-addon_pkg_postinst
@@ -117,9 +139,11 @@ blender-addon_pkg_postinst() {
 	debug-print-function ${FUNCNAME} "${@}"
 
 	elog
-	elog "This blender addon installs to following system subdirectory"
-	elog "${GENTOO_BLENDER_ADDONS_DIR}"
-	elog "You can override this value by setting GENTOO_BLENDER_ADDONS_DIR to your make.conf file"
+	elog "This blender addon installs to following system subdirectory:"
+	elog "${_GENTOO_BLENDER_ADDONS_HOME[@]}"
+	elog "You can override this value by setting following variable to your make.conf file:"
+	elog "GENTOO_BLENDER_ADDONS_DIR"
+	elog "Each blender slot will use this single directory for the addons."
 	elog "Please, set this value to PreferencesFilePaths.scripts_directory"
 	elog "More info you can find at page "
 	elog "https://docs.blender.org/manual/en/latest/preferences/file.html#scripts-path"
@@ -131,6 +155,15 @@ blender-addon_pkg_postinst() {
 # remove addon dir on uninstalling blender addon.
 blender-addon_pkg_postrm() {
 	if [[ -z "${REPLACED_BY_VERSION}" ]]; then
-		rm -r ${ROOT}${GENTOO_BLENDER_ADDONS_DIR}/addons/${PN}
+		if [ ${GENTOO_BLENDER_ADDONS_DIR} ]; then
+			_GENTOO_BLENDER_ADDONS_HOME=( "${GENTOO_BLENDER_ADDONS_DIR}" )
+		else
+			for i in "${_BLENDER_SEL_IMPLS[@]}"; do
+				_GENTOO_BLENDER_ADDONS_HOME+=( "/usr/share/blender/${i/_/\.}/scripts/addons" )
+			done
+		fi
+		for (( i = ${#_GENTOO_BLENDER_ADDONS_HOME[@]} - 1; i >= 0; i-- )); do
+			rm -r ${ROOT}${GENTOO_BLENDER_ADDONS_HOME[i]}/${PN}
+		done
 	fi
 }
