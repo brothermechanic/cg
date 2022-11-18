@@ -1,8 +1,8 @@
 EAPI=8
 
-PYTHON_COMPAT=( python3_{10..11} )
+BLENDER_COMPAT=( 2_93 3_{1..5} )
 
-inherit git-r3 python-single-r1 blender-addons-dir
+inherit blender-addon
 
 DESCRIPTION="A central repository of Blender contrib addons"
 HOMEPAGE="https://git.blender.org/gitweb/gitweb.cgi/blender-addons-contrib.git"
@@ -23,9 +23,7 @@ LICENSE="GPL-2"
 
 DEPEND="${PYTHON_DEPS}"
 
-src_install() {
-	egit_clean
-	insinto ${GENTOO_BLENDER_ADDONS_DIR}/../${MY_PV}/scripts/${PN}/
-	doins -r "${S}"/*
-	python_optimize "${ED}/${GENTOO_BLENDER_ADDONS_DIR}/../${MY_PV}/scripts/${PN}/"
+src_install(){
+    : ${GENTOO_BLENDER_ADDONS_DIR:="/usr/share/blender/${SLOT}/scripts"}
+    blender-addon_src_install
 }

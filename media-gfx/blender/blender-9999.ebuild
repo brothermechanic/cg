@@ -234,9 +234,10 @@ src_prepare() {
         cp "${FILESDIR}"/splash.png release/datafiles/
     fi
 
-    #set GENTOO_BLENDER_ADDONS_DIR to userpref
-	sed -i -e "s|.pythondir.*|.pythondir = \"${GENTOO_BLENDER_ADDONS_DIR}\",|" "${S}"/release/datafiles/userdef/userdef_default.c || die
-
+	if use addons_contrib; then
+        #set GENTOO_BLENDER_ADDONS_DIR to userpref
+        sed -i -e "s|.pythondir.*|.pythondir = \"${GENTOO_BLENDER_ADDONS_DIR}\",|" "${S}"/release/datafiles/userdef/userdef_default.c || die
+    fi
 	# remove some bundled deps
 	rm -rf extern/{Eigen3,glew-es,lzo,gflags,glog,draco,glew} || die
 	#rm -rf intern/guardedalloc  || die
