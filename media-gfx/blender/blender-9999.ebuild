@@ -102,18 +102,6 @@ RDEPEND="${PYTHON_DEPS}
 		dev-cpp/gflags
 		dev-cpp/glog[gflags]
 	)
-	X? (
-		x11-libs/libX11
-		x11-libs/libXi
-		x11-libs/libXxf86vm
-	)
-	wayland? (
-		dev-libs/wayland
-		gui-libs/egl-wayland
-		dev-util/wayland-scanner
-		x11-libs/libxkbcommon
-		sys-apps/dbus
-	)
 	jack? ( virtual/jack )
 	jemalloc? ( dev-libs/jemalloc:= )
 	jpeg2k? ( media-libs/openjpeg:2= )
@@ -141,7 +129,7 @@ RDEPEND="${PYTHON_DEPS}
 		dev-libs/c-blosc:=
 	)
 	optix? ( >=dev-libs/optix-7.4.0 )
-	osl? ( >=media-libs/osl-1.11.10.0 )
+	osl? ( >=media-libs/osl-1.11.16.0-r3:= )
 	pdf? ( media-libs/libharu )
 	potrace? ( media-gfx/potrace )
 	pugixml? ( dev-libs/pugixml )
@@ -154,9 +142,21 @@ RDEPEND="${PYTHON_DEPS}
 	usd? ( media-libs/openusd[monolithic,-python] )
 	valgrind? ( dev-util/valgrind )
 	webp? ( media-libs/libwebp )
+	wayland? (
+		>=dev-libs/wayland-1.12
+		>=dev-libs/wayland-protocols-1.15
+		>=x11-libs/libxkbcommon-0.2.0
+		media-libs/mesa[wayland]
+		sys-apps/dbus
+	)
+	X? (
+		x11-libs/libX11
+		x11-libs/libXi
+		x11-libs/libXxf86vm
+	)
 "
 
-DEPEND="${RDEPEND}
+DEPEND="
 	dev-cpp/eigen:=
 "
 
@@ -167,8 +167,8 @@ BDEPEND="
 	virtual/pkgconfig
 	nls? ( sys-devel/gettext )
 	doc? (
-		dev-python/sphinx
 		app-doc/doxygen[-nodot(-),dot(+)]
+		dev-python/sphinx[latex]
 	)
 "
 
@@ -234,10 +234,9 @@ src_prepare() {
         cp "${FILESDIR}"/splash.png release/datafiles/
     fi
 
-	if use addons_contrib; then
-        #set GENTOO_BLENDER_ADDONS_DIR to userpref
-        sed -i -e "s|.pythondir.*|.pythondir = \"${GENTOO_BLENDER_ADDONS_DIR}\",|" "${S}"/release/datafiles/userdef/userdef_default.c || die
-    fi
+    #set GENTOO_BLENDER_ADDONS_DIR to userpref
+    sed -i -e "s|.pythondir.*|.pythondir = \"${GENTOO_BLENDER_ADDONS_DIR}\",|" "${S}"/release/datafiles/userdef/userdef_default.c || die
+
 	# remove some bundled deps
 	rm -rf extern/{Eigen3,glew-es,lzo,gflags,glog,draco,glew} || die
 	#rm -rf intern/guardedalloc  || die
@@ -322,7 +321,8 @@ src_configure() {
 	fi
 
 	local mycmakeargs=()
-	#CUDA Kernel Selection
+
+	# CUDA Kernel Selection
 	local CUDA_ARCH=""
 	if use cuda; then
 		for CA in ${CUDA_ARCHS}; do
@@ -342,7 +342,7 @@ src_configure() {
 			-DCUDA_CUDART_LIBRARY=/opt/cuda/lib64
 			-DCUDA_NVCC_EXECUTABLE=/opt/cuda/bin/nvcc
 			-DCUDA_NVCC_FLAGS="-std=c++14;${NVCCFLAGS}"
-			-DCUDA_HOST_COMPILER=""
+			-DCUDA_HOST_COMPILER="" # Needed for system NVCCFLAGS value assigned for ccbin
 		)
 	fi
 
@@ -351,6 +351,7 @@ src_configure() {
 			-DOPTIX_ROOT_DIR=/opt/optix/SDK
 			-DOPTIX_INCLUDE_DIR=/opt/optix/include
 			-DWITH_CYCLES_DEVICE_OPTIX=ON
+			-DCYCLES_RUNTIME_OPTIX_ROOT_DIR="${EPREFIX}"/opt/optix
 		)
 	fi
 
@@ -476,8 +477,8 @@ src_test() {
 	blender_get_version
 	# Define custom blender data/script file paths not be able to find them otherwise during testing.
 	# (Because the data is in the image directory and it will default to look in /usr/share)
-	export BLENDER_SYSTEM_SCRIPTS=${ED}/usr/share/blender/${BV}/scripts
-	export BLENDER_SYSTEM_DATAFILES=${ED}/usr/share/blender/${BV}/datafiles
+	export BLENDER_SYSTEM_SCRIPTS="${ED}"/usr/share/blender/${BV}/scripts
+	export BLENDER_SYSTEM_DATAFILES="${ED}"/usr/share/blender/${BV}/datafiles
 
 	# Sanity check that the script and datafile path is valid.
 	# If they are not vaild, blender will fallback to the default path which is not what we want.
@@ -487,7 +488,7 @@ src_test() {
 	cmake_src_test
 
 	# Clean up the image directory for src_install
-	rm -fr ${ED}/* || die
+	rm -fr "${ED}"/* || die
 }
 
 src_install() {
