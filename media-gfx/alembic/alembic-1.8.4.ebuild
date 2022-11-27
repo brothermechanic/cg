@@ -1,9 +1,9 @@
-# Copyright 1999-2021 Gentoo Authors
+# Copyright 1999-2022 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
 
 EAPI=8
 
-PYTHON_COMPAT=( python3_{8..10} )
+PYTHON_COMPAT=( python3_{8..11} )
 
 inherit cmake python-single-r1
 
@@ -23,7 +23,7 @@ RESTRICT="
 
 RDEPEND="
 	${PYTHON_DEPS}
-	dev-libs/imath:3=
+	>=dev-libs/imath-3.1.6:=
 	python? ( dev-libs/imath:=[python,${PYTHON_SINGLE_USEDEP}] )
 	hdf5? (
 		>=sci-libs/hdf5-1.10.2:=[zlib(+)]
@@ -35,7 +35,7 @@ DEPEND="${RDEPEND}"
 
 PATCHES=(
 	"${FILESDIR}/${PN}-1.8.0-0001-set-correct-libdir.patch"
-	"${FILESDIR}/${P}-0001-find-py-ilmbase-in-config-mode.patch"
+	"${FILESDIR}/${PN}-1.8.3-0001-find-py-ilmbase-in-config-mode.patch"
 )
 
 DOCS=( ACKNOWLEDGEMENTS.txt FEEDBACK.txt NEWS.txt README.txt )
@@ -53,9 +53,11 @@ src_configure() {
 	local mycmakeargs=(
 		-DALEMBIC_USING_IMATH_3=ON
 		-DALEMBIC_BUILD_LIBS=ON
+		-DALEMBIC_DEBUG_WARNINGS_AS_ERRORS=OFF
 		-DALEMBIC_SHARED_LIBS=ON
 		# currently does nothing but require doxygen
 		-DDOCS_PATH=OFF
+		-DUSE_ARNOLD=OFF
 		-DUSE_BINARIES=ON
 		-DUSE_EXAMPLES=$(usex examples)
 		-DUSE_HDF5=$(usex hdf5)
@@ -69,3 +71,4 @@ src_configure() {
 
 	cmake_src_configure
 }
+
