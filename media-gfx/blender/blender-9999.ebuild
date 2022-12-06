@@ -343,7 +343,7 @@ src_configure() {
 			-DCUDA_INCLUDE_DIRS=/opt/cuda/include
 			-DCUDA_CUDART_LIBRARY=/opt/cuda/lib64
 			-DCUDA_NVCC_EXECUTABLE=/opt/cuda/bin/nvcc
-			-DCUDA_NVCC_FLAGS="-std=c++14;${NVCCFLAGS}"
+			-DCUDA_NVCC_FLAGS="-std=c++14"
 			-DCUDA_HOST_COMPILER="$(cuda_gccdir)"
 		)
 	fi
