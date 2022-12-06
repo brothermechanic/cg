@@ -6,7 +6,7 @@ EAPI=8
 PYTHON_COMPAT=( python3_{10..11} )
 LLVM_MAX_SLOT="15"
 
-inherit check-reqs cmake flag-o-matic pax-utils python-single-r1 toolchain-funcs xdg-utils blender-addons-dir
+inherit check-reqs cmake cuda flag-o-matic pax-utils python-single-r1 toolchain-funcs xdg-utils blender-addons-dir
 
 DESCRIPTION="Blender is a free and open-source 3D creation suite."
 HOMEPAGE="https://www.blender.org"
@@ -226,6 +226,8 @@ src_prepare() {
 
 	blender_get_version
 
+	use cuda && cuda_src_prepare
+
 	eapply "${FILESDIR}/x112.patch"
 	eapply "${FILESDIR}/${SLOT}/blender-system-glog-gflags.patch"
 	#eapply "${FILESDIR}/Fix-build-with-system-glew.patch"
@@ -341,6 +343,8 @@ src_configure() {
 			-DCUDA_INCLUDE_DIRS=/opt/cuda/include
 			-DCUDA_CUDART_LIBRARY=/opt/cuda/lib64
 			-DCUDA_NVCC_EXECUTABLE=/opt/cuda/bin/nvcc
+			-DCUDA_NVCC_FLAGS="-std=c++14;${NVCCFLAGS}"
+			-DCUDA_HOST_COMPILER="$(cuda_gccdir)"
 		)
 	fi
 
