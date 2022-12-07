@@ -8,7 +8,7 @@ PYTHON_COMPAT=( python3_{8..11} )
 # Check this on updates
 LLVM_MAX_SLOT=15
 
-inherit cmake llvm toolchain-funcs python-single-r1
+inherit cmake cuda llvm toolchain-funcs python-single-r1
 
 DESCRIPTION="Advanced shading language for production GI renderers"
 HOMEPAGE="http://opensource.imageworks.com/?p=osl"
@@ -24,8 +24,9 @@ X86_CPU_FEATURES=(
 	avx:avx avx2:avx2 avx512f:avx512f f16c:f16c
 )
 CPU_FEATURES=( ${X86_CPU_FEATURES[@]/#/cpu_flags_x86_} )
+CUDA_ARCHS="sm_30 sm_35 sm_50 sm_52 sm_61 sm_70 sm_75 sm_86"
 
-IUSE="doc optix partio qt5 test ${CPU_FEATURES[@]%:*} python"
+IUSE="doc optix partio qt5 test ${CPU_FEATURES[@]%:*} ${CUDA_ARCHS} python"
 RESTRICT="
 	!test (test)
 	mirror
@@ -39,7 +40,10 @@ RDEPEND="
 	>=media-libs/openimageio-2.3.12.0:=
 	<sys-devel/clang-$((${LLVM_MAX_SLOT} + 1)):=
 	sys-libs/zlib:=
-	optix? ( >=dev-libs/optix-7.4.0 )
+	optix? (
+		dev-util/nvidia-cuda-toolkit:=
+		>=dev-libs/optix-7.4.0
+	)
 	python? (
 		${PYTHON_DEPS}
 		$(python_gen_cond_dep '
@@ -74,36 +78,48 @@ pkg_setup() {
 src_prepare() {
 	cmake_src_prepare
 	# optix 7.4 build fix
-	sed -i -e 's/OPTIX_COMPILE_DEBUG_LEVEL_LINEINFO/OPTIX_COMPILE_DEBUG_LEVEL_MINIMAL/g' src/testshade/optixgridrender.cpp src/testrender/optixraytracer.cpp || die
+	if use optix; then
+		sed -i -e 's/OPTIX_COMPILE_DEBUG_LEVEL_LINEINFO/OPTIX_COMPILE_DEBUG_LEVEL_MINIMAL/g' src/testshade/optixgridrender.cpp src/testrender/optixraytracer.cpp || die
+		cuda_src_prepare
+	fi
 }
 
 src_configure() {
 	local cpufeature
 	local mysimd=()
+	local mycmakeargs=()
 	for cpufeature in "${CPU_FEATURES[@]}"; do
 		use "${cpufeature%:*}" && mysimd+=("${cpufeature#*:}")
 	done
 
+	CMAKE_BUILD_TYPE=Release
+	#OSL_EXTRA_NVCC_ARGS="--compiler-bindir $(cuda_gccdir)"
+
 	# If no CPU SIMDs were used, completely disable them
 	[[ -z ${mysimd} ]] && mysimd=("0")
 
-	local gcc="$(tc-getCC)"
+	if use optix; then
+		for CA in ${CUDA_ARCHS}; do
+			use ${CA} && CUDA_ARCH+="${CA};"
+		done
 
-	CMAKE_BUILD_TYPE=Release
-	local mycmakeargs=(
-		#-DCMAKE_CXX_STANDARD=14
+		mycmakeargs+=(
+			-DCUDA_TARGET_ARCH=${CUDA_ARCH%%;}
+			-DUSE_OPTIX=ON
+			-DOPTIX_INCLUDE_DIR="/opt/optix/include"
+		)
+	fi
+
+	mycmakeargs+=(
+		-DCMAKE_CXX_STANDARD=14
 		-DCMAKE_INSTALL_DOCDIR="share/doc/${PF}"
 		-DINSTALL_DOCS=$(usex doc)
 		-DUSE_CCACHE=OFF
 		-DLLVM_STATIC=OFF
 		-DOSL_BUILD_TESTS=$(usex test)
-		# Breaks build for now: bug #827949
-		#-DOSL_BUILD_TESTS=$(usex test)
-		#-DOSL_SHADER_INSTALL_DIR="${EPREFIX}/usr/include/${PN^^}/shaders"
-		#-DOSL_PTX_INSTALL_DIR="${EPREFIX}/usr/include/${PN^^}/ptx"
+		-DOSL_SHADER_INSTALL_DIR="${EPREFIX}/usr/include/${PN^^}/shaders"
+		-DOSL_PTX_INSTALL_DIR="${EPREFIX}/usr/include/${PN^^}/ptx"
 		-DSTOP_ON_WARNING=OFF
-		-DUSE_OPTIX=$(usex optix)
-		-DOPTIX_INCLUDE_DIR=/opt/optix/include
 		-DUSE_PARTIO=$(usex partio)
 		-DUSE_QT=$(usex qt5)
 		-DUSE_PYTHON=$(usex python)

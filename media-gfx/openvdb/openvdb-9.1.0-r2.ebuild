@@ -5,17 +5,26 @@ EAPI=8
 
 PYTHON_COMPAT=( python3_{8..11} )
 
-inherit cmake llvm python-single-r1
+inherit cmake cuda llvm python-single-r1
 
 DESCRIPTION="Library for the efficient manipulation of volumetric data"
 HOMEPAGE="https://www.openvdb.org"
 SRC_URI="https://github.com/AcademySoftwareFoundation/${PN}/archive/v${PV}.tar.gz -> ${P}.tar.gz"
 
 LICENSE="MPL-2.0"
-SLOT="0/9"
-KEYWORDS="~amd64 ~arm ~arm64 ~ppc64 ~x86"
-IUSE="abi7-compat abi8-compat abi9-compat ax cpu_flags_x86_avx cpu_flags_x86_sse4_2 benchmark +blosc cuda doc examples +intrinsics
-	nanovdb openexr numpy png python static-libs test utils zlib -sm_30 -sm_35 -sm_50 -sm_52 -sm_61 -sm_70 -sm_75 -sm_86"
+SLOT="0/9.1"
+KEYWORDS="~amd64 ~arm ~arm64 ~ppc64 ~riscv ~x86"
+
+X86_CPU_FEATURES=(
+	sse2:sse2 sse3:sse3 ssse3:ssse3 sse4_1:sse4.1 sse4_2:sse4.2
+	avx:avx avx2:avx2 avx512f:avx512f f16c:f16c
+)
+CPU_FEATURES=( ${X86_CPU_FEATURES[@]/#/cpu_flags_x86_} )
+CUDA_ARCHS="sm_30 sm_35 sm_50 sm_52 sm_61 sm_70 sm_75 sm_86"
+
+IUSE="abi7-compat abi8-compat abi9-compat ax benchmark +blosc cuda doc examples +intrinsics
+	nanovdb numpy python static-libs test utils zlib ${CPU_FEATURES[@]%:*} ${CUDA_ARCHS}"
+
 RESTRICT="
 	mirror
 	!test? ( test )
@@ -26,8 +35,6 @@ REQUIRED_USE="^^ ( abi7-compat abi8-compat abi9-compat )
 	blosc? ( zlib )
 	ax? ( zlib )
 	numpy? ( python )
-	openexr? ( utils )
-	png? ( utils )
 	intrinsics? ( nanovdb || ( cpu_flags_x86_avx cpu_flags_x86_sse4_2 ) )
 	python? ( ${PYTHON_REQUIRED_USE} )
 "
@@ -37,15 +44,12 @@ RDEPEND="
 	dev-libs/jemalloc:=
 	dev-libs/log4cplus:=
 	>=dev-libs/imath-3.1.4-r2:=[python?]
-	media-libs/glfw
-	media-libs/glu
-	openexr? ( >=media-libs/openexr-3:= )
-	png? ( media-libs/libpng:= )
+	zlib? ( sys-libs/zlib:= )
 	x11-libs/libXcursor
 	x11-libs/libXi
 	x11-libs/libXinerama
 	x11-libs/libXrandr
-	ax? ( >=sys-devel/llvm-14:= )
+	ax? ( <sys-devel/llvm-14:= )
 	blosc? ( dev-libs/c-blosc:= )
 	cuda? ( >=dev-util/nvidia-cuda-toolkit-11 )
 	python? (
@@ -55,11 +59,15 @@ RDEPEND="
 			numpy? ( dev-python/numpy[${PYTHON_USEDEP}] )
 		')
 	)
-	zlib? ( sys-libs/zlib )
+	utils? (
+		media-libs/glfw
+		media-libs/glu
+		media-libs/libpng:=
+		>=media-libs/openexr-3:=
+		virtual/opengl
+	)
 "
-
 DEPEND="${RDEPEND}"
-
 BDEPEND="
 	virtual/pkgconfig
 	doc? (
@@ -73,7 +81,7 @@ BDEPEND="
 	test? ( dev-util/cppunit dev-cpp/gtest )
 "
 
-LLVM_MAX_SLOT=15
+LLVM_MAX_SLOT=13
 
 PATCHES=(
 	"${FILESDIR}/${PN}-7.1.0-0001-Fix-multilib-header-source.patch"
@@ -87,22 +95,18 @@ PATCHES=(
 pkg_setup() {
 	use ax && llvm_pkg_setup
 	use python && python-single-r1_pkg_setup
-	appredict nvidia-uvm
 }
 
 src_prepare() {
 	sed -i -e "s|DESTINATION doc|DESTINATION share/doc/${P}|g" doc/CMakeLists.txt || die
 	sed -i -e "s|DESTINATION lib|DESTINATION $(get_libdir)|g" {,${PN}/${PN}/}CMakeLists.txt || die
 
-	# Bugs #569738 and #591214
-	local nv
-	for nv in /dev/nvidia-uvm /dev/nvidia-uvm-tools /dev/nvidiactl /dev/nvidia{0..9} ; do
-		# We do not check for existence as they may show up later
-		# https://bugs.gentoo.org/show_bug.cgi?id=569738#c21
-		addwrite "${nv}"
-	done
-
 	cmake_src_prepare
+
+	if use cuda; then
+		cuda_add_sandbox -w
+		cuda_src_prepare
+	fi
 }
 
 src_configure() {
@@ -134,14 +138,14 @@ src_configure() {
 		-DOPENVDB_CORE_STATIC=$(usex static-libs)
 		-DOPENVDB_ENABLE_RPATH=OFF
 		-DUSE_BLOSC=$(usex blosc)
-		-DUSE_ZLIB=$(usex zlib)
-		-DUSE_EXR=$(usex openexr)
-		-DUSE_PNG=$(usex png)
 		-DUSE_CCACHE=OFF
 		-DUSE_COLORED_OUTPUT=ON
+		-DUSE_EXR=$(usex utils)
 		-DUSE_IMATH_HALF=ON
 		-DUSE_LOG4CPLUS=ON
 		-DUSE_NANOVDB=$(usex nanovdb)
+		-DUSE_PNG=$(usex utils)
+		-DUSE_ZLIB=$(usex zlib)
 		-DCONCURRENT_MALLOC="Tbbmalloc"
 	)
 
@@ -160,12 +164,14 @@ src_configure() {
 		)
 	fi
 
-	local CUDA_ARCH=""
 	if use cuda; then
-		for CA in 30 35 50 52 61 70 75 86; do
-			use sm_${CA} && CUDA_ARCH+="${CA};"
+		for CA in ${CUDA_ARCHS}; do
+			use ${CA} && CUDA_ARCH+="${CA#sm_*};"
 		done
-		[ -n "${CUDA_ARCH}" ] && mycmakeargs+=( -DCMAKE_CUDA_ARCHITECTURES=${CUDA_ARCH::-1} )
+		mycmakeargs+=(
+			-DCMAKE_CUDA_ARCHITECTURES=${CUDA_ARCH%%;}
+			-DNANOVDB_USE_CUDA=ON
+		)
 	fi
 
 	if use nanovdb; then
@@ -175,7 +181,6 @@ src_configure() {
 			-DNANOVDB_BUILD_TOOLS=$(usex utils ON OFF)
 			-DNANOVDB_BUILD_EXAMPLES=$(usex examples ON OFF)
 			-DNANOVDB_USE_BLOSC=$(usex blosc ON OFF)
-			-DNANOVDB_USE_CUDA=$(usex cuda ON OFF)
 			-DNANOVDB_USE_OPENVDB=ON
 			-DNANOVDB_USE_MAGICAVOXEL=OFF
 			-DNANOVDB_USE_INTRINSICS=$(usex intrinsics ON OFF)
