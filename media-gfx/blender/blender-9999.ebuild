@@ -37,7 +37,7 @@ LICENSE="|| ( GPL-3 BL )"
 CUDA_ARCHS="sm_30 sm_35 sm_50 sm_52 sm_61 sm_70 sm_75 sm_86"
 IUSE_DESKTOP="cg -portable +X headless wayland +addons +addons_contrib +nls +icu -ndof"
 IUSE_GPU="+opengl -optix cuda ${CUDA_ARCHS}"
-IUSE_LIBS="clang +cycles gmp sdl jack openal pulseaudio +freestyle -osl +openvdb nanovdb abi6-compat abi7-compat abi8-compat abi9-compat +opensubdiv +opencolorio +openimageio +pdf +pugixml +potrace +collada -alembic +gltf-draco +fftw +oidn +quadriflow -usd +bullet -valgrind +jemalloc libmv +llvm"
+IUSE_LIBS="clang +cycles gmp sdl jack openal pulseaudio +freestyle -osl +openvdb nanovdb abi7-compat abi8-compat abi9-compat abi10-compat +opensubdiv +opencolorio +openimageio +pdf +pugixml +potrace +collada -alembic +gltf-draco +fftw +oidn +quadriflow -usd +bullet -valgrind +jemalloc libmv +llvm"
 IUSE_CPU="+openmp embree +simd +tbb +lld gold"
 IUSE_TEST="-debug -doc -man -gtests test"
 IUSE_IMAGE="-dpx -dds +openexr jpeg2k tiff +hdr webp"
@@ -60,7 +60,7 @@ REQUIRED_USE="${PYTHON_REQUIRED_USE}
 	openexr? ( openimageio )
 	optix? ( cycles cuda )
 	openvdb? (
-		^^ ( abi6-compat abi7-compat abi8-compat abi9-compat )
+		^^ ( abi7-compat abi8-compat abi9-compat abi10-compat )
 		cycles tbb
 	)
 	osl? ( cycles llvm )
@@ -125,7 +125,7 @@ RDEPEND="${PYTHON_DEPS}
 	openexr? ( media-libs/openexr:= )
 	opensubdiv? ( media-libs/opensubdiv[cuda?,openmp?,tbb?] )
 	openvdb? (
-		>=media-gfx/openvdb-9.0.0[abi6-compat(-)?,abi7-compat(-)?,abi8-compat(-)?,abi9-compat(-)?]
+		>=media-gfx/openvdb-9.0.0[abi7-compat(-)?,abi8-compat(-)?,abi9-compat(-)?,abi10-compat(-)?]
 		dev-libs/c-blosc:=
 	)
 	optix? ( >=dev-libs/optix-7.4.0 )
@@ -308,14 +308,14 @@ src_configure() {
 
 	if use openvdb; then
 		local version
-		if use abi6-compat; then
-			version=6;
-		elif use abi7-compat; then
+		if use abi7-compat; then
 			version=7;
-        elif use abi8-compat; then
+		elif use abi8-compat; then
 			version=8;
-		elif use abi9-compat; then
-			version=9
+        elif use abi9-compat; then
+			version=9;
+		elif use abi10-compat; then
+			version=10
 		else
 			die "Openvdb abi version not compatible"
 		fi

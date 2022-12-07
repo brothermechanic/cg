@@ -12,7 +12,7 @@ HOMEPAGE="https://www.openvdb.org"
 SRC_URI="https://github.com/AcademySoftwareFoundation/${PN}/archive/v${PV}.tar.gz -> ${P}.tar.gz"
 
 LICENSE="MPL-2.0"
-SLOT="0/9.1"
+SLOT="0/10.0"
 KEYWORDS="~amd64 ~arm ~arm64 ~ppc64 ~riscv ~x86"
 
 X86_CPU_FEATURES=(
@@ -104,8 +104,9 @@ src_prepare() {
 	cmake_src_prepare
 
 	if use cuda; then
-		cuda_add_sandbox -w
 		cuda_src_prepare
+		cuda_add_sandbox -w
+		addpredict /dev/nvidia-uvm
 	fi
 }
 
