@@ -24,6 +24,12 @@ RDEPEND="
         freecad? ( media-gfx/freecad )
         "
 
+src_prepare() {
+    eapply_user
+    # set icons by default
+    sed -i '/name="Show icons in Shift-A menu",/{n;s/.*/\t\default=True,/}' settings.py
+}
+
 src_install() {
     if use freecad ; then
         insinto $(python_get_sitedir)/
