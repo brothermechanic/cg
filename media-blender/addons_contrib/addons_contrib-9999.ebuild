@@ -24,6 +24,6 @@ LICENSE="GPL-2"
 DEPEND="${PYTHON_DEPS}"
 
 src_install(){
-    : ${GENTOO_BLENDER_ADDONS_DIR:="/usr/share/blender/${SLOT}/scripts"}
+    GENTOO_BLENDER_ADDONS_DIR="/usr/share/blender/${SLOT}/scripts"
     blender-addon_src_install
 }

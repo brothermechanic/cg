@@ -66,7 +66,7 @@ _BLENDER_SEL_IMPLS=()
 : ${KEYWORDS:=alpha amd64 arm arm64 hppa ia64 ~loong m68k ~mips ppc ppc64 ~riscv s390 sparc x86 ~x64-cygwin ~amd64-linux ~x86-linux ~ppc-macos ~x64-macos ~sparc-solaris ~sparc64-solaris ~x64-solaris ~x86-solaris}
 : ${RESTRICT:="mirror"}
 #S="${WORKDIR}/"
-RDEPEND+="media-gfx/blender:="
+RDEPEND+="media-gfx/blender"
 
 # << Phase functions >>
 EXPORT_FUNCTIONS pkg_pretend pkg_setup src_install src_compile pkg_postinst pkg_postrm
@@ -138,7 +138,6 @@ blender-addon_src_install() {
 blender-addon_pkg_postinst() {
 	debug-print-function ${FUNCNAME} "${@}"
 
-	elog
 	elog "This blender addon installs to following system subdirectory:"
 	elog "${_GENTOO_BLENDER_ADDONS_HOME[@]}"
 	elog "You can override this value by setting following variable to your make.conf file:"
@@ -146,8 +145,7 @@ blender-addon_pkg_postinst() {
 	elog "Each blender slot will use this single directory for the addons."
 	elog "Please, set this value to PreferencesFilePaths.scripts_directory"
 	elog "More info you can find at page "
-	elog "https://docs.blender.org/manual/en/latest/preferences/file.html#scripts-path"
-	elog
+	elog "https://docs.blender.org/manual/en/3.4/editors/preferences/file_paths.html#data"
 }
 
 # @FUNCTION: blender-addon_pkg_postrm
