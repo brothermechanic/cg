@@ -39,7 +39,7 @@ REQUIRED_USE="^^ ( abi7-compat abi8-compat abi9-compat )
 	python? ( ${PYTHON_REQUIRED_USE} )
 "
 RDEPEND="
-	>=dev-cpp/tbb-2021.4:=
+	>=dev-cpp/tbb-2020.3:=
 	dev-libs/boost:=
 	dev-libs/jemalloc:=
 	dev-libs/log4cplus:=
