@@ -177,6 +177,8 @@ src_configure() {
 
 	if use nanovdb; then
 		mycmakeargs+=(
+			-DCMAKE_CUDA_FLAGS="-ccbin=$(cuda_gccdir)"
+			-DNANOVDB_USE_CUDA=$(usex cuda ON OFF)
 			-DNANOVDB_BUILD_UNITTESTS=$(usex test ON OFF)
 			-DNANOVDB_BUILD_BENCHMARK=$(usex benchmark ON OFF)
 			-DNANOVDB_BUILD_TOOLS=$(usex utils ON OFF)

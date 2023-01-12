@@ -207,7 +207,6 @@ pkg_pretend() {
 }
 
 pkg_setup() {
-	blender_check_requirements
 	python-single-r1_pkg_setup
 }
 
@@ -392,8 +391,13 @@ src_configure() {
 		-WITH_GHOST_X11=$(usex X)
 		-DWITH_GHOST_XDND=$(usex X)								# drag-n-drop support on X11
 		-DWITH_GHOST_WAYLAND=$(usex wayland)
+		-DWITH_GHOST_WAYLAND_APP_ID=blender-${BV}
+		-DWITH_GHOST_WAYLAND_DBUS=$(usex wayland)
+		-DWITH_GHOST_WAYLAND_DYNLOAD=OFF
+		-DWITH_GHOST_WAYLAND_LIBDECOR=OFF
 		-DWITH_IMAGE_CINEON=$(usex dpx)
 		-DWITH_HARU=$(usex pdf)
+		-DWITH_INSTALL_PORTABLE=$(usex portable)
 		-DWITH_IMAGE_DDS=$(usex dds)
 		-DWITH_IMAGE_HDR=$(usex hdr)
 		-DWITH_IMAGE_WEBP=$(usex webp)
@@ -401,7 +405,6 @@ src_configure() {
 		-DWITH_IMAGE_OPENJPEG=$(usex jpeg2k)
 		-DWITH_IMAGE_TIFF=$(usex tiff)
 		-DWITH_INPUT_NDOF=$(usex ndof)
-		-DWITH_INSTALL_PORTABLE=$(usex portable)
 		-DWITH_INTERNATIONAL=$(usex nls)						# I18N fonts and text
 		-DWITH_JACK=$(usex jack)
 		-DWITH_JACK_DYNLOAD=$(usex jack)
