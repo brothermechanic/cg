@@ -48,7 +48,7 @@ IUSE="${IUSE_DESKTOP} ${IUSE_GPU} ${IUSE_LIBS} ${IUSE_CPU} ${IUSE_TEST} ${IUSE_I
 
 REQUIRED_USE="${PYTHON_REQUIRED_USE}
 	|| ( gold lld )
-	|| ( headless wayland X )
+	|| ( headless X )
 	alembic? ( openexr )
 	embree? ( cycles tbb )
 	smoke? ( fftw )
@@ -76,12 +76,15 @@ done
 
 RDEPEND="${PYTHON_DEPS}
 	$(python_gen_cond_dep '
+		dev-python/cython[${PYTHON_USEDEP}]
 		dev-python/numpy[${PYTHON_USEDEP}]
-		dev-python/requests[${PYTHON_USEDEP}]
 		dev-python/python-zstandard[${PYTHON_USEDEP}]
-        dev-libs/boost[python,nls?,icu?,threads(+),${PYTHON_USEDEP}]
+		dev-python/requests[${PYTHON_USEDEP}]
+		dev-libs/boost[python,nls?,icu?,threads(+),${PYTHON_USEDEP}]
 	')
 	media-libs/freetype:=[brotli]
+	media-libs/libepoxy:=
+	media-libs/libjpeg-turbo:=
 	app-arch/brotli:=[static-libs]
 	media-libs/libpng:=
 	media-libs/libsamplerate
@@ -91,21 +94,21 @@ RDEPEND="${PYTHON_DEPS}
 	addons? ( media-blender/addons:${SLOT} )
 	addons_contrib? ( media-blender/addons_contrib:${SLOT} )
 	alembic? ( media-gfx/alembic:=[boost(+),-hdf5] )
-	collada? ( media-libs/opencollada )
+	collada? ( >=media-libs/opencollada-1.6.68 )
 	cuda? ( dev-util/nvidia-cuda-toolkit:= )
 	embree? ( >=media-libs/embree-3.10.0[raymask,tbb?] )
 	ffmpeg? ( media-video/ffmpeg:=[x264,mp3,encode,theora,jpeg2k?,vpx,vorbis,opus,xvid] )
 	fftw? ( sci-libs/fftw:3.0=[openmp?] )
-	gltf-draco? ( media-libs/draco[gltf] )
+	gltf-draco? ( media-libs/draco:=[gltf] )
 	gmp? ( dev-libs/gmp )
 	gtests? (
-		dev-cpp/gflags
-		dev-cpp/glog[gflags]
+		dev-cpp/gflags:=
+		dev-cpp/glog:=[gflags]
 	)
 	jack? ( virtual/jack )
 	jemalloc? ( dev-libs/jemalloc:= )
 	jpeg2k? ( media-libs/openjpeg:2= )
-	libmv? ( sci-libs/ceres-solver )
+	libmv? ( sci-libs/ceres-solver:= )
 	lzo? ( dev-libs/lzo:2= )
 	ndof? (
 		app-misc/spacenavd
@@ -119,13 +122,13 @@ RDEPEND="${PYTHON_DEPS}
 		media-libs/glew:*
 		virtual/glu
 	)
-	oidn? ( media-libs/oidn )
+	oidn? ( >=media-libs/oidn-1.4.1 )
 	openimageio? ( >=media-libs/openimageio-2.3.12.0-r3:= )
 	opencolorio? ( >=media-libs/opencolorio-2.1.1-r7:= )
-	openexr? ( media-libs/openexr:= )
-	opensubdiv? ( media-libs/opensubdiv[cuda?,openmp?,tbb?] )
+	openexr? ( >=media-libs/openexr-3:0= )
+	opensubdiv? ( >=media-libs/opensubdiv-3.4.0[cuda?,openmp?,tbb?] )
 	openvdb? (
-		>=media-gfx/openvdb-9.0.0[abi7-compat(-)?,abi8-compat(-)?,abi9-compat(-)?,abi10-compat(-)?]
+		>=media-gfx/openvdb-9.0.0:=[abi7-compat(-)?,abi8-compat(-)?,abi9-compat(-)?,abi10-compat(-)?,nanovdb?]
 		dev-libs/c-blosc:=
 	)
 	optix? ( >=dev-libs/optix-7.4.0 )
@@ -138,10 +141,10 @@ RDEPEND="${PYTHON_DEPS}
 	sdl? ( media-libs/libsdl2[sound,joystick] )
 	sndfile? ( media-libs/libsndfile )
 	tbb? ( dev-cpp/tbb:= )
-	tiff? ( media-libs/tiff )
+	tiff? ( media-libs/tiff:= )
 	usd? ( media-libs/openusd[monolithic,-python] )
 	valgrind? ( dev-util/valgrind )
-	webp? ( media-libs/libwebp )
+	webp? ( media-libs/libwebp:= )
 	wayland? (
 		>=dev-libs/wayland-1.12
 		>=dev-libs/wayland-protocols-1.15
@@ -229,6 +232,7 @@ src_prepare() {
 
 	eapply "${FILESDIR}/x112.patch"
 	eapply "${FILESDIR}/${SLOT}/blender-system-glog-gflags.patch"
+	eapply "${FILESDIR}/blender-fix-boost-1.81-iostream.patch"
 	#eapply "${FILESDIR}/Fix-build-with-system-glew.patch"
 	if use cg; then
         eapply "${FILESDIR}"/cg-defaults.patch
@@ -347,15 +351,6 @@ src_configure() {
 		)
 	fi
 
-	if use optix; then
-		mycmakeargs+=(
-			-DOPTIX_ROOT_DIR=/opt/optix/SDK
-			-DOPTIX_INCLUDE_DIR=/opt/optix/include
-			-DWITH_CYCLES_DEVICE_OPTIX=ON
-			-DCYCLES_RUNTIME_OPTIX_ROOT_DIR="${EPREFIX}"/opt/optix
-		)
-	fi
-
 	mycmakeargs+=(
 		-DSUPPORT_NEON_BUILD=0
 		-DCMAKE_INSTALL_PREFIX=/usr
@@ -376,7 +371,6 @@ src_configure() {
 		-DWITH_CODEC_AVI=$(usex avi)
 		-DWITH_CODEC_FFMPEG=$(usex ffmpeg)
 		-DWITH_CODEC_SNDFILE=$(usex sndfile)
-		-DWITH_FFTW3=$(usex fftw)
 		-DWITH_CYCLES=$(usex cycles)							# Enable Cycles Render Engine
 		-DWITH_CYCLES_DEVICE_CUDA=$(usex cuda)
 		-DWITH_CYCLES_CUDA_BUILD_SERIAL=$(usex cuda)			# Build cuda kernels in serial mode (if parallel build takes too much RAM or crash)
@@ -387,6 +381,7 @@ src_configure() {
 		-DWITH_CYCLES_STANDALONE_GUI=OFF
 		-DWITH_CYCLES_LOGGING=$(usex gtests)
 		-DWITH_DOC_MANPAGE=$(usex man)
+		-DWITH_FFTW3=$(usex fftw)
 		-DWITH_FREESTYLE=$(usex freestyle)						# advanced edges rendering
 		-WITH_GHOST_X11=$(usex X)
 		-DWITH_GHOST_XDND=$(usex X)								# drag-n-drop support on X11
@@ -420,6 +415,7 @@ src_configure() {
 		-DWITH_MOD_FLUID=$(usex fluid)							# Mantaflow Fluid Simulation Framework
 		-DWITH_MOD_REMESH=$(usex remesh)						# Remesh Modifier
 		-DWITH_MOD_OCEANSIM=$(usex oceansim)					# Ocean Modifier
+		-DWITH_NANOVDB=$(usex nanovdb)							# OpenVDB for rendering on the GPU
 		-DWITH_OPENAL=$(usex openal)
 		-DWITH_OPENCOLLADA=$(usex collada)						# export format support
 		-DWITH_OPENCOLORIO=$(usex opencolorio)
@@ -430,7 +426,6 @@ src_configure() {
 		-DWITH_OPENSUBDIV=$(usex opensubdiv)					# for surface subdivision
 		-DWITH_OPENVDB=$(usex openvdb)							# advanced remesh and smoke
 		-DWITH_OPENVDB_BLOSC=$(usex openvdb)					# compression for OpenVDB
-		-DWITH_NANOVDB=$(usex nanovdb)							# OpenVDB for rendering on the GPU
 		-DWITH_QUADRIFLOW=$(usex quadriflow)					# remesher
 		-DWITH_SDL=$(usex sdl)									# for sound and joystick support
 		-DWITH_SDL_DYNLOAD=$(usex sdl)
@@ -460,6 +455,15 @@ src_configure() {
 		#-Wno-dev
 		#-DCMAKE_FIND_DEBUG_MODE=ON
 	)
+
+	if use optix; then
+		mycmakeargs+=(
+			-DWITH_CYCLES_DEVICE_OPTIX=ON
+			-DCYCLES_RUNTIME_OPTIX_ROOT_DIR="${EPREFIX}"/opt/optix
+			-DOPTIX_ROOT_DIR="${EPREFIX}"/opt/optix/SDK
+			-DOPTIX_INCLUDE_DIR="${EPREFIX}"/opt/optix/include
+		)
+	fi
 
 	append-flags $(usex debug '-DDEBUG' '-DNDEBUG')
 
@@ -537,20 +541,21 @@ src_install() {
 
 		docinto "html/API/blender"
 		dodoc -r "${CMAKE_USE_DIR}"/doc/doxygen/html/.
+
+		# Fix doc installdir
+		docinto html
+		dodoc "${CMAKE_USE_DIR}"/release/text/readme.html
+		rm -r "${ED%/}"/usr/share/doc/blender
 	fi
 
-	# Fix doc installdir
-	docinto html
-	dodoc "${CMAKE_USE_DIR}"/release/text/readme.html
-	rm -r "${ED%/}"/usr/share/doc/blender || die
+	python_optimize "${ED%/}/usr/share/blender/${MY_PV}/scripts"
 
-	#python_fix_shebang "${ED%/}/usr/bin/blender-${MY_PV}-thumbnailer.py"
-	#python_optimize "${ED%/}/usr/share/blender/${MY_PV}/scripts"
-
-	mv "${ED}/usr/bin/blender-thumbnailer" "${ED}/usr/bin/blender-${SLOT}-thumbnailer" || die
-	ln -s "${ED}/usr/bin/blender-${SLOT}-thumbnailer" "${ED}/usr/bin/blender-thumbnailer"
-	mv "${ED}/usr/bin/blender" "${ED}/usr/bin/blender-${SLOT}" || die
-	ln -s "${ED}/usr/bin/blender-${SLOT}" "${ED}/usr/bin/blender"
+	pushd ${ED}/usr/bin
+	mv "blender-thumbnailer" "blender-${SLOT}-thumbnailer" || die
+	ln -s "blender-${SLOT}-thumbnailer" "blender-thumbnailer"
+	mv "blender" "blender-${SLOT}" || die
+	ln -s "blender-${SLOT}" "blender"
+	popd
 
 	elog "${PN^}-$( grep -Po 'CPACK_PACKAGE_VERSION "\K[^"]..' ${BUILD_DIR}/CPackConfig.cmake ) has been installed."
 }
