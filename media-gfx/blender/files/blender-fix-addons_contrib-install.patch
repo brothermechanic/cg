@@ -1,0 +1,21 @@
+--- a/CMakeLists.txt	2023-01-18 11:40:58.576861366 +0300
++++ b/CMakeLists.txt	2023-01-18 13:08:30.737920041 +0300
+@@ -984,6 +984,18 @@ if(WITH_PYTHON)
+       "control systems: * CONTINUING WITHOUT ADDONS *"
+     )
+   endif()
++  
++  file(GLOB RESULT "${CMAKE_SOURCE_DIR}/release/scripts/addons_contrib")
++  list(LENGTH RESULT DIR_LEN)
++  if(DIR_LEN EQUAL 0)
++    message(
++      WARNING
++      "Addons path '${CMAKE_SOURCE_DIR}/release/scripts/addons_contrib' is missing, "
++      "This is a 'git submodule', which are known not to work with bridges to other version "
++      "control systems: * CONTINUING WITHOUT ADDONS *"
++    )
++  endif()
++
+ endif()
+ 
+ 

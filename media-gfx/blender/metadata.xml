@@ -7,6 +7,9 @@
 	<maintainer restrict="&gt;=media-gfx/blender-9999" type="person">
 		<email>perestoronin@gmail.com</email>
 	</maintainer>
+	<maintainer restrict="&gt;=media-gfx/blender-9999" type="person">
+		<email>anex5.2008@gmail.com</email>
+	</maintainer>
 
 	<longdescription>
 		Blender, the open source software for 3D modeling, animation,
@@ -23,9 +26,6 @@
 		</flag>
 		<flag name="avi">
 			Add support for AVI codec.
-		</flag>
-		<flag name="blender">
-			Build main blender editor.
 		</flag>
 		<flag name="boolean">
 			Build with boolean modifier.
@@ -61,9 +61,6 @@
 		</flag>
 		<flag name="freestyle">
 			FreeStyle is an edge- and line-based non-photorealistic rendering engine.
-		</flag>
-		<flag name="game-engine">
-			Adds Game Engine support to Blender.
 		</flag>
 		<flag name="oceansim">
 			Build with modifier for ocean simulation.
@@ -114,6 +111,12 @@
 			Nvidia Cuda Shader Models https://developer.nvidia.com/cuda-gpus
 		</flag>
 		<flag name="sm_70">
+			Nvidia Cuda Shader Models https://developer.nvidia.com/cuda-gpus
+		</flag>
+		<flag name="sm_75">
+			Nvidia Cuda Shader Models https://developer.nvidia.com/cuda-gpus
+		</flag>
+		<flag name="sm_86">
 			Nvidia Cuda Shader Models https://developer.nvidia.com/cuda-gpus
 		</flag>
 		<flag name="smoke">

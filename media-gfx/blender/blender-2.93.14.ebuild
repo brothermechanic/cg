@@ -3,31 +3,37 @@
 
 EAPI=8
 
-PYTHON_COMPAT=( python3_{8..10} )
-LLVM_MAX_SLOT="14"
+PYTHON_COMPAT=( python3_{9..10} )
+LLVM_MAX_SLOT="15"
 
-inherit check-reqs cmake flag-o-matic pax-utils python-single-r1 toolchain-funcs xdg-utils
+inherit check-reqs cmake cuda flag-o-matic pax-utils python-single-r1 toolchain-funcs xdg-utils
 
 DESCRIPTION="Blender is a free and open-source 3D creation suite."
 HOMEPAGE="https://www.blender.org"
 
-MY_PV="$(ver_cut 1-2)"
-SRC_URI="https://download.blender.org/source/${P}.tar.xz"
-TEST_TARBALL_VERSION="${MY_PV}.0"
-SRC_URI+=" https://dev.gentoo.org/~sam/distfiles/${CATEGORY}/${PN}/${PN}-3.0.1-ffmpeg-5.0.patch.bz2"
-SRC_URI+=" test? ( https://dev.gentoo.org/~sam/distfiles/${CATEGORY}/${PN}/${PN}-${TEST_TARBALL_VERSION}-tests.tar.bz2 )"
-#EGIT_REPO_URI="https://git.blender.org/blender"
-#EGIT_SUBMODULES=( release/datafiles/locale )
-#EGIT_BRANCH="blender-v${MY_PV}-release"
-#EGIT_COMMIT="3e85bb34d0d792b49cf4923f781d98791c5a161c"
-KEYWORDS="amd64 ~x86 ~arm64"
+inherit git-r3
+EGIT_REPO_URI="https://git.blender.org/blender.git"
+EGIT_SUBMODULES=( release/datafiles/locale release/scripts/addons release/scripts/addons_contrib )
+if [[ ${PV} == 9999 ]]; then
+	EGIT_BRANCH="master"
+    KEYWORDS=""
+	MY_PV="3.5"
+else
+	#SRC_URI="https://download.blender.org/source/${P}.tar.xz"
+	#TEST_TARBALL_VERSION=2.93.0
+	#SRC_URI+=" test? ( https://dev.gentoo.org/~sam/distfiles/${CATEGORY}/${PN}/${PN}-${TEST_TARBALL_VERSION}-tests.tar.bz2 )"
+	MY_PV="$(ver_cut 1-2)"
+	EGIT_BRANCH="blender-v${MY_PV}-release"
+	KEYWORDS="~amd64 ~x86 ~arm64 ~arm"
+fi
 
-SLOT="${MY_PV}"
+: ${GENTOO_BLENDER_ADDONS_DIR:-"/usr/share/blender/scripts/addons"} # For default preferences only
+SLOT="$MY_PV"
 LICENSE="|| ( GPL-3 BL )"
 CUDA_ARCHS="sm_30 sm_35 sm_50 sm_52 sm_61 sm_70 sm_75 sm_86"
-IUSE_DESKTOP="cg -portable +X +addons +addons_contrib +nls +icu -ndof"
+IUSE_DESKTOP="cg -portable +X headless +nls +icu -ndof"
 IUSE_GPU="+opengl -optix cuda opencl ${CUDA_ARCHS}"
-IUSE_LIBS="+cycles gmp sdl jack openal pulseaudio +freestyle -osl +openvdb nanovdb abi6-compat abi7-compat abi8-compat abi9-compat +opensubdiv +opencolorio +openimageio +pdf +pugixml +potrace +collada -alembic +gltf-draco +fftw +oidn +quadriflow -usd +bullet -valgrind +jemalloc libmv +llvm"
+IUSE_LIBS="clang +cycles gmp sdl jack openal pulseaudio +freestyle -osl +openvdb nanovdb abi7-compat abi8-compat abi9-compat abi10-compat +opensubdiv +opencolorio +openimageio +pdf +pugixml +potrace +collada -alembic +gltf-draco +fftw +oidn +quadriflow -usd +bullet -valgrind +jemalloc libmv +llvm"
 IUSE_CPU="+openmp embree +simd +tbb +lld gold"
 IUSE_TEST="-debug -doc -man -gtests test"
 IUSE_IMAGE="-dpx -dds +openexr jpeg2k tiff +hdr"
@@ -38,6 +44,7 @@ IUSE="${IUSE_DESKTOP} ${IUSE_GPU} ${IUSE_LIBS} ${IUSE_CPU} ${IUSE_TEST} ${IUSE_I
 
 REQUIRED_USE="${PYTHON_REQUIRED_USE}
 	|| ( gold lld )
+	|| ( headless X )
 	alembic? ( openexr )
 	embree? ( cycles tbb )
 	smoke? ( fftw )
@@ -50,7 +57,7 @@ REQUIRED_USE="${PYTHON_REQUIRED_USE}
 	openexr? ( openimageio )
 	optix? ( cycles cuda )
 	openvdb? (
-		^^ ( abi6-compat abi7-compat abi8-compat abi9-compat )
+		^^ ( abi7-compat abi8-compat abi9-compat abi10-compat )
 		cycles tbb
 	)
 	osl? ( cycles llvm )
@@ -66,42 +73,37 @@ done
 
 RDEPEND="${PYTHON_DEPS}
 	$(python_gen_cond_dep '
+		dev-python/cython[${PYTHON_USEDEP}]
 		dev-python/numpy[${PYTHON_USEDEP}]
+		dev-python/python-zstandard[${PYTHON_USEDEP}]
 		dev-python/requests[${PYTHON_USEDEP}]
-        dev-libs/boost[python,nls?,icu?,threads(+),${PYTHON_USEDEP}]
+		dev-libs/boost[python,nls?,icu?,threads(+),${PYTHON_USEDEP}]
 	')
-	media-libs/freetype:=
+	media-libs/freetype:=[brotli]
+	media-libs/libepoxy:=
+	media-libs/libjpeg-turbo:=
 	app-arch/brotli:=[static-libs]
 	media-libs/libpng:=
 	media-libs/libsamplerate
 	sys-libs/zlib:=
 	virtual/jpeg
 	virtual/libintl
-	addons? ( media-blender/addons:${SLOT} )
-	addons_contrib? ( media-blender/addons_contrib:${SLOT} )
-	alembic? ( >=media-gfx/alembic-1.8.3-r2:=[boost(+),-hdf5] )
+	alembic? ( media-gfx/alembic:=[boost(+),-hdf5] )
 	collada? ( >=media-libs/opencollada-1.6.68 )
-	cuda? ( <=dev-util/nvidia-cuda-toolkit-11.4:= )
+	cuda? ( dev-util/nvidia-cuda-toolkit:= )
 	embree? ( >=media-libs/embree-3.10.0[raymask,tbb?] )
 	ffmpeg? ( media-video/ffmpeg:=[x264,mp3,encode,theora,jpeg2k?,vpx,vorbis,opus,xvid] )
-	fftw? ( sci-libs/fftw:3.0= )
-	gltf-draco? ( media-libs/draco[gltf] )
+	fftw? ( sci-libs/fftw:3.0=[openmp?] )
+	gltf-draco? ( media-libs/draco:=[gltf] )
 	gmp? ( dev-libs/gmp )
 	gtests? (
-		dev-cpp/gflags
-		dev-cpp/glog[gflags]
-	)
-	X? (
-		x11-libs/libX11
-		x11-libs/libXi
-		x11-libs/libXxf86vm
+		dev-cpp/gflags:=
+		dev-cpp/glog:=[gflags]
 	)
 	jack? ( virtual/jack )
 	jemalloc? ( dev-libs/jemalloc:= )
 	jpeg2k? ( media-libs/openjpeg:2= )
-	libmv? ( sci-libs/ceres-solver )
-	lld? ( <sys-devel/lld-$((${LLVM_MAX_SLOT} + 1)):= )
-	llvm? ( <sys-devel/llvm-$((${LLVM_MAX_SLOT} + 1)):= )
+	libmv? ( sci-libs/ceres-solver:= )
 	lzo? ( dev-libs/lzo:2= )
 	ndof? (
 		app-misc/spacenavd
@@ -116,17 +118,17 @@ RDEPEND="${PYTHON_DEPS}
 		media-libs/glew:*
 		virtual/glu
 	)
-	oidn? ( media-libs/oidn )
-	openimageio? ( =media-libs/openimageio-2.3.12.0-r3:= )
-	opencolorio? ( =media-libs/opencolorio-2.1.1-r7:= )
+	oidn? ( >=media-libs/oidn-1.4.1 )
+	openimageio? ( >=media-libs/openimageio-2.3.12.0-r3:= )
+	opencolorio? ( >=media-libs/opencolorio-2.1.1-r7:= )
 	openexr? ( >=media-libs/openexr-3:0= )
 	opensubdiv? ( >=media-libs/opensubdiv-3.4.0[cuda?,opencl?,openmp?,tbb?] )
 	openvdb? (
-		>=media-gfx/openvdb-9.0.0[abi6-compat(-)?,abi7-compat(-)?,abi8-compat(-)?,abi9-compat(-)?]
+		>=media-gfx/openvdb-8.2.0:=[abi7-compat(-)?,abi8-compat(-)?,abi9-compat(-)?,nanovdb?]
 		dev-libs/c-blosc:=
 	)
-	optix? ( =dev-libs/optix-7.3.0 )
-	osl? ( >=media-libs/osl-1.11.10.0 )
+	optix? ( >=dev-libs/optix-7.4.0 )
+	osl? ( >=media-libs/osl-1.11.16.0-r3:= )
 	pdf? ( media-libs/libharu )
 	potrace? ( media-gfx/potrace )
 	pugixml? ( dev-libs/pugixml )
@@ -135,21 +137,29 @@ RDEPEND="${PYTHON_DEPS}
 	sdl? ( media-libs/libsdl2[sound,joystick] )
 	sndfile? ( media-libs/libsndfile )
 	tbb? ( <dev-cpp/tbb-2021.4.0:= )
-	tiff? ( media-libs/tiff )
+	tiff? ( media-libs/tiff:= )
 	usd? ( media-libs/openusd[monolithic,-python] )
 	valgrind? ( dev-util/valgrind )
+	X? (
+		x11-libs/libX11
+		x11-libs/libXi
+		x11-libs/libXxf86vm
+	)
 "
 
-DEPEND="${RDEPEND}
+DEPEND="
 	dev-cpp/eigen:=
 "
 
 BDEPEND="
+	lld? ( <sys-devel/lld-$((${LLVM_MAX_SLOT} + 1)):= )
+	llvm? ( <sys-devel/llvm-$((${LLVM_MAX_SLOT} + 1)):= )
+    clang? ( <sys-devel/clang-$((${LLVM_MAX_SLOT} + 1)):= )
 	virtual/pkgconfig
 	nls? ( sys-devel/gettext )
 	doc? (
-		dev-python/sphinx
 		app-doc/doxygen[-nodot(-),dot(+)]
+		dev-python/sphinx[latex]
 	)
 "
 
@@ -158,16 +168,16 @@ RESTRICT="
 	!test? ( test )
 "
 
-QA_WX_LOAD="usr/share/${PN}/${MY_PV}/scripts/addons/cycles/lib/kernel_sm_*.cubin"
+QA_WX_LOAD="usr/share/${PN}/${SLOT}/scripts/addons/cycles/lib/kernel_sm_*.cubin"
 QA_PREBUILT="${QA_WX_LOAD}"
 QA_PRESTRIPPED="${QA_WX_LOAD}"
 QA_FLAGS_IGNORED="${QA_WX_LOAD}"
 
 PATCHES=(
-	"${FILESDIR}"/${PN}-3.0.0-intern-ghost-fix-typo-in-finding-XF86VMODE.patch
-	"${FILESDIR}"/${PN}-3.0.1-openexr.patch
-	"${FILESDIR}"/${PN}-3.0.1-openimageio-2.3.patch
-	"${WORKDIR}"/${PN}-3.0.1-ffmpeg-5.0.patch
+	"${FILESDIR}"/${SLOT}/${PN}-3.0.0-intern-ghost-fix-typo-in-finding-XF86VMODE.patch
+	"${FILESDIR}"/${SLOT}/${PN}-3.0.1-openexr.patch
+	"${FILESDIR}"/${SLOT}/${PN}-3.0.1-openimageio-2.3.patch
+	"${FILESDIR}"/${SLOT}/${PN}-3.0.1-ffmpeg-5.0.patch
 )
 
 blender_check_requirements() {
@@ -195,46 +205,42 @@ pkg_pretend() {
 }
 
 pkg_setup() {
-	blender_check_requirements
 	python-single-r1_pkg_setup
 }
 
 src_unpack() {
-	default
+	git-r3_src_unpack
 
 	if use test; then
+		default
 		mkdir -p lib || die
 		mv "${WORKDIR}"/blender-${TEST_TARBALL_VERSION}-tests/tests lib || die
 	fi
 }
 
 src_prepare() {
-	python_setup
-
 	cmake_src_prepare
 
 	blender_get_version
 
+	use cuda && cuda_src_prepare
+
 	eapply "${FILESDIR}/x112.patch"
-	eapply "${FILESDIR}/${MY_PV}/blender-system-glog-gflags.patch"
+	eapply "${FILESDIR}/${SLOT}/blender-system-glog-gflags.patch"
 	eapply "${FILESDIR}/Fix-build-with-system-glew.patch"
+	eapply "${FILESDIR}/blender-fix-boost-1.81-iostream.patch"
 	if use cg; then
-        eapply "${FILESDIR}"/${SLOT}/cg-addons.patch
         eapply "${FILESDIR}"/${SLOT}/cg-defaults.patch
-        eapply "${FILESDIR}"/${SLOT}/cg-keymap.patch
-        eapply "${FILESDIR}"/${SLOT}/cg-mesh.patch
-        eapply "${FILESDIR}"/${SLOT}/cg-userdef.patch
+        cp "${FILESDIR}"/splash.png release/datafiles/
     fi
 
-	if use addons_contrib; then
-        #set BLENDER_ADDONS_DIR to userpref
-        if ! [ -d "${BLENDER_ADDONS_DIR}" ]; then
-        	BLENDER_ADDONS_DIR="/usr/share/blender/${SLOT}/scripts/addons/"
-        fi
-        sed -i -e "s|.pythondir.*|.pythondir = \"${BLENDER_ADDONS_DIR}\",|" "${S}"/release/datafiles/userdef/userdef_default.c || die
-    fi
+    #set GENTOO_BLENDER_ADDONS_DIR to userpref
+    sed -i -e "s|.pythondir.*|.pythondir = \"${GENTOO_BLENDER_ADDONS_DIR}\",|" "${S}"/release/datafiles/userdef/userdef_default.c || die
+
 	# remove some bundled deps
 	rm -rf extern/{Eigen3,glew-es,lzo,gflags,glog,draco,glew} || die
+	#rm -rf intern/guardedalloc  || die
+	#sed -i '/add_subdirectory(guardedalloc)/d' intern/CMakeLists.txt || die
 
 	# we don't want static glew, but it's scattered across
 	# multiple files that differ from version to version
@@ -250,19 +256,20 @@ src_prepare() {
 		-i doc/doxygen/Doxyfile || die
 
 	# Prepare icons and .desktop files for slotting.
-	sed -e "s|blender.svg|blender-${BV}.svg|" -i source/creator/CMakeLists.txt || die
-	sed -e "s|blender-symbolic.svg|blender-${BV}-symbolic.svg|" -i source/creator/CMakeLists.txt || die
-	sed -e "s|blender.desktop|blender-${BV}.desktop|" -i source/creator/CMakeLists.txt || die
-	sed -e "s|blender-thumbnailer.py|blender-${BV}-thumbnailer.py|" -i source/creator/CMakeLists.txt || die
+	sed -e "s|blender.svg|blender-${SLOT}.svg|" -i source/creator/CMakeLists.txt || die
+	sed -e "s|blender-symbolic.svg|blender-${SLOT}-symbolic.svg|" -i source/creator/CMakeLists.txt || die
+	sed -e "s|blender.desktop|blender-${SLOT}.desktop|" -i source/creator/CMakeLists.txt || die
+	sed -e "s|blender-thumbnailer.py|blender-${SLOT}-thumbnailer.py|" -i source/creator/CMakeLists.txt || die
 
 	sed -e "s|Name=Blender|Name=Blender ${PV}|" -i release/freedesktop/blender.desktop || die
-	sed -e "s|Exec=blender|Exec=blender-${BV}|" -i release/freedesktop/blender.desktop || die
-	sed -e "s|Icon=blender|Icon=blender-${BV}|" -i release/freedesktop/blender.desktop || die
+	sed -e "s|Exec=blender|Exec=blender-${SLOT}|" -i release/freedesktop/blender.desktop || die
+	sed -e "s|Icon=blender|Icon=blender-${SLOT}|" -i release/freedesktop/blender.desktop || die
 
-	mv release/freedesktop/icons/scalable/apps/blender.svg release/freedesktop/icons/scalable/apps/blender-${BV}.svg || die
-	mv release/freedesktop/icons/symbolic/apps/blender-symbolic.svg release/freedesktop/icons/symbolic/apps/blender-${BV}-symbolic.svg || die
-	mv release/freedesktop/blender.desktop release/freedesktop/blender-${BV}.desktop || die
-	mv release/bin/blender-thumbnailer.py release/bin/blender-${BV}-thumbnailer.py || die
+	mv release/freedesktop/icons/scalable/apps/blender.svg release/freedesktop/icons/scalable/apps/blender-${SLOT}.svg || die
+	mv release/freedesktop/icons/symbolic/apps/blender-symbolic.svg release/freedesktop/icons/symbolic/apps/blender-${SLOT}-symbolic.svg || die
+	mv release/freedesktop/blender.desktop release/freedesktop/blender-${SLOT}.desktop || die
+	mv release/bin/blender-thumbnailer.py release/bin/blender-${SLOT}-thumbnailer.py || die
+
 
 	if use test; then
 		# Without this the tests will try to use /usr/bin/blender and /usr/share/blender/ to run the tests.
@@ -295,8 +302,6 @@ src_configure() {
 		has_version "sys-devel/llvm:${slot}" && LLVM_SLOT="${slot}"
 	done
 
-	python_setup
-
 	# FIX: forcing '-funsigned-char' fixes an anti-aliasing issue with menu
 	# shadows, see bug #276338 for reference
 	append-flags -funsigned-char -fno-strict-aliasing
@@ -304,14 +309,12 @@ src_configure() {
 
 	if use openvdb; then
 		local version
-		if use abi6-compat; then
-			version=6;
-		elif use abi7-compat; then
+		if use abi7-compat; then
 			version=7;
-        elif use abi8-compat; then
+		elif use abi8-compat; then
 			version=8;
-		elif use abi9-compat; then
-			version=9
+        elif use abi9-compat; then
+			version=9;
 		else
 			die "Openvdb abi version not compatible"
 		fi
@@ -319,7 +322,8 @@ src_configure() {
 	fi
 
 	local mycmakeargs=()
-	#CUDA Kernel Selection
+
+	# CUDA Kernel Selection
 	local CUDA_ARCH=""
 	if use cuda; then
 		for CA in ${CUDA_ARCHS}; do
@@ -338,19 +342,13 @@ src_configure() {
 			-DCUDA_INCLUDE_DIRS=/opt/cuda/include
 			-DCUDA_CUDART_LIBRARY=/opt/cuda/lib64
 			-DCUDA_NVCC_EXECUTABLE=/opt/cuda/bin/nvcc
-			-DCUDA_NVCC_FLAGS=-std=c++11
-		)
-	fi
-
-	if use optix; then
-		mycmakeargs+=(
-			-DOPTIX_ROOT_DIR=/opt/optix/SDK
-			-DOPTIX_INCLUDE_DIR=/opt/optix/include
-			-DWITH_CYCLES_DEVICE_OPTIX=ON
+			-DCUDA_NVCC_FLAGS="-std=c++14"
+			-DCUDA_HOST_COMPILER="$(cuda_gccdir)"
 		)
 	fi
 
 	mycmakeargs+=(
+		-DSUPPORT_NEON_BUILD=$(usex arm 1 0)
 		-DCMAKE_INSTALL_PREFIX=/usr
 		-DPYTHON_VERSION="${EPYTHON/python/}"
 		-DPYTHON_INCLUDE_DIR="$(python_get_includedir)"
@@ -359,8 +357,8 @@ src_configure() {
 		-DWITH_CPU_SIMD=$(usex simd)
 		-DWITH_PYTHON_INSTALL=$(usex !portable OFF ON)			# Copy system python
 		-DWITH_PYTHON_INSTALL_NUMPY=$(usex !portable OFF ON)
-		-DWITH_PYTHON_MODULE=$(usex !X)							# runs without a user interface
-		-DWITH_HEADLESS=$(usex !X)								# server mode only
+		-DWITH_PYTHON_MODULE=$(usex headless)					# runs without a user interface
+		-DWITH_HEADLESS=$(usex headless)						# server mode only
 		-DWITH_ALEMBIC=$(usex alembic)							# export format support
 		-DWITH_ASSERT_ABORT=$(usex debug)
 		-DWITH_BOOST=ON
@@ -369,7 +367,6 @@ src_configure() {
 		-DWITH_CODEC_AVI=$(usex avi)
 		-DWITH_CODEC_FFMPEG=$(usex ffmpeg)
 		-DWITH_CODEC_SNDFILE=$(usex sndfile)
-		-DWITH_FFTW3=$(usex fftw)
 		-DWITH_CYCLES=$(usex cycles)							# Enable Cycles Render Engine
 		-DWITH_CYCLES_DEVICE_CUDA=$(usex cuda)
 		-DWITH_CYCLES_CUDA_BUILD_SERIAL=$(usex cuda)			# Build cuda kernels in serial mode (if parallel build takes too much RAM or crash)
@@ -381,17 +378,19 @@ src_configure() {
 		-DWITH_CYCLES_STANDALONE_GUI=OFF
 		-DWITH_CYCLES_LOGGING=$(usex gtests)
 		-DWITH_DOC_MANPAGE=$(usex man)
+		-DWITH_FFTW3=$(usex fftw)
 		-DWITH_FREESTYLE=$(usex freestyle)						# advanced edges rendering
+		-WITH_GHOST_X11=$(usex X)
 		-DWITH_GHOST_XDND=$(usex X)								# drag-n-drop support on X11
 		-DWITH_IMAGE_CINEON=$(usex dpx)
 		-DWITH_HARU=$(usex pdf)
+		-DWITH_INSTALL_PORTABLE=$(usex portable)
 		-DWITH_IMAGE_DDS=$(usex dds)
 		-DWITH_IMAGE_HDR=$(usex hdr)
 		-DWITH_IMAGE_OPENEXR=$(usex openexr)
 		-DWITH_IMAGE_OPENJPEG=$(usex jpeg2k)
 		-DWITH_IMAGE_TIFF=$(usex tiff)
 		-DWITH_INPUT_NDOF=$(usex ndof)
-		-DWITH_INSTALL_PORTABLE=$(usex portable)
 		-DWITH_INTERNATIONAL=$(usex nls)						# I18N fonts and text
 		-DWITH_JACK=$(usex jack)
 		-DWITH_JACK_DYNLOAD=$(usex jack)
@@ -407,6 +406,7 @@ src_configure() {
 		-DWITH_MOD_FLUID=$(usex fluid)							# Mantaflow Fluid Simulation Framework
 		-DWITH_MOD_REMESH=$(usex remesh)						# Remesh Modifier
 		-DWITH_MOD_OCEANSIM=$(usex oceansim)					# Ocean Modifier
+		-DWITH_NANOVDB=$(usex nanovdb)							# OpenVDB for rendering on the GPU
 		-DWITH_OPENAL=$(usex openal)
 		-DWITH_OPENCOLLADA=$(usex collada)						# export format support
 		-DWITH_OPENCOLORIO=$(usex opencolorio)
@@ -417,7 +417,6 @@ src_configure() {
 		-DWITH_OPENSUBDIV=$(usex opensubdiv)					# for surface subdivision
 		-DWITH_OPENVDB=$(usex openvdb)							# advanced remesh and smoke
 		-DWITH_OPENVDB_BLOSC=$(usex openvdb)					# compression for OpenVDB
-		-DWITH_NANOVDB=$(usex nanovdb)							# OpenVDB for rendering on the GPU
 		-DWITH_QUADRIFLOW=$(usex quadriflow)					# remesher
 		-DWITH_SDL=$(usex sdl)									# for sound and joystick support
 		-DWITH_SDL_DYNLOAD=$(usex sdl)
@@ -441,8 +440,22 @@ src_configure() {
 		#-DUSD_LIBRARY=/opt/openusd/lib/libusd_ms.so
 		-DWITH_NINJA_POOL_JOBS=OFF								# for machines with 16GB of RAM or less
 		-DBUILD_SHARED_LIBS=OFF
-		-Wno-dev
+		-DWITH_CLANG=$(usex clang)
+		#-DCLANG_ROOT_DIR="/usr/lib/llvm/${LLVM_SLOT}"
+		-DCLANG_INCLUDE_DIR="/usr/lib/llvm/${LLVM_SLOT}/include/clang"
+		#-Wno-dev
+		#-DCMAKE_FIND_DEBUG_MODE=ON
 	)
+
+	if use optix; then
+		mycmakeargs+=(
+			-DWITH_CYCLES_DEVICE_OPTIX=ON
+			-DCYCLES_RUNTIME_OPTIX_ROOT_DIR="${EPREFIX}"/opt/optix
+			-DOPTIX_ROOT_DIR="${EPREFIX}"/opt/optix/SDK
+			-DOPTIX_INCLUDE_DIR="${EPREFIX}"/opt/optix/include
+		)
+	fi
+
 	append-flags $(usex debug '-DDEBUG' '-DNDEBUG')
 
 	if tc-is-gcc ; then
@@ -464,18 +477,21 @@ src_test() {
 	blender_get_version
 	# Define custom blender data/script file paths not be able to find them otherwise during testing.
 	# (Because the data is in the image directory and it will default to look in /usr/share)
-	export BLENDER_SYSTEM_SCRIPTS=${ED}/usr/share/blender/${BV}/scripts
-	export BLENDER_SYSTEM_DATAFILES=${ED}/usr/share/blender/${BV}/datafiles
+	export BLENDER_SYSTEM_SCRIPTS="${ED}"/usr/share/blender/${SLOT}/scripts
+	export BLENDER_SYSTEM_DATAFILES="${ED}"/usr/share/blender/${SLOT}/datafiles
+
+	# Sanity check that the script and datafile path is valid.
+	# If they are not vaild, blender will fallback to the default path which is not what we want.
+	[ -d "$BLENDER_SYSTEM_SCRIPTS" ] || die "The custom script path is invalid, fix the ebuild!"
+	[ -d "$BLENDER_SYSTEM_DATAFILES" ] || die "The custom datafiles path is invalid, fix the ebuild!"
 
 	cmake_src_test
 
 	# Clean up the image directory for src_install
-	rm -fr ${ED}/* || die
+	rm -fr "${ED}"/* || die
 }
 
 src_install() {
-	python_setup
-
 	blender_get_version
 
 	# Pax mark blender for hardened support.
@@ -491,8 +507,8 @@ src_install() {
 	if use doc; then
 		# Define custom blender data/script file paths. Otherwise Blender will not be able to find them during doc building.
 		# (Because the data is in the image directory and it will default to look in /usr/share)
-		export BLENDER_SYSTEM_SCRIPTS=${ED}/usr/share/blender/${BV}/scripts
-		export BLENDER_SYSTEM_DATAFILES=${ED}/usr/share/blender/${BV}/datafiles
+		export BLENDER_SYSTEM_SCRIPTS=${ED}/usr/share/blender/${SLOT}/scripts
+		export BLENDER_SYSTEM_DATAFILES=${ED}/usr/share/blender/${SLOT}/datafiles
 
 		# Workaround for binary drivers.
 		addpredict /dev/ati
@@ -518,15 +534,19 @@ src_install() {
 		dodoc -r "${CMAKE_USE_DIR}"/doc/doxygen/html/.
 	fi
 
+	# Fix doc installdir
 	docinto html
 	dodoc "${CMAKE_USE_DIR}"/release/text/readme.html
-	rm -r "${ED%/}"/usr/share/doc/blender || die
+	rm -r "${ED%/}"/usr/share/doc/blender
+	python_fix_shebang "${ED}/usr/bin/blender-${BV}-thumbnailer.py"
+	python_optimize "${ED%/}/usr/share/blender/${SLOT}/scripts"
 
-	python_fix_shebang "${ED%/}/usr/bin/blender-${BV}-thumbnailer.py"
-	python_optimize "${ED%/}/usr/share/blender/${BV}/scripts"
-	ln -s "${ED}/usr/bin/blender-${MY_PV}" "${ED}/usr/bin/blender"
+	pushd ${ED}/usr/bin
+	mv "blender" "blender-${SLOT}" || die
+	ln -s "blender-${SLOT}" "blender"
+	popd
 
-	elog "${PN^}-$( grep -Po 'CPACK_PACKAGE_VERSION "\K[^"]...' ${BUILD_DIR}/CPackConfig.cmake ) has been installed."
+	elog "${PN^}-$( grep -Po 'CPACK_PACKAGE_VERSION "\K[^"]..' ${BUILD_DIR}/CPackConfig.cmake ) has been installed."
 }
 
 pkg_postinst() {
@@ -545,11 +565,11 @@ pkg_postinst() {
 	elog "changing the 'Temporary Files' directory in Blender preferences."
 	elog
 
-	if ! use python_single_target_python3_9; then
+	if ! use python_single_target_python3_10; then
 		elog "You are building Blender with a newer python version than"
 		elog "supported by this version upstream."
 		elog "If you experience breakages with e.g. plugins, please switch to"
-		elog "python_single_target_python3_9 instead."
+		elog "python_single_target_python3_10 instead."
 		elog "Bug: https://bugs.gentoo.org/737388"
 		elog
 	fi

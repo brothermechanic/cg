@@ -38,7 +38,8 @@ _GENTOO_BLENDER_ADDONS_HOME=()
 # @DEFAULT_UNSET
 # @DESCRIPTION:
 # Directory for installing blender addons.
-: ${GENTOO_BLENDER_ADDONS_DIR:=}
+# Set empty value for this variable here to install addons to blender default directory according to blender slot
+: ${GENTOO_BLENDER_ADDONS_DIR:-"/usr/share/blender/scripts/addons"}
 
 # @ECLASS_VARIABLE: _BLENDER_ALL_IMPLS
 # @INTERNAL

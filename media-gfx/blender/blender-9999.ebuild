@@ -6,18 +6,17 @@ EAPI=8
 PYTHON_COMPAT=( python3_{10..11} )
 LLVM_MAX_SLOT="15"
 
-inherit check-reqs cmake cuda flag-o-matic pax-utils python-single-r1 toolchain-funcs xdg-utils blender-addons-dir
+inherit check-reqs cmake cuda flag-o-matic pax-utils python-single-r1 toolchain-funcs xdg-utils
 
 DESCRIPTION="Blender is a free and open-source 3D creation suite."
 HOMEPAGE="https://www.blender.org"
 
 inherit git-r3
+EGIT_REPO_URI="https://git.blender.org/blender.git"
+EGIT_SUBMODULES=( release/datafiles/locale release/scripts/addons release/scripts/addons_contrib )
 if [[ ${PV} == 9999 ]]; then
-	#inherit git-r3
-	EGIT_REPO_URI="https://git.blender.org/blender"
-	EGIT_SUBMODULES=( release/datafiles/locale )
 	EGIT_BRANCH="master"
-	#EGIT_COMMIT=""
+	#EGIT_COMMIT="fe3110a2859d84401dceda06fd41f3b082eae790"
     KEYWORDS=""
 	MY_PV="3.5"
 else
@@ -25,17 +24,15 @@ else
 	#TEST_TARBALL_VERSION=2.93.0
 	#SRC_URI+=" test? ( https://dev.gentoo.org/~sam/distfiles/${CATEGORY}/${PN}/${PN}-${TEST_TARBALL_VERSION}-tests.tar.bz2 )"
 	MY_PV="$(ver_cut 1-2)"
-	EGIT_REPO_URI="https://git.blender.org/blender"
-	EGIT_SUBMODULES=( release/datafiles/locale )
 	EGIT_BRANCH="blender-v${MY_PV}-release"
-    #EGIT_COMMIT="3e85bb34d0d792b49cf4923f781d98791c5a161c"
-	KEYWORDS="~amd64 ~x86 ~arm64"
+	KEYWORDS="~amd64 ~x86 ~arm64 ~arm"
 fi
 
+: ${GENTOO_BLENDER_ADDONS_DIR:-"/usr/share/blender/scripts/addons"} # For default preferences only
 SLOT="$MY_PV"
 LICENSE="|| ( GPL-3 BL )"
 CUDA_ARCHS="sm_30 sm_35 sm_50 sm_52 sm_61 sm_70 sm_75 sm_86"
-IUSE_DESKTOP="cg -portable +X headless wayland +addons +addons_contrib +nls +icu -ndof"
+IUSE_DESKTOP="cg -portable +X headless wayland +nls +icu -ndof"
 IUSE_GPU="+opengl -optix cuda ${CUDA_ARCHS}"
 IUSE_LIBS="clang +cycles gmp sdl jack openal pulseaudio +freestyle -osl +openvdb nanovdb abi7-compat abi8-compat abi9-compat abi10-compat +opensubdiv +opencolorio +openimageio +pdf +pugixml +potrace +collada -alembic +gltf-draco +fftw +oidn +quadriflow -usd +bullet -valgrind +jemalloc libmv +llvm"
 IUSE_CPU="+openmp embree +simd +tbb +lld gold"
@@ -91,8 +88,6 @@ RDEPEND="${PYTHON_DEPS}
 	sys-libs/zlib:=
 	virtual/jpeg
 	virtual/libintl
-	addons? ( media-blender/addons:${SLOT} )
-	addons_contrib? ( media-blender/addons_contrib:${SLOT} )
 	alembic? ( media-gfx/alembic:=[boost(+),-hdf5] )
 	collada? ( >=media-libs/opencollada-1.6.68 )
 	cuda? ( dev-util/nvidia-cuda-toolkit:= )
@@ -232,8 +227,9 @@ src_prepare() {
 
 	eapply "${FILESDIR}/x112.patch"
 	eapply "${FILESDIR}/${SLOT}/blender-system-glog-gflags.patch"
-	eapply "${FILESDIR}/blender-fix-boost-1.81-iostream.patch"
 	#eapply "${FILESDIR}/Fix-build-with-system-glew.patch"
+	eapply "${FILESDIR}/blender-fix-boost-1.81-iostream.patch"
+	eapply "${FILESDIR}/blender-fix-addons_contrib-install.patch"
 	if use cg; then
         eapply "${FILESDIR}"/cg-defaults.patch
         cp "${FILESDIR}"/splash.png release/datafiles/
@@ -361,7 +357,7 @@ src_configure() {
 		-DWITH_CPU_SIMD=$(usex simd)
 		-DWITH_PYTHON_INSTALL=$(usex !portable OFF ON)			# Copy system python
 		-DWITH_PYTHON_INSTALL_NUMPY=$(usex !portable OFF ON)
-		-DWITH_PYTHON_MODULE=$(usex !X)							# runs without a user interface
+		-DWITH_PYTHON_MODULE=$(usex headless)					# runs without a user interface
 		-DWITH_HEADLESS=$(usex headless)						# server mode only
 		-DWITH_ALEMBIC=$(usex alembic)							# export format support
 		-DWITH_ASSERT_ABORT=$(usex debug)
@@ -486,8 +482,8 @@ src_test() {
 	blender_get_version
 	# Define custom blender data/script file paths not be able to find them otherwise during testing.
 	# (Because the data is in the image directory and it will default to look in /usr/share)
-	export BLENDER_SYSTEM_SCRIPTS="${ED}"/usr/share/blender/${BV}/scripts
-	export BLENDER_SYSTEM_DATAFILES="${ED}"/usr/share/blender/${BV}/datafiles
+	export BLENDER_SYSTEM_SCRIPTS="${ED}"/usr/share/blender/${SLOT}/scripts
+	export BLENDER_SYSTEM_DATAFILES="${ED}"/usr/share/blender/${SLOT}/datafiles
 
 	# Sanity check that the script and datafile path is valid.
 	# If they are not vaild, blender will fallback to the default path which is not what we want.
@@ -516,8 +512,8 @@ src_install() {
 	if use doc; then
 		# Define custom blender data/script file paths. Otherwise Blender will not be able to find them during doc building.
 		# (Because the data is in the image directory and it will default to look in /usr/share)
-		export BLENDER_SYSTEM_SCRIPTS=${ED}/usr/share/blender/${BV}/scripts
-		export BLENDER_SYSTEM_DATAFILES=${ED}/usr/share/blender/${BV}/datafiles
+		export BLENDER_SYSTEM_SCRIPTS=${ED}/usr/share/blender/${SLOT}/scripts
+		export BLENDER_SYSTEM_DATAFILES=${ED}/usr/share/blender/${SLOT}/datafiles
 
 		# Workaround for binary drivers.
 		addpredict /dev/ati
@@ -541,14 +537,13 @@ src_install() {
 
 		docinto "html/API/blender"
 		dodoc -r "${CMAKE_USE_DIR}"/doc/doxygen/html/.
-
-		# Fix doc installdir
-		docinto html
-		dodoc "${CMAKE_USE_DIR}"/release/text/readme.html
-		rm -r "${ED%/}"/usr/share/doc/blender
 	fi
 
-	python_optimize "${ED%/}/usr/share/blender/${MY_PV}/scripts"
+	# Fix doc installdir
+	docinto html
+	dodoc "${CMAKE_USE_DIR}"/release/text/readme.html
+	rm -r "${ED%/}"/usr/share/doc/blender
+	python_optimize "${ED%/}/usr/share/blender/${SLOT}/scripts"
 
 	pushd ${ED}/usr/bin
 	mv "blender-thumbnailer" "blender-${SLOT}-thumbnailer" || die
