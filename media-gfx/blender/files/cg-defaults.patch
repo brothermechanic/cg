@@ -66,18 +66,6 @@ diff -Naur a/source/blender/makesdna/DNA_modifier_defaults.h b/source/blender/ma
      .uv_smooth = SUBSURF_UV_SMOOTH_PRESERVE_BOUNDARIES, \
      .quality = 3, \
      .boundary_smooth = SUBSURF_BOUNDARY_SMOOTH_ALL, \
-diff -Naur a/source/blender/makesdna/DNA_object_defaults.h b/source/blender/makesdna/DNA_object_defaults.h
---- a/source/blender/makesdna/DNA_object_defaults.h	2020-12-24 20:07:32.000000000 +0300
-+++ b/source/blender/makesdna/DNA_object_defaults.h	2020-12-27 22:56:45.667471288 +0300
-@@ -56,7 +56,7 @@
-     .dt = OB_TEXTURE, \
-  \
-     .empty_drawtype = OB_PLAINAXES, \
--    .empty_drawsize = 1.0, \
-+    .empty_drawsize = 0.1, \
-     .empty_image_depth = OB_EMPTY_IMAGE_DEPTH_DEFAULT, \
-     .ima_ofs = {-0.5, -0.5}, \
-  \
 diff -Naur a/source/blender/makesdna/DNA_view3d_defaults.h b/source/blender/makesdna/DNA_view3d_defaults.h
 --- a/source/blender/makesdna/DNA_view3d_defaults.h	2020-12-24 20:07:32.000000000 +0300
 +++ b/source/blender/makesdna/DNA_view3d_defaults.h	2020-12-27 22:52:32.467466785 +0300
