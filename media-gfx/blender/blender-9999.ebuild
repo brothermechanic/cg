@@ -12,7 +12,7 @@ DESCRIPTION="Blender is a free and open-source 3D creation suite."
 HOMEPAGE="https://www.blender.org"
 
 inherit git-r3
-EGIT_REPO_URI="https://git.blender.org/blender.git"
+EGIT_REPO_URI="https://projects.blender.org/blender/blender.git"
 EGIT_SUBMODULES=( release/datafiles/locale release/scripts/addons release/scripts/addons_contrib )
 if [[ ${PV} == 9999 ]]; then
 	EGIT_BRANCH="master"
