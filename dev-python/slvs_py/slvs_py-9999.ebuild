@@ -3,7 +3,7 @@
 
 EAPI=8
 
-PYTHON_COMPAT=( python3_{9..10} )
+PYTHON_COMPAT=( python3_{9..11} )
 
 inherit distutils-r1 git-r3
 
@@ -26,6 +26,7 @@ BDEPEND="
 #RDEPEND="
 #	=media-gfx/solvespace-2.4.2
 #"
+
 DEPEND="${RDEPEND}
 	dev-python/setuptools[${PYTHON_USEDEP}]"
 

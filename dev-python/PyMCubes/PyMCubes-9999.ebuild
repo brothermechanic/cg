@@ -1,6 +1,6 @@
-EAPI=7
+EAPI=8
 
-PYTHON_COMPAT=( python3_{9..10} )
+PYTHON_COMPAT=( python3_{9..11} )
 inherit git-r3 distutils-r1
 
 DESCRIPTION="Marching cubes algorithm to extract iso-surfaces from volumetric data"
