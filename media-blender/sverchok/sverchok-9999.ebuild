@@ -26,8 +26,10 @@ RDEPEND="
 
 src_prepare() {
     eapply_user
+    eapply "${FILESDIR}/approx_subd_to_nurbs.patch"
     # set icons by default
     sed -i '/name="Show icons in Shift-A menu",/{n;s/.*/\t\default=True,/}' settings.py
+
 }
 
 src_install() {
