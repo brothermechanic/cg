@@ -13,9 +13,10 @@ HOMEPAGE="https://www.blender.org"
 
 inherit git-r3
 EGIT_REPO_URI="https://projects.blender.org/blender/blender.git"
-EGIT_SUBMODULES=( release/datafiles/locale release/scripts/addons release/scripts/addons_contrib )
+EGIT_REPO_URI_LIST="https://projects.blender.org/blender/blender-addons.git https://projects.blender.org/blender/blender-addons-contrib.git"
+EGIT_SUBMODULES=()
 if [[ ${PV} == 9999 ]]; then
-	#EGIT_BRANCH="main"
+	EGIT_BRANCH="main"
 	#EGIT_COMMIT="fe3110a2859d84401dceda06fd41f3b082eae790"
     KEYWORDS=""
 	MY_PV="3.5"
@@ -211,6 +212,12 @@ pkg_setup() {
 src_unpack() {
 	git-r3_src_unpack
 
+	for repo in $(echo ${EGIT_REPO_URI_LIST}); do
+		EGIT_REPO_URI="${repo}"
+		EGIT_CHECKOUT_DIR=${WORKDIR}/${P}/scripts/$(echo -n "${repo}" | sed -rne 's/^http.*\/blender-([a-z-]*).*/\1/p')
+		git-r3_src_unpack
+	done
+
 	if use test; then
 		default
 		mkdir -p lib || die
@@ -229,7 +236,7 @@ src_prepare() {
 	eapply "${FILESDIR}/${SLOT}/blender-system-glog-gflags.patch"
 	#eapply "${FILESDIR}/Fix-build-with-system-glew.patch"
 	eapply "${FILESDIR}/blender-fix-boost-1.81-iostream.patch"
-	eapply "${FILESDIR}/blender-fix-addons_contrib-install.patch"
+ 	use elibc_musl && eapply "${FILESDIR}/blender-3.2.2-support-building-with-musl-libc.patch"
 	if use cg; then
         eapply "${FILESDIR}"/cg-defaults.patch
         cp "${FILESDIR}"/splash.png release/datafiles/
@@ -281,10 +288,10 @@ src_prepare() {
 	# linguas cleanup
 	local i
 	if ! use nls; then
-		rm -r "${S}"/release/datafiles/locale || die
+		rm -r "${S}"/locale || die
 	else
 		if [[ -n "${LINGUAS+x}" ]] ; then
-			cd "${S}"/release/datafiles/locale/po
+			cd "${S}"/locale/po
 			for i in *.po ; do
 				mylang=${i%.po}
 				has ${mylang} ${LINGUAS} || { rm -r ${i} || die ; }
@@ -337,8 +344,6 @@ src_configure() {
 			)
 		fi
 		mycmakeargs+=(
-			-DWITH_CYCLES_CUDA=ON
-			-DWITH_CYCLES_CUDA_BINARIES=ON
 			-DCUDA_INCLUDE_DIRS=/opt/cuda/include
 			-DCUDA_CUDART_LIBRARY=/opt/cuda/lib64
 			-DCUDA_NVCC_EXECUTABLE=/opt/cuda/bin/nvcc
@@ -348,7 +353,7 @@ src_configure() {
 	fi
 
 	mycmakeargs+=(
-		-DSUPPORT_NEON_BUILD=0
+		-DSUPPORT_NEON_BUILD=$(usex arm64 ON OFF)
 		-DCMAKE_INSTALL_PREFIX=/usr
 		-DPYTHON_VERSION="${EPYTHON/python/}"
 		-DPYTHON_INCLUDE_DIR="$(python_get_includedir)"
@@ -369,17 +374,20 @@ src_configure() {
 		-DWITH_CODEC_SNDFILE=$(usex sndfile)
 		-DWITH_CYCLES=$(usex cycles)							# Enable Cycles Render Engine
 		-DWITH_CYCLES_DEVICE_CUDA=$(usex cuda)
+		-DWITH_CYCLES_DEVICE_OPTIX=$(usex optix)
+		-DWITH_CYCLES_CUDA=$(usex cuda)
+		-DWITH_CYCLES_CUDA_BINARIES=$(usex cuda)
 		-DWITH_CYCLES_CUDA_BUILD_SERIAL=$(usex cuda)			# Build cuda kernels in serial mode (if parallel build takes too much RAM or crash)
 		-DWITH_CYCLES_EMBREE=$(usex embree)
 		-DWITH_CYCLES_NATIVE_ONLY=$(usex cycles)				# for native kernel only
 		-DWITH_CYCLES_OSL=$(usex osl)
 		-DWITH_CYCLES_STANDALONE=OFF
 		-DWITH_CYCLES_STANDALONE_GUI=OFF
-		-DWITH_CYCLES_LOGGING=$(usex gtests)
+		-DWITH_CYCLES_LOGGING=ON
 		-DWITH_DOC_MANPAGE=$(usex man)
 		-DWITH_FFTW3=$(usex fftw)
 		-DWITH_FREESTYLE=$(usex freestyle)						# advanced edges rendering
-		-WITH_GHOST_X11=$(usex X)
+		-DWITH_GHOST_X11=$(usex X)
 		-DWITH_GHOST_XDND=$(usex X)								# drag-n-drop support on X11
 		-DWITH_GHOST_WAYLAND=$(usex wayland)
 		-DWITH_GHOST_WAYLAND_APP_ID=blender-${BV}
@@ -430,14 +438,12 @@ src_configure() {
 		-DWITH_SYSTEM_GLES=$(usex !portable)
 		-DWITH_SYSTEM_GLEW=$(usex !portable)
 		-DWITH_SYSTEM_LZO=$(usex !portable)
-		#-DWITH_SYSTEM_LZMA=$(usex !portable)
 		-DWITH_SYSTEM_GFLAGS=$(usex !portable)
 		-DWITH_SYSTEM_GLOG=$(usex !portable)
 		#-DWITH_SYSTEM_CERES=$(usex !portable)
 		-DWITH_GTESTS=$(usex gtests)
 		-DWITH_GHOST_DEBUG=$(usex debug)
 		-DWITH_CXX_GUARDEDALLOC=$(usex debug)
-		-DWITH_CXX11_ABI=ON
 		-DWITH_TBB=$(usex tbb)
 		-DWITH_USD=$(usex usd)									# export format support
 		-DWITH_XR_OPENXR=OFF
@@ -446,7 +452,7 @@ src_configure() {
 		-DWITH_NINJA_POOL_JOBS=OFF								# for machines with 16GB of RAM or less
 		-DBUILD_SHARED_LIBS=OFF
 		-DWITH_CLANG=$(usex clang)
-		#-DCLANG_ROOT_DIR="/usr/lib/llvm/${LLVM_SLOT}"
+		-DCLANG_ROOT_DIR="/usr/lib/llvm/${LLVM_SLOT}"
 		-DCLANG_INCLUDE_DIR="/usr/lib/llvm/${LLVM_SLOT}/include/clang"
 		#-Wno-dev
 		#-DCMAKE_FIND_DEBUG_MODE=ON
@@ -454,7 +460,6 @@ src_configure() {
 
 	if use optix; then
 		mycmakeargs+=(
-			-DWITH_CYCLES_DEVICE_OPTIX=ON
 			-DCYCLES_RUNTIME_OPTIX_ROOT_DIR="${EPREFIX}"/opt/optix
 			-DOPTIX_ROOT_DIR="${EPREFIX}"/opt/optix/SDK
 			-DOPTIX_INCLUDE_DIR="${EPREFIX}"/opt/optix/include
