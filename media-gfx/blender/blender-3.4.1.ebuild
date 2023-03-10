@@ -20,9 +20,6 @@ if [[ ${PV} == 9999 ]]; then
     KEYWORDS=""
 	MY_PV="3.5"
 else
-	#SRC_URI="https://download.blender.org/source/${P}.tar.xz"
-	#TEST_TARBALL_VERSION=2.93.0
-	#SRC_URI+=" test? ( https://dev.gentoo.org/~sam/distfiles/${CATEGORY}/${PN}/${PN}-${TEST_TARBALL_VERSION}-tests.tar.bz2 )"
 	MY_PV="$(ver_cut 1-2)"
 	EGIT_BRANCH="blender-v${MY_PV}-release"
 	KEYWORDS="~amd64 ~x86 ~arm64 ~arm"
@@ -33,7 +30,7 @@ SLOT="$MY_PV"
 LICENSE="|| ( GPL-3 BL )"
 CUDA_ARCHS="sm_30 sm_35 sm_50 sm_52 sm_61 sm_70 sm_75 sm_86"
 IUSE_DESKTOP="cg -portable +X headless wayland +nls +icu -ndof"
-IUSE_GPU="+opengl -optix cuda ${CUDA_ARCHS}"
+IUSE_GPU="+opengl -openpgl -optix cuda +hip ${CUDA_ARCHS}"
 IUSE_LIBS="clang +cycles gmp sdl jack openal pulseaudio +freestyle -osl +openvdb nanovdb abi7-compat abi8-compat abi9-compat abi10-compat +opensubdiv +opencolorio +openimageio +pdf +pugixml +potrace +collada -alembic +gltf-draco +fftw +oidn +quadriflow -usd +bullet -valgrind +jemalloc libmv +llvm"
 IUSE_CPU="+openmp embree +simd +tbb +lld gold"
 IUSE_TEST="-debug -doc -man -gtests test"
@@ -88,7 +85,7 @@ RDEPEND="${PYTHON_DEPS}
 	sys-libs/zlib:=
 	virtual/jpeg
 	virtual/libintl
-	alembic? ( media-gfx/alembic:=[boost(+),-hdf5] )
+	alembic? ( >=media-gfx/alembic-1.8.3-r2[boost(+),-hdf5] )
 	collada? ( >=media-libs/opencollada-1.6.68 )
 	cuda? ( dev-util/nvidia-cuda-toolkit:= )
 	embree? ( >=media-libs/embree-3.10.0[raymask,tbb?] )
@@ -117,8 +114,9 @@ RDEPEND="${PYTHON_DEPS}
 		media-libs/glew:*
 		virtual/glu
 	)
+	openpgl? ( >=media-libs/openpgl-0.5.0:= )
 	oidn? ( >=media-libs/oidn-1.4.1 )
-	openimageio? ( >=media-libs/openimageio-2.3.12.0-r3:= )
+	openimageio? ( >=media-libs/openimageio-2.4.6.0:= )
 	opencolorio? ( >=media-libs/opencolorio-2.1.1-r7:= )
 	openexr? ( >=media-libs/openexr-3:0= )
 	opensubdiv? ( >=media-libs/opensubdiv-3.4.0[cuda?,openmp?,tbb?] )
@@ -163,10 +161,13 @@ BDEPEND="
 	llvm? ( <sys-devel/llvm-$((${LLVM_MAX_SLOT} + 1)):= )
     clang? ( <sys-devel/clang-$((${LLVM_MAX_SLOT} + 1)):= )
 	virtual/pkgconfig
-	nls? ( sys-devel/gettext )
 	doc? (
 		app-doc/doxygen[-nodot(-),dot(+)]
 		dev-python/sphinx[latex]
+	)
+	nls? ( sys-devel/gettext )
+	wayland? (
+		dev-util/wayland-scanner
 	)
 "
 
@@ -226,8 +227,9 @@ src_prepare() {
 	use cuda && cuda_src_prepare
 
 	eapply "${FILESDIR}/x112.patch"
-	eapply "${FILESDIR}/${SLOT}/blender-system-glog-gflags.patch"
-	#eapply "${FILESDIR}/Fix-build-with-system-glew.patch"
+	eapply "${FILESDIR}/blender-system-glog-gflags.patch"
+	eapply "${FILESDIR}/blender-system-embree.patch"
+	eapply "${FILESDIR}/blender-fix-usd-python.patch"
 	eapply "${FILESDIR}/blender-fix-boost-1.81-iostream.patch"
 	use elibc_musl && eapply "${FILESDIR}/blender-3.2.2-support-building-with-musl-libc.patch"
 	if use cg; then
@@ -346,37 +348,41 @@ src_configure() {
 	fi
 
 	mycmakeargs+=(
-		-DSUPPORT_NEON_BUILD=$(usex arm64 ON OFF)
+		-DSUPPORT_NEON_BUILD=$(usex arm64)
 		-DCMAKE_INSTALL_PREFIX=/usr
 		-DPYTHON_VERSION="${EPYTHON/python/}"
 		-DPYTHON_INCLUDE_DIR="$(python_get_includedir)"
 		-DPYTHON_LIBRARY="$(python_get_library_path)"
 		-DWITH_BOOST_ICU=$(usex icu)
 		-DWITH_CPU_SIMD=$(usex simd)
-		-DWITH_PYTHON_INSTALL=$(usex !portable OFF ON)			# Copy system python
-		-DWITH_PYTHON_INSTALL_NUMPY=$(usex !portable OFF ON)
+		-DWITH_PYTHON_INSTALL=$(usex portable)					# Copy system python
+		-DWITH_PYTHON_INSTALL_NUMPY=$(usex portable)
+		-DWITH_PYTHON_INSTALL_ZSTANDARD=$(usex portable)
 		-DWITH_PYTHON_MODULE=$(usex headless)					# runs without a user interface
 		-DWITH_HEADLESS=$(usex headless)						# server mode only
 		-DWITH_ALEMBIC=$(usex alembic)							# export format support
 		-DWITH_ASSERT_ABORT=$(usex debug)
-		-DWITH_BOOST=ON
+		-DWITH_BOOST=yes
 		-DWITH_BULLET=$(usex bullet)							# Physics Engine
-		-DWITH_SYSTEM_BULLET=OFF								# currently unsupported
+		-DWITH_SYSTEM_BULLET=no									# currently unsupported
 		-DWITH_CODEC_AVI=$(usex avi)
 		-DWITH_CODEC_FFMPEG=$(usex ffmpeg)
 		-DWITH_CODEC_SNDFILE=$(usex sndfile)
 		-DWITH_CYCLES=$(usex cycles)							# Enable Cycles Render Engine
 		-DWITH_CYCLES_DEVICE_CUDA=$(usex cuda)
 		-DWITH_CYCLES_DEVICE_OPTIX=$(usex optix)
+		-DWITH_CYCLES_DEVICE_HIP=$(usex hip)
+		-DWITH_CYCLES_HIP_BINARIES=$(usex hip)
 		-DWITH_CYCLES_CUDA=$(usex cuda)
 		-DWITH_CYCLES_CUDA_BINARIES=$(usex cuda)
 		-DWITH_CYCLES_CUDA_BUILD_SERIAL=$(usex cuda)			# Build cuda kernels in serial mode (if parallel build takes too much RAM or crash)
 		-DWITH_CYCLES_EMBREE=$(usex embree)
 		-DWITH_CYCLES_NATIVE_ONLY=$(usex cycles)				# for native kernel only
 		-DWITH_CYCLES_OSL=$(usex osl)
-		-DWITH_CYCLES_STANDALONE=OFF
-		-DWITH_CYCLES_STANDALONE_GUI=OFF
-		-DWITH_CYCLES_LOGGING=$(usex gtests)
+		-DWITH_CYCLES_PATH_GUIDING=$(usex openpgl)
+		-DWITH_CYCLES_STANDALONE=no
+		-DWITH_CYCLES_STANDALONE_GUI=no
+		-DWITH_CYCLES_LOGGING=yes
 		-DWITH_DOC_MANPAGE=$(usex man)
 		-DWITH_FFTW3=$(usex fftw)
 		-DWITH_FREESTYLE=$(usex freestyle)						# advanced edges rendering
@@ -385,8 +391,8 @@ src_configure() {
 		-DWITH_GHOST_WAYLAND=$(usex wayland)
 		-DWITH_GHOST_WAYLAND_APP_ID=blender-${BV}
 		-DWITH_GHOST_WAYLAND_DBUS=$(usex wayland)
-		-DWITH_GHOST_WAYLAND_DYNLOAD=OFF
-		-DWITH_GHOST_WAYLAND_LIBDECOR=OFF
+		-DWITH_GHOST_WAYLAND_DYNLOAD=$(usex wayland)
+		-DWITH_GHOST_WAYLAND_LIBDECOR=no
 		-DWITH_IMAGE_CINEON=$(usex dpx)
 		-DWITH_HARU=$(usex pdf)
 		-DWITH_INSTALL_PORTABLE=$(usex portable)
@@ -397,6 +403,7 @@ src_configure() {
 		-DWITH_IMAGE_OPENJPEG=$(usex jpeg2k)
 		-DWITH_IMAGE_TIFF=$(usex tiff)
 		-DWITH_INPUT_NDOF=$(usex ndof)
+		-DWITH_INPUT_IME=no
 		-DWITH_INTERNATIONAL=$(usex nls)						# I18N fonts and text
 		-DWITH_JACK=$(usex jack)
 		-DWITH_JACK_DYNLOAD=$(usex jack)
@@ -406,7 +413,7 @@ src_configure() {
 		-DWITH_LZO=$(usex lzo)									# used for pointcache only
 		-DWITH_DRACO=$(usex gltf-draco)							# gltf mesh compression
 		-DWITH_LLVM=$(usex llvm)
-		-DWITH_LIBMV=$(usex libmv)                              # Enable libmv sfm camera tracking
+		-DWITH_LIBMV=$(usex libmv)                           	# Enable libmv sfm camera tracking
 		-DWITH_MEM_JEMALLOC=$(usex jemalloc)					# Enable malloc replacement
 		-DWITH_MEM_VALGRIND=$(usex valgrind)
 		-DWITH_MOD_FLUID=$(usex fluid)							# Mantaflow Fluid Simulation Framework
@@ -428,8 +435,8 @@ src_configure() {
 		-DWITH_SDL_DYNLOAD=$(usex sdl)
 		-DWITH_STATIC_LIBS=$(usex portable)
 		-DWITH_SYSTEM_EIGEN3=$(usex !portable)
-		-DWITH_SYSTEM_GLES=$(usex !portable)
-		-DWITH_SYSTEM_GLEW=$(usex !portable)
+		#-DWITH_SYSTEM_GLES=$(usex !portable)
+		#-DWITH_SYSTEM_GLEW=$(usex !portable)
 		-DWITH_SYSTEM_LZO=$(usex !portable)
 		-DWITH_SYSTEM_GFLAGS=$(usex !portable)
 		-DWITH_SYSTEM_GLOG=$(usex !portable)
@@ -439,16 +446,15 @@ src_configure() {
 		-DWITH_CXX_GUARDEDALLOC=$(usex debug)
 		-DWITH_TBB=$(usex tbb)
 		-DWITH_USD=$(usex usd)									# export format support
-		-DWITH_XR_OPENXR=OFF
+		-DWITH_XR_OPENXR=no
 		#-DUSD_ROOT_DIR=/opt/openusd
 		#-DUSD_LIBRARY=/opt/openusd/lib/libusd_ms.so
-		-DWITH_NINJA_POOL_JOBS=OFF								# for machines with 16GB of RAM or less
-		-DBUILD_SHARED_LIBS=OFF
+		-DWITH_NINJA_POOL_JOBS=no								# for machines with 16GB of RAM or less
+		-DBUILD_SHARED_LIBS=no
 		-DWITH_CLANG=$(usex clang)
-		#-DCLANG_ROOT_DIR="/usr/lib/llvm/${LLVM_SLOT}"
 		-DCLANG_INCLUDE_DIR="/usr/lib/llvm/${LLVM_SLOT}/include/clang"
 		#-Wno-dev
-		#-DCMAKE_FIND_DEBUG_MODE=ON
+		#-DCMAKE_FIND_DEBUG_MODE=yes
 	)
 
 	if use optix; then

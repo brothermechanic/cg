@@ -3,7 +3,7 @@
 
 EAPI=8
 
-PYTHON_COMPAT=( python3_{9..10} )
+PYTHON_COMPAT=( python3_{10..11} )
 LLVM_MAX_SLOT="15"
 
 inherit check-reqs cmake cuda flag-o-matic pax-utils python-single-r1 toolchain-funcs xdg-utils
@@ -12,20 +12,11 @@ DESCRIPTION="Blender is a free and open-source 3D creation suite."
 HOMEPAGE="https://www.blender.org"
 
 inherit git-r3
-EGIT_REPO_URI="https://git.blender.org/blender.git"
+EGIT_REPO_URI="https://projects.blender.org/blender/blender.git"
 EGIT_SUBMODULES=( release/datafiles/locale release/scripts/addons release/scripts/addons_contrib )
-if [[ ${PV} == 9999 ]]; then
-	EGIT_BRANCH="master"
-    KEYWORDS=""
-	MY_PV="3.5"
-else
-	#SRC_URI="https://download.blender.org/source/${P}.tar.xz"
-	#TEST_TARBALL_VERSION=2.93.0
-	#SRC_URI+=" test? ( https://dev.gentoo.org/~sam/distfiles/${CATEGORY}/${PN}/${PN}-${TEST_TARBALL_VERSION}-tests.tar.bz2 )"
-	MY_PV="$(ver_cut 1-2)"
-	EGIT_BRANCH="blender-v${MY_PV}-release"
-	KEYWORDS="~amd64 ~x86 ~arm64 ~arm"
-fi
+MY_PV="$(ver_cut 1-2)"
+EGIT_BRANCH="blender-v${MY_PV}-release"
+KEYWORDS="~amd64 ~x86 ~arm64 ~arm"
 
 : ${GENTOO_BLENDER_ADDONS_DIR:-"/usr/share/blender/scripts/addons"} # For default preferences only
 SLOT="$MY_PV"
@@ -88,7 +79,7 @@ RDEPEND="${PYTHON_DEPS}
 	sys-libs/zlib:=
 	virtual/jpeg
 	virtual/libintl
-	alembic? ( media-gfx/alembic:=[boost(+),-hdf5] )
+	alembic? ( >=media-gfx/alembic-1.8.3-r2[boost(+),-hdf5] )
 	collada? ( >=media-libs/opencollada-1.6.68 )
 	cuda? ( dev-util/nvidia-cuda-toolkit:= )
 	embree? ( >=media-libs/embree-3.10.0[raymask,tbb?] )
@@ -119,12 +110,12 @@ RDEPEND="${PYTHON_DEPS}
 		virtual/glu
 	)
 	oidn? ( >=media-libs/oidn-1.4.1 )
-	openimageio? ( >=media-libs/openimageio-2.3.12.0-r3:= )
+	openimageio? ( >=media-libs/openimageio-2.4.6.0:= )
 	opencolorio? ( >=media-libs/opencolorio-2.1.1-r7:= )
 	openexr? ( >=media-libs/openexr-3:0= )
 	opensubdiv? ( >=media-libs/opensubdiv-3.4.0[cuda?,opencl?,openmp?,tbb?] )
 	openvdb? (
-		>=media-gfx/openvdb-8.2.0:=[abi7-compat(-)?,abi8-compat(-)?,abi9-compat(-)?,nanovdb?]
+		>=media-gfx/openvdb-9.0.0:=[abi7-compat(-)?,abi8-compat(-)?,abi9-compat(-)?,abi10-compat(-)?,nanovdb?]
 		dev-libs/c-blosc:=
 	)
 	optix? ( >=dev-libs/optix-7.4.0 )
@@ -136,7 +127,7 @@ RDEPEND="${PYTHON_DEPS}
 	quicktime? ( media-libs/libquicktime )
 	sdl? ( media-libs/libsdl2[sound,joystick] )
 	sndfile? ( media-libs/libsndfile )
-	tbb? ( <dev-cpp/tbb-2021.4.0:= )
+	tbb? ( dev-cpp/tbb:= )
 	tiff? ( media-libs/tiff:= )
 	usd? ( media-libs/openusd[monolithic,-python] )
 	valgrind? ( dev-util/valgrind )
@@ -156,11 +147,11 @@ BDEPEND="
 	llvm? ( <sys-devel/llvm-$((${LLVM_MAX_SLOT} + 1)):= )
     clang? ( <sys-devel/clang-$((${LLVM_MAX_SLOT} + 1)):= )
 	virtual/pkgconfig
-	nls? ( sys-devel/gettext )
 	doc? (
 		app-doc/doxygen[-nodot(-),dot(+)]
 		dev-python/sphinx[latex]
 	)
+	nls? ( sys-devel/gettext )
 "
 
 RESTRICT="
@@ -191,13 +182,8 @@ blender_check_requirements() {
 blender_get_version() {
 	# Get blender version from blender itself.
 	BV=$(grep "BLENDER_VERSION " source/blender/blenkernel/BKE_blender_version.h | cut -d " " -f 3; assert)
-	if ((${BV:0:1} < 3)) ; then
-		# Add period (290 -> 2.90).
-		BV=${BV:0:1}.${BV:1}
-	else
-		# Add period and strip last number (300 -> 3.0)
-		BV=${BV:0:1}.${BV:1:1}
-	fi
+	# Add period (290 -> 2.90).
+	BV=${BV:0:1}.${BV:1}
 }
 
 pkg_pretend() {
@@ -226,8 +212,10 @@ src_prepare() {
 	use cuda && cuda_src_prepare
 
 	eapply "${FILESDIR}/x112.patch"
-	eapply "${FILESDIR}/${SLOT}/blender-system-glog-gflags.patch"
-	eapply "${FILESDIR}/Fix-build-with-system-glew.patch"
+	eapply "${FILESDIR}/blender-system-glog-gflags.patch"
+	eapply "${FILESDIR}/blender-system-embree.patch"
+	eapply "${FILESDIR}/blender-fix-usd-python.patch"
+	eapply "${FILESDIR}/${SLOT}/Fix-build-with-system-glew.patch"
 	eapply "${FILESDIR}/blender-fix-boost-1.81-iostream.patch"
 	if use cg; then
         eapply "${FILESDIR}"/${SLOT}/cg-defaults.patch
@@ -315,6 +303,8 @@ src_configure() {
 			version=8;
         elif use abi9-compat; then
 			version=9;
+		elif use abi10-compat; then
+			version=10
 		else
 			die "Openvdb abi version not compatible"
 		fi
@@ -337,8 +327,6 @@ src_configure() {
 			)
 		fi
 		mycmakeargs+=(
-			-DWITH_CYCLES_CUDA=ON
-			-DWITH_CYCLES_CUDA_BINARIES=ON
 			-DCUDA_INCLUDE_DIRS=/opt/cuda/include
 			-DCUDA_CUDART_LIBRARY=/opt/cuda/lib64
 			-DCUDA_NVCC_EXECUTABLE=/opt/cuda/bin/nvcc
@@ -348,15 +336,15 @@ src_configure() {
 	fi
 
 	mycmakeargs+=(
-		-DSUPPORT_NEON_BUILD=$(usex arm 1 0)
+		-DSUPPORT_NEON_BUILD=$(usex arm)
 		-DCMAKE_INSTALL_PREFIX=/usr
 		-DPYTHON_VERSION="${EPYTHON/python/}"
 		-DPYTHON_INCLUDE_DIR="$(python_get_includedir)"
 		-DPYTHON_LIBRARY="$(python_get_library_path)"
 		-DWITH_BOOST_ICU=$(usex icu)
 		-DWITH_CPU_SIMD=$(usex simd)
-		-DWITH_PYTHON_INSTALL=$(usex !portable OFF ON)			# Copy system python
-		-DWITH_PYTHON_INSTALL_NUMPY=$(usex !portable OFF ON)
+		-DWITH_PYTHON_INSTALL=$(usex portable)					# Copy system python
+		-DWITH_PYTHON_INSTALL_NUMPY=$(usex portable)
 		-DWITH_PYTHON_MODULE=$(usex headless)					# runs without a user interface
 		-DWITH_HEADLESS=$(usex headless)						# server mode only
 		-DWITH_ALEMBIC=$(usex alembic)							# export format support
@@ -369,6 +357,9 @@ src_configure() {
 		-DWITH_CODEC_SNDFILE=$(usex sndfile)
 		-DWITH_CYCLES=$(usex cycles)							# Enable Cycles Render Engine
 		-DWITH_CYCLES_DEVICE_CUDA=$(usex cuda)
+		-DWITH_CYCLES_DEVICE_OPTIX=$(usex optix)
+		-DWITH_CYCLES_CUDA=$(usex cuda)
+		-DWITH_CYCLES_CUDA_BINARIES=$(usex cuda)
 		-DWITH_CYCLES_CUDA_BUILD_SERIAL=$(usex cuda)			# Build cuda kernels in serial mode (if parallel build takes too much RAM or crash)
 		-DWITH_CYCLES_DEVICE_OPENCL=$(usex opencl)				# Enable Cycles OpenCL compute support
 		-DWITH_CYCLES_EMBREE=$(usex embree)
@@ -376,11 +367,11 @@ src_configure() {
 		-DWITH_CYCLES_OSL=$(usex osl)
 		-DWITH_CYCLES_STANDALONE=OFF
 		-DWITH_CYCLES_STANDALONE_GUI=OFF
-		-DWITH_CYCLES_LOGGING=$(usex gtests)
+		-DWITH_CYCLES_LOGGING=ON
 		-DWITH_DOC_MANPAGE=$(usex man)
 		-DWITH_FFTW3=$(usex fftw)
 		-DWITH_FREESTYLE=$(usex freestyle)						# advanced edges rendering
-		-WITH_GHOST_X11=$(usex X)
+		-DWITH_GHOST_X11=$(usex X)
 		-DWITH_GHOST_XDND=$(usex X)								# drag-n-drop support on X11
 		-DWITH_IMAGE_CINEON=$(usex dpx)
 		-DWITH_HARU=$(usex pdf)
@@ -400,7 +391,7 @@ src_configure() {
 		-DWITH_LZO=$(usex lzo)									# used for pointcache only
 		-DWITH_DRACO=$(usex gltf-draco)							# gltf mesh compression
 		-DWITH_LLVM=$(usex llvm)
-		-DWITH_LIBMV=$(usex libmv)                              # Enable libmv sfm camera tracking
+		-DWITH_LIBMV=$(usex libmv)                           	# Enable libmv sfm camera tracking
 		-DWITH_MEM_JEMALLOC=$(usex jemalloc)					# Enable malloc replacement
 		-DWITH_MEM_VALGRIND=$(usex valgrind)
 		-DWITH_MOD_FLUID=$(usex fluid)							# Mantaflow Fluid Simulation Framework
@@ -425,14 +416,12 @@ src_configure() {
 		-DWITH_SYSTEM_GLES=$(usex !portable)
 		-DWITH_SYSTEM_GLEW=$(usex !portable)
 		-DWITH_SYSTEM_LZO=$(usex !portable)
-		#-DWITH_SYSTEM_LZMA=$(usex !portable)
 		-DWITH_SYSTEM_GFLAGS=$(usex !portable)
 		-DWITH_SYSTEM_GLOG=$(usex !portable)
 		#-DWITH_SYSTEM_CERES=$(usex !portable)
 		-DWITH_GTESTS=$(usex gtests)
 		-DWITH_GHOST_DEBUG=$(usex debug)
 		-DWITH_CXX_GUARDEDALLOC=$(usex debug)
-		-DWITH_CXX11_ABI=ON
 		-DWITH_TBB=$(usex tbb)
 		-DWITH_USD=$(usex usd)									# export format support
 		-DWITH_XR_OPENXR=OFF
@@ -449,7 +438,6 @@ src_configure() {
 
 	if use optix; then
 		mycmakeargs+=(
-			-DWITH_CYCLES_DEVICE_OPTIX=ON
 			-DCYCLES_RUNTIME_OPTIX_ROOT_DIR="${EPREFIX}"/opt/optix
 			-DOPTIX_ROOT_DIR="${EPREFIX}"/opt/optix/SDK
 			-DOPTIX_INCLUDE_DIR="${EPREFIX}"/opt/optix/include
