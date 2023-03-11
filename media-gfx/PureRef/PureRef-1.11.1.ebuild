@@ -8,7 +8,7 @@ inherit eutils
 DESCRIPTION="PureRef - Reference Image Viewer"
 HOMEPAGE="https://www.pureref.com"
 SRC_URI="${P}_x64.deb"
-RESTRICT="fetch"
+RESTRICT="fetch strip"
 LICENSE=""
 SLOT="0"
 KEYWORDS="~amd64 ~x86"
