@@ -20,7 +20,7 @@ LICENSE="GPL-2"
 RDEPEND="dev-python/numpy"
 
 src_install(){
-	echo "{\"Copy Target\" : \"${D}${GENTOO_BLENDER_ADDONS_DIR}/addons\"}" > conf.json
+	echo "{\"Copy Target\" : \"${ED}${GENTOO_BLENDER_ADDONS_DIR}/${PN}\"}" > conf.json
 	esetup.py build --copy --noversioncheck
 
 	blender-addon_src_install

@@ -126,10 +126,14 @@ blender-addon_src_install() {
 	fi
 
 	for (( i = ${#_GENTOO_BLENDER_ADDONS_HOME[@]} - 1; i >= 0; i-- )); do
+		python_optimize
 		insinto ${_GENTOO_BLENDER_ADDONS_HOME[i]}/${PN}
 		diropts -g users -m0775
-		doins -r "${S}"/*
-		python_optimize "${D}${_GENTOO_BLENDER_ADDONS_HOME[i]}/${PN}"
+		if [ -a "${S}"/${PN} ]; then
+			doins -r "${S}"/${PN}/*
+		else
+			doins -r "${S}"/*
+		fi
 	done
 }
 

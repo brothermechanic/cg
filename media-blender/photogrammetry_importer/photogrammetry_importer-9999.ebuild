@@ -16,4 +16,4 @@ RDEPEND="
 	dev-python/pyntcloud
 "
 
-S="${WORKDIR}/${P}/${PN}"
+#S="${WORKDIR}/${P}/${PN}"
