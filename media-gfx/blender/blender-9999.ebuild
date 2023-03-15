@@ -25,7 +25,6 @@ else
 	KEYWORDS="~amd64 ~arm ~arm64"
 fi
 
-: ${GENTOO_BLENDER_ADDONS_DIR:-"/usr/share/blender/scripts/addons"} # For default preferences only
 SLOT="$MY_PV"
 LICENSE="|| ( GPL-3 BL )"
 CUDA_ARCHS="sm_30 sm_35 sm_50 sm_52 sm_61 sm_70 sm_75 sm_86"
@@ -42,7 +41,7 @@ IUSE="${IUSE_DESKTOP} ${IUSE_GPU} ${IUSE_LIBS} ${IUSE_CPU} ${IUSE_TEST} ${IUSE_I
 
 REQUIRED_USE="${PYTHON_REQUIRED_USE}
 	|| ( gold lld )
-	|| ( headless X )
+	|| ( headless wayland X )
 	alembic? ( openexr )
 	embree? ( cycles tbb )
 	smoke? ( fftw )
@@ -238,14 +237,13 @@ src_prepare() {
 	eapply "${FILESDIR}/blender-system-embree.patch"
 	eapply "${FILESDIR}/blender-fix-usd-python.patch"
 	eapply "${FILESDIR}/blender-fix-boost-1.81-iostream.patch"
-	use elibc_musl && eapply "${FILESDIR}/blender-3.2.2-support-building-with-musl-libc.patch"
 	if use cg; then
         eapply "${FILESDIR}"/cg-defaults.patch
         cp "${FILESDIR}"/splash.png release/datafiles/
     fi
 
-    #set GENTOO_BLENDER_ADDONS_DIR to userpref
-    sed -i -e "s|.pythondir.*|.pythondir = \"${GENTOO_BLENDER_ADDONS_DIR}\",|" "${S}"/release/datafiles/userdef/userdef_default.c || die
+    #set scripts dir to userpref
+    sed -i -e "s|.pythondir.*|.pythondir = \"/usr/share/blender/${SLOT}/scripts\",|" "${S}"/release/datafiles/userdef/userdef_default.c || die
 
 	# remove some bundled deps
 	rm -rf extern/{Eigen3,lzo,gflags,glog,draco} || die
@@ -567,7 +565,7 @@ pkg_postinst() {
 	elog "find them in cg/local-patches/blender/"
 	elog "To apply someone copy them in "
 	elog "/etc/portage/patches/media-gfx/blender/"
-	elog "or create simlink"
+	elog "or create symlink"
 	elog
 	elog "It is recommended to change your blender temp directory"
 	elog "from /tmp to /home/user/tmp or another tmp file under your"
