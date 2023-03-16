@@ -39,7 +39,7 @@ _GENTOO_BLENDER_ADDONS_HOME=()
 # @DESCRIPTION:
 # Directory for installing blender addons.
 # Set empty value for this variable here to install addons to blender default directory according to blender slot
-: ${GENTOO_BLENDER_ADDONS_DIR:="/usr/share/blender/scripts/addons"}
+: ${GENTOO_BLENDER_ADDONS_DIR:="/usr/share/blender/scripts"}
 
 # @ECLASS_VARIABLE: _BLENDER_ALL_IMPLS
 # @INTERNAL
@@ -121,13 +121,13 @@ blender-addon_src_install() {
 		_GENTOO_BLENDER_ADDONS_HOME=( "${GENTOO_BLENDER_ADDONS_DIR}" )
 	else
 		for i in "${_BLENDER_SEL_IMPLS[@]}"; do
-			_GENTOO_BLENDER_ADDONS_HOME+=( "/usr/share/blender/${i/_/\.}/scripts/addons" )
+			_GENTOO_BLENDER_ADDONS_HOME+=( "/usr/share/blender/${i/_/\.}/scripts" )
 		done
 	fi
 
 	for (( i = ${#_GENTOO_BLENDER_ADDONS_HOME[@]} - 1; i >= 0; i-- )); do
 		python_optimize
-		insinto ${_GENTOO_BLENDER_ADDONS_HOME[i]}/${PN}
+		insinto ${_GENTOO_BLENDER_ADDONS_HOME[i]}/addons/${PN}
 		diropts -g users -m0775
 		if [ -a "${S}"/${PN} ]; then
 			doins -r "${S}"/${PN}/*
@@ -162,11 +162,11 @@ blender-addon_pkg_postrm() {
 			_GENTOO_BLENDER_ADDONS_HOME=( "${GENTOO_BLENDER_ADDONS_DIR}" )
 		else
 			for i in "${_BLENDER_SEL_IMPLS[@]}"; do
-				_GENTOO_BLENDER_ADDONS_HOME+=( "/usr/share/blender/${i/_/\.}/scripts/addons" )
+				_GENTOO_BLENDER_ADDONS_HOME+=( "/usr/share/blender/${i/_/\.}/scripts" )
 			done
 		fi
 		for (( i = ${#_GENTOO_BLENDER_ADDONS_HOME[@]} - 1; i >= 0; i-- )); do
-			rm -r ${ROOT}${GENTOO_BLENDER_ADDONS_HOME[i]}/${PN}
+			rm -r ${ROOT}${GENTOO_BLENDER_ADDONS_HOME[i]}/addons/${PN}
 		done
 	fi
 }

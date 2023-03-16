@@ -243,7 +243,7 @@ src_prepare() {
     fi
 
     #set scripts dir to userpref
-    sed -i -e "s|.pythondir.*|.pythondir = \"/usr/share/blender/${SLOT}/scripts\",|" "${S}"/release/datafiles/userdef/userdef_default.c || die
+    sed -i -e "s|.pythondir.*|.pythondir = \"${GENTOO_BLENDER_ADDONS_DIR}\",|" "${S}"/release/datafiles/userdef/userdef_default.c || die
 
 	# remove some bundled deps
 	rm -rf extern/{Eigen3,lzo,gflags,glog,draco} || die
