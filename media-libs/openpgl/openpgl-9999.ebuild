@@ -53,12 +53,12 @@ RDEPEND="
 "
 
 REQUIRED_USE="
-	amd64? ( cpu_flags_x86_sse3 cpu_flags_x86_avx )
+	amd64? ( cpu_flags_x86_sse3 )
 	arm64? ( cpu_flags_arm_neon )
 "
 
 BDEPEND="
-	sys-devel/cmake
+	dev-util/cmake
 	app-alternatives/lex
 	app-alternatives/yacc
 "

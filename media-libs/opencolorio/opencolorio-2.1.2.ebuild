@@ -1,9 +1,9 @@
-# Copyright 1999-2022 Gentoo Authors
+# Copyright 1999-2023 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
 
-EAPI=7
+EAPI=8
 
-PYTHON_COMPAT=( python3_{8..10} )
+PYTHON_COMPAT=( python3_{9..11} )
 
 inherit cmake flag-o-matic python-single-r1
 
@@ -16,7 +16,7 @@ LICENSE="BSD"
 # TODO: drop .1 on next SONAME bump (2.1 -> 2.2?) as we needed to nudge it
 # to force rebuild of consumers due to changing to openexr 3 changing API.
 SLOT="0/$(ver_cut 1-2).1"
-KEYWORDS="~amd64 ~arm ~arm64 ~ppc64 ~x86"
+KEYWORDS="amd64 ~arm ~arm64 ~ppc64 ~riscv ~x86"
 IUSE="cpu_flags_x86_sse2 doc opengl python static-libs test"
 REQUIRED_USE="
 	doc? ( python )
@@ -31,7 +31,7 @@ RDEPEND="
 	dev-libs/tinyxml
 	opengl? (
 		media-libs/lcms:2
-		>=media-libs/openimageio-2.1.1-r4:=
+		>=media-libs/openimageio-2.3.12.0-r3:=
 		media-libs/glew:=
 		media-libs/freeglut
 		virtual/opengl
@@ -53,6 +53,11 @@ BDEPEND="
 # Restricting tests, bugs #439790 and #447908
 RESTRICT="test"
 
+PATCHES=(
+	"${FILESDIR}"/${PN}-2.1.1-gcc12.patch
+	"${FILESDIR}"/${PN}-2.1.2-musl-strtol.patch
+)
+
 pkg_setup() {
 	use python && python-single-r1_pkg_setup
 }
@@ -62,6 +67,11 @@ src_prepare() {
 
 	sed -i -e "s|LIBRARY DESTINATION lib|LIBRARY DESTINATION $(get_libdir)|g" {,src/bindings/python/,src/OpenColorIO/,src/libutils/oiiohelpers/,src/libutils/oglapphelpers/}CMakeLists.txt || die
 	sed -i -e "s|ARCHIVE DESTINATION lib|ARCHIVE DESTINATION $(get_libdir)|g" {,src/bindings/python/,src/OpenColorIO/,src/libutils/oiiohelpers/,src/libutils/oglapphelpers/}CMakeLists.txt || die
+
+	# Avoid automagic test dependency on OSL, bug #833933
+	# Can cause problems during e.g. OpenEXR unsplitting migration
+	cmake_run_in tests cmake_comment_add_subdirectory osl
+
 }
 
 src_configure() {
