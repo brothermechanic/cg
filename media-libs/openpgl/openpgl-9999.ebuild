@@ -45,19 +45,19 @@ CPU_FEATURES_MAP=(
 	${X86_CPU_FEATURES[@]}
 )
 IUSE="${IUSE} ${CPU_FEATURES_MAP[@]%:*}"
-RESTRICT="mirror"
+RESTRICT="mirror test"
 
 RDEPEND="
 	!openmp? ( dev-cpp/tbb )
+	media-libs/embree
 "
 
-	# amd64? ( cpu_flags_x86_sse3 cpu_flags_x86_avx cpu_flags_x86_avx2 )
 REQUIRED_USE="
+	amd64? ( cpu_flags_x86_sse3 cpu_flags_x86_avx )
 	arm64? ( cpu_flags_arm_neon )
 "
 
 BDEPEND="
-	media-libs/embree
 	sys-devel/cmake
 	app-alternatives/lex
 	app-alternatives/yacc
