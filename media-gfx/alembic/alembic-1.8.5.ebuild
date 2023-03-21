@@ -3,7 +3,7 @@
 
 EAPI=8
 
-PYTHON_COMPAT=( python3_{8..11} )
+PYTHON_COMPAT=( python3_{9..11} )
 
 inherit cmake python-single-r1
 
@@ -34,15 +34,15 @@ RDEPEND="
 DEPEND="${RDEPEND}"
 
 PATCHES=(
-	"${FILESDIR}/${PN}-1.8.0-0001-set-correct-libdir.patch"
+	#"${FILESDIR}/${PN}-1.8.0-0001-set-correct-libdir.patch"
 	"${FILESDIR}/${PN}-1.8.3-0001-find-py-ilmbase-in-config-mode.patch"
 )
 
 DOCS=( ACKNOWLEDGEMENTS.txt FEEDBACK.txt NEWS.txt README.txt )
 
 src_prepare() {
-	# Fix headers to use Imath-3
-	#sed -i -e 's/\#include <Imath/\#include <Imath-3\/Imath/' lib/Alembic/AbcGeom/XformSample.cpp bin/AbcEcho/AbcBoundsEcho.cpp lib/Alembic/AbcCoreAbstract/TimeSampling.cpp lib/Alembic/AbcCoreAbstract/TimeSamplingType.cpp || die
+	# Fix libdir
+	sed -i -r -e 's|(SET[^"]+ lib)(.*)|\1\$\{LIB_SUFFIX\}\2|' CMakeLists.txt lib/Alembic/CMakeLists.txt || die
 	cmake_src_prepare
 	# PyAlembic test doesn't properly find Imath, comment it for now
 	cmake_run_in python/PyAlembic cmake_comment_add_subdirectory Tests
