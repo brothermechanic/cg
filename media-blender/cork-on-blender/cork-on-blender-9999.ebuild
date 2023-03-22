@@ -5,7 +5,7 @@ EAPI=8
 
 inherit blender-addon
 
-BLENDER_COMPAT=( 2_93 3_{1..5} )
+BLENDER_COMPAT=( 2_93 3_{1..6} )
 
 DESCRIPTION="Blender addon. Cork - a powerful standalone boolean calculations software"
 HOMEPAGE="https://github.com/dfelinto/cork-on-blender"
