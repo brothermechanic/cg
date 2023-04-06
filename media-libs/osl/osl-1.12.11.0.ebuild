@@ -6,7 +6,7 @@ EAPI=8
 PYTHON_COMPAT=( python3_{8..11} )
 
 # Check this on updates
-LLVM_MAX_SLOT=16
+LLVM_MAX_SLOT=15
 
 inherit cmake cuda llvm toolchain-funcs python-single-r1
 
@@ -106,7 +106,7 @@ src_configure() {
 		mycmakeargs+=(
 			-DCUDA_TARGET_ARCH=${CUDA_ARCH%%;}
 			-DUSE_OPTIX=ON
-			-DOPTIX_INCLUDE_DIR="/opt/optix/include"
+			#-DOPTIX_INCLUDE_DIR="/opt/optix/include"
 		)
 	fi
 

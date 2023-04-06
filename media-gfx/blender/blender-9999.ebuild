@@ -31,7 +31,7 @@ CUDA_ARCHS="sm_30 sm_35 sm_50 sm_52 sm_61 sm_70 sm_75 sm_86"
 IUSE_DESKTOP="cg -portable +X headless +nls +icu -ndof wayland"
 IUSE_GPU="cuda oneapi +opengl -openpgl -optix +hip ${CUDA_ARCHS}"
 IUSE_LIBS="clang +cycles gmp sdl jack openal pulseaudio +freestyle -osl +openvdb nanovdb abi7-compat abi8-compat abi9-compat abi10-compat +opensubdiv +opencolorio +openimageio +pdf +pugixml +potrace +collada -alembic +gltf-draco +fftw +oidn +quadriflow -usd +bullet -valgrind +jemalloc libmv +llvm"
-IUSE_CPU="+openmp embree +simd +tbb +lld gold"
+IUSE_CPU="+openmp embree +simd +tbb +lld gold cpu_flags_arm_neon"
 IUSE_TEST="-debug -doc -man -gtests test"
 IUSE_IMAGE="-dpx -dds +openexr jpeg2k tiff +hdr webp"
 IUSE_CODEC="avi +ffmpeg -sndfile +quicktime"
@@ -344,7 +344,7 @@ src_configure() {
 	fi
 
 	mycmakeargs+=(
-		-DSUPPORT_NEON_BUILD=$(usex arm)
+		-DSUPPORT_NEON_BUILD=$(usex cpu_flags_arm_neon)
 		-DCMAKE_INSTALL_PREFIX=/usr
 		-DPYTHON_VERSION="${EPYTHON/python/}"
 		-DPYTHON_INCLUDE_DIR="$(python_get_includedir)"
