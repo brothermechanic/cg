@@ -22,6 +22,7 @@ if [[ ${PV} == 9999 ]]; then
 else
 	MY_PV="$(ver_cut 1-2)"
 	EGIT_BRANCH="blender-v${MY_PV}-release"
+	EGIT_COMMIT="v${PV}"
 	KEYWORDS="~amd64 ~arm ~arm64"
 fi
 
