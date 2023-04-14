@@ -10,4 +10,4 @@ EGIT_REPO_URI="https://github.com/makehumancommunity/makehuman-plugin-for-blende
 
 LICENSE="GPL-2"
 
-S="${WORKDIR}"/"${P}"/blender_source/MH_Community
+ADDON_SOURCE_SUBDIR="${S}/blender_source/MH_Community"

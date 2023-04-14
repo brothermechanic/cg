@@ -13,3 +13,4 @@ EGIT_REPO_URI="https://gitlab.com/tibicen/simple-asset-manager"
 
 LICENSE="GPL-2"
 
+ADDON_SOURCE_SUBDIR=${S}/SimpleAssetManager

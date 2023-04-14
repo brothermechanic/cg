@@ -13,4 +13,4 @@ EGIT_REPO_URI="https://github.com/nutti/Screencast-Keys"
 
 LICENSE="GPL-3"
 
-S=${WORKDIR}/${P}/src/screencast_keys
+ADDON_SOURCE_SUBDIR=${S}/src/screencast_keys

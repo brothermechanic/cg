@@ -10,5 +10,5 @@ EGIT_REPO_URI="https://github.com/robmcrosby/BlenderUSDZ"
 
 LICENSE="GPL-3"
 
-S=${WORKDIR}/${P}/io_scene_usdz
+ADDON_SOURCE_SUBDIR=${S}/io_scene_usdz
 

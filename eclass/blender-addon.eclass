@@ -41,6 +41,13 @@ _GENTOO_BLENDER_ADDONS_HOME=()
 # Set empty value for this variable here to install addons to blender default directory according to blender slot
 : ${GENTOO_BLENDER_ADDONS_DIR:="/usr/share/blender/scripts"}
 
+# @ECLASS_VARIABLE: ADDON_INSTALL_SUBDIR
+# @USER_VARIABLE
+# @DEFAULT_UNSET
+# @DESCRIPTION:
+# Directory which contains sources of blender addon, usually it's identical to gentoo variable S.
+: ${ADDON_SOURCE_SUBDIR:="${S}"}
+
 # @ECLASS_VARIABLE: _BLENDER_ALL_IMPLS
 # @INTERNAL
 # @DESCRIPTION:
@@ -129,11 +136,7 @@ blender-addon_src_install() {
 		python_optimize
 		insinto ${_GENTOO_BLENDER_ADDONS_HOME[i]}/addons/${PN}
 		diropts -g users -m0775
-		if [ -a "${S}"/${PN} ]; then
-			doins -r "${S}"/${PN}/*
-		else
-			doins -r "${S}"/*
-		fi
+		doins -r "${ADDON_SOURCE_SUBDIR}"/*
 	done
 }
 

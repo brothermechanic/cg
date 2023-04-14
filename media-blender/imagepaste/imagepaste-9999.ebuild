@@ -6,7 +6,7 @@ inherit blender-addon
 
 DESCRIPTION="Blender addon for image pasting from system clipboard"
 HOMEPAGE="https://gumroad.com/l/BmQWu"
-EGIT_REPO_URI="https://github.com/Yeetus3141/ImagePaste"
+EGIT_REPO_URI="https://github.com/b-init/ImagePaste"
 
 LICENSE="GPL-3"
 
@@ -17,5 +17,7 @@ PATCHES=(
 src_prepare() {
 	default
 	rm -r "${S}"/imagepaste/clipboard/linux/bin/xclip
+	rm -r "${S}"/imagepaste/clipboard/windows
+	rm -r "${S}"/imagepaste/clipboard/darwin
 }
 
