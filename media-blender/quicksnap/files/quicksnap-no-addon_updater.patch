@@ -1,0 +1,46 @@
+--- a/__init__.py	2023-05-02 22:19:42.089330248 +0300
++++ b/__init__.py	2023-05-02 22:20:45.554116610 +0300
+@@ -1,7 +1,6 @@
+ import importlib
+ import logging
+ import sys
+-from . import addon_updater_ops
+ 
+ bl_info = {
+     "name": "QuickSnap",
+@@ -17,7 +16,7 @@ bl_info = {
+ }
+ 
+ 
+-modulesNames = ['addon_updater', 'addon_updater_ops', 'quicksnap_utils', 'quicksnap_snapdata', 'quicksnap_render',
++modulesNames = ['quicksnap_utils', 'quicksnap_snapdata', 'quicksnap_render',
+                 'quicksnap']
+ 
+ modulesFullNames = {}
+--- a/quicksnap.py	2023-05-03 00:23:19.765875770 +0300
++++ b/quicksnap.py	2023-05-03 00:24:41.281739079 +0300
+@@ -9,7 +9,6 @@ from . import quicksnap_utils
+ from .quicksnap_snapdata import SnapData
+ from bpy_extras import view3d_utils
+ from .quicksnap_utils import State
+-from . import addon_updater_ops
+ 
+ __name_addon__ = '.'.join(__name__.split('.')[:-1])
+ logger = logging.getLogger(__name_addon__)
+@@ -26,7 +25,6 @@ class QuickVertexSnapOperator(bpy.types.
+ 
+     def initialize(self, context):
+         self.icons = {}
+-        addon_updater_ops.check_for_update_background()
+         # Get 'WINDOW' region of the context. Useful when the active context region is UI within the 3DView
+         region = None
+         for region_item in context.area.regions:
+@@ -1014,7 +1012,6 @@ class QuickVertexSnapPreference(bpy.type
+         quicksnap_utils.insert_ui_hotkey(col, 'EVENT_ESC', "Cancel Snap")
+         quicksnap_utils.insert_ui_hotkey(col, 'MOUSE_RMB', "Cancel Snap")
+ 
+-        addon_updater_ops.update_settings_ui(self, context)
+ 
+ 
+ 
+

@@ -13,3 +13,9 @@ EGIT_REPO_URI="https://github.com/JulienHeijmans/quicksnap"
 
 LICENSE="MIT"
 
+src_prepare() {
+	default
+	eapply "${FILESDIR}/quicksnap-no-addon_updater.patch"
+	rm -r "${S}"/addon_updater_ops.py
+	rm -r "${S}"/addon_updater.py
+}
