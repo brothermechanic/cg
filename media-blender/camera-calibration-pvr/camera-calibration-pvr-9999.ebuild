@@ -3,7 +3,7 @@
 
 EAPI=8
 
-PYTHON_COMPAT=( python3_{9..11} )
+PYTHON_COMPAT=( python3_{10..11} )
 
 BLENDER_COMPAT=( 2_93 3_{1..6} )
 
@@ -23,7 +23,7 @@ RDEPEND="$(python_gen_cond_dep '
 ')"
 
 src_compile() {
-   cd "${S}"/figures
-   ${EPYTHON} generate-figures.py
+	cd "${S}"/figures
+	${EPYTHON} generate-figures.py
 }
 
