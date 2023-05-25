@@ -18,7 +18,7 @@ EGIT_SUBMODULES=()
 if [[ ${PV} == 9999 ]]; then
 	#EGIT_BRANCH="main"
 	#EGIT_COMMIT="fe3110a2859d84401dceda06fd41f3b082eae790"
-	MY_PV="3.6"
+	MY_PV="4.0"
 else
 	MY_PV="$(ver_cut 1-2)"
 	EGIT_BRANCH="blender-v${MY_PV}-release"
