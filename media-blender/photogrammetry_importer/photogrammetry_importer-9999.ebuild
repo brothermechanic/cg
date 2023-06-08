@@ -16,4 +16,4 @@ RDEPEND="
 	dev-python/pyntcloud
 "
 
-#S="${WORKDIR}/${P}/${PN}"
+ADDON_SOURCE_SUBDIR=${S}/${PN}

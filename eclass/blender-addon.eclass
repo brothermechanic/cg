@@ -20,7 +20,7 @@ case "${EAPI:-0}" in
 	*)     die "Unsupported EAPI=${EAPI} (unknown) for ${ECLASS}" ;;
 esac
 
-PYTHON_COMPAT=( python3_{9..11} )
+PYTHON_COMPAT=( python3_{10..12} )
 
 inherit git-r3 vcs-clean python-single-r1
 
