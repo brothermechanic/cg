@@ -1,10 +1,10 @@
-# Copyright 1999-2022 Gentoo Authors
+# Copyright 1999-2023 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
 
 EAPI=8
 
-PYTHON_COMPAT=( python3_{10..11} )
-LLVM_MAX_SLOT="15"
+PYTHON_COMPAT=( python3_{10..12} )
+LLVM_MAX_SLOT="16"
 
 inherit check-reqs cmake cuda flag-o-matic pax-utils python-single-r1 toolchain-funcs xdg-utils llvm
 
@@ -21,8 +21,9 @@ if [[ ${PV} == 9999 ]]; then
 	MY_PV="4.0"
 else
 	MY_PV="$(ver_cut 1-2)"
-	EGIT_BRANCH="blender-v${MY_PV}-release"
+	#EGIT_BRANCH="blender-v${MY_PV}-release"
 	EGIT_COMMIT="v${PV}"
+	if [[ "${PV}" == "3.6.0" ]]; then EGIT_COMMIT="962331c256b0"; fi
 	KEYWORDS="~amd64 ~arm ~arm64"
 fi
 
@@ -31,10 +32,10 @@ LICENSE="|| ( GPL-3 BL )"
 CUDA_ARCHS="sm_30 sm_35 sm_50 sm_52 sm_61 sm_70 sm_75 sm_86"
 IUSE_DESKTOP="cg -portable +X headless +nls +icu -ndof wayland"
 IUSE_GPU="cuda oneapi +opengl -openpgl -optix +hip ${CUDA_ARCHS}"
-IUSE_LIBS="clang +cycles gmp sdl jack openal pulseaudio +freestyle -osl +openvdb nanovdb abi7-compat abi8-compat abi9-compat abi10-compat +opensubdiv +opencolorio +openimageio +pdf +pugixml +potrace +collada -alembic +gltf-draco +fftw +oidn +quadriflow -usd +bullet -valgrind +jemalloc libmv +llvm"
+IUSE_LIBS="clang +cycles gmp sdl jack openal pulseaudio +freestyle -osl +openvdb nanovdb abi7-compat abi8-compat abi9-compat abi10-compat +opensubdiv +opencolorio +pdf +pugixml +potrace +collada -alembic +gltf-draco +fftw +oidn +quadriflow -usd +bullet -valgrind +jemalloc libmv +llvm"
 IUSE_CPU="+openmp embree +simd +tbb +lld gold cpu_flags_arm_neon"
 IUSE_TEST="-debug -doc -man -gtests test"
-IUSE_IMAGE="-dpx -dds +openexr jpeg2k tiff +hdr webp"
+IUSE_IMAGE="-dpx +openexr jpeg2k webp"
 IUSE_CODEC="avi +ffmpeg -sndfile +quicktime"
 IUSE_COMPRESSION="+lzma -lzo"
 IUSE_MODIFIERS="+fluid +smoke +oceansim +remesh"
@@ -47,12 +48,10 @@ REQUIRED_USE="${PYTHON_REQUIRED_USE}
 	embree? ( cycles tbb )
 	smoke? ( fftw )
 	cuda? ( cycles )
-	cycles? ( openexr tiff openimageio )
 	fluid?  ( fftw tbb )
 	oceansim? ( fftw )
 	oidn? ( cycles tbb )
 	oneapi? ( cycles )
-	openexr? ( openimageio )
 	optix? ( cycles cuda )
 	openvdb? (
 		^^ ( abi7-compat abi8-compat abi9-compat abi10-compat )
@@ -60,7 +59,6 @@ REQUIRED_USE="${PYTHON_REQUIRED_USE}
 	)
 	osl? ( cycles llvm )
 	test? ( gtests opencolorio )
-	tiff? ( openimageio )
 "
 
 LANGS="en ar bg ca cs de el es es_ES fa fi fr he hr hu id it ja ky ne nl pl pt pt_BR ru sr sr@latin sv tr uk zh_CN zh_TW"
@@ -90,6 +88,7 @@ RDEPEND="${PYTHON_DEPS}
 	collada? ( >=media-libs/opencollada-1.6.68 )
 	cuda? ( dev-util/nvidia-cuda-toolkit:= )
 	embree? ( >=media-libs/embree-3.10.0[raymask,tbb?] )
+	hip? ( >=dev-util/hip-5.4.0 )
 	ffmpeg? ( media-video/ffmpeg:=[x264,mp3,encode,theora,jpeg2k?,vpx,vorbis,opus,xvid] )
 	fftw? ( sci-libs/fftw:3.0=[openmp?] )
 	gltf-draco? ( media-libs/draco:=[gltf] )
@@ -117,7 +116,7 @@ RDEPEND="${PYTHON_DEPS}
 	)
 	openpgl? ( >=media-libs/openpgl-0.5.0:= )
 	oidn? ( >=media-libs/oidn-1.4.1 )
-	openimageio? ( >=media-libs/openimageio-2.4.6.0:= )
+	>=media-libs/openimageio-2.4.6.0:=
 	opencolorio? ( >=media-libs/opencolorio-2.1.1-r7:= )
 	openexr? ( >=media-libs/openexr-3:0= )
 	opensubdiv? ( >=media-libs/opensubdiv-3.4.0[cuda?,openmp?,tbb?] )
@@ -130,12 +129,11 @@ RDEPEND="${PYTHON_DEPS}
 	pdf? ( media-libs/libharu )
 	potrace? ( media-gfx/potrace )
 	pugixml? ( dev-libs/pugixml )
-	pulseaudio? ( media-sound/pulseaudio )
+	pulseaudio? ( media-libs/libpulse )
 	quicktime? ( media-libs/libquicktime )
 	sdl? ( media-libs/libsdl2[sound,joystick] )
 	sndfile? ( media-libs/libsndfile )
 	tbb? ( dev-cpp/tbb:= )
-	tiff? ( media-libs/tiff:= )
 	usd? ( media-libs/openusd[monolithic,-python] )
 	valgrind? ( dev-util/valgrind )
 	webp? ( media-libs/libwebp:= )
@@ -215,6 +213,9 @@ src_unpack() {
 	git-r3_src_unpack
 
 	for repo in $(echo ${EGIT_REPO_URI_LIST}); do
+		EGIT_BRANCH="main"
+		EGIT_COMMIT="v${PV}"
+		if [[ "${PV}" == "3.6.0" || "${PV}" == "9999" ]]; then EGIT_COMMIT=""; fi
 		EGIT_REPO_URI="${repo}"
 		EGIT_CHECKOUT_DIR=${WORKDIR}/${P}/scripts/$(echo -n "${repo}" | sed -rne 's/^http.*\/blender-([a-z-]*).*/\1/p')
 		git-r3_src_unpack
@@ -336,17 +337,15 @@ src_configure() {
 			)
 		fi
 		mycmakeargs+=(
-			-DCUDA_INCLUDE_DIRS=/opt/cuda/include
-			-DCUDA_CUDART_LIBRARY=/opt/cuda/lib64
+#			-DCUDA_INCLUDE_DIRS=/opt/cuda/include
+#			-DCUDA_CUDART_LIBRARY=/opt/cuda/lib64
 			-DCUDA_NVCC_EXECUTABLE=/opt/cuda/bin/nvcc
-			-DCUDA_NVCC_FLAGS="-std=c++14"
-			-DCUDA_HOST_COMPILER="$(cuda_gccdir)"
+			-DCUDA_HOST_COMPILER="$(cuda_gccdir)\/$(tc-getCC)"
 		)
 	fi
 
 	mycmakeargs+=(
 		-DSUPPORT_NEON_BUILD=$(usex cpu_flags_arm_neon)
-		-DCMAKE_INSTALL_PREFIX=/usr
 		-DPYTHON_VERSION="${EPYTHON/python/}"
 		-DPYTHON_INCLUDE_DIR="$(python_get_includedir)"
 		-DPYTHON_LIBRARY="$(python_get_library_path)"
@@ -396,12 +395,12 @@ src_configure() {
 		-DWITH_IMAGE_CINEON=$(usex dpx)
 		-DWITH_HARU=$(usex pdf)
 		-DWITH_INSTALL_PORTABLE=$(usex portable)
-		-DWITH_IMAGE_DDS=$(usex dds)
-		-DWITH_IMAGE_HDR=$(usex hdr)
+#		-DWITH_IMAGE_DDS=$(usex dds)
+#		-DWITH_IMAGE_HDR=$(usex hdr)
 		-DWITH_IMAGE_WEBP=$(usex webp)
 		-DWITH_IMAGE_OPENEXR=$(usex openexr)
 		-DWITH_IMAGE_OPENJPEG=$(usex jpeg2k)
-		-DWITH_IMAGE_TIFF=$(usex tiff)
+#		-DWITH_IMAGE_TIFF=$(usex tiff)
 		-DWITH_INPUT_NDOF=$(usex ndof)
 		-DWITH_INPUT_IME=no
 		-DWITH_INTERNATIONAL=$(usex nls)						# I18N fonts and text
@@ -425,7 +424,7 @@ src_configure() {
 		-DWITH_OPENCOLORIO=$(usex opencolorio)
 		-DWITH_OPENGL=$(usex opengl)
 		-DWITH_OPENIMAGEDENOISE=$(usex oidn)					# compositing node
-		-DWITH_OPENIMAGEIO=$(usex openimageio)
+#		-DWITH_OPENIMAGEIO=$(usex openimageio)
 		-DWITH_OPENMP=$(usex openmp)
 		-DWITH_OPENSUBDIV=$(usex opensubdiv)					# for surface subdivision
 		-DWITH_OPENVDB=$(usex openvdb)							# advanced remesh and smoke
@@ -561,7 +560,8 @@ src_install() {
 
 pkg_postinst() {
 	elog
-	elog "Blender compiles from master thunk by default"
+	elog "Blender uses python integration. As such, may have some"
+	elog "inherent risks with running unknown python scripts."
 	elog
 	elog "There is some my prefer blender settings as patches"
 	elog "find them in cg/local-patches/blender/"
@@ -575,11 +575,11 @@ pkg_postinst() {
 	elog "changing the 'Temporary Files' directory in Blender preferences."
 	elog
 
-	if ! use python_single_target_python3_10; then
+	if ! use python_single_target_python3_11; then
 		elog "You are building Blender with a newer python version than"
 		elog "supported by this version upstream."
 		elog "If you experience breakages with e.g. plugins, please switch to"
-		elog "python_single_target_python3_10 instead."
+		elog "python_single_target_python3_11 instead."
 		elog "Bug: https://bugs.gentoo.org/737388"
 		elog
 	fi

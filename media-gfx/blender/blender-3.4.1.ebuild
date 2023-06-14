@@ -1,4 +1,4 @@
-# Copyright 1999-2022 Gentoo Authors
+# Copyright 1999-2023 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
 
 EAPI=8
@@ -13,26 +13,26 @@ HOMEPAGE="https://www.blender.org"
 
 inherit git-r3
 EGIT_REPO_URI="https://projects.blender.org/blender/blender.git"
-EGIT_SUBMODULES=( release/datafiles/locale release/scripts/addons release/scripts/addons_contrib )
+EGIT_REPO_URI_LIST="https://projects.blender.org/blender/blender-addons.git https://projects.blender.org/blender/blender-addons-contrib.git"
+EGIT_SUBMODULES=( release/datafiles/locale )
 if [[ ${PV} == 9999 ]]; then
 	#EGIT_BRANCH="main"
 	#EGIT_COMMIT="fe3110a2859d84401dceda06fd41f3b082eae790"
-    KEYWORDS=""
 	MY_PV="3.5"
 else
 	MY_PV="$(ver_cut 1-2)"
-	EGIT_BRANCH="blender-v${MY_PV}-release"
+	#EGIT_BRANCH="blender-v${MY_PV}-release"
+	EGIT_COMMIT="v${PV}"
 	KEYWORDS="~amd64 ~x86 ~arm64 ~arm"
 fi
 
-: ${GENTOO_BLENDER_ADDONS_DIR:-"/usr/share/blender/scripts/addons"} # For default preferences only
 SLOT="$MY_PV"
 LICENSE="|| ( GPL-3 BL )"
 CUDA_ARCHS="sm_30 sm_35 sm_50 sm_52 sm_61 sm_70 sm_75 sm_86"
 IUSE_DESKTOP="cg -portable +X headless wayland +nls +icu -ndof"
 IUSE_GPU="+opengl -openpgl -optix cuda +hip ${CUDA_ARCHS}"
 IUSE_LIBS="clang +cycles gmp sdl jack openal pulseaudio +freestyle -osl +openvdb nanovdb abi7-compat abi8-compat abi9-compat abi10-compat +opensubdiv +opencolorio +openimageio +pdf +pugixml +potrace +collada -alembic +gltf-draco +fftw +oidn +quadriflow -usd +bullet -valgrind +jemalloc libmv +llvm"
-IUSE_CPU="+openmp embree +simd +tbb +lld gold"
+IUSE_CPU="+openmp embree +simd +tbb +lld gold cpu_flags_arm_neon"
 IUSE_TEST="-debug -doc -man -gtests test"
 IUSE_IMAGE="-dpx -dds +openexr jpeg2k tiff +hdr webp"
 IUSE_CODEC="avi +ffmpeg -sndfile +quicktime"
@@ -47,7 +47,7 @@ REQUIRED_USE="${PYTHON_REQUIRED_USE}
 	embree? ( cycles tbb )
 	smoke? ( fftw )
 	cuda? ( cycles )
-	cycles? ( openexr tiff openimageio )
+	cycles? ( openexr openimageio )
 	fluid?  ( fftw tbb )
 	oceansim? ( fftw )
 	oidn? ( cycles tbb )
@@ -180,6 +180,7 @@ QA_WX_LOAD="usr/share/${PN}/${SLOT}/scripts/addons/cycles/lib/kernel_sm_*.cubin"
 QA_PREBUILT="${QA_WX_LOAD}"
 QA_PRESTRIPPED="${QA_WX_LOAD}"
 QA_FLAGS_IGNORED="${QA_WX_LOAD}"
+: ${GENTOO_BLENDER_ADDONS_DIR:="/usr/share/blender/scripts"} # Only for pythondir user preferences
 
 blender_check_requirements() {
 	[[ ${MERGE_TYPE} != binary ]] && use openmp && tc-check-openmp
@@ -212,6 +213,14 @@ pkg_setup() {
 src_unpack() {
 	git-r3_src_unpack
 
+	for repo in $(echo ${EGIT_REPO_URI_LIST}); do
+		EGIT_BRANCH="main"
+		EGIT_COMMIT="v${PV}"
+		EGIT_REPO_URI="${repo}"
+		EGIT_CHECKOUT_DIR=${WORKDIR}/${P}/scripts/$(echo -n "${repo}" | sed -rne 's/^http.*\/blender-([a-z-]*).*/\1/p')
+		git-r3_src_unpack
+	done
+
 	if use test; then
 		default
 		mkdir -p lib || die
@@ -231,13 +240,12 @@ src_prepare() {
 	eapply "${FILESDIR}/blender-system-embree.patch"
 	eapply "${FILESDIR}/blender-fix-usd-python.patch"
 	eapply "${FILESDIR}/blender-fix-boost-1.81-iostream.patch"
-	use elibc_musl && eapply "${FILESDIR}/blender-3.2.2-support-building-with-musl-libc.patch"
 	if use cg; then
         eapply "${FILESDIR}"/cg-defaults.patch
         cp "${FILESDIR}"/splash.png release/datafiles/
     fi
 
-    #set GENTOO_BLENDER_ADDONS_DIR to userpref
+    #set scripts dir to userpref
     sed -i -e "s|.pythondir.*|.pythondir = \"${GENTOO_BLENDER_ADDONS_DIR}\",|" "${S}"/release/datafiles/userdef/userdef_default.c || die
 
 	# remove some bundled deps
@@ -348,8 +356,7 @@ src_configure() {
 	fi
 
 	mycmakeargs+=(
-		-DSUPPORT_NEON_BUILD=$(usex arm64)
-		-DCMAKE_INSTALL_PREFIX=/usr
+		-DSUPPORT_NEON_BUILD=$(usex cpu_flags_arm_neon)
 		-DPYTHON_VERSION="${EPYTHON/python/}"
 		-DPYTHON_INCLUDE_DIR="$(python_get_includedir)"
 		-DPYTHON_LIBRARY="$(python_get_library_path)"
