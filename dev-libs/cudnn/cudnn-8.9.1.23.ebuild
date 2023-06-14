@@ -14,7 +14,7 @@ CUDA_V="${CUDA_MA}.${CUDA_MI}"
 DESCRIPTION="NVIDIA Accelerated Deep Learning on GPU library"
 HOMEPAGE="https://developer.nvidia.com/cudnn"
 #SRC_URI="https://developer.download.nvidia.com/compute/redist/cudnn/v${BASE_V}/local_installers/${CUDA_V}/cudnn-linux-x86_64-${PV}_cuda${CUDA_MA}-archive.tar.xz"
-SRC_URI="cudnn-linux-x86_64-8.8.0.121_cuda12-archive.tar.xz"
+SRC_URI="cudnn-linux-x86_64-8.9.1.23_cuda12-archive.tar.xz"
 
 LICENSE="NVIDIA-cuDNN"
 SLOT="0/8"
