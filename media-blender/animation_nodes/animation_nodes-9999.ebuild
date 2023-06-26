@@ -19,6 +19,8 @@ LICENSE="GPL-2"
 
 RDEPEND="dev-python/numpy"
 
+ADDON_SOURCE_SUBDIR=${S}/${PN}
+
 src_install(){
 	echo "{\"Copy Target\" : \"${ED}${GENTOO_BLENDER_ADDONS_DIR}/${PN}\"}" > conf.json
 	esetup.py build --copy --noversioncheck

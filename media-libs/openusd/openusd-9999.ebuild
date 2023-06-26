@@ -1,9 +1,9 @@
 # Copyright 1999-2021 Gentoo Foundation
 # Distributed under the terms of the GNU General Public License v2
 
-EAPI=7
+EAPI=8
 
-PYTHON_COMPAT=( python3_{10..11} )
+PYTHON_COMPAT=( python3_{10..12} )
 
 inherit git-r3 cmake python-single-r1 flag-o-matic
 
@@ -68,7 +68,7 @@ CMAKE_BUILD_TYPE=Release
 
 PATCHES=(
 	"${FILESDIR}/algorithm.patch"
-	"${FILESDIR}/fix-size_t-in-singularTask.h.patch"
+	#"${FILESDIR}/fix-size_t-in-singularTask.h.patch"
 )
 
 USD_PATH="/opt/${PN}"
@@ -131,5 +131,4 @@ src_install() {
 
 	chrpath --delete "${D}$${USD_PATH}/lib/*.so"
 }
-
 
