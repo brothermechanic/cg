@@ -43,13 +43,14 @@ RDEPEND="
 		sci-libs/camd
 		sci-libs/ccolamd
 		sci-libs/cholmod[metis(+)]
+		sci-libs/metis[-int64]
 		sci-libs/colamd
 		sci-libs/spqr
 	)
 "
 DEPEND="${RDEPEND}"
 
-DOCS=( README.md VERSION )
+DOCS=( README.md )
 
 S=${WORKDIR}/${PN}-${COMMIT_HASH}
 
