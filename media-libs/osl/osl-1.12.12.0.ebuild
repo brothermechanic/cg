@@ -1,9 +1,9 @@
-# Copyright 1999-2022 Gentoo Authors
+# Copyright 1999-2023 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
 
 EAPI=8
 
-PYTHON_COMPAT=( python3_{8..11} )
+PYTHON_COMPAT=( python3_{10..12} )
 
 # Check this on updates
 LLVM_MAX_SLOT=15
@@ -31,7 +31,12 @@ RESTRICT="
 	!test (test)
 	mirror
 "
-REQUIRED_USE="${PYTHON_REQUIRED_USE}"
+REQUIRED_USE="
+	${PYTHON_REQUIRED_USE}
+	optix? (
+		^^ ( ${CUDA_ARCHS} )
+	)
+"
 
 RDEPEND="
 	dev-libs/boost:=
@@ -65,6 +70,10 @@ BDEPEND="
 	virtual/pkgconfig
 "
 
+PATCHES=(
+	${FILESDIR}/osl-1.12.12.0-llvm-16.patch
+)
+
 llvm_check_deps() {
 	has_version -r "sys-devel/clang:${LLVM_SLOT}"
 }
@@ -87,31 +96,18 @@ src_prepare() {
 src_configure() {
 	local cpufeature
 	local mysimd=()
-	local mycmakeargs=()
 	for cpufeature in "${CPU_FEATURES[@]}"; do
 		use "${cpufeature%:*}" && mysimd+=("${cpufeature#*:}")
 	done
 
 	CMAKE_BUILD_TYPE=Release
-	#OSL_EXTRA_NVCC_ARGS="--compiler-bindir $(cuda_gccdir)"
 
 	# If no CPU SIMDs were used, completely disable them
 	[[ -z ${mysimd} ]] && mysimd=("0")
 
-	if use optix; then
-		for CA in ${CUDA_ARCHS}; do
-			use ${CA} && CUDA_ARCH+="${CA};"
-		done
-
-		mycmakeargs+=(
-			-DCUDA_TARGET_ARCH=${CUDA_ARCH%%;}
-			-DUSE_OPTIX=ON
-			#-DOPTIX_INCLUDE_DIR="/opt/optix/include"
-		)
-	fi
-
-	mycmakeargs+=(
-		-DCMAKE_CXX_STANDARD=14
+	local mycmakeargs+=(
+		-DUSE_OPTIX=$(usex optix)
+		-DCMAKE_CXX_STANDARD=17
 		-DCMAKE_INSTALL_DOCDIR="share/doc/${PF}"
 		-DINSTALL_DOCS=$(usex doc)
 		-DUSE_CCACHE=OFF
@@ -127,6 +123,11 @@ src_configure() {
 		-DUSE_SIMD="$(IFS=","; echo "${mysimd[*]}")"
 	)
 
+	if use optix; then
+		for CA in ${CUDA_ARCHS}; do
+			use ${CA} && mycmakeargs+=(	-DCUDA_TARGET_ARCH="${CA}" ) && break
+		done
+	fi
 	cmake_src_configure
 }
 

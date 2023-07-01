@@ -1,0 +1,17 @@
+--- a/sysdeps/x86/bits/floatn.h
++++ b/sysdeps/x86/bits/floatn.h
+@@ -26,12 +26,13 @@
+    glibc includes corresponding *f128 interfaces for it.  The required
+    libgcc support was added some time after the basic compiler
+    support, for x86_64 and x86.  */
+-#if (defined __x86_64__							\
++#if (defined __x86_64__	&&  !defined(__CUDACC__) \
+      ? __GNUC_PREREQ (4, 3)						\
+      : (defined __GNU__ ? __GNUC_PREREQ (4, 5) : __GNUC_PREREQ (4, 4)))
+ # define __HAVE_FLOAT128 1
+ #else
+ # define __HAVE_FLOAT128 0
++# undef __SIZEOF_FLOAT128__
+ #endif
+ 
+ /* Defined to 1 if __HAVE_FLOAT128 is 1 and the type is ABI-distinct

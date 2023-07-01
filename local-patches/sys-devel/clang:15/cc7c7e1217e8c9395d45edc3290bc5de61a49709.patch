@@ -1,0 +1,22 @@
+From cc7c7e1217e8c9395d45edc3290bc5de61a49709 Mon Sep 17 00:00:00 2001
+From: Josip Basic <j8asic@gmail.com>
+Date: Wed, 3 May 2023 09:04:36 +0200
+Subject: [PATCH] Exclude __clang_cuda_texture_intrinsics for cuda >= 12
+
+---
+ clang/lib/Headers/__clang_cuda_runtime_wrapper.h | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/clang/lib/Headers/__clang_cuda_runtime_wrapper.h b/clang/lib/Headers/__clang_cuda_runtime_wrapper.h
+index 512fc300fc344c..9f22c23f137bbe 100644
+--- a/clang/lib/Headers/__clang_cuda_runtime_wrapper.h
++++ b/clang/lib/Headers/__clang_cuda_runtime_wrapper.h
+@@ -360,7 +360,7 @@ __DEVICE__ unsigned int __isLocal(const void *p) {
+ // __clang_cuda_texture_intrinsics.h must be included first in order to provide
+ // implementation for __nv_tex_surf_handler that CUDA's headers depend on.
+ // The implementation requires c++11 and only works with CUDA-9 or newer.
+-#if __cplusplus >= 201103L && CUDA_VERSION >= 9000
++#if __cplusplus >= 201103L && CUDA_VERSION >= 9000 && CUDA_VERSION < 12000
+ // clang-format off
+ #include <__clang_cuda_texture_intrinsics.h>
+ // clang-format on
