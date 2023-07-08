@@ -1,0 +1,44 @@
+--- a/initializer.py
++++ b/initializer.py
+@@ -99,34 +99,21 @@ class Anton_OT_Initializer(bpy.types.Ope
+         # subprocess.call(["python3", os.path.join(scene.anton.taichi_path, "projects/spgrid_topo_opt/scripts/opt_anton.py")])
+ 
+         bpy.ops.object.modifier_add(type='TRIANGULATE')
+-        bpy.ops.object.modifier_apply(apply_as='DATA', modifier="Triangulate")
+-        bpy.ops.export_scene.obj(filepath=os.path.join(scene.anton.workspace_path, scene.anton.filename, scene.anton.filename + '.obj'),
++        bpy.ops.object.modifier_apply(modifier="Triangulate")
++        bpy.ops.wm.obj_export(filepath=os.path.join(scene.anton.workspace_path, scene.anton.filename, scene.anton.filename + '.obj'),
+                                     check_existing=True,
+-                                    axis_forward='Y',
+-                                    axis_up='Z',
++                                    forward_axis='Y',
++                                    up_axis='Z',
+                                     filter_glob="*.obj;*.mtl",
+-                                    use_selection=False,
+-                                    use_animation=False,
+-                                    use_mesh_modifiers=True,
+-                                    use_normals=False,
+-                                    use_uvs=False,
+-                                    use_materials=False,
+-                                    use_triangles=True,
+-                                    use_nurbs=False,
+-                                    use_vertex_groups=False,
+-                                    use_blen_objects=True,
+-                                    group_by_object=False,
+-                                    group_by_material=False,
+-                                    keep_vertex_order=True,
+                                     global_scale=1, path_mode='AUTO')
+ 
+         active_object.select_set(True)
+         bpy.ops.object.delete()
+ 
+         bpy.ops.object.select_all(action='DESELECT')
+-        bpy.ops.import_scene.obj(filepath=os.path.join(scene.anton.workspace_path, scene.anton.filename, scene.anton.filename + '.obj'),
+-                                    axis_forward='Y',
+-                                    axis_up='Z')
++        bpy.ops.wm.obj_import(filepath=os.path.join(scene.anton.workspace_path, scene.anton.filename, scene.anton.filename + '.obj'),
++                                    forward_axis='Y',
++                                    up_axis='Z')
+ 
+         _temp_ob = bpy.context.selected_objects[0]
+         _temp_ob.name = scene.anton.filename

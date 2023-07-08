@@ -18,9 +18,8 @@ EGIT_REPO_URI="https://github.com/scorpion81/Blender-Molecular-Script"
 LICENSE="GPL-3"
 ADDON_SOURCE_SUBDIR=${S}/molecular
 
-BDEPEND="dev-python/cython"
-
-RDEPEND="$(python_gen_cond_dep '
+BDEPEND="$(python_gen_cond_dep '
+	dev-python/cython[${PYTHON_USEDEP}]
     dev-python/setuptools[${PYTHON_USEDEP}]
 ')"
 

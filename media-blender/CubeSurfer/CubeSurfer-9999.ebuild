@@ -17,10 +17,9 @@ EGIT_REPO_URI="https://github.com/porkminer/CubeSurfer"
 
 LICENSE="GPL-3"
 
-BDEPEND="dev-python/cython"
-
-RDEPEND="$(python_gen_cond_dep '
+BDEPEND="$(python_gen_cond_dep '
     dev-python/setuptools[${PYTHON_USEDEP}]
+	dev-python/cython[${PYTHON_USEDEP}]
 ')"
 
 src_prepare() {

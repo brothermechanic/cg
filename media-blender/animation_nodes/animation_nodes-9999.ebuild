@@ -17,7 +17,7 @@ EGIT_REPO_URI="https://github.com/JacquesLucke/${PN}"
 
 LICENSE="GPL-2"
 
-RDEPEND="dev-python/numpy"
+RDEPEND="$(python_gen_cond_dep 'dev-python/numpy[${PYTHON_USEDEP}]')"
 
 ADDON_SOURCE_SUBDIR=${S}/${PN}
 
