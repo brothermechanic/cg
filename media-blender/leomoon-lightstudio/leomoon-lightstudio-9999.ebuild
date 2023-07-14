@@ -13,3 +13,8 @@ EGIT_REPO_URI="https://github.com/leomoon-studios/leomoon-lightstudio"
 
 LICENSE="GPL-2"
 
+src_prepare() {
+    default
+    # Fix blender 3.4+ gpu shader color name
+    has_version -b '>=media-gfx/blender-3.4.0' && sed -re 's/[2,3]D_([A-Z]+_COLOR)/\1/g' -i operators/modal_utils.py || die "Sed failed"
+}

@@ -11,5 +11,5 @@ DESCRIPTION="Add captured camera shake/wobble to your cameras"
 HOMEPAGE="https://github.com/EatTheFuture/camera_shakify"
 EGIT_REPO_URI="https://github.com/EatTheFuture/camera_shakify"
 
-LICENSE="GPL-3"
+LICENSE="GPL CC0-1.0"
 

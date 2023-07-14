@@ -13,7 +13,7 @@ EGIT_REPO_URI="https://github.com/HugoTini/DeepBump"
 
 LICENSE="GPL-3"
 
-RDEPEND="
+RDEPEND="$(python_gen_cond_dep '
+	dev-python/numpy[${PYTHON_USEDEP}]
 	>=sci-libs/onnxruntime-0.14.0:=
-	dev-python/numpy
 "

@@ -32,8 +32,9 @@ BDEPEND="
 	dev-cpp/nlohmann_json
 	sci-libs/pytorch
 	dev-libs/re2
+	dev-libs/protobuf:=
 	cuda? (
-		dev-util/nvidia-cuda-toolkit:12=
+		dev-util/nvidia-cuda-toolkit:=
 		dev-libs/cudnn:=
 	)
 	dnn? (
@@ -51,7 +52,6 @@ BDEPEND="
 			dev-python/flatbuffers[${PYTHON_USEDEP}]
 			dev-python/numpy[${PYTHON_USEDEP}]
 			dev-python/sympy[${PYTHON_USEDEP}]
-			dev-python/protobuf[${PYTHON_USEDEP}]
 			dev-python/psutil[${PYTHON_USEDEP}]
 			dev-python/py-cpuinfo[${PYTHON_USEDEP}]
 		')

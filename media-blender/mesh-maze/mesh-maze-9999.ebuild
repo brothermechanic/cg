@@ -7,9 +7,9 @@ BLENDER_COMPAT=( 2_93 3_{1..6} 4_0 )
 
 inherit blender-addon
 
-DESCRIPTION="Generates normal & height maps from image textures"
-HOMEPAGE="hugotini.github.io/deepbump"
-EGIT_REPO_URI="https://github.com/HugoTini/DeepBump"
+DESCRIPTION="Convert any mesh to a maze pattern"
+HOMEPAGE="https://elfnor.com/mesh-maze-blender-add-on.html"
+EGIT_REPO_URI="https://github.com/elfnor/mesh_maze"
 
-LICENSE="GPL-3"
+LICENSE="MIT"
 
