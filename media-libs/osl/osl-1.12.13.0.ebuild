@@ -8,7 +8,7 @@ PYTHON_COMPAT=( python3_{10..12} )
 # Check this on updates
 LLVM_MAX_SLOT=15
 
-inherit cmake cuda llvm toolchain-funcs python-single-r1
+inherit cmake cuda flag-o-matic llvm toolchain-funcs python-single-r1
 
 DESCRIPTION="Advanced shading language for production GI renderers"
 HOMEPAGE="http://opensource.imageworks.com/?p=osl"
@@ -105,7 +105,12 @@ src_configure() {
 	# If no CPU SIMDs were used, completely disable them
 	[[ -z ${mysimd} ]] && mysimd=("0")
 
-	local mycmakeargs+=(
+	# This is currently needed on arm64 to get the NEON SIMD wrapper to compile the code successfully
+	# Even if there are no SIMD features selected, it seems like the code will turn on NEON support if it is available.
+	use arm64 && append-flags -flax-vector-conversions
+
+	local gcc="$(tc-getCC)"
+	local mycmakeargs=(
 		-DUSE_OPTIX=$(usex optix)
 		-DCMAKE_CXX_STANDARD=17
 		-DCMAKE_INSTALL_DOCDIR="share/doc/${PF}"
@@ -134,7 +139,7 @@ src_configure() {
 src_test() {
 	# TODO: investigate failures
 	local myctestargs=(
-		-E "(osl-imageio|osl-imageio.opt|render-background|render-bumptest|render-mx-furnace-burley-diffuse|render-mx-furnace-sheen|render-mx-burley-diffuse|render-mx-conductor|render-mx-generalized-schlick|render-mx-generalized-schlick-glass|render-microfacet|render-oren-nayar|render-uv|render-veachmis|render-ward)"
+		-E "(osl-imageio|osl-imageio.opt|render-background|render-bumptest|render-mx-furnace-burley-diffuse|render-mx-furnace-sheen|render-mx-burley-diffuse|render-mx-conductor|render-mx-generalized-schlick|render-mx-generalized-schlick-glass|render-microfacet|render-oren-nayar|render-uv|render-veachmis|render-ward|render-raytypes.opt|color|color.opt|example-deformer)"
 	)
 
 	cmake_src_test

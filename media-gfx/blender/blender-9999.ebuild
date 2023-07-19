@@ -31,8 +31,9 @@ SLOT="$MY_PV"
 LICENSE="|| ( GPL-3 BL )"
 CUDA_ARCHS="sm_30 sm_35 sm_50 sm_52 sm_61 sm_70 sm_75 sm_86"
 IUSE_DESKTOP="cg -portable +X headless +nls +icu -ndof wayland"
-IUSE_GPU="cuda oneapi +opengl -openpgl -optix +hip ${CUDA_ARCHS}"
-IUSE_LIBS="clang +cycles gmp sdl jack openal pulseaudio +freestyle -osl +openvdb nanovdb abi7-compat abi8-compat abi9-compat abi10-compat +opensubdiv +opencolorio +pdf +pugixml +potrace +collada -alembic +gltf-draco +fftw +oidn +quadriflow -usd +bullet -valgrind +jemalloc libmv +llvm"
+IUSE_GPU="cuda oneapi +opengl -openpgl -optix +hip vulkan ${CUDA_ARCHS}"
+IUSE_LIBS="audaspace clang +cycles gmp sdl jack openal pulseaudio +freestyle -osl +openvdb nanovdb abi7-compat abi8-compat abi9-compat abi10-compat \
+	+opensubdiv +opencolorio +pdf +pugixml +potrace +collada -alembic +gltf-draco +fftw +oidn +quadriflow -usd +bullet -valgrind +jemalloc +libmv +llvm"
 IUSE_CPU="+openmp embree +simd +tbb +lld gold cpu_flags_arm_neon"
 IUSE_TEST="-debug -doc -man -gtests test"
 IUSE_IMAGE="-dpx +openexr jpeg2k webp"
@@ -96,6 +97,7 @@ RDEPEND="${PYTHON_DEPS}
 	gtests? (
 		dev-cpp/gflags:=
 		dev-cpp/glog:=[gflags]
+		dec-cpp/gmock:=
 	)
 	jack? ( virtual/jack )
 	jemalloc? ( dev-libs/jemalloc:= )
@@ -131,7 +133,7 @@ RDEPEND="${PYTHON_DEPS}
 	pugixml? ( dev-libs/pugixml )
 	pulseaudio? ( media-libs/libpulse )
 	quicktime? ( media-libs/libquicktime )
-	sdl? ( media-libs/libsdl2[sound,joystick] )
+	sdl? ( media-libs/libsdl2[sound,joystick,vulkan?] )
 	sndfile? ( media-libs/libsndfile )
 	tbb? ( dev-cpp/tbb:= )
 	usd? ( media-libs/openusd[monolithic,-python] )
@@ -153,6 +155,11 @@ RDEPEND="${PYTHON_DEPS}
 
 DEPEND="
 	dev-cpp/eigen:=
+	vulkan? (
+		media-libs/shaderc
+		media-libs/vulkan-loader[X?,wayland?]
+	)
+
 "
 
 BDEPEND="
@@ -236,10 +243,12 @@ src_prepare() {
 	use cuda && cuda_src_prepare
 
 	eapply "${FILESDIR}/x112.patch"
-	eapply "${FILESDIR}/blender-system-glog-gflags.patch"
+#	eapply "${FILESDIR}/blender-system-glog-gflags.patch"
 	eapply "${FILESDIR}/blender-system-embree.patch"
+	eapply "${FILESDIR}/blender-system-libs.patch"
 	eapply "${FILESDIR}/blender-fix-usd-python.patch"
 	eapply "${FILESDIR}/blender-fix-boost-1.81-iostream.patch"
+	use vulkan && eapply "${FILESDIR}/blender-fix-gcc-13-vk_mem_alloc.h.patch"
 	if use cg; then
         eapply "${FILESDIR}"/cg-defaults.patch
         cp "${FILESDIR}"/splash.png release/datafiles/
@@ -249,7 +258,7 @@ src_prepare() {
     sed -i -e "s|.pythondir.*|.pythondir = \"${GENTOO_BLENDER_ADDONS_DIR}\",|" "${S}"/release/datafiles/userdef/userdef_default.c || die
 
 	# remove some bundled deps
-	rm -rf extern/{Eigen3,lzo,gflags,glog,draco} || die
+	rm -rf extern/{Eigen3,lzo,gflags,glog,gtest,gmock,draco,ceres} || die
 
 	# Disable MS Windows help generation. The variable doesn't do what it
 	# it sounds like.
@@ -433,18 +442,24 @@ src_configure() {
 		-DWITH_SDL=$(usex sdl)									# for sound and joystick support
 		-DWITH_SDL_DYNLOAD=$(usex sdl)
 		-DWITH_STATIC_LIBS=$(usex portable)
+		-DWITH_AUDASPACE=$(usex audaspace)
+		-DWITH_SYSTEM_AUDASPACE=$(usex !portable)
 		-DWITH_SYSTEM_EIGEN3=$(usex !portable)
 		#-DWITH_SYSTEM_GLES=$(usex !portable)
 		#-DWITH_SYSTEM_GLEW=$(usex !portable)
 		-DWITH_SYSTEM_LZO=$(usex !portable)
 		-DWITH_SYSTEM_GFLAGS=$(usex !portable)
 		-DWITH_SYSTEM_GLOG=$(usex !portable)
-		#-DWITH_SYSTEM_CERES=$(usex !portable)
+		-DWITH_SYSTEM_CERES=$(usex !portable)
+		-DCERES_INCLUDE_DIRS="/usr/include/ceres"
 		-DWITH_GTESTS=$(usex gtests)
+		-DWITH_SYSTEM_GTESTS=$(usex !portable)
 		-DWITH_GHOST_DEBUG=$(usex debug)
 		-DWITH_CXX_GUARDEDALLOC=$(usex debug)
+		-DWITH_GMP=$(usex gmp)
 		-DWITH_TBB=$(usex tbb)
 		-DWITH_USD=$(usex usd)									# export format support
+		-DWITH_VULKAN_BACKEND=$(usex vulkan)
 		-DWITH_XR_OPENXR=no
 		#-DUSD_ROOT_DIR=/opt/openusd
 		#-DUSD_LIBRARY=/opt/openusd/lib/libusd_ms.so
@@ -452,6 +467,7 @@ src_configure() {
 		-DBUILD_SHARED_LIBS=no
 		-DWITH_CLANG=$(usex clang)
 		-DCLANG_INCLUDE_DIR="/usr/lib/llvm/${LLVM_SLOT}/include/clang"
+		-DWITH_BUILDINFO=OFF
 		#-Wno-dev
 		#-DCMAKE_FIND_DEBUG_MODE=yes
 	)
