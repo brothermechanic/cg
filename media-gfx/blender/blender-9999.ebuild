@@ -31,7 +31,7 @@ SLOT="$MY_PV"
 LICENSE="|| ( GPL-3 BL )"
 CUDA_ARCHS="sm_30 sm_35 sm_50 sm_52 sm_61 sm_70 sm_75 sm_86"
 IUSE_DESKTOP="cg -portable +X headless +nls +icu -ndof wayland"
-IUSE_GPU="cuda oneapi +opengl -openpgl -optix +hip vulkan ${CUDA_ARCHS}"
+IUSE_GPU="cuda oneapi +opengl -openpgl -optix +hip -vulkan ${CUDA_ARCHS}"
 IUSE_LIBS="audaspace clang +cycles gmp sdl jack openal pulseaudio +freestyle -osl +openvdb nanovdb abi7-compat abi8-compat abi9-compat abi10-compat \
 	+opensubdiv +opencolorio +pdf +pugixml +potrace +collada -alembic +gltf-draco +fftw +oidn +quadriflow -usd +bullet -valgrind +jemalloc +libmv +llvm"
 IUSE_CPU="+openmp embree +simd +tbb +lld gold cpu_flags_arm_neon"
@@ -76,6 +76,7 @@ RDEPEND="${PYTHON_DEPS}
 		dev-python/requests[${PYTHON_USEDEP}]
 		dev-libs/boost[python,nls?,icu?,threads(+),${PYTHON_USEDEP}]
 	')
+	>=dev-cpp/nlohmann_json-3.10.0:=
 	media-libs/freetype:=[brotli]
 	media-libs/libepoxy:=
 	media-libs/libjpeg-turbo:=
@@ -243,12 +244,13 @@ src_prepare() {
 	use cuda && cuda_src_prepare
 
 	eapply "${FILESDIR}/x112.patch"
-#	eapply "${FILESDIR}/blender-system-glog-gflags.patch"
 	eapply "${FILESDIR}/blender-system-embree.patch"
+	eapply "${FILESDIR}/blender-system-json.patch"
 	eapply "${FILESDIR}/blender-system-libs.patch"
 	eapply "${FILESDIR}/blender-fix-usd-python.patch"
 	eapply "${FILESDIR}/blender-fix-boost-1.81-iostream.patch"
-	use vulkan && eapply "${FILESDIR}/blender-fix-gcc-13-vk_mem_alloc.h.patch"
+	use optix && eapply "${FILESDIR}/blender-fix-optix-build.patch"
+	#use vulkan && eapply "${FILESDIR}/blender-fix-gcc-13-vk_mem_alloc.h.patch"
 	if use cg; then
         eapply "${FILESDIR}"/cg-defaults.patch
         cp "${FILESDIR}"/splash.png release/datafiles/
@@ -258,7 +260,7 @@ src_prepare() {
     sed -i -e "s|.pythondir.*|.pythondir = \"${GENTOO_BLENDER_ADDONS_DIR}\",|" "${S}"/release/datafiles/userdef/userdef_default.c || die
 
 	# remove some bundled deps
-	rm -rf extern/{Eigen3,lzo,gflags,glog,gtest,gmock,draco,ceres} || die
+	use portable || rm -rf extern/{audaspace,json,Eigen3,lzo,gflags,glog,gtest,gmock,draco,ceres,vulkan_memory_allocator} || die
 
 	# Disable MS Windows help generation. The variable doesn't do what it
 	# it sounds like.
@@ -404,12 +406,9 @@ src_configure() {
 		-DWITH_IMAGE_CINEON=$(usex dpx)
 		-DWITH_HARU=$(usex pdf)
 		-DWITH_INSTALL_PORTABLE=$(usex portable)
-#		-DWITH_IMAGE_DDS=$(usex dds)
-#		-DWITH_IMAGE_HDR=$(usex hdr)
 		-DWITH_IMAGE_WEBP=$(usex webp)
 		-DWITH_IMAGE_OPENEXR=$(usex openexr)
 		-DWITH_IMAGE_OPENJPEG=$(usex jpeg2k)
-#		-DWITH_IMAGE_TIFF=$(usex tiff)
 		-DWITH_INPUT_NDOF=$(usex ndof)
 		-DWITH_INPUT_IME=no
 		-DWITH_INTERNATIONAL=$(usex nls)						# I18N fonts and text
@@ -433,7 +432,6 @@ src_configure() {
 		-DWITH_OPENCOLORIO=$(usex opencolorio)
 		-DWITH_OPENGL=$(usex opengl)
 		-DWITH_OPENIMAGEDENOISE=$(usex oidn)					# compositing node
-#		-DWITH_OPENIMAGEIO=$(usex openimageio)
 		-DWITH_OPENMP=$(usex openmp)
 		-DWITH_OPENSUBDIV=$(usex opensubdiv)					# for surface subdivision
 		-DWITH_OPENVDB=$(usex openvdb)							# advanced remesh and smoke
@@ -460,6 +458,7 @@ src_configure() {
 		-DWITH_TBB=$(usex tbb)
 		-DWITH_USD=$(usex usd)									# export format support
 		-DWITH_VULKAN_BACKEND=$(usex vulkan)
+		-DWITH_SYSTEM_VMA=$(usex !portable)
 		-DWITH_XR_OPENXR=no
 		#-DUSD_ROOT_DIR=/opt/openusd
 		#-DUSD_LIBRARY=/opt/openusd/lib/libusd_ms.so

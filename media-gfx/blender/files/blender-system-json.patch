@@ -1,0 +1,31 @@
+--- a/source/blender/blenlib/CMakeLists.txt
++++ b/source/blender/blenlib/CMakeLists.txt
+@@ -17,7 +17,7 @@ set(INC
+ 
+ set(INC_SYS
+   ../../../extern/wcwidth
+-  ../../../extern/json/include
++  /usr/include/nlohmann
+ 
+   ${EIGEN3_INCLUDE_DIRS}
+   ${ZLIB_INCLUDE_DIRS}
+@@ -384,7 +384,7 @@ set(SRC
+   PIL_time_utildefines.h
+ 
+   # Without these files listed, they aren't known to CMake.
+-  ../../../extern/json/include/json.hpp
++  /usr/include/nlohmann/json.hpp
+ )
+ 
+ set(LIB
+--- a/intern/ghost/CMakeLists.txt
++++ b/intern/ghost/CMakeLists.txt
+@@ -584,7 +584,7 @@ if(WITH_XR_OPENXR)
+     ../../extern/tinygltf/tiny_gltf.h
+   )
+   list(APPEND INC_SYS
+-    ../../extern/json/include
++    /usr/include/nlohmann
+     ../../extern/tinygltf
+   )
+   list(APPEND INC_SYS
