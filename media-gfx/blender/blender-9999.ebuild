@@ -16,14 +16,13 @@ EGIT_REPO_URI="https://projects.blender.org/blender/blender.git"
 EGIT_REPO_URI_LIST="https://projects.blender.org/blender/blender-addons.git https://projects.blender.org/blender/blender-addons-contrib.git"
 EGIT_SUBMODULES=()
 if [[ ${PV} == 9999 ]]; then
-	#EGIT_BRANCH="main"
+	EGIT_BRANCH="main"
 	#EGIT_COMMIT="fe3110a2859d84401dceda06fd41f3b082eae790"
 	MY_PV="4.0"
 else
 	MY_PV="$(ver_cut 1-2)"
 	#EGIT_BRANCH="blender-v${MY_PV}-release"
 	EGIT_COMMIT="v${PV}"
-	if [[ "${PV}" == "3.6.0" ]]; then EGIT_COMMIT="962331c256b0"; fi
 	KEYWORDS="~amd64 ~arm ~arm64"
 fi
 
@@ -32,7 +31,7 @@ LICENSE="|| ( GPL-3 BL )"
 CUDA_ARCHS="sm_30 sm_35 sm_50 sm_52 sm_61 sm_70 sm_75 sm_86"
 IUSE_DESKTOP="cg -portable +X headless +nls +icu -ndof wayland"
 IUSE_GPU="cuda oneapi +opengl -openpgl -optix +hip -vulkan ${CUDA_ARCHS}"
-IUSE_LIBS="audaspace clang +cycles gmp sdl jack openal pulseaudio +freestyle -osl +openvdb nanovdb abi7-compat abi8-compat abi9-compat abi10-compat \
+IUSE_LIBS="+cycles gmp sdl jack openal pulseaudio +freestyle -osl +openvdb nanovdb abi7-compat abi8-compat abi9-compat abi10-compat \
 	+opensubdiv +opencolorio +pdf +pugixml +potrace +collada -alembic +gltf-draco +fftw +oidn +quadriflow -usd +bullet -valgrind +jemalloc +libmv +llvm"
 IUSE_CPU="+openmp embree +simd +tbb +lld gold cpu_flags_arm_neon"
 IUSE_TEST="-debug -doc -man -gtests test"
@@ -89,7 +88,7 @@ RDEPEND="${PYTHON_DEPS}
 	alembic? ( >=media-gfx/alembic-1.8.3-r2[boost(+),-hdf5] )
 	collada? ( >=media-libs/opencollada-1.6.68 )
 	cuda? ( dev-util/nvidia-cuda-toolkit:= )
-	embree? ( >=media-libs/embree-3.10.0[raymask,tbb?] )
+	embree? ( >=media-libs/embree-4.0.1[raymask,tbb?] )
 	hip? ( >=dev-util/hip-5.4.0 )
 	ffmpeg? ( media-video/ffmpeg:=[x264,mp3,encode,theora,jpeg2k?,vpx,vorbis,opus,xvid] )
 	fftw? ( sci-libs/fftw:3.0=[openmp?] )
@@ -111,7 +110,11 @@ RDEPEND="${PYTHON_DEPS}
 	)
 	nanovdb? ( media-gfx/openvdb[cuda?,nanovdb?] )
 	nls? ( virtual/libiconv )
-	openal? ( media-libs/openal )
+	oneapi? ( sys-devel/DPC++:= )
+	openal? (
+		media-libs/openal
+		media-libs/audaspace
+	)
 	opengl? (
 		virtual/opengl
 		media-libs/glew:*
@@ -165,8 +168,9 @@ DEPEND="
 
 BDEPEND="
 	lld? ( <sys-devel/lld-$((${LLVM_MAX_SLOT} + 1)):= )
-	llvm? ( <sys-devel/llvm-$((${LLVM_MAX_SLOT} + 1)):= )
-    clang? ( <sys-devel/clang-$((${LLVM_MAX_SLOT} + 1)):= )
+	llvm? (
+		<sys-devel/llvm-$((${LLVM_MAX_SLOT} + 1)):=
+	)
 	virtual/pkgconfig
 	doc? (
 		app-doc/doxygen[-nodot(-),dot(+)]
@@ -223,7 +227,7 @@ src_unpack() {
 	for repo in $(echo ${EGIT_REPO_URI_LIST}); do
 		EGIT_BRANCH="main"
 		EGIT_COMMIT="v${PV}"
-		if [[ "${PV}" == "3.6.0" || "${PV}" == "9999" ]]; then EGIT_COMMIT=""; fi
+		if [[ "${PV}" == "9999" ]]; then EGIT_COMMIT=""; fi
 		EGIT_REPO_URI="${repo}"
 		EGIT_CHECKOUT_DIR=${WORKDIR}/${P}/scripts/$(echo -n "${repo}" | sed -rne 's/^http.*\/blender-([a-z-]*).*/\1/p')
 		git-r3_src_unpack
@@ -244,13 +248,14 @@ src_prepare() {
 	use cuda && cuda_src_prepare
 
 	eapply "${FILESDIR}/x112.patch"
+	eapply "${FILESDIR}/blender-fix-desktop.patch"
 	eapply "${FILESDIR}/blender-system-embree.patch"
 	eapply "${FILESDIR}/blender-system-json.patch"
 	eapply "${FILESDIR}/blender-system-libs.patch"
 	eapply "${FILESDIR}/blender-fix-usd-python.patch"
 	eapply "${FILESDIR}/blender-fix-boost-1.81-iostream.patch"
 	use optix && eapply "${FILESDIR}/blender-fix-optix-build.patch"
-	#use vulkan && eapply "${FILESDIR}/blender-fix-gcc-13-vk_mem_alloc.h.patch"
+	use vulkan && eapply "${FILESDIR}/blender-fix-vulkan-build.patch"
 	if use cg; then
         eapply "${FILESDIR}"/cg-defaults.patch
         cp "${FILESDIR}"/splash.png release/datafiles/
@@ -260,7 +265,7 @@ src_prepare() {
     sed -i -e "s|.pythondir.*|.pythondir = \"${GENTOO_BLENDER_ADDONS_DIR}\",|" "${S}"/release/datafiles/userdef/userdef_default.c || die
 
 	# remove some bundled deps
-	use portable || rm -rf extern/{audaspace,json,Eigen3,lzo,gflags,glog,gtest,gmock,draco,ceres,vulkan_memory_allocator} || die
+	use portable || rm -rf extern/{audaspace,json,Eigen3,lzo,gflags,glog,gtest,gmock,draco,ceres} || die
 
 	# Disable MS Windows help generation. The variable doesn't do what it
 	# it sounds like.
@@ -348,8 +353,6 @@ src_configure() {
 			)
 		fi
 		mycmakeargs+=(
-#			-DCUDA_INCLUDE_DIRS=/opt/cuda/include
-#			-DCUDA_CUDART_LIBRARY=/opt/cuda/lib64
 			-DCUDA_NVCC_EXECUTABLE=/opt/cuda/bin/nvcc
 			-DCUDA_HOST_COMPILER="$(cuda_gccdir)\/$(tc-getCC)"
 		)
@@ -440,11 +443,9 @@ src_configure() {
 		-DWITH_SDL=$(usex sdl)									# for sound and joystick support
 		-DWITH_SDL_DYNLOAD=$(usex sdl)
 		-DWITH_STATIC_LIBS=$(usex portable)
-		-DWITH_AUDASPACE=$(usex audaspace)
+		-DWITH_AUDASPACE=$(usex openal)
 		-DWITH_SYSTEM_AUDASPACE=$(usex !portable)
 		-DWITH_SYSTEM_EIGEN3=$(usex !portable)
-		#-DWITH_SYSTEM_GLES=$(usex !portable)
-		#-DWITH_SYSTEM_GLEW=$(usex !portable)
 		-DWITH_SYSTEM_LZO=$(usex !portable)
 		-DWITH_SYSTEM_GFLAGS=$(usex !portable)
 		-DWITH_SYSTEM_GLOG=$(usex !portable)
@@ -458,15 +459,12 @@ src_configure() {
 		-DWITH_TBB=$(usex tbb)
 		-DWITH_USD=$(usex usd)									# export format support
 		-DWITH_VULKAN_BACKEND=$(usex vulkan)
-		-DWITH_SYSTEM_VMA=$(usex !portable)
 		-DWITH_XR_OPENXR=no
 		#-DUSD_ROOT_DIR=/opt/openusd
 		#-DUSD_LIBRARY=/opt/openusd/lib/libusd_ms.so
 		-DWITH_NINJA_POOL_JOBS=no								# for machines with 16GB of RAM or less
 		-DBUILD_SHARED_LIBS=no
-		-DWITH_CLANG=$(usex clang)
-		-DCLANG_INCLUDE_DIR="/usr/lib/llvm/${LLVM_SLOT}/include/clang"
-		-DWITH_BUILDINFO=OFF
+		-DWITH_BUILDINFO=no
 		#-Wno-dev
 		#-DCMAKE_FIND_DEBUG_MODE=yes
 	)

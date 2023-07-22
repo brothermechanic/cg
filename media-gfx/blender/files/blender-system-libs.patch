@@ -29,7 +29,7 @@
  endif()
  
 -if(WITH_VULKAN_BACKEND)
-+if(WITH_VULKAN_BACKEND AND NOT WITH_SYSTEM_VMA)
++if(WITH_VULKAN_BACKEND)
    add_subdirectory(vulkan_memory_allocator)
  endif()
 --- a/CMakeLists.txt
@@ -51,24 +51,6 @@
  
  # Freestyle
  option(WITH_FREESTYLE     "Enable Freestyle (advanced edges rendering)" ON)
-@@ -656,9 +660,12 @@ mark_as_advanced(WITH_OPENGL_BACKEND)
- # Vulkan
- option(WITH_VULKAN_BACKEND "Enable Vulkan as graphics backend (only for development)" OFF)
- option(WITH_VULKAN_GUARDEDALLOC "Use guardedalloc for host allocations done inside Vulkan (development option)" OFF)
-+option(WITH_SYSTEM_VMA "Use system-wide vulkan memory allocator instead of a bundled one" OFF)
-+
- mark_as_advanced(
-   WITH_VULKAN_BACKEND
-   WITH_VULKAN_GUARDEDALLOC
-+  WITH_SYSTEM_VMA
- )
- 
- # Metal
-@@ -1323,7 +1330,16 @@ if(WITH_PYTHON_MODULE)
-   endif()
- endif()
- 
--
 +#------------------------------------------------------------------------------
 +# Configure libmv
 +if(WITH_LIBMV)
@@ -82,19 +64,6 @@
  # -----------------------------------------------------------------------------
  # Configure `GLog/GFlags`
  
-@@ -1366,6 +1382,12 @@ if(WITH_LIBMV OR WITH_GTESTS OR (WITH_CY
-   endif()
- endif()
- 
-+# -----------------------------------------------------------------------------
-+# Configure `Vulkan`
-+
-+if(WITH_VULKAN_BACKEND AND WITH_SYSTEM_VMA)
-+  find_package(VulkanMemoryAllocator)
-+endif()
- 
- # -----------------------------------------------------------------------------
- # Ninja Job Limiting
 --- a/intern/libmv/CMakeLists.txt
 +++ b/intern/libmv/CMakeLists.txt
 @@ -29,9 +29,19 @@ if(WITH_LIBMV)
@@ -119,7 +88,7 @@
      ../guardedalloc
    )
  
-@@ -39,18 +49,30 @@ if(WITH_LIBMV)
+@@ -39,18 +49,31 @@ if(WITH_LIBMV)
      ${EIGEN3_INCLUDE_DIRS}
      ${PNG_INCLUDE_DIRS}
      ${ZLIB_INCLUDE_DIRS}
@@ -151,47 +120,8 @@
 +      ceres
 +    )
 +  endif()
++
    add_definitions(
      -DWITH_LIBMV_GUARDED_ALLOC
      -DLIBMV_NO_FAST_DETECTOR=
---- a/source/blender/gpu/CMakeLists.txt
-+++ b/source/blender/gpu/CMakeLists.txt
-@@ -335,9 +335,6 @@ endif()
- 
- 
- if(WITH_VULKAN_BACKEND)
--  list(APPEND INC
--    ../../../extern/vulkan_memory_allocator
--  )
-   list(APPEND INC_SYS
-     ${VULKAN_INCLUDE_DIRS}
-     ${MOLTENVK_INCLUDE_DIRS}
-@@ -351,9 +348,27 @@ if(WITH_VULKAN_BACKEND)
-     ${VULKAN_LIBRARIES}
-     ${SHADERC_LIBRARIES}
-     ${MOLTENVK_LIBRARIES}
--    extern_vulkan_memory_allocator
-   )
- 
-+  if(NOT WITH_SYSTEM_VMA)
-+    list(APPEND LIB
-+      extern_vulkan_memory_allocator
-+    )
-+    list(APPEND INC
-+      ../../../extern/vulkan_memory_allocator
-+    )
-+  else()
-+    list(APPEND LIB
-+      VulkanMemoryAllocatorrd
-+    )
-+    list(APPEND SRC_HEADERS
-+      vk_mem_alloc.h
-+    )
-+    list(APPEND INC
-+      /usr/include/spirv-tools
-+    )
-+  endif()
-+
-   add_definitions(-DWITH_VULKAN_BACKEND)
- endif()
- 
+

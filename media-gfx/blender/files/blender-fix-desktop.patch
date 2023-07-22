@@ -1,0 +1,10 @@
+--- a/release/freedesktop/blender.desktop
++++ b/release/freedesktop/blender.desktop
+@@ -84,6 +84,6 @@ Icon=blender
+ Terminal=false
+ Type=Application
+ PrefersNonDefaultGPU=true
+-X-KDE-RunOnDiscreteGpu=true
++X-PreferRunOnDiscreteGPU=true
+ Categories=Graphics;3DGraphics;
+ MimeType=application/x-blender;

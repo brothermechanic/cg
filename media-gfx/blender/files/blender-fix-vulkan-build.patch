@@ -1,0 +1,26 @@
+--- a/extern/vulkan_memory_allocator/vk_mem_alloc.h
++++ b/extern/vulkan_memory_allocator/vk_mem_alloc.h
+@@ -2566,6 +2566,7 @@ VMA_CALL_PRE void VMA_CALL_POST vmaFreeS
+ #undef VMA_IMPLEMENTATION
+ 
+ #include <cstdint>
++#include <cstdio>
+ #include <cstdlib>
+ #include <cstring>
+ #include <utility>
+--- a/source/blender/gpu/CMakeLists.txt
++++ b/source/blender/gpu/CMakeLists.txt
+@@ -351,6 +351,12 @@ if(WITH_VULKAN_BACKEND)
+     ${SHADERC_LIBRARIES}
+     ${MOLTENVK_LIBRARIES}
+     extern_vulkan_memory_allocator
++    SPIRV-Tools-opt
++    SPIRV-Tools
++    SPIRV-Tools-link
++    glslang
++    SPIRV
++    SPVRemapper
+   )
+ 
+   add_definitions(-DWITH_VULKAN_BACKEND)
+
