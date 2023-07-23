@@ -10,7 +10,7 @@ HOMEPAGE="https://github.com/embree/embree"
 SRC_URI="https://github.com/embree/embree/archive/v${PV}.tar.gz -> ${P}.tar.gz"
 
 LICENSE="Apache-2.0"
-SLOT="3"
+SLOT="$(ver_cut 1)"
 KEYWORDS="-* ~amd64 ~arm64"
 X86_CPU_FLAGS=( sse2 sse4_2 avx avx2 avx512dq )
 CPU_FLAGS=( cpu_flags_arm_neon ${X86_CPU_FLAGS[@]/#/cpu_flags_x86_} )

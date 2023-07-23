@@ -67,6 +67,7 @@ for X in ${LANGS} ; do
 	REQUIRED_USE+=" linguas_${X}? ( nls )"
 done
 
+#oneapi? ( sys-devel/DPC++:= )
 RDEPEND="${PYTHON_DEPS}
 	$(python_gen_cond_dep '
 		dev-python/cython[${PYTHON_USEDEP}]
@@ -110,7 +111,6 @@ RDEPEND="${PYTHON_DEPS}
 	)
 	nanovdb? ( media-gfx/openvdb[cuda?,nanovdb?] )
 	nls? ( virtual/libiconv )
-	oneapi? ( sys-devel/DPC++:= )
 	openal? (
 		media-libs/openal
 		media-libs/audaspace
@@ -476,6 +476,9 @@ src_configure() {
 			-DOPTIX_INCLUDE_DIR="${EPREFIX}"/opt/optix/include
 		)
 	fi
+
+	# This is currently needed on arm64 to get the NEON SIMD wrapper to compile the code successfully
+	use arm64 && append-flags -flax-vector-conversions
 
 	append-flags $(usex debug '-DDEBUG' '-DNDEBUG')
 
