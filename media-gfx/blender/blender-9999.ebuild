@@ -6,12 +6,11 @@ EAPI=8
 PYTHON_COMPAT=( python3_{10..12} )
 LLVM_MAX_SLOT="16"
 
-inherit check-reqs cmake cuda flag-o-matic pax-utils python-single-r1 toolchain-funcs xdg-utils llvm
+inherit check-reqs cmake cuda flag-o-matic git-r3 pax-utils python-single-r1 toolchain-funcs xdg-utils llvm
 
 DESCRIPTION="Blender is a free and open-source 3D creation suite."
 HOMEPAGE="https://www.blender.org"
 
-inherit git-r3
 EGIT_REPO_URI="https://projects.blender.org/blender/blender.git"
 EGIT_REPO_URI_LIST="https://projects.blender.org/blender/blender-addons.git https://projects.blender.org/blender/blender-addons-contrib.git"
 EGIT_SUBMODULES=()
@@ -30,8 +29,8 @@ SLOT="$MY_PV"
 LICENSE="|| ( GPL-3 BL )"
 CUDA_ARCHS="sm_30 sm_35 sm_50 sm_52 sm_61 sm_70 sm_75 sm_86"
 IUSE_DESKTOP="cg -portable +X headless +nls +icu -ndof wayland"
-IUSE_GPU="cuda oneapi +opengl -openpgl -optix +hip -vulkan ${CUDA_ARCHS}"
-IUSE_LIBS="+cycles gmp sdl jack openal pulseaudio +freestyle -osl +openvdb nanovdb abi7-compat abi8-compat abi9-compat abi10-compat \
+IUSE_GPU="cuda oneapi +opengl openpgl optix +hip +vulkan ${CUDA_ARCHS}"
+IUSE_LIBS="+cycles +cycles-bin-kernels gmp sdl jack openal pulseaudio +freestyle -osl +openvdb nanovdb abi7-compat abi8-compat abi9-compat abi10-compat \
 	+opensubdiv +opencolorio +pdf +pugixml +potrace +collada -alembic +gltf-draco +fftw +oidn +quadriflow -usd +bullet -valgrind +jemalloc +libmv +llvm"
 IUSE_CPU="+openmp embree +simd +tbb +lld gold cpu_flags_arm_neon"
 IUSE_TEST="-debug -doc -man -gtests test"
@@ -130,7 +129,7 @@ RDEPEND="${PYTHON_DEPS}
 		>=media-gfx/openvdb-9.0.0:=[abi7-compat(-)?,abi8-compat(-)?,abi9-compat(-)?,abi10-compat(-)?,nanovdb?]
 		dev-libs/c-blosc:=
 	)
-	optix? ( >=dev-libs/optix-7.4.0 )
+	optix? ( >=dev-libs/optix-7.5.0 )
 	osl? ( >=media-libs/osl-1.11.16.0-r3:= )
 	pdf? ( media-libs/libharu )
 	potrace? ( media-gfx/potrace )
@@ -187,7 +186,7 @@ RESTRICT="
 	!test? ( test )
 "
 
-QA_WX_LOAD="usr/share/${PN}/${SLOT}/scripts/addons/cycles/lib/kernel_sm_*.cubin"
+QA_WX_LOAD="usr/share/${PN}/${SLOT}/scripts/addons/cycles/lib/kernel_sm_.*\.cubin"
 QA_PREBUILT="${QA_WX_LOAD}"
 QA_PRESTRIPPED="${QA_WX_LOAD}"
 QA_FLAGS_IGNORED="${QA_WX_LOAD}"
@@ -232,9 +231,10 @@ src_unpack() {
 		EGIT_CHECKOUT_DIR=${WORKDIR}/${P}/scripts/$(echo -n "${repo}" | sed -rne 's/^http.*\/blender-([a-z-]*).*/\1/p')
 		git-r3_src_unpack
 	done
-
 	if use test; then
-		default
+		inherit subversion
+		TESTS_SVN_URL=https://svn.blender.org/svnroot/bf-blender/trunk/lib/tests
+		subversion_fetch ${TESTS_SVN_URL} ../lib/tests
 		mkdir -p lib || die
 		mv "${WORKDIR}"/blender-${TEST_TARBALL_VERSION}-tests/tests lib || die
 	fi
@@ -287,7 +287,7 @@ src_prepare() {
 
 	if use test; then
 		# Without this the tests will try to use /usr/bin/blender and /usr/share/blender/ to run the tests.
-		sed -e "s|string(REPLACE.*|set(TEST_INSTALL_DIR ${ED}/usr/)|g" -i tests/CMakeLists.txt || die
+		sed -e "s|set(TEST_INSTALL_DIR.*|set(TEST_INSTALL_DIR ${ED}/usr/)|g" -i tests/CMakeLists.txt || die
 		sed -e "s|string(REPLACE.*|set(TEST_INSTALL_DIR ${ED}/usr/)|g" -i build_files/cmake/Modules/GTestTesting.cmake || die
 	fi
 
@@ -382,12 +382,12 @@ src_configure() {
 		-DWITH_CYCLES_DEVICE_CUDA=$(usex cuda)
 		-DWITH_CYCLES_DEVICE_OPTIX=$(usex optix)
 		-DWITH_CYCLES_DEVICE_HIP=$(usex hip)
-		-DWITH_CYCLES_HIP_BINARIES=$(usex hip)
+		-DWITH_CYCLES_HIP_BINARIES=$(usex cycles-bin-kernels $(usex hip) no)
 		-DWITH_CYCLES_CUDA=$(usex cuda)
-		-DWITH_CYCLES_CUDA_BINARIES=$(usex cuda)
+		-DWITH_CYCLES_CUDA_BINARIES=$(usex cycles-bin-kernels $(usex cuda) no)
 		-DWITH_CYCLES_CUDA_BUILD_SERIAL=$(usex cuda)			# Build cuda kernels in serial mode (if parallel build takes too much RAM or crash)
 		-DWITH_CYCLES_DEVICE_ONEAPI=$(usex oneapi)
-		-DWITH_CYCLES_ONEAPI_BINARIES=$(usex oneapi)
+		-DWITH_CYCLES_ONEAPI_BINARIES=$(usex cycles-bin-kernels $(usex oneapi) no)
 		-DWITH_CYCLES_EMBREE=$(usex embree)
 		-DWITH_CYCLES_NATIVE_ONLY=$(usex cycles)				# for native kernel only
 		-DWITH_CYCLES_OSL=$(usex osl)
@@ -406,9 +406,10 @@ src_configure() {
 		-DWITH_GHOST_WAYLAND_DBUS=$(usex wayland)
 		-DWITH_GHOST_WAYLAND_DYNLOAD=$(usex wayland)
 		-DWITH_GHOST_WAYLAND_LIBDECOR=no
-		-DWITH_IMAGE_CINEON=$(usex dpx)
+		-DWITH_GMP=$(usex gmp)
 		-DWITH_HARU=$(usex pdf)
 		-DWITH_INSTALL_PORTABLE=$(usex portable)
+		-DWITH_IMAGE_CINEON=$(usex dpx)
 		-DWITH_IMAGE_WEBP=$(usex webp)
 		-DWITH_IMAGE_OPENEXR=$(usex openexr)
 		-DWITH_IMAGE_OPENJPEG=$(usex jpeg2k)
@@ -455,7 +456,6 @@ src_configure() {
 		-DWITH_SYSTEM_GTESTS=$(usex !portable)
 		-DWITH_GHOST_DEBUG=$(usex debug)
 		-DWITH_CXX_GUARDEDALLOC=$(usex debug)
-		-DWITH_GMP=$(usex gmp)
 		-DWITH_TBB=$(usex tbb)
 		-DWITH_USD=$(usex usd)									# export format support
 		-DWITH_VULKAN_BACKEND=$(usex vulkan)
