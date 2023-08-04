@@ -29,7 +29,7 @@ fi
 
 LICENSE="Apache-2.0"
 SLOT="0"
-IUSE="doc examples +python jack +fftw +ffmpeg +sdl +sndfile +openal pulseaudio"
+IUSE="doc examples +python jack +fftw +ffmpeg sdl +sndfile openal pulseaudio"
 
 BDEPEND="
 	virtual/libc

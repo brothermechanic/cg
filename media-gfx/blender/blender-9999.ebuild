@@ -1,10 +1,11 @@
 # Copyright 1999-2023 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
+# TODO add https://materialx.org/ support
 
 EAPI=8
 
 PYTHON_COMPAT=( python3_{10..12} )
-LLVM_MAX_SLOT="16"
+LLVM_MAX_SLOT="15"
 
 inherit check-reqs cmake cuda flag-o-matic git-r3 pax-utils python-single-r1 toolchain-funcs xdg-utils llvm
 
@@ -18,6 +19,7 @@ if [[ ${PV} == 9999 ]]; then
 	EGIT_BRANCH="main"
 	#EGIT_COMMIT="fe3110a2859d84401dceda06fd41f3b082eae790"
 	MY_PV="4.0"
+	KEYWORDS=""
 else
 	MY_PV="$(ver_cut 1-2)"
 	#EGIT_BRANCH="blender-v${MY_PV}-release"
@@ -28,26 +30,31 @@ fi
 SLOT="$MY_PV"
 LICENSE="|| ( GPL-3 BL )"
 CUDA_ARCHS="sm_30 sm_35 sm_50 sm_52 sm_61 sm_70 sm_75 sm_86"
-IUSE_DESKTOP="cg -portable +X headless +nls +icu -ndof wayland"
-IUSE_GPU="cuda oneapi +opengl openpgl optix +hip +vulkan ${CUDA_ARCHS}"
-IUSE_LIBS="+cycles +cycles-bin-kernels gmp sdl jack openal pulseaudio +freestyle -osl +openvdb nanovdb abi7-compat abi8-compat abi9-compat abi10-compat \
-	+opensubdiv +opencolorio +pdf +pugixml +potrace +collada -alembic +gltf-draco +fftw +oidn +quadriflow -usd +bullet -valgrind +jemalloc +libmv +llvm"
-IUSE_CPU="+openmp embree +simd +tbb +lld gold cpu_flags_arm_neon"
-IUSE_TEST="-debug -doc -man -gtests test"
-IUSE_IMAGE="-dpx +openexr jpeg2k webp"
+COMPRESSION="lzma lzo"
+ABI="abi7-compat abi8-compat abi9-compat abi10-compat"
+MODIFIERS="+fluid +smoke +oceansim +remesh +gmp +quadriflow"
+
+IUSE_CPU="+openmp +simd +tbb -lld -gold +mold -cpu_flags_arm_neon -llvm -valgrind +jemalloc"
+IUSE_GPU="cuda optix -hip -oneapi +cycles-bin-kernels +opengl +nanovdb -vulkan ${CUDA_ARCHS}"
+IUSE_DESKTOP="+cg -portable +X headless +nls -ndof wayland ${MODIFIERS}"
+IUSE_LIBS="+bullet +opencolorio +oidn +opensubdiv +openvdb +libmv +freestyle ${COMPRESSION} ${ABI}"
+IUSE_CYC="+cycles -osl +openpgl +embree +pugixml +potrace +fftw"
+IUSE_3DFILES="-alembic -usd +collada +obj +ply +stl"
+IUSE_IMAGE="-dpx +openexr jpeg2k webp +pdf"
 IUSE_CODEC="avi +ffmpeg -sndfile +quicktime"
-IUSE_COMPRESSION="+lzma -lzo"
-IUSE_MODIFIERS="+fluid +smoke +oceansim +remesh"
-IUSE="${IUSE_DESKTOP} ${IUSE_GPU} ${IUSE_LIBS} ${IUSE_CPU} ${IUSE_TEST} ${IUSE_IMAGE} ${IUSE_CODEC} ${IUSE_COMPRESSION} ${IUSE_MODIFIERS}"
+IUSE_SOUND="jack openal -pulseaudio sdl"
+IUSE_TEST="-debug -doc -man -gtests -test"
+
+IUSE="${IUSE_CPU} ${IUSE_GPU} ${IUSE_DESKTOP} ${IUSE_LIBS} ${IUSE_CYC} ${IUSE_3DFILES} ${IUSE_IMAGE} ${IUSE_CODEC} ${IUSE_SOUND} ${IUSE_TEST}"
 
 REQUIRED_USE="${PYTHON_REQUIRED_USE}
-	|| ( gold lld )
+	|| ( gold lld mold )
 	|| ( headless wayland X )
 	alembic? ( openexr )
 	embree? ( cycles tbb )
 	smoke? ( fftw )
-	cuda? ( cycles )
-	fluid?  ( fftw tbb )
+	cuda? ( cycles cycles-bin-kernels nanovdb )
+	fluid? ( fftw tbb )
 	oceansim? ( fftw )
 	oidn? ( cycles tbb )
 	oneapi? ( cycles )
@@ -58,6 +65,7 @@ REQUIRED_USE="${PYTHON_REQUIRED_USE}
 	)
 	osl? ( cycles llvm )
 	test? ( gtests opencolorio )
+	usd? ( tbb )
 "
 
 LANGS="en ar bg ca cs de el es es_ES fa fi fr he hr hu id it ja ky ne nl pl pt pt_BR ru sr sr@latin sv tr uk zh_CN zh_TW"
@@ -73,7 +81,7 @@ RDEPEND="${PYTHON_DEPS}
 		dev-python/numpy[${PYTHON_USEDEP}]
 		dev-python/zstandard[${PYTHON_USEDEP}]
 		dev-python/requests[${PYTHON_USEDEP}]
-		dev-libs/boost[python,nls?,icu?,threads(+),${PYTHON_USEDEP}]
+		dev-libs/boost[python,nls?,icu,threads(+),${PYTHON_USEDEP}]
 	')
 	>=dev-cpp/nlohmann_json-3.10.0:=
 	media-libs/freetype:=[brotli]
@@ -92,12 +100,10 @@ RDEPEND="${PYTHON_DEPS}
 	hip? ( >=dev-util/hip-5.4.0 )
 	ffmpeg? ( media-video/ffmpeg:=[x264,mp3,encode,theora,jpeg2k?,vpx,vorbis,opus,xvid] )
 	fftw? ( sci-libs/fftw:3.0=[openmp?] )
-	gltf-draco? ( media-libs/draco:=[gltf] )
 	gmp? ( dev-libs/gmp )
 	gtests? (
 		dev-cpp/gflags:=
 		dev-cpp/glog:=[gflags]
-		dec-cpp/gmock:=
 	)
 	jack? ( virtual/jack )
 	jemalloc? ( dev-libs/jemalloc:= )
@@ -110,9 +116,9 @@ RDEPEND="${PYTHON_DEPS}
 	)
 	nanovdb? ( media-gfx/openvdb[cuda?,nanovdb?] )
 	nls? ( virtual/libiconv )
+	media-libs/audaspace[openal?,sdl?,pulseaudio?]
 	openal? (
 		media-libs/openal
-		media-libs/audaspace
 	)
 	opengl? (
 		virtual/opengl
@@ -363,15 +369,13 @@ src_configure() {
 		-DPYTHON_VERSION="${EPYTHON/python/}"
 		-DPYTHON_INCLUDE_DIR="$(python_get_includedir)"
 		-DPYTHON_LIBRARY="$(python_get_library_path)"
-		-DWITH_BOOST_ICU=$(usex icu)
 		-DWITH_CPU_SIMD=$(usex simd)
 		-DWITH_PYTHON_INSTALL=$(usex portable)					# Copy system python
 		-DWITH_PYTHON_INSTALL_NUMPY=$(usex portable)
 		-DWITH_PYTHON_INSTALL_ZSTANDARD=$(usex portable)
-		-DWITH_PYTHON_MODULE=$(usex headless)					# runs without a user interface
+		-DWITH_PYTHON_MODULE=$(usex headless)					# build as regular python module
 		-DWITH_HEADLESS=$(usex headless)						# server mode only
 		-DWITH_ALEMBIC=$(usex alembic)							# export format support
-		-DWITH_ASSERT_ABORT=$(usex debug)
 		-DWITH_BOOST=yes
 		-DWITH_BULLET=$(usex bullet)							# Physics Engine
 		-DWITH_SYSTEM_BULLET=no									# currently unsupported
@@ -384,30 +388,32 @@ src_configure() {
 		-DWITH_CYCLES_DEVICE_HIP=$(usex hip)
 		-DWITH_CYCLES_HIP_BINARIES=$(usex cycles-bin-kernels $(usex hip) no)
 		-DWITH_CYCLES_CUDA=$(usex cuda)
-		-DWITH_CYCLES_CUDA_BINARIES=$(usex cycles-bin-kernels $(usex cuda) no)
+		-DWITH_CYCLES_CUDA_BINARIES=$(usex cycles-bin-kernels $(usex cuda) no)	# build when install
 		-DWITH_CYCLES_CUDA_BUILD_SERIAL=$(usex cuda)			# Build cuda kernels in serial mode (if parallel build takes too much RAM or crash)
 		-DWITH_CYCLES_DEVICE_ONEAPI=$(usex oneapi)
 		-DWITH_CYCLES_ONEAPI_BINARIES=$(usex cycles-bin-kernels $(usex oneapi) no)
-		-DWITH_CYCLES_EMBREE=$(usex embree)
+		-DWITH_CYCLES_EMBREE=$(usex embree)						# Speedup library for Cycles
 		-DWITH_CYCLES_NATIVE_ONLY=$(usex cycles)				# for native kernel only
 		-DWITH_CYCLES_OSL=$(usex osl)
-		-DWITH_CYCLES_PATH_GUIDING=$(usex openpgl)
+		-DWITH_CYCLES_PATH_GUIDING=$(usex openpgl)				# Speedup library for Cycles
 		-DWITH_CYCLES_STANDALONE=no
 		-DWITH_CYCLES_STANDALONE_GUI=no
-		-DWITH_CYCLES_LOGGING=yes
+		-DWITH_CYCLES_DEBUG=$(usex debug)
 		#-DWITH_CYCLES_NETWORK=no
 		-DWITH_DOC_MANPAGE=$(usex man)
 		-DWITH_FFTW3=$(usex fftw)
 		-DWITH_FREESTYLE=$(usex freestyle)						# advanced edges rendering
-		-DWITH_GHOST_X11=$(usex X)
+		-DWITH_SYSTEM_FREETYPE=$(usex !portable)
+		-DWITH_GHOST_X11=$(usex X)								# Enable building against X11
 		-DWITH_GHOST_XDND=$(usex X)								# drag-n-drop support on X11
-		-DWITH_GHOST_WAYLAND=$(usex wayland)
+		-DWITH_GHOST_WAYLAND=$(usex wayland)					# Enable building against wayland
 		-DWITH_GHOST_WAYLAND_APP_ID=blender-${BV}
 		-DWITH_GHOST_WAYLAND_DBUS=$(usex wayland)
 		-DWITH_GHOST_WAYLAND_DYNLOAD=$(usex wayland)
 		-DWITH_GHOST_WAYLAND_LIBDECOR=no
-		-DWITH_GMP=$(usex gmp)
-		-DWITH_HARU=$(usex pdf)
+		-DWITH_GMP=$(usex gmp)									# boolean engine
+		-DWITH_HARU=$(usex pdf)									# export format support
+		-DWITH_IO_GPENCIL=$(usex pdf)							# export format support
 		-DWITH_INSTALL_PORTABLE=$(usex portable)
 		-DWITH_IMAGE_CINEON=$(usex dpx)
 		-DWITH_IMAGE_WEBP=$(usex webp)
@@ -422,8 +428,8 @@ src_configure() {
 		-DWITH_PULSEAUDIO_DYNLOAD=$(usex pulseaudio)
 		-DWITH_LZMA=$(usex lzma)								# used for pointcache only
 		-DWITH_LZO=$(usex lzo)									# used for pointcache only
-		-DWITH_DRACO=$(usex gltf-draco)							# gltf mesh compression
 		-DWITH_LLVM=$(usex llvm)
+		-DWITH_CLANG=$(usex llvm)
 		-DWITH_LIBMV=$(usex libmv)                           	# Enable libmv sfm camera tracking
 		-DWITH_MEM_JEMALLOC=$(usex jemalloc)					# Enable malloc replacement
 		-DWITH_MEM_VALGRIND=$(usex valgrind)
@@ -433,6 +439,9 @@ src_configure() {
 		-DWITH_NANOVDB=$(usex nanovdb)							# OpenVDB for rendering on the GPU
 		-DWITH_OPENAL=$(usex openal)
 		-DWITH_OPENCOLLADA=$(usex collada)						# export format support
+		-DWITH_IO_WAVEFRONT_OBJ=$(usex obj)						# export format support
+		-DWITH_IO_PLY=$(usex ply)								# export format support
+		-DWITH_IO_STL=$(usex stl)								# export format support
 		-DWITH_OPENCOLORIO=$(usex opencolorio)
 		-DWITH_OPENGL=$(usex opengl)
 		-DWITH_OPENIMAGEDENOISE=$(usex oidn)					# compositing node
@@ -442,9 +451,8 @@ src_configure() {
 		-DWITH_OPENVDB_BLOSC=$(usex openvdb)					# compression for OpenVDB
 		-DWITH_QUADRIFLOW=$(usex quadriflow)					# remesher
 		-DWITH_SDL=$(usex sdl)									# for sound and joystick support
-		-DWITH_SDL_DYNLOAD=$(usex sdl)
 		-DWITH_STATIC_LIBS=$(usex portable)
-		-DWITH_AUDASPACE=$(usex openal)
+		-DWITH_AUDASPACE=yes
 		-DWITH_SYSTEM_AUDASPACE=$(usex !portable)
 		-DWITH_SYSTEM_EIGEN3=$(usex !portable)
 		-DWITH_SYSTEM_LZO=$(usex !portable)
@@ -459,14 +467,17 @@ src_configure() {
 		-DWITH_TBB=$(usex tbb)
 		-DWITH_USD=$(usex usd)									# export format support
 		-DWITH_VULKAN_BACKEND=$(usex vulkan)
-		-DWITH_XR_OPENXR=no
+		-DWITH_VULKAN_GUARDEDALLOC=$(usex vulkan)
+		-DWITH_XR_OPENXR=no										# VR interface
 		#-DUSD_ROOT_DIR=/opt/openusd
 		#-DUSD_LIBRARY=/opt/openusd/lib/libusd_ms.so
 		-DWITH_NINJA_POOL_JOBS=no								# for machines with 16GB of RAM or less
 		-DBUILD_SHARED_LIBS=no
-		-DWITH_BUILDINFO=no
-		#-Wno-dev
+		-DWITH_BUILDINFO=yes
+		#-DWITH_EXPERIMENTAL_FEATURES=yes
+		-Wno-dev
 		#-DCMAKE_FIND_DEBUG_MODE=yes
+		-DWITH_STRICT_BUILD_OPTIONS=yes
 	)
 
 	if use optix; then
@@ -487,6 +498,7 @@ src_configure() {
 		mycmakeargs+=(
 			-DWITH_LINKER_LLD=$(usex lld)
 			-DWITH_LINKER_GOLD=$(usex gold)
+			-DWITH_LINKER_MOLD=$(usex mold)
 		)
 	fi
 
@@ -561,7 +573,7 @@ src_install() {
 	# Fix doc installdir
 	docinto html
 	dodoc "${CMAKE_USE_DIR}"/release/text/readme.html
-	rm -r "${ED%/}"/usr/share/doc/blender
+	rm -r "${ED%/}"/usr/share/doc/blender-${PV}
 	python_optimize "${ED%/}/usr/share/blender/${SLOT}/scripts"
 
 	pushd ${ED}/usr/bin
@@ -591,12 +603,11 @@ pkg_postinst() {
 	elog "changing the 'Temporary Files' directory in Blender preferences."
 	elog
 
-	if ! use python_single_target_python3_11; then
+	if ! use python_single_target_python3_12; then
 		elog "You are building Blender with a newer python version than"
 		elog "supported by this version upstream."
 		elog "If you experience breakages with e.g. plugins, please switch to"
 		elog "python_single_target_python3_11 instead."
-		elog "Bug: https://bugs.gentoo.org/737388"
 		elog
 	fi
 
