@@ -5,7 +5,7 @@
 EAPI=8
 
 PYTHON_COMPAT=( python3_{10..12} )
-LLVM_MAX_SLOT="15"
+LLVM_MAX_SLOT="16"
 
 inherit check-reqs cmake cuda flag-o-matic git-r3 pax-utils python-single-r1 toolchain-funcs xdg-utils llvm
 
@@ -43,7 +43,7 @@ IUSE_3DFILES="-alembic -usd +collada +obj +ply +stl"
 IUSE_IMAGE="-dpx +openexr jpeg2k webp +pdf"
 IUSE_CODEC="avi +ffmpeg -sndfile +quicktime"
 IUSE_SOUND="jack openal -pulseaudio sdl"
-IUSE_TEST="-debug -doc -man -gtests -test"
+IUSE_TEST="-debug -doc -man -gtests -test +icu"
 
 IUSE="${IUSE_CPU} ${IUSE_GPU} ${IUSE_DESKTOP} ${IUSE_LIBS} ${IUSE_CYC} ${IUSE_3DFILES} ${IUSE_IMAGE} ${IUSE_CODEC} ${IUSE_SOUND} ${IUSE_TEST}"
 
@@ -81,7 +81,7 @@ RDEPEND="${PYTHON_DEPS}
 		dev-python/numpy[${PYTHON_USEDEP}]
 		dev-python/zstandard[${PYTHON_USEDEP}]
 		dev-python/requests[${PYTHON_USEDEP}]
-		dev-libs/boost[python,nls?,icu,threads(+),${PYTHON_USEDEP}]
+		dev-libs/boost[python,nls?,icu?,threads(+),${PYTHON_USEDEP}]
 	')
 	>=dev-cpp/nlohmann_json-3.10.0:=
 	media-libs/freetype:=[brotli]
@@ -104,6 +104,7 @@ RDEPEND="${PYTHON_DEPS}
 	gtests? (
 		dev-cpp/gflags:=
 		dev-cpp/glog:=[gflags]
+		dec-cpp/gmock:=
 	)
 	jack? ( virtual/jack )
 	jemalloc? ( dev-libs/jemalloc:= )
@@ -376,7 +377,9 @@ src_configure() {
 		-DWITH_PYTHON_MODULE=$(usex headless)					# build as regular python module
 		-DWITH_HEADLESS=$(usex headless)						# server mode only
 		-DWITH_ALEMBIC=$(usex alembic)							# export format support
+		-DWITH_ASSERT_ABORT=$(usex debug)
 		-DWITH_BOOST=yes
+		-DWITH_BOOST_ICU=$(usex icu)
 		-DWITH_BULLET=$(usex bullet)							# Physics Engine
 		-DWITH_SYSTEM_BULLET=no									# currently unsupported
 		-DWITH_CODEC_AVI=$(usex avi)
@@ -399,6 +402,7 @@ src_configure() {
 		-DWITH_CYCLES_STANDALONE=no
 		-DWITH_CYCLES_STANDALONE_GUI=no
 		-DWITH_CYCLES_DEBUG=$(usex debug)
+		-DWITH_CYCLES_LOGGING=yes
 		#-DWITH_CYCLES_NETWORK=no
 		-DWITH_DOC_MANPAGE=$(usex man)
 		-DWITH_FFTW3=$(usex fftw)
@@ -429,7 +433,6 @@ src_configure() {
 		-DWITH_LZMA=$(usex lzma)								# used for pointcache only
 		-DWITH_LZO=$(usex lzo)									# used for pointcache only
 		-DWITH_LLVM=$(usex llvm)
-		-DWITH_CLANG=$(usex llvm)
 		-DWITH_LIBMV=$(usex libmv)                           	# Enable libmv sfm camera tracking
 		-DWITH_MEM_JEMALLOC=$(usex jemalloc)					# Enable malloc replacement
 		-DWITH_MEM_VALGRIND=$(usex valgrind)
@@ -473,7 +476,6 @@ src_configure() {
 		#-DUSD_LIBRARY=/opt/openusd/lib/libusd_ms.so
 		-DWITH_NINJA_POOL_JOBS=no								# for machines with 16GB of RAM or less
 		-DBUILD_SHARED_LIBS=no
-		-DWITH_BUILDINFO=yes
 		#-DWITH_EXPERIMENTAL_FEATURES=yes
 		-Wno-dev
 		#-DCMAKE_FIND_DEBUG_MODE=yes
