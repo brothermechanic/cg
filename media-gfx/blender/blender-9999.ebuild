@@ -31,19 +31,19 @@ SLOT="$MY_PV"
 LICENSE="|| ( GPL-3 BL )"
 CUDA_ARCHS="sm_30 sm_35 sm_50 sm_52 sm_61 sm_70 sm_75 sm_86"
 COMPRESSION="lzma lzo"
-ABI="abi7-compat abi8-compat abi9-compat abi10-compat"
+VDB_ABI="abi7-compat abi8-compat abi9-compat abi10-compat"
 MODIFIERS="+fluid +smoke +oceansim +remesh +gmp +quadriflow"
 
-IUSE_CPU="+openmp +simd +tbb -lld -gold +mold -cpu_flags_arm_neon -llvm -valgrind +jemalloc"
-IUSE_GPU="cuda optix -hip -oneapi +cycles-bin-kernels +opengl +nanovdb -vulkan ${CUDA_ARCHS}"
+IUSE_CPU="+openmp +simd +tbb -lld -gold +mold -cpu_flags_arm_neon llvm -valgrind +jemalloc"
+IUSE_GPU="cuda optix hip oneapi +cycles-bin-kernels +opengl +nanovdb vulkan ${CUDA_ARCHS}"
 IUSE_DESKTOP="+cg -portable +X headless +nls -ndof wayland ${MODIFIERS}"
-IUSE_LIBS="+bullet +opencolorio +oidn +opensubdiv +openvdb +libmv +freestyle ${COMPRESSION} ${ABI}"
-IUSE_CYC="+cycles -osl +openpgl +embree +pugixml +potrace +fftw"
+IUSE_LIBS="+bullet +opencolorio +oidn +opensubdiv +openvdb +libmv +freestyle ${COMPRESSION} ${VDB_ABI}"
+IUSE_CYC="+cycles osl +openpgl +embree +pugixml +potrace +fftw"
 IUSE_3DFILES="-alembic -usd +collada +obj +ply +stl"
 IUSE_IMAGE="-dpx +openexr jpeg2k webp +pdf"
 IUSE_CODEC="avi +ffmpeg -sndfile +quicktime"
 IUSE_SOUND="jack openal -pulseaudio sdl"
-IUSE_TEST="-debug -doc -man -gtests -test +icu"
+IUSE_TEST="-debug -doc -man -gtests -test icu"
 
 IUSE="${IUSE_CPU} ${IUSE_GPU} ${IUSE_DESKTOP} ${IUSE_LIBS} ${IUSE_CYC} ${IUSE_3DFILES} ${IUSE_IMAGE} ${IUSE_CODEC} ${IUSE_SOUND} ${IUSE_TEST}"
 
@@ -64,6 +64,7 @@ REQUIRED_USE="${PYTHON_REQUIRED_USE}
 		cycles tbb
 	)
 	osl? ( cycles llvm )
+	vulkan? ( llvm )
 	test? ( gtests opencolorio )
 	usd? ( tbb )
 "
@@ -104,7 +105,7 @@ RDEPEND="${PYTHON_DEPS}
 	gtests? (
 		dev-cpp/gflags:=
 		dev-cpp/glog:=[gflags]
-		dec-cpp/gmock:=
+		dev-cpp/gmock:=
 	)
 	jack? ( virtual/jack )
 	jemalloc? ( dev-libs/jemalloc:= )
@@ -126,18 +127,18 @@ RDEPEND="${PYTHON_DEPS}
 		media-libs/glew:*
 		virtual/glu
 	)
-	openpgl? ( >=media-libs/openpgl-0.5.0:= )
 	oidn? ( >=media-libs/oidn-1.4.1 )
 	>=media-libs/openimageio-2.4.6.0:=
 	opencolorio? ( >=media-libs/opencolorio-2.1.1-r7:= )
 	openexr? ( >=media-libs/openexr-3:0= )
+	openpgl? ( >=media-libs/openpgl-0.5.0:= )
 	opensubdiv? ( >=media-libs/opensubdiv-3.4.0[cuda?,openmp?,tbb?] )
 	openvdb? (
 		>=media-gfx/openvdb-9.0.0:=[abi7-compat(-)?,abi8-compat(-)?,abi9-compat(-)?,abi10-compat(-)?,nanovdb?]
 		dev-libs/c-blosc:=
 	)
 	optix? ( >=dev-libs/optix-7.5.0 )
-	osl? ( >=media-libs/osl-1.11.16.0-r3:= )
+	osl? ( >=media-libs/osl-1.11.16.0-r3:=[optix?] )
 	pdf? ( media-libs/libharu )
 	potrace? ( media-gfx/potrace )
 	pugixml? ( dev-libs/pugixml )
@@ -153,7 +154,6 @@ RDEPEND="${PYTHON_DEPS}
 		>=dev-libs/wayland-1.12
 		>=dev-libs/wayland-protocols-1.15
 		>=x11-libs/libxkbcommon-0.2.0
-		media-libs/mesa[wayland]
 		sys-apps/dbus
 	)
 	X? (
@@ -161,6 +161,7 @@ RDEPEND="${PYTHON_DEPS}
 		x11-libs/libXi
 		x11-libs/libXxf86vm
 	)
+	media-libs/mesa[X?,wayland?,llvm?]
 "
 
 DEPEND="
@@ -174,9 +175,9 @@ DEPEND="
 
 BDEPEND="
 	lld? ( <sys-devel/lld-$((${LLVM_MAX_SLOT} + 1)):= )
-	llvm? (
-		<sys-devel/llvm-$((${LLVM_MAX_SLOT} + 1)):=
-	)
+	mold? ( sys-devel/mold:= )
+	gold? ( <sys-devel/llvm-$((${LLVM_MAX_SLOT} + 1)):=[binutils-plugin] )
+	llvm? (	<sys-devel/llvm-$((${LLVM_MAX_SLOT} + 1)):=	)
 	virtual/pkgconfig
 	doc? (
 		app-doc/doxygen[-nodot(-),dot(+)]
@@ -193,7 +194,7 @@ RESTRICT="
 	!test? ( test )
 "
 
-QA_WX_LOAD="usr/share/${PN}/${SLOT}/scripts/addons/cycles/lib/kernel_sm_.*\.cubin"
+QA_WX_LOAD="usr/share/${PN}/${SLOT}/scripts/addons/cycles/lib/kernel_.*\.cubin"
 QA_PREBUILT="${QA_WX_LOAD}"
 QA_PRESTRIPPED="${QA_WX_LOAD}"
 QA_FLAGS_IGNORED="${QA_WX_LOAD}"
@@ -481,6 +482,9 @@ src_configure() {
 		-Wno-dev
 		#-DCMAKE_FIND_DEBUG_MODE=yes
 		-DWITH_STRICT_BUILD_OPTIONS=yes
+		-DWITH_BUILDINFO=no
+		-DWITH_HYDRA=no 										# MacOS features default on if WITH_STRICT_BUILD_OPTIONS=yes
+		-DWITH_MATERIALX=no
 	)
 
 	if use optix; then
@@ -612,6 +616,14 @@ pkg_postinst() {
 	elog "home directory. This can be done by starting blender, then"
 	elog "changing the 'Temporary Files' directory in Blender preferences."
 	elog
+
+	if use osl; then
+		ewarn ""
+		ewarn "OSL is know to cause runtime segfaults if Mesa has been linked to"
+		ewarn "an other LLVM version than what OSL is linked to."
+		ewarn "See https://bugs.gentoo.org/880671 for more details"
+		ewarn ""
+	fi
 
 	if ! use python_single_target_python3_12; then
 		elog "You are building Blender with a newer python version than"
