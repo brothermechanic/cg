@@ -15,6 +15,6 @@ LICENSE="GPL-3"
 
 src_install() {
 	blender-addon_src_install
-	insinto ${GENTOO_BLENDER_ADDONS_DIR}/addons/${PN}/Nodes || die
+	insinto ${GENTOO_BLENDER_SCRIPTS_DIR}/addons/${PN}/Nodes || die
 	doins "${FILESDIR}"/Blur.py
 }

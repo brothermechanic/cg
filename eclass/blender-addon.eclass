@@ -22,7 +22,7 @@ esac
 
 PYTHON_COMPAT=( python3_{10..12} )
 
-inherit git-r3 vcs-clean python-single-r1
+inherit git-r3 vcs-clean python-single-r1 blender-scripts-dir
 
 # << Eclass variables >>
 
@@ -32,14 +32,6 @@ inherit git-r3 vcs-clean python-single-r1
 # @DESCRIPTION:
 # Each blender slot has it's own subdirectory for addons.
 _GENTOO_BLENDER_ADDONS_HOME=()
-
-# @ECLASS_VARIABLE: GENTOO_BLENDER_ADDONS_DIR
-# @USER_VARIABLE
-# @DEFAULT_UNSET
-# @DESCRIPTION:
-# Directory for installing blender addons.
-# Set empty value for this variable here to install addons to blender default directory according to blender slot
-: ${GENTOO_BLENDER_ADDONS_DIR:="/usr/share/blender/scripts"}
 
 # @ECLASS_VARIABLE: ADDON_INSTALL_SUBDIR
 # @USER_VARIABLE
@@ -117,15 +109,15 @@ blender-addon_src_compile() {
 
 # @FUNCTION: blender-addon_src_install
 # @DESCRIPTION:
-# Installs an addon into the GENTOO_BLENDER_ADDONS_DIR of default directory
+# Installs an addon into the GENTOO_BLENDER_SCRIPTS_DIR of default directory
 blender-addon_src_install() {
 	debug-print-function ${FUNCNAME} "${@}"
 
 	egit_clean
 	[[ -a .github ]] && rm -r .github
 
-	if [ ${GENTOO_BLENDER_ADDONS_DIR} ]; then
-		_GENTOO_BLENDER_ADDONS_HOME=( "${GENTOO_BLENDER_ADDONS_DIR}" )
+	if [ ${GENTOO_BLENDER_SCRIPTS_DIR} ]; then
+		_GENTOO_BLENDER_ADDONS_HOME=( "${GENTOO_BLENDER_SCRIPTS_DIR}" )
 	else
 		for i in "${_BLENDER_SEL_IMPLS[@]}"; do
 			_GENTOO_BLENDER_ADDONS_HOME+=( "/usr/share/blender/${i/_/\.}/scripts" )
@@ -149,7 +141,7 @@ blender-addon_pkg_postinst() {
 	elog "This blender addon installs to following system subdirectory:"
 	elog "${_GENTOO_BLENDER_ADDONS_HOME[@]}"
 	elog "You can override this value by setting following variable to your make.conf file:"
-	elog "GENTOO_BLENDER_ADDONS_DIR"
+	elog "GENTOO_BLENDER_SCRIPTS_DIR"
 	elog "Each blender slot will use this single directory for the addons."
 	elog "Please, set this value to PreferencesFilePaths.scripts_directory"
 	elog "More info you can find at page "
@@ -161,8 +153,8 @@ blender-addon_pkg_postinst() {
 # remove addon dir on uninstalling blender addon.
 blender-addon_pkg_postrm() {
 	if [[ -z "${REPLACED_BY_VERSION}" ]]; then
-		if [ ${GENTOO_BLENDER_ADDONS_DIR} ]; then
-			_GENTOO_BLENDER_ADDONS_HOME=( "${GENTOO_BLENDER_ADDONS_DIR}" )
+		if [ ${GENTOO_BLENDER_SCRIPTS_DIR} ]; then
+			_GENTOO_BLENDER_ADDONS_HOME=( "${GENTOO_BLENDER_SCRIPTS_DIR}" )
 		else
 			for i in "${_BLENDER_SEL_IMPLS[@]}"; do
 				_GENTOO_BLENDER_ADDONS_HOME+=( "/usr/share/blender/${i/_/\.}/scripts" )

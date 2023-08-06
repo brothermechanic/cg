@@ -22,7 +22,7 @@ RDEPEND="$(python_gen_cond_dep 'dev-python/numpy[${PYTHON_USEDEP}]')"
 ADDON_SOURCE_SUBDIR=${S}/${PN}
 
 src_install(){
-	echo "{\"Copy Target\" : \"${ED}${GENTOO_BLENDER_ADDONS_DIR}/${PN}\"}" > conf.json
+	echo "{\"Copy Target\" : \"${ED}${GENTOO_BLENDER_SCRIPTS_DIR}/addons/${PN}\"}" > conf.json
 	esetup.py build --copy --noversioncheck
 
 	blender-addon_src_install
