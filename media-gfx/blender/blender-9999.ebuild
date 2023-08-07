@@ -163,6 +163,7 @@ RDEPEND="${PYTHON_DEPS}
 	)
 	media-libs/mesa[X?,wayland?,llvm?]
 	gnome-base/gvfs
+	cg? ( media-blender/cg_preferences )
 "
 
 DEPEND="
@@ -268,8 +269,8 @@ src_prepare() {
 	use vulkan && eapply "${FILESDIR}/blender-fix-vulkan-build.patch"
 
 	if use cg and [ ${CG_BLENDER_SCRIPTS_DIR} ]; then
-        eapply "${FILESDIR}"/cg-defaults.patch
-        cp "${FILESDIR}"/splash.png release/datafiles/
+		eapply "${FILESDIR}"/cg-defaults.patch
+		cp "${FILESDIR}"/splash.png release/datafiles/
 		cp "${FILESDIR}"/cg_environment.py "${S}"/scripts/startup/ || die
 		sed -i -e "s|cg_blender_scripts_dir =.*|cg_blender_scripts_dir = \"${CG_BLENDER_SCRIPTS_DIR}\"|" "${S}"/scripts/startup/cg_environment.py || die
 		elog "Bledner configured for CG overlay!"

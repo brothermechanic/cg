@@ -17,19 +17,22 @@ __version__ = '0.1'
 
 import bpy
 from bpy.app.handlers import persistent
+import addon_utils
 
 
 @persistent
-def cg_env():
+def cg_env(dummy):
     '''Scripts environment'''
     cg_blender_scripts_dir = ''
     if cg_blender_scripts_dir not in bpy.utils.script_paths_pref():
         script_directories = bpy.context.preferences.filepaths.script_directories
         new_dir = script_directories.new()
         new_dir.directory = cg_blender_scripts_dir
-        new_dir.name = "CG_BLENDER_SCRIPTS_DIR"
+        new_dir.name = 'CG_BLENDER_SCRIPTS_DIR'
+    else:
+        addon_utils.enable('cg_preferences', default_set=True)
 
-    print("CG Environment activated!")
+    print('CG Environment activated!')
 
 
 def register():
@@ -42,5 +45,5 @@ def unregister():
     bpy.app.handlers.load_post.remove(cg_env)
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     register()
