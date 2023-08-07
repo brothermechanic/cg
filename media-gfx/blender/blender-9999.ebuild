@@ -7,7 +7,7 @@ EAPI=8
 PYTHON_COMPAT=( python3_{10..12} )
 LLVM_MAX_SLOT="16"
 
-inherit check-reqs cmake cuda flag-o-matic git-r3 pax-utils python-single-r1 toolchain-funcs xdg-utils llvm blender-scripts-dir
+inherit check-reqs cmake cuda flag-o-matic git-r3 pax-utils python-single-r1 toolchain-funcs xdg-utils llvm cg-blender-scripts-dir
 
 DESCRIPTION="Blender is a free and open-source 3D creation suite."
 HOMEPAGE="https://www.blender.org"
@@ -162,6 +162,7 @@ RDEPEND="${PYTHON_DEPS}
 		x11-libs/libXxf86vm
 	)
 	media-libs/mesa[X?,wayland?,llvm?]
+	gnome-base/gvfs
 "
 
 DEPEND="
@@ -265,15 +266,18 @@ src_prepare() {
 	use llvm && eapply "${FILESDIR}/blender-fix-clang-build.patch"
 	use optix && eapply "${FILESDIR}/blender-fix-optix-build.patch"
 	use vulkan && eapply "${FILESDIR}/blender-fix-vulkan-build.patch"
-	if use cg; then
+
+	if use cg and [ ${CG_BLENDER_SCRIPTS_DIR} ]; then
         eapply "${FILESDIR}"/cg-defaults.patch
         cp "${FILESDIR}"/splash.png release/datafiles/
-    fi
-
-    #set scripts dir to userpref
-    #if [ ${GENTOO_BLENDER_SCRIPTS_DIR} ]; then
-	#sed -i -e "s|.script_directories.*|.script_directories = {\"GENTOO_BLENDER_SCRIPTS_DIR\", \"${GENTOO_BLENDER_SCRIPTS_DIR}\"},|" "${S}"/release/datafiles/userdef/userdef_default.c || die
-	#fi
+		cp "${FILESDIR}"/cg_environment.py "${S}"/scripts/startup/ || die
+		sed -i -e "s|cg_blender_scripts_dir =.*|cg_blender_scripts_dir = \"${CG_BLENDER_SCRIPTS_DIR}\"|" "${S}"/scripts/startup/cg_environment.py || die
+		elog "Bledner configured for CG overlay!"
+	else
+		ewarn "Bledner don't configured for CG overlay!"
+		ewarn "Please setup <b>cg<b> use flag and"
+		ewarn "<b>CG_BLENDER_SCRIPTS_DIR<b> variable!"
+	fi
 
 	# remove some bundled deps
 	use portable || rm -rf extern/{audaspace,json,Eigen3,lzo,gflags,glog,gtest,gmock,draco,ceres} || die
@@ -593,12 +597,6 @@ src_install() {
 	mv "blender" "blender-${SLOT}" || die
 	ln -s "blender-${SLOT}" "blender"
 	popd
-
-	if [ ${GENTOO_BLENDER_SCRIPTS_DIR} ]; then
-		cd "${CMAKE_USE_DIR}" || die
-		einfo "Generating Blender default userprefs ..."
-		"${BUILD_DIR}"/bin/blender --background --python ${FILESDIR}/cg.py -noaudio || die "script cg.py failed."
-	fi
 
 	elog "${PN^}-$( grep -Po 'CPACK_PACKAGE_VERSION "\K[^"]..' ${BUILD_DIR}/CPackConfig.cmake ) has been installed."
 }

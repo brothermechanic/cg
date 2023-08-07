@@ -180,7 +180,7 @@ QA_WX_LOAD="usr/share/${PN}/${SLOT}/scripts/addons/cycles/lib/kernel_sm_*.cubin"
 QA_PREBUILT="${QA_WX_LOAD}"
 QA_PRESTRIPPED="${QA_WX_LOAD}"
 QA_FLAGS_IGNORED="${QA_WX_LOAD}"
-: ${GENTOO_BLENDER_SCRIPTS_DIR:="/usr/share/blender/scripts"} # Only for pythondir user preferences
+: ${CG_BLENDER_SCRIPTS_DIR:="/usr/share/blender/scripts"} # Only for pythondir user preferences
 
 blender_check_requirements() {
 	[[ ${MERGE_TYPE} != binary ]] && use openmp && tc-check-openmp
@@ -246,7 +246,7 @@ src_prepare() {
     fi
 
     #set scripts dir to userpref
-    sed -i -e "s|.pythondir.*|.pythondir = \"${GENTOO_BLENDER_SCRIPTS_DIR}\",|" "${S}"/release/datafiles/userdef/userdef_default.c || die
+    sed -i -e "s|.pythondir.*|.pythondir = \"${CG_BLENDER_SCRIPTS_DIR}\",|" "${S}"/release/datafiles/userdef/userdef_default.c || die
 
 	# remove some bundled deps
 	rm -rf extern/{Eigen3,glew-es,lzo,gflags,glog,draco,glew} || die

@@ -22,7 +22,7 @@ esac
 
 PYTHON_COMPAT=( python3_{10..12} )
 
-inherit git-r3 vcs-clean python-single-r1 blender-scripts-dir
+inherit git-r3 vcs-clean python-single-r1 cg-blender-scripts-dir
 
 # << Eclass variables >>
 
@@ -109,15 +109,15 @@ blender-addon_src_compile() {
 
 # @FUNCTION: blender-addon_src_install
 # @DESCRIPTION:
-# Installs an addon into the GENTOO_BLENDER_SCRIPTS_DIR of default directory
+# Installs an addon into the CG_BLENDER_SCRIPTS_DIR of default directory
 blender-addon_src_install() {
 	debug-print-function ${FUNCNAME} "${@}"
 
 	egit_clean
 	[[ -a .github ]] && rm -r .github
 
-	if [ ${GENTOO_BLENDER_SCRIPTS_DIR} ]; then
-		_GENTOO_BLENDER_ADDONS_HOME=( "${GENTOO_BLENDER_SCRIPTS_DIR}" )
+	if [ ${CG_BLENDER_SCRIPTS_DIR} ]; then
+		_GENTOO_BLENDER_ADDONS_HOME=( "${CG_BLENDER_SCRIPTS_DIR}" )
 	else
 		for i in "${_BLENDER_SEL_IMPLS[@]}"; do
 			_GENTOO_BLENDER_ADDONS_HOME+=( "/usr/share/blender/${i/_/\.}/scripts" )
@@ -141,7 +141,7 @@ blender-addon_pkg_postinst() {
 	elog "This blender addon installs to following system subdirectory:"
 	elog "${_GENTOO_BLENDER_ADDONS_HOME[@]}"
 	elog "You can override this value by setting following variable to your make.conf file:"
-	elog "GENTOO_BLENDER_SCRIPTS_DIR"
+	elog "CG_BLENDER_SCRIPTS_DIR"
 	elog "Each blender slot will use this single directory for the addons."
 	elog "Please, set this value to PreferencesFilePaths.scripts_directory"
 	elog "More info you can find at page "
@@ -153,8 +153,8 @@ blender-addon_pkg_postinst() {
 # remove addon dir on uninstalling blender addon.
 blender-addon_pkg_postrm() {
 	if [[ -z "${REPLACED_BY_VERSION}" ]]; then
-		if [ ${GENTOO_BLENDER_SCRIPTS_DIR} ]; then
-			_GENTOO_BLENDER_ADDONS_HOME=( "${GENTOO_BLENDER_SCRIPTS_DIR}" )
+		if [ ${CG_BLENDER_SCRIPTS_DIR} ]; then
+			_GENTOO_BLENDER_ADDONS_HOME=( "${CG_BLENDER_SCRIPTS_DIR}" )
 		else
 			for i in "${_BLENDER_SEL_IMPLS[@]}"; do
 				_GENTOO_BLENDER_ADDONS_HOME+=( "/usr/share/blender/${i/_/\.}/scripts" )

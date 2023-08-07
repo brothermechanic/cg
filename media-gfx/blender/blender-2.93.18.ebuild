@@ -18,7 +18,7 @@ MY_PV="$(ver_cut 1-2)"
 EGIT_BRANCH="blender-v${MY_PV}-release"
 KEYWORDS="~amd64 ~x86 ~arm64 ~arm"
 
-: ${GENTOO_BLENDER_SCRIPTS_DIR:-"/usr/share/blender/scripts/addons"} # For default preferences only
+: ${CG_BLENDER_SCRIPTS_DIR:-"/usr/share/blender/scripts/addons"} # For default preferences only
 SLOT="$MY_PV"
 LICENSE="|| ( GPL-3 BL )"
 CUDA_ARCHS="sm_30 sm_35 sm_50 sm_52 sm_61 sm_70 sm_75 sm_86"
@@ -222,8 +222,8 @@ src_prepare() {
         cp "${FILESDIR}"/splash.png release/datafiles/
     fi
 
-    #set GENTOO_BLENDER_SCRIPTS_DIR to userpref
-    sed -i -e "s|.pythondir.*|.pythondir = \"${GENTOO_BLENDER_SCRIPTS_DIR}\",|" "${S}"/release/datafiles/userdef/userdef_default.c || die
+    #set CG_BLENDER_SCRIPTS_DIR to userpref
+    sed -i -e "s|.pythondir.*|.pythondir = \"${CG_BLENDER_SCRIPTS_DIR}\",|" "${S}"/release/datafiles/userdef/userdef_default.c || die
 
 	# remove some bundled deps
 	rm -rf extern/{Eigen3,glew-es,lzo,gflags,glog,draco,glew} || die
