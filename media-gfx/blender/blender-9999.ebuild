@@ -268,6 +268,11 @@ src_prepare() {
         cp "${FILESDIR}"/splash.png release/datafiles/
     fi
 
+    #set scripts dir to userpref
+    #if [ ${GENTOO_BLENDER_SCRIPTS_DIR} ]; then
+	sed -i -e "s|.script_directories.*|.script_directories = {\"GENTOO_BLENDER_SCRIPTS_DIR\", \"${GENTOO_BLENDER_SCRIPTS_DIR}\"},|" "${S}"/release/datafiles/userdef/userdef_default.c || die
+	#fi
+
 	# remove some bundled deps
 	use portable || rm -rf extern/{audaspace,json,Eigen3,lzo,gflags,glog,gtest,gmock,draco,ceres} || die
 
@@ -283,12 +288,7 @@ src_prepare() {
 
 	sed -e "s|Name=Blender|Name=Blender ${SLOT}|" -i release/freedesktop/blender.desktop || die
 	sed -e "s|Icon=blender|Icon=blender-${SLOT}|" -i release/freedesktop/blender.desktop || die
-
-	if [ ${GENTOO_BLENDER_SCRIPTS_DIR} ]; then
-		sed -e "s|Exec.*|Exec=blender-${SLOT} --python ${GENTOO_BLENDER_SCRIPTS_DIR}/hook/cg.py|" -i release/freedesktop/blender.desktop || die
-	else
-		ed -e "s|Exec.*|Exec=blender-${SLOT}|" -i release/freedesktop/blender.desktop || die
-	fi
+	sed -e "s|Exec.*|Exec=blender-${SLOT}|" -i release/freedesktop/blender.desktop || die
 
 	mv release/freedesktop/icons/scalable/apps/blender.svg release/freedesktop/icons/scalable/apps/blender-${SLOT}.svg || die
 	mv release/freedesktop/icons/symbolic/apps/blender-symbolic.svg release/freedesktop/icons/symbolic/apps/blender-${SLOT}-symbolic.svg || die
@@ -589,13 +589,6 @@ src_install() {
 	mv "blender" "blender-${SLOT}" || die
 	ln -s "blender-${SLOT}" "blender"
 	popd
-
-	if [ ${GENTOO_BLENDER_SCRIPTS_DIR} ]; then
-		insinto "${GENTOO_BLENDER_SCRIPTS_DIR}"/hook
-		doins "${FILESDIR}"/cg.py || die "doins share failed"
-		sed -i -e "s|directory=.*|directory=\"${GENTOO_BLENDER_SCRIPTS_DIR}\"|" "${ED%/}/${GENTOO_BLENDER_SCRIPTS_DIR}/hook/cg.py" || die
-		fperms -R 777 "${GENTOO_BLENDER_SCRIPTS_DIR}/hook/"
-	fi
 
 	elog "${PN^}-$( grep -Po 'CPACK_PACKAGE_VERSION "\K[^"]..' ${BUILD_DIR}/CPackConfig.cmake ) has been installed."
 }
