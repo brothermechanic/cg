@@ -170,14 +170,16 @@ DEPEND="
 		media-libs/shaderc
 		media-libs/vulkan-loader[X?,wayland?]
 	)
-
 "
 
 BDEPEND="
 	lld? ( <sys-devel/lld-$((${LLVM_MAX_SLOT} + 1)):= )
 	mold? ( sys-devel/mold:= )
 	gold? ( <sys-devel/llvm-$((${LLVM_MAX_SLOT} + 1)):=[binutils-plugin] )
-	llvm? (	<sys-devel/llvm-$((${LLVM_MAX_SLOT} + 1)):=	)
+	llvm? (
+		<sys-devel/llvm-$((${LLVM_MAX_SLOT} + 1)):=
+		<sys-devel/clang-$((${LLVM_MAX_SLOT} + 1)):=
+	)
 	virtual/pkgconfig
 	doc? (
 		app-doc/doxygen[-nodot(-),dot(+)]
@@ -194,10 +196,9 @@ RESTRICT="
 	!test? ( test )
 "
 
-QA_WX_LOAD="usr/share/${PN}/${SLOT}/scripts/addons/cycles/lib/kernel_.*\.cubin"
-QA_PREBUILT="${QA_WX_LOAD}"
-QA_PRESTRIPPED="${QA_WX_LOAD}"
-QA_FLAGS_IGNORED="${QA_WX_LOAD}"
+QA_EXECSTACK="usr/share/${PN}/${SLOT}/scripts/addons/cycles/lib/kernel_.*\.cubin"
+QA_FLAGS_IGNORED="${QA_EXECSTACK}"
+QA_PRESTRIPPED="${QA_EXECSTACK}"
 
 blender_check_requirements() {
 	[[ ${MERGE_TYPE} != binary ]] && use openmp && tc-check-openmp
@@ -261,6 +262,7 @@ src_prepare() {
 	eapply "${FILESDIR}/blender-system-libs.patch"
 	eapply "${FILESDIR}/blender-fix-usd-python.patch"
 	eapply "${FILESDIR}/blender-fix-boost-1.81-iostream.patch"
+	use llvm && eapply "${FILESDIR}/blender-fix-clang-build.patch"
 	use optix && eapply "${FILESDIR}/blender-fix-optix-build.patch"
 	use vulkan && eapply "${FILESDIR}/blender-fix-vulkan-build.patch"
 	if use cg; then
@@ -270,7 +272,7 @@ src_prepare() {
 
     #set scripts dir to userpref
     #if [ ${GENTOO_BLENDER_SCRIPTS_DIR} ]; then
-	sed -i -e "s|.script_directories.*|.script_directories = {\"GENTOO_BLENDER_SCRIPTS_DIR\", \"${GENTOO_BLENDER_SCRIPTS_DIR}\"},|" "${S}"/release/datafiles/userdef/userdef_default.c || die
+	#sed -i -e "s|.script_directories.*|.script_directories = {\"GENTOO_BLENDER_SCRIPTS_DIR\", \"${GENTOO_BLENDER_SCRIPTS_DIR}\"},|" "${S}"/release/datafiles/userdef/userdef_default.c || die
 	#fi
 
 	# remove some bundled deps
@@ -287,8 +289,8 @@ src_prepare() {
 	sed -e "s|blender.desktop|blender-${SLOT}.desktop|" -i source/creator/CMakeLists.txt || die
 
 	sed -e "s|Name=Blender|Name=Blender ${SLOT}|" -i release/freedesktop/blender.desktop || die
-	sed -e "s|Icon=blender|Icon=blender-${SLOT}|" -i release/freedesktop/blender.desktop || die
 	sed -e "s|Exec.*|Exec=blender-${SLOT}|" -i release/freedesktop/blender.desktop || die
+	sed -e "s|Icon=blender|Icon=blender-${SLOT}|" -i release/freedesktop/blender.desktop || die
 
 	mv release/freedesktop/icons/scalable/apps/blender.svg release/freedesktop/icons/scalable/apps/blender-${SLOT}.svg || die
 	mv release/freedesktop/icons/symbolic/apps/blender-symbolic.svg release/freedesktop/icons/symbolic/apps/blender-${SLOT}-symbolic.svg || die
@@ -435,6 +437,7 @@ src_configure() {
 		-DWITH_LZMA=$(usex lzma)								# used for pointcache only
 		-DWITH_LZO=$(usex lzo)									# used for pointcache only
 		-DWITH_LLVM=$(usex llvm)
+		-DWITH_CLANG=$(usex llvm)
 		-DWITH_LIBMV=$(usex libmv)                           	# Enable libmv sfm camera tracking
 		-DWITH_MEM_JEMALLOC=$(usex jemalloc)					# Enable malloc replacement
 		-DWITH_MEM_VALGRIND=$(usex valgrind)
@@ -482,8 +485,9 @@ src_configure() {
 		-Wno-dev
 		#-DCMAKE_FIND_DEBUG_MODE=yes
 		-DWITH_STRICT_BUILD_OPTIONS=yes
+		-DWITH_LIBS_PRECOMPILED=no
 		-DWITH_BUILDINFO=no
-		-DWITH_HYDRA=no 										# MacOS features default on if WITH_STRICT_BUILD_OPTIONS=yes
+		-DWITH_HYDRA=no 										# MacOS features enabled by default if WITH_STRICT_BUILD_OPTIONS=yes
 		-DWITH_MATERIALX=no
 	)
 
@@ -580,7 +584,7 @@ src_install() {
 	# Fix doc installdir
 	docinto html
 	dodoc "${CMAKE_USE_DIR}"/release/text/readme.html
-	rm -r "${ED%/}"/usr/share/doc/blender-${PV}
+	rm -r "${ED%/}"/usr/share/doc/blender
 	python_optimize "${ED%/}/usr/share/blender/${SLOT}/scripts"
 
 	pushd ${ED}/usr/bin
@@ -589,6 +593,12 @@ src_install() {
 	mv "blender" "blender-${SLOT}" || die
 	ln -s "blender-${SLOT}" "blender"
 	popd
+
+	if [ ${GENTOO_BLENDER_SCRIPTS_DIR} ]; then
+		cd "${CMAKE_USE_DIR}" || die
+		einfo "Generating Blender default userprefs ..."
+		"${BUILD_DIR}"/bin/blender --background --python ${FILESDIR}/cg.py -noaudio || die "script cg.py failed."
+	fi
 
 	elog "${PN^}-$( grep -Po 'CPACK_PACKAGE_VERSION "\K[^"]..' ${BUILD_DIR}/CPackConfig.cmake ) has been installed."
 }
