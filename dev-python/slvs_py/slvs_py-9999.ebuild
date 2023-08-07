@@ -5,17 +5,18 @@ EAPI=8
 
 PYTHON_COMPAT=( python3_{10..12} )
 DISTUTILS_USE_PEP517=setuptools
+DISTUTILS_EXT=1
 
 inherit distutils-r1
 
 DESCRIPTION="Python Binding of SOLVESPACE Constraint Solver"
 HOMEPAGE="https://github.com/realthunder/slvs_py"
 
-EGIT_SUBMODULES=()
 if [[ ${PV} == 9999 ]]; then
 	inherit git-r3
 	EGIT_REPO_URI="https://github.com/realthunder/${PN}"
 	EGIT_BRANCH="master"
+	EGIT_SUBMODULES=( slvs )
 else
 	SRC_URI="https://github.com/realthunder/${PN}/archive/refs/tags/v${PV}.tar.gz -> ${P}.tar.gz"
 	KEYWORDS="amd64 arm arm64 hppa ~ia64 ~mips x86"
