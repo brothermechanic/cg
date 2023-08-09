@@ -48,7 +48,7 @@ IUSE_TEST="-debug -doc -man -gtests -test icu"
 IUSE="${IUSE_CPU} ${IUSE_GPU} ${IUSE_DESKTOP} ${IUSE_LIBS} ${IUSE_CYC} ${IUSE_3DFILES} ${IUSE_IMAGE} ${IUSE_CODEC} ${IUSE_SOUND} ${IUSE_TEST}"
 
 REQUIRED_USE="${PYTHON_REQUIRED_USE}
-	|| ( gold lld mold )
+	^^ ( gold lld mold )
 	|| ( headless wayland X )
 	alembic? ( openexr )
 	embree? ( cycles tbb )
@@ -161,8 +161,7 @@ RDEPEND="${PYTHON_DEPS}
 		x11-libs/libXi
 		x11-libs/libXxf86vm
 	)
-	media-libs/mesa[X?,wayland?,llvm?]
-	gnome-base/gvfs
+	media-libs/mesa[X?,wayland?,llvm?,vulkan?]
 	cg? ( media-blender/cg_preferences )
 "
 
@@ -170,7 +169,7 @@ DEPEND="
 	dev-cpp/eigen:=
 	vulkan? (
 		media-libs/shaderc
-		media-libs/vulkan-loader[X?,wayland?]
+		media-libs/vulkan-loader[X?,wayland?,layers]
 	)
 "
 
