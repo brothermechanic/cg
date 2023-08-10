@@ -21,7 +21,7 @@ RDEPEND="$(python_gen_cond_dep '
     dev-python/scipy[${PYTHON_USEDEP}]
     dev-python/geomdl[${PYTHON_USEDEP}]
     dev-python/PyMCubes[${PYTHON_USEDEP}]
-    freecad? ( media-gfx/freecad[${PYTHON_USEDEP}] )
+    freecad? ( media-gfx/freecad[${PYTHON_SINGLE_USEDEP}] )
 ')"
 
 src_prepare() {
