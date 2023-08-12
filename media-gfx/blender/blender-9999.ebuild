@@ -96,6 +96,7 @@ RDEPEND="${PYTHON_DEPS}
 	alembic? ( >=media-gfx/alembic-1.8.3-r2[boost(+),-hdf5] )
 	collada? ( >=media-libs/opencollada-1.6.68 )
 	cuda? ( dev-util/nvidia-cuda-toolkit:= )
+	draco? ( >=media-libs/draco-1.5.2:= )
 	embree? ( >=media-libs/embree-4.0.1[raymask,tbb?] )
 	hip? ( >=dev-util/hip-5.4.0 )
 	ffmpeg? ( media-video/ffmpeg:=[x264,mp3,encode,theora,jpeg2k?,vpx,vorbis,opus,xvid] )
@@ -260,7 +261,7 @@ src_prepare() {
 	eapply "${FILESDIR}/blender-fix-desktop.patch"
 	eapply "${FILESDIR}/blender-system-embree.patch"
 	eapply "${FILESDIR}/blender-system-json.patch"
-	eapply "${FILESDIR}/blender-system-draco.patch"
+	eapply "${FILESDIR}/${SLOT}/blender-system-draco.patch"
 	#eapply "${FILESDIR}/blender-fix-buildinfo.patch"
 	eapply "${FILESDIR}/${SLOT}/blender-system-libs.patch"
 	eapply "${FILESDIR}/blender-fix-usd-python.patch"
