@@ -37,7 +37,7 @@ MODIFIERS="+fluid +smoke +oceansim +remesh +gmp +quadriflow"
 IUSE_CPU="+openmp +simd +tbb -lld -gold +mold -cpu_flags_arm_neon llvm -valgrind +jemalloc"
 IUSE_GPU="cuda optix hip oneapi +cycles-bin-kernels +opengl +nanovdb vulkan ${CUDA_ARCHS}"
 IUSE_DESKTOP="+cg -portable +X headless +nls -ndof wayland ${MODIFIERS}"
-IUSE_LIBS="+bullet +opencolorio +oidn +opensubdiv +openvdb +libmv +freestyle ${COMPRESSION} ${VDB_ABI}"
+IUSE_LIBS="+bullet +draco +opencolorio +oidn +opensubdiv +openvdb +libmv +freestyle ${COMPRESSION} ${VDB_ABI}"
 IUSE_CYC="+cycles osl +openpgl +embree +pugixml +potrace +fftw"
 IUSE_3DFILES="-alembic -usd +collada +obj +ply +stl"
 IUSE_IMAGE="-dpx +openexr jpeg2k webp +pdf"
@@ -75,7 +75,6 @@ for X in ${LANGS} ; do
 	REQUIRED_USE+=" linguas_${X}? ( nls )"
 done
 
-#oneapi? ( sys-devel/DPC++:= )
 RDEPEND="${PYTHON_DEPS}
 	$(python_gen_cond_dep '
 		dev-python/cython[${PYTHON_USEDEP}]
@@ -118,7 +117,8 @@ RDEPEND="${PYTHON_DEPS}
 	)
 	nanovdb? ( media-gfx/openvdb[cuda?,nanovdb?] )
 	nls? ( virtual/libiconv )
-	media-libs/audaspace[openal?,sdl?,pulseaudio?]
+	media-libs/audaspace:=[python,openal?,sdl?,pulseaudio?]
+	oneapi? ( sys-devel/DPC++:= )
 	openal? (
 		media-libs/openal
 	)
@@ -197,7 +197,7 @@ RESTRICT="
 	!test? ( test )
 "
 
-QA_EXECSTACK="usr/share/${PN}/${SLOT}/scripts/addons/cycles/lib/kernel_.*\.cubin"
+QA_EXECSTACK="usr/share/${PN}/${SLOT}/scripts/addons/cycles/lib/kernel_*"
 QA_FLAGS_IGNORED="${QA_EXECSTACK}"
 QA_PRESTRIPPED="${QA_EXECSTACK}"
 
@@ -260,12 +260,14 @@ src_prepare() {
 	eapply "${FILESDIR}/blender-fix-desktop.patch"
 	eapply "${FILESDIR}/blender-system-embree.patch"
 	eapply "${FILESDIR}/blender-system-json.patch"
-	eapply "${FILESDIR}/blender-system-libs.patch"
+	eapply "${FILESDIR}/blender-system-draco.patch"
+	#eapply "${FILESDIR}/blender-fix-buildinfo.patch"
+	eapply "${FILESDIR}/${SLOT}/blender-system-libs.patch"
 	eapply "${FILESDIR}/blender-fix-usd-python.patch"
 	eapply "${FILESDIR}/blender-fix-boost-1.81-iostream.patch"
 	use llvm && eapply "${FILESDIR}/blender-fix-clang-build.patch"
 	use optix && eapply "${FILESDIR}/blender-fix-optix-build.patch"
-	use vulkan && eapply "${FILESDIR}/blender-fix-vulkan-build.patch"
+	use vulkan && eapply "${FILESDIR}/${SLOT}/blender-fix-vulkan-build.patch"
 
 	if use cg and [ ${CG_BLENDER_SCRIPTS_DIR} ]; then
 		eapply "${FILESDIR}"/cg-defaults.patch
@@ -295,6 +297,13 @@ src_prepare() {
 	sed -e "s|Name=Blender|Name=Blender ${SLOT}|" -i release/freedesktop/blender.desktop || die
 	sed -e "s|Exec.*|Exec=blender-${SLOT}|" -i release/freedesktop/blender.desktop || die
 	sed -e "s|Icon=blender|Icon=blender-${SLOT}|" -i release/freedesktop/blender.desktop || die
+
+#   echo -e " #define BUILD_HASH \"$(git-r3_peek_remote_ref ${EGIT_REPO_URI_LIST% *})\"\n" \
+#		"#define BUILD_COMMIT_TIMESTAMP \"\"\n" \
+#  		"#define BUILD_BRANCH \"${EGIT_BRANCH} modified\"\n" \
+#		"#define BUILD_DATE \"$(TZ=\"UTC\" date --date=today +%Y-%m-%d)\"\n" \
+#		"#define BUILD_TIME \"$(TZ=\"UTC\" date --date=today +%H:%M:%S)\"\n" \
+#		"#include \"buildinfo_static.h\"\n" > build_files/cmake/buildinfo.h || die
 
 	mv release/freedesktop/icons/scalable/apps/blender.svg release/freedesktop/icons/scalable/apps/blender-${SLOT}.svg || die
 	mv release/freedesktop/icons/symbolic/apps/blender-symbolic.svg release/freedesktop/icons/symbolic/apps/blender-${SLOT}-symbolic.svg || die
@@ -433,6 +442,8 @@ src_configure() {
 		-DWITH_IMAGE_OPENJPEG=$(usex jpeg2k)
 		-DWITH_INPUT_NDOF=$(usex ndof)
 		-DWITH_INPUT_IME=no
+		-DWITH_IK_SOLVER=no 									# Disable legacy IK solver
+		-DWITH_IK_ITASC=yes
 		-DWITH_INTERNATIONAL=$(usex nls)						# I18N fonts and text
 		-DWITH_JACK=$(usex jack)
 		-DWITH_JACK_DYNLOAD=$(usex jack)
@@ -464,6 +475,8 @@ src_configure() {
 		-DWITH_QUADRIFLOW=$(usex quadriflow)					# remesher
 		-DWITH_SDL=$(usex sdl)									# for sound and joystick support
 		-DWITH_STATIC_LIBS=$(usex portable)
+		-DWITH_DRACO=$(usex draco)
+		-DWITH_SYSTEM_DRACO=$(usex !portable)
 		-DWITH_AUDASPACE=yes
 		-DWITH_SYSTEM_AUDASPACE=$(usex !portable)
 		-DWITH_SYSTEM_EIGEN3=$(usex !portable)
@@ -480,7 +493,9 @@ src_configure() {
 		-DWITH_USD=$(usex usd)									# export format support
 		-DWITH_VULKAN_BACKEND=$(usex vulkan)
 		-DWITH_VULKAN_GUARDEDALLOC=$(usex vulkan)
-		-DWITH_XR_OPENXR=no										# VR interface
+		-DWITH_XR_OPENXR=OFF									# VR interface
+		-DSYCL_LIBRARY="/usr/lib/llvm/intel"
+		-DSYCL_INCLUDE_DIR="/usr/lib/llvm/intel/include"
 		#-DUSD_ROOT_DIR=/opt/openusd
 		#-DUSD_LIBRARY=/opt/openusd/lib/libusd_ms.so
 		-DWITH_NINJA_POOL_JOBS=no								# for machines with 16GB of RAM or less
@@ -490,7 +505,8 @@ src_configure() {
 		#-DCMAKE_FIND_DEBUG_MODE=yes
 		-DWITH_STRICT_BUILD_OPTIONS=yes
 		-DWITH_LIBS_PRECOMPILED=no
-		-DWITH_BUILDINFO=no
+		-DWITH_BUILDINFO=yes
+		-DWITH_UNITY_BUILD=no 									# Enable Unity build for modules (memory usage/compile time)
 		-DWITH_HYDRA=no 										# MacOS features enabled by default if WITH_STRICT_BUILD_OPTIONS=yes
 		-DWITH_MATERIALX=no
 	)

@@ -1,0 +1,29 @@
+--- a/source/creator/CMakeLists.txt
++++ b/source/creator/CMakeLists.txt
+@@ -242,26 +242,6 @@ if(WITH_BUILDINFO)
+   # MS-Windows when using `msbuild`.
+   set_source_files_properties(${buildinfo_h_fake} PROPERTIES SYMBOLIC TRUE)
+ 
+-  # a custom target that is always built
+-  add_custom_target(
+-    buildinfo ALL
+-    DEPENDS ${buildinfo_h_fake}
+-  )
+-
+-  # Creates `buildinfo.h` using CMAKE script.
+-  add_custom_command(
+-    OUTPUT
+-      ${buildinfo_h_fake}  # ensure we always run
+-      ${buildinfo_h_real}
+-    COMMAND
+-      ${CMAKE_COMMAND}
+-      -DSOURCE_DIR=${CMAKE_SOURCE_DIR}
+-      # Overrides only used when non-empty strings.
+-      -DBUILD_DATE=${BUILDINFO_OVERRIDE_DATE}
+-      -DBUILD_TIME=${BUILDINFO_OVERRIDE_TIME}
+-      -P ${CMAKE_SOURCE_DIR}/build_files/cmake/buildinfo.cmake
+-    )
+-
+   # `buildinfo.h` is a generated file.
+   set_source_files_properties(
+     ${buildinfo_h_real}
