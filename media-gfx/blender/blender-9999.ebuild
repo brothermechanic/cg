@@ -257,18 +257,15 @@ src_prepare() {
 
 	use cuda && cuda_src_prepare
 
-	eapply "${FILESDIR}/x112.patch"
-	eapply "${FILESDIR}/blender-fix-desktop.patch"
-	eapply "${FILESDIR}/blender-system-embree.patch"
-	eapply "${FILESDIR}/blender-system-json.patch"
-	eapply "${FILESDIR}/${SLOT}/blender-system-draco.patch"
-	#eapply "${FILESDIR}/blender-fix-buildinfo.patch"
-	eapply "${FILESDIR}/${SLOT}/blender-system-libs.patch"
-	eapply "${FILESDIR}/blender-fix-usd-python.patch"
-	eapply "${FILESDIR}/blender-fix-boost-1.81-iostream.patch"
-	use llvm && eapply "${FILESDIR}/blender-fix-clang-build.patch"
-	use optix && eapply "${FILESDIR}/blender-fix-optix-build.patch"
-	use vulkan && eapply "${FILESDIR}/${SLOT}/blender-fix-vulkan-build.patch"
+	use portable || eapply "${FILESDIR}/${SLOT}"/*.patch
+	use portable || eapply "${FILESDIR}"/blender-system-json.patch
+	eapply "${FILESDIR}"/x112.patch
+	eapply "${FILESDIR}"/blender-fix-desktop.patch
+	#eapply "${FILESDIR}"/blender-fix-buildinfo.patch
+	eapply "${FILESDIR}"/blender-fix-usd-python.patch
+	eapply "${FILESDIR}"/blender-fix-boost-1.81-iostream.patch
+	use llvm && eapply "${FILESDIR}"/blender-fix-clang-build.patch
+	use optix && eapply "${FILESDIR}"/blender-fix-optix-build.patch
 
 	if use cg and [ ${CG_BLENDER_SCRIPTS_DIR} ]; then
 		eapply "${FILESDIR}"/cg-defaults.patch
@@ -605,14 +602,15 @@ src_install() {
 	# Fix doc installdir
 	docinto html
 	dodoc "${CMAKE_USE_DIR}"/release/text/readme.html
-	rm -r "${ED%/}"/usr/share/doc/blender
+	rm -r "${ED%/}"/usr/share/doc/blende.*
 	python_optimize "${ED%/}/usr/share/blender/${SLOT}/scripts"
 
+	use portable && dodir "${ED%/}"/usr/bin
 	pushd ${ED}/usr/bin
-	mv "blender-thumbnailer" "blender-${SLOT}-thumbnailer" || die
-	ln -s "blender-${SLOT}-thumbnailer" "blender-thumbnailer"
-	mv "blender" "blender-${SLOT}" || die
-	ln -s "blender-${SLOT}" "blender"
+		mv "blender-thumbnailer" "blender-${SLOT}-thumbnailer" || die
+		ln -s "blender-${SLOT}-thumbnailer" "blender-thumbnailer"
+		mv "blender" "blender-${SLOT}" || die
+		ln -s "blender-${SLOT}" "blender"
 	popd
 
 	elog "${PN^}-$( grep -Po 'CPACK_PACKAGE_VERSION "\K[^"]..' ${BUILD_DIR}/CPackConfig.cmake ) has been installed."
