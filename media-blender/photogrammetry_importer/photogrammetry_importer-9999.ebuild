@@ -14,11 +14,8 @@ RDEPEND="$(python_gen_cond_dep '
 	>=dev-python/pillow-6.0.0[${PYTHON_USEDEP}]
 	dev-python/pyntcloud[${PYTHON_USEDEP}]
 	dev-python/laspy[${PYTHON_USEDEP}]
+	dev-python/lazrs[${PYTHON_USEDEP}]
 ')"
-
-#PATCHES=(
-#	"${FILESDIR}"/photogrammetry_importer_fix_FLAT_COLOR.patch
-#)
 
 ADDON_SOURCE_SUBDIR=${S}/${PN}
 
