@@ -6,14 +6,14 @@ EAPI=8
 PYTHON_COMPAT=( python3_{10..12} )
 
 # Check this on updates
-LLVM_MAX_SLOT=15
+LLVM_MAX_SLOT=17
 
 inherit cmake cuda flag-o-matic llvm toolchain-funcs python-single-r1
 
 DESCRIPTION="Advanced shading language for production GI renderers"
 HOMEPAGE="http://opensource.imageworks.com/?p=osl"
-SRC_URI="https://github.com/AcademySoftwareFoundation/OpenShadingLanguage/archive/v${PV}.tar.gz -> ${P}.tar.gz"
-S="${WORKDIR}/OpenShadingLanguage-${PV}"
+SRC_URI="https://github.com/AcademySoftwareFoundation/OpenShadingLanguage/archive/0d4c34375968be491cdb0d360b3f81755fc20cf9.tar.gz -> ${P}.tar.gz"
+S="${WORKDIR}/OpenShadingLanguage-0d4c34375968be491cdb0d360b3f81755fc20cf9"
 
 LICENSE="BSD"
 SLOT="0"
@@ -26,7 +26,7 @@ X86_CPU_FEATURES=(
 CPU_FEATURES=( ${X86_CPU_FEATURES[@]/#/cpu_flags_x86_} )
 CUDA_ARCHS="sm_30 sm_35 sm_50 sm_52 sm_61 sm_70 sm_75 sm_86"
 
-IUSE="doc optix partio qt5 test ${CPU_FEATURES[@]%:*} ${CUDA_ARCHS} python"
+IUSE="doc optix partio qt5 qt6 test ${CPU_FEATURES[@]%:*} ${CUDA_ARCHS} python plugins"
 RESTRICT="
 	!test (test)
 	mirror
@@ -36,6 +36,7 @@ REQUIRED_USE="
 	optix? (
 		^^ ( ${CUDA_ARCHS} )
 	)
+	?? ( qt5 qt6 )
 "
 
 RDEPEND="
@@ -61,6 +62,7 @@ RDEPEND="
 		dev-qt/qtgui:5
 		dev-qt/qtwidgets:5
 	)
+	qt6? ( dev-qt/qtbase:6[gui,widgets] )
 "
 
 DEPEND="${RDEPEND}"
@@ -69,10 +71,6 @@ BDEPEND="
 	sys-devel/flex
 	virtual/pkgconfig
 "
-
-PATCHES=(
-	${FILESDIR}/osl-1.12.12.0-llvm-16.patch
-)
 
 llvm_check_deps() {
 	has_version -r "sys-devel/clang:${LLVM_SLOT}"
@@ -91,6 +89,9 @@ src_prepare() {
 		sed -i -e 's/OPTIX_COMPILE_DEBUG_LEVEL_LINEINFO/OPTIX_COMPILE_DEBUG_LEVEL_MINIMAL/g' src/testshade/optixgridrender.cpp src/testrender/optixraytracer.cpp || die
 		cuda_src_prepare
 	fi
+	sed -e 's/DESTINATION cmake/DESTINATION "${OSL_CONFIG_INSTALL_DIR}"/g' \
+		-re '/install \(FILES src\/build-scripts\/serialize-bc\.py/{:a;N;/PERMISSIONS \$\{PERMISSION_FLAGS\}\)/!ba};/DESTINATION build-scripts/d' \
+		-i CMakeLists.txt || die "Sed failed."
 }
 
 src_configure() {
@@ -109,20 +110,23 @@ src_configure() {
 	# Even if there are no SIMD features selected, it seems like the code will turn on NEON support if it is available.
 	use arm64 && append-flags -flax-vector-conversions
 
+	filter-flags -no-opaque-pointers
+
 	local gcc="$(tc-getCC)"
 	local mycmakeargs=(
-		-DUSE_OPTIX=$(usex optix)
+		-DOSL_USE_OPTIX=$(usex optix)
 		-DCMAKE_CXX_STANDARD=17
 		-DCMAKE_INSTALL_DOCDIR="share/doc/${PF}"
 		-DINSTALL_DOCS=$(usex doc)
 		-DUSE_CCACHE=OFF
 		-DLLVM_STATIC=OFF
 		-DOSL_BUILD_TESTS=$(usex test)
+		-DOSL_BUILD_PLUGINS=$(usex plugins)
 		-DOSL_SHADER_INSTALL_DIR="${EPREFIX}/usr/include/${PN^^}/shaders"
 		-DOSL_PTX_INSTALL_DIR="${EPREFIX}/usr/include/${PN^^}/ptx"
 		-DSTOP_ON_WARNING=OFF
 		-DUSE_PARTIO=$(usex partio)
-		-DUSE_QT=$(usex qt5)
+		-DUSE_QT=$(usex qt6 ON $(usex qt5))
 		-DUSE_PYTHON=$(usex python)
 		-DPYTHON_VERSION="${EPYTHON/python}"
 		-DUSE_SIMD="$(IFS=","; echo "${mysimd[*]}")"
@@ -132,6 +136,7 @@ src_configure() {
 		for CA in ${CUDA_ARCHS}; do
 			use ${CA} && mycmakeargs+=(	-DCUDA_TARGET_ARCH="${CA}" ) && break
 		done
+		mycmakeargs+=( -DCUDA_TOOLKIT_ROOT_DIR="/opt/cuda" )
 	fi
 	cmake_src_configure
 }
