@@ -1,13 +1,13 @@
 # Copyright 1999-2023 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
-# TODO add https://materialx.org/ support
 
 EAPI=8
 
 PYTHON_COMPAT=( python3_{10..12} )
-LLVM_MAX_SLOT="16"
+OPENVDB_COMPAT=( {7..10} )
+LLVM_MAX_SLOT="17"
 
-inherit check-reqs cmake cuda flag-o-matic git-r3 pax-utils python-single-r1 toolchain-funcs xdg-utils llvm cg-blender-scripts-dir
+inherit check-reqs cmake cuda flag-o-matic git-r3 pax-utils python-single-r1 toolchain-funcs xdg-utils llvm openvdb cg-blender-scripts-dir
 
 DESCRIPTION="Blender is a free and open-source 3D creation suite."
 HOMEPAGE="https://www.blender.org"
@@ -18,7 +18,7 @@ EGIT_SUBMODULES=()
 if [[ ${PV} == 9999 ]]; then
 	EGIT_BRANCH="main"
 	#EGIT_COMMIT="fe3110a2859d84401dceda06fd41f3b082eae790"
-	MY_PV="4.0"
+	MY_PV="4.1"
 	KEYWORDS=""
 else
 	MY_PV="$(ver_cut 1-2)"
@@ -29,19 +29,50 @@ fi
 
 SLOT="$MY_PV"
 LICENSE="|| ( GPL-3 BL )"
-CUDA_ARCHS="sm_30 sm_35 sm_50 sm_52 sm_61 sm_70 sm_75 sm_86"
+
+CUDA_TARGETS_COMPAT=(
+	sm_30
+	sm_35
+	sm_37
+	sm_50
+	sm_52
+	sm_60
+	sm_61
+	sm_70
+	sm_75
+	sm_86
+	sm_89
+	compute_89
+)
+
+AMDGPU_TARGETS_COMPAT=(
+	gfx900
+	gfx90c
+	gfx902
+	gfx1010
+	gfx1011
+	gfx1012
+	gfx1030
+	gfx1031
+	gfx1032
+	gfx1034
+	gfx1035
+	gfx1100
+	gfx1101
+	gfx1102
+)
+
 COMPRESSION="lzma lzo"
-VDB_ABI="abi7-compat abi8-compat abi9-compat abi10-compat"
 MODIFIERS="+fluid +smoke +oceansim +remesh +gmp +quadriflow"
 
 IUSE_CPU="+openmp +simd +tbb -lld -gold +mold -cpu_flags_arm_neon llvm -valgrind +jemalloc"
-IUSE_GPU="cuda optix hip oneapi +cycles-bin-kernels +opengl +nanovdb vulkan ${CUDA_ARCHS}"
+IUSE_GPU="cuda optix rocm oneapi +cycles-bin-kernels +opengl vulkan ${CUDA_TARGETS_COMPAT[@]/#/cuda_targets_} ${AMDGPU_TARGETS_COMPAT[@]/#/amdgpu_targets_}"
 IUSE_DESKTOP="+cg -portable +X headless +nls -ndof wayland ${MODIFIERS}"
-IUSE_LIBS="+bullet +draco +opencolorio +oidn +opensubdiv +openvdb +libmv +freestyle ${COMPRESSION} ${VDB_ABI}"
+IUSE_LIBS="+bullet +boost +dbus +draco +materialx +opencolorio +oidn +opensubdiv +openvdb nanovdb openxr +libmv +freestyle ${COMPRESSION}"
 IUSE_CYC="+cycles osl +openpgl +embree +pugixml +potrace +fftw"
 IUSE_3DFILES="-alembic -usd +collada +obj +ply +stl"
 IUSE_IMAGE="-dpx +openexr jpeg2k webp +pdf"
-IUSE_CODEC="avi +ffmpeg -sndfile +quicktime"
+IUSE_CODEC="avi +ffmpeg flac -sndfile +quicktime aom mp3 opus theora vorbis vpx x264 xvid"
 IUSE_SOUND="jack openal -pulseaudio sdl"
 IUSE_TEST="-debug -doc -man -gtests -test icu"
 
@@ -49,21 +80,25 @@ IUSE="${IUSE_CPU} ${IUSE_GPU} ${IUSE_DESKTOP} ${IUSE_LIBS} ${IUSE_CYC} ${IUSE_3D
 
 REQUIRED_USE="${PYTHON_REQUIRED_USE}
 	^^ ( gold lld mold )
-	|| ( headless wayland X )
+	|| ( wayland X )
+	!boost? ( !alembic !opencolorio !cycles !nls !openvdb )
 	alembic? ( openexr )
+	dbus? (	wayland )
 	embree? ( cycles tbb )
 	smoke? ( fftw )
 	cuda? ( cycles cycles-bin-kernels nanovdb )
 	fluid? ( fftw tbb )
+	materialx? (
+		!python_single_target_python3_10
+		python_single_target_python3_11
+	)
 	oceansim? ( fftw )
 	oidn? ( cycles tbb )
 	oneapi? ( cycles )
 	optix? ( cycles cuda )
-	openvdb? (
-		^^ ( abi7-compat abi8-compat abi9-compat abi10-compat )
-		cycles tbb
-	)
-	osl? ( cycles llvm )
+	openvdb? ( ${OPENVDB_REQUIRED_USE} cycles tbb )
+	osl? ( cycles llvm pugixml )
+	rocm? ( cycles llvm )
 	vulkan? ( llvm )
 	test? ( gtests opencolorio )
 	usd? ( tbb )
@@ -75,33 +110,81 @@ for X in ${LANGS} ; do
 	REQUIRED_USE+=" linguas_${X}? ( nls )"
 done
 
-RDEPEND="${PYTHON_DEPS}
+CODECS="
+	aom? (
+		>=media-libs/libaom-3.3.0
+	)
+	mp3? (
+		>=media-sound/lame-3.100[sndfile]
+	)
+	opus? (
+		>=media-libs/opus-1.3.1
+	)
+	theora? (
+		>=media-libs/libogg-1.3.5
+		>=media-libs/libtheora-1.1.1
+		vorbis? (
+			>=media-libs/libtheora-1.1.1[encode]
+		)
+	)
+	vorbis? (
+		>=media-libs/libogg-1.3.5
+		>=media-libs/libvorbis-1.3.7
+	)
+	vpx? (
+		>=media-libs/libvpx-1.11
+	)
+	x264? (
+		>=media-libs/x264-0.0.20220221
+	)
+	xvid? (
+		>=media-libs/xvid-1.3.7
+	)
+"
+
+RDEPEND="
+	${CODECS}
+	${PYTHON_DEPS}
 	$(python_gen_cond_dep '
-		dev-python/cython[${PYTHON_USEDEP}]
-		dev-python/numpy[${PYTHON_USEDEP}]
-		dev-python/zstandard[${PYTHON_USEDEP}]
-		dev-python/requests[${PYTHON_USEDEP}]
-		dev-libs/boost[python,nls?,icu?,threads(+),${PYTHON_USEDEP}]
+		dev-libs/boost[nls?,icu?,threads(+),python,${PYTHON_USEDEP}]
+		>=dev-python/certifi-2021.10.8[${PYTHON_USEDEP}]
+		>=dev-python/charset-normalizer-2.0.6[${PYTHON_USEDEP}]
+		>=dev-python/idna-3.2[${PYTHON_USEDEP}]
+		>=dev-python/numpy-1.23.5[${PYTHON_USEDEP}]
+		>=dev-python/pybind11-2.10.1[${PYTHON_USEDEP}]
+		>=dev-python/zstandard-0.16.0[${PYTHON_USEDEP}]
+		>=dev-python/requests-2.26.0[${PYTHON_USEDEP}]
+		>=dev-python/urllib3-1.26.7[${PYTHON_USEDEP}]
 	')
 	>=dev-cpp/nlohmann_json-3.10.0:=
-	media-libs/freetype:=[brotli]
+	media-libs/freetype:=[brotli,bzip2,harfbuzz,png]
 	media-libs/libepoxy:=
-	media-libs/libjpeg-turbo:=
-	app-arch/brotli:=[static-libs]
-	media-libs/libpng:=
+	>=dev-cpp/pystring-1.1.3
+	>=dev-libs/fribidi-1.0.12
+	>=media-libs/libpng-1.6.37:0=
+	>=sys-libs/minizip-ng-3.0.7
+	>=sys-libs/zlib-1.2.13
+	dev-libs/lzo:2
+	media-libs/libglvnd
 	media-libs/libsamplerate
-	sys-libs/zlib:=
-	virtual/jpeg
 	virtual/libintl
-	alembic? ( >=media-gfx/alembic-1.8.3-r2[boost(+),-hdf5] )
+	alembic? ( >=media-gfx/alembic-1.8.3-r2[boost(+),hdf5(+)] )
 	collada? ( >=media-libs/opencollada-1.6.68 )
 	cuda? ( dev-util/nvidia-cuda-toolkit:= )
 	draco? ( >=media-libs/draco-1.5.2:= )
-	embree? ( >=media-libs/embree-4.0.1[raymask,tbb?] )
-	hip? ( >=dev-util/hip-5.4.0 )
-	ffmpeg? ( media-video/ffmpeg:=[x264,mp3,encode,theora,jpeg2k?,vpx,vorbis,opus,xvid] )
+	dbus? ( sys-apps/dbus )
+	embree? (
+		>=media-libs/embree-3.1.0[raymask,tbb?]
+		<media-libs/embree-5
+	)
+	rocm? ( >=dev-util/hip-5.4.0 )
+	ffmpeg? (
+		<media-video/ffmpeg-7:=[encode,jpeg2k?,mp3?,opus?,sdl,theora?,vorbis?,vpx?,x264?,xvid?,zlib]
+		>=media-video/ffmpeg-4:=[encode,jpeg2k?,mp3?,opus?,sdl,theora?,vorbis?,vpx?,x264?,xvid?,zlib]
+	)
 	fftw? ( sci-libs/fftw:3.0=[openmp?] )
-	gmp? ( dev-libs/gmp )
+	flac? (	>=media-libs/flac-1.4.2	)
+	gmp? ( >=dev-libs/gmp-6.2.1[cxx] )
 	gtests? (
 		dev-cpp/gflags:=
 		dev-cpp/glog:=[gflags]
@@ -113,13 +196,18 @@ RDEPEND="${PYTHON_DEPS}
 	libmv? ( sci-libs/ceres-solver:= )
 	lzo? ( dev-libs/lzo:2= )
 	ndof? (
+		>=dev-libs/libspnav-1.1
 		app-misc/spacenavd
-		dev-libs/libspnav
 	)
-	nanovdb? ( media-gfx/openvdb[cuda?,nanovdb?] )
+	materialx? (
+		media-libs/materialx[${PYTHON_SINGLE_USEDEP},python]
+	)
 	nls? ( virtual/libiconv )
 	media-libs/audaspace:=[python,openal?,sdl?,pulseaudio?]
-	oneapi? ( sys-devel/DPC++:= )
+	oneapi? (
+		<dev-libs/level-zero-2
+		>=dev-libs/level-zero-1.8.8
+	)
 	openal? (
 		media-libs/openal
 	)
@@ -129,33 +217,56 @@ RDEPEND="${PYTHON_DEPS}
 		virtual/glu
 	)
 	oidn? ( >=media-libs/oidn-1.4.1 )
-	>=media-libs/openimageio-2.4.6.0:=
+	<media-libs/openimageio-2.5[${PYTHON_SINGLE_USEDEP},${OPENVDB_SINGLE_USEDEP},color-management?,jpeg2k?,png,python,tools(+),webp?]
+	>=media-libs/openimageio-2.4.15.0[${PYTHON_SINGLE_USEDEP},${OPENVDB_SINGLE_USEDEP},color-management?,jpeg2k?,png,python,tools(+),webp?]
+	>=dev-cpp/robin-map-0.6.2
+	>=dev-libs/libfmt-9.1.0
 	opencolorio? ( >=media-libs/opencolorio-2.1.1-r7:= )
-	openexr? ( >=media-libs/openexr-3:0= )
-	openpgl? ( >=media-libs/openpgl-0.5.0:= )
+	openexr? ( >=media-libs/openexr-3:= )
+	openpgl? (
+		<media-libs/openpgl-0.6[tbb?]
+		>=media-libs/openpgl-0.5[tbb?]
+	)
 	opensubdiv? ( >=media-libs/opensubdiv-3.4.0[cuda?,openmp?,tbb?] )
 	openvdb? (
-		>=media-gfx/openvdb-9.0.0:=[abi7-compat(-)?,abi8-compat(-)?,abi9-compat(-)?,abi10-compat(-)?,nanovdb?]
-		dev-libs/c-blosc:=
+		>=media-gfx/openvdb-9.0.0:=[${OPENVDB_SINGLE_USEDEP},nanovdb?]
+		<media-gfx/openvdb-11.0.0:=[${OPENVDB_SINGLE_USEDEP},nanovdb?]
+		>=dev-libs/c-blosc-1.21.1[zlib]
+		nanovdb? (
+			>=media-gfx/nanovdb-32:0=
+		)
 	)
-	optix? ( >=dev-libs/optix-7.5.0 )
-	osl? ( >=media-libs/osl-1.11.16.0-r3:=[optix?] )
-	pdf? ( media-libs/libharu )
-	potrace? ( media-gfx/potrace )
+	openxr? (
+		>=media-libs/openxr-1.0.17
+	)
+	optix? (
+		>=dev-libs/optix-7.5.0
+		>=media-libs/osl-1.11.16.0-r3:=[optix,cuda_targets_sm_50]
+		<media-libs/osl-1.13:=[optix,cuda_targets_sm_50]
+	)
+	osl? (
+		>=media-libs/osl-1.11.16.0-r3:=
+		<media-libs/osl-1.13:=
+	)
+	pdf? ( >=media-libs/libharu-2.3.0 )
+	potrace? ( >=media-gfx/potrace-1.16 )
 	pugixml? ( dev-libs/pugixml )
 	pulseaudio? ( media-libs/libpulse )
 	quicktime? ( media-libs/libquicktime )
 	sdl? ( media-libs/libsdl2[sound,joystick,vulkan?] )
 	sndfile? ( media-libs/libsndfile )
 	tbb? ( dev-cpp/tbb:= )
-	usd? ( media-libs/openusd[monolithic,-python] )
+	usd? (
+		<media-libs/openusd-24[imaging,monolithic,opengl,openvdb?,openimageio,python]
+		>=media-libs/openusd-23.11[imaging,monolithic,opengl,openvdb?,openimageio,python]
+	)
 	valgrind? ( dev-util/valgrind )
-	webp? ( media-libs/libwebp:= )
+	webp? ( >=media-libs/libwebp-1.3.2:= )
 	wayland? (
 		>=dev-libs/wayland-1.12
 		>=dev-libs/wayland-protocols-1.15
 		>=x11-libs/libxkbcommon-0.2.0
-		sys-apps/dbus
+		>=gui-libs/libdecor-0.1.0
 	)
 	X? (
 		x11-libs/libX11
@@ -164,17 +275,37 @@ RDEPEND="${PYTHON_DEPS}
 	)
 	media-libs/mesa[X?,wayland?,llvm?,vulkan?]
 	cg? ( media-blender/cg_preferences )
+	|| (
+		virtual/glu
+		>=media-libs/glu-9.0.1
+	)
+	|| (
+		virtual/jpeg:0=
+		>=media-libs/libjpeg-turbo-2.1.3
+	)
 "
 
 DEPEND="
 	dev-cpp/eigen:=
 	vulkan? (
-		media-libs/shaderc
-		media-libs/vulkan-loader[X?,wayland?,layers]
+		>=media-libs/shaderc-2022.3
+		>=media-libs/vulkan-loader-1.2.198[X?,wayland?,layers]
 	)
 "
 
 BDEPEND="
+	$(python_gen_cond_dep '
+		>=dev-python/setuptools-63.2.0[${PYTHON_USEDEP}]
+		>=dev-python/cython-0.29.30[${PYTHON_USEDEP}]
+		>=dev-python/autopep8-1.6.0[${PYTHON_USEDEP}]
+		>=dev-python/pycodestyle-2.8.0[${PYTHON_USEDEP}]
+	')
+	>=dev-cpp/yaml-cpp-0.7.0
+	>=dev-util/cmake-3.10
+	>=dev-util/meson-0.63.0
+	>=dev-util/vulkan-headers-1.2.198
+	dev-util/patchelf
+	virtual/pkgconfig
 	lld? ( <sys-devel/lld-$((${LLVM_MAX_SLOT} + 1)):= )
 	mold? ( sys-devel/mold:= )
 	gold? ( <sys-devel/llvm-$((${LLVM_MAX_SLOT} + 1)):=[binutils-plugin] )
@@ -182,10 +313,15 @@ BDEPEND="
 		<sys-devel/llvm-$((${LLVM_MAX_SLOT} + 1)):=
 		<sys-devel/clang-$((${LLVM_MAX_SLOT} + 1)):=
 	)
-	virtual/pkgconfig
 	doc? (
-		app-doc/doxygen[-nodot(-),dot(+)]
-		dev-python/sphinx[latex]
+		>=dev-python/sphinx-3.3.1[latex]
+		>=dev-python/sphinx_rtd_theme-0.5.0
+		app-doc/doxygen[dot]
+		dev-texlive/texlive-bibtexextra
+		dev-texlive/texlive-fontsextra
+		dev-texlive/texlive-fontutils
+		dev-texlive/texlive-latex
+		dev-texlive/texlive-latexextra
 	)
 	nls? ( sys-devel/gettext )
 	wayland? (
@@ -202,8 +338,15 @@ QA_EXECSTACK="usr/share/${PN}/${SLOT}/scripts/addons/cycles/lib/kernel_*"
 QA_FLAGS_IGNORED="${QA_EXECSTACK}"
 QA_PRESTRIPPED="${QA_EXECSTACK}"
 
+PATCHES=(
+	"${FILESDIR}/${PN}-3.5.1-openusd-21.11-python.patch"
+	"${FILESDIR}/${PN}-3.0.0-boost_python.patch"
+	"${FILESDIR}/${PN}-3.5.1-tbb-rpath.patch"
+	"${FILESDIR}/${PN}-3.6.0-hip-flags.patch"
+)
+
 blender_check_requirements() {
-	[[ ${MERGE_TYPE} != binary ]] && use openmp && tc-check-openmp
+	[[ ${MERGE_TYPE} != binary ]] && ( use openmp && tc-check-openmp )
 
 	if use doc; then
 		CHECKREQS_DISK_BUILD="4G" check-reqs_pkg_pretend
@@ -255,14 +398,17 @@ src_prepare() {
 
 	blender_get_version
 
+	use openvdb && openvdb_src_prepare
 	use cuda && cuda_src_prepare
 
 	use portable || eapply "${FILESDIR}/${SLOT}"/*.patch
 	use portable || eapply "${FILESDIR}"/blender-system-json.patch
 	eapply "${FILESDIR}"/x112.patch
 	eapply "${FILESDIR}"/blender-fix-desktop.patch
+	eapply "${FILESDIR}"/blender-3.2.2-findtbb2.patch
+
 	#eapply "${FILESDIR}"/blender-fix-buildinfo.patch
-	eapply "${FILESDIR}"/blender-fix-usd-python.patch
+	#eapply "${FILESDIR}"/blender-fix-usd-python.patch
 	eapply "${FILESDIR}"/blender-fix-boost-1.81-iostream.patch
 	use llvm && eapply "${FILESDIR}"/blender-fix-clang-build.patch
 	use optix && eapply "${FILESDIR}"/blender-fix-optix-build.patch
@@ -333,7 +479,7 @@ src_prepare() {
 }
 
 src_configure() {
-	use debug && CMAKE_BUILD_TYPE="Debug" || CMAKE_BUILD_TYPE="Release"
+	CMAKE_BUILD_TYPE=$(usex debug "Debug" "Release")
 	for slot in $(seq 10 ${LLVM_MAX_SLOT}); do
 		has_version "sys-devel/llvm:${slot}" && LLVM_SLOT="${slot}"
 	done
@@ -343,35 +489,19 @@ src_configure() {
 	append-flags -funsigned-char -fno-strict-aliasing
 	append-lfs-flags
 
-	if use openvdb; then
-		local version
-		if use abi7-compat; then
-			version=7;
-		elif use abi8-compat; then
-			version=8;
-        elif use abi9-compat; then
-			version=9;
-		elif use abi10-compat; then
-			version=10
-		else
-			die "Openvdb abi version not compatible"
-		fi
-		append-cppflags -DOPENVDB_ABI_VERSION_NUMBER=${version}
-	fi
-
 	local mycmakeargs=()
 
+	use openvdb && openvdb_src_configure
 	# CUDA Kernel Selection
-	local CUDA_ARCH=""
 	if use cuda; then
-		for CA in ${CUDA_ARCHS}; do
-			use ${CA} && CUDA_ARCH+="${CA};"
+		for CT in ${CUDA_TARGETS_COMPAT[@]}; do
+			use ${CT/#/cuda_targets_} && CUDA_TARGETS+="${CT};"
 		done
 
 		#If a kernel isn't selected then all of them are built by default
-		if [ -n "${CUDA_ARCH}" ] ; then
+		if [ -n "${CUDA_TARGETS}" ] ; then
 			mycmakeargs+=(
-				-DCYCLES_CUDA_BINARIES_ARCH=${CUDA_ARCH::-1}
+				-DCYCLES_CUDA_BINARIES_ARCH=${CUDA_TARGETS%%*;}
 			)
 		fi
 		mycmakeargs+=(
@@ -393,7 +523,7 @@ src_configure() {
 		-DWITH_HEADLESS=$(usex headless)						# server mode only
 		-DWITH_ALEMBIC=$(usex alembic)							# export format support
 		-DWITH_ASSERT_ABORT=$(usex debug)
-		-DWITH_BOOST=yes
+		-DWITH_BOOST=$(usex boost)
 		-DWITH_BOOST_ICU=$(usex icu)
 		-DWITH_BULLET=$(usex bullet)							# Physics Engine
 		-DWITH_SYSTEM_BULLET=no									# currently unsupported
@@ -403,11 +533,13 @@ src_configure() {
 		-DWITH_CYCLES=$(usex cycles)							# Enable Cycles Render Engine
 		-DWITH_CYCLES_DEVICE_CUDA=$(usex cuda)
 		-DWITH_CYCLES_DEVICE_OPTIX=$(usex optix)
-		-DWITH_CYCLES_DEVICE_HIP=$(usex hip)
-		-DWITH_CYCLES_HIP_BINARIES=$(usex cycles-bin-kernels $(usex hip) no)
+		-DWITH_CYCLES_DEVICE_HIP=$(usex rocm)
+		-DWITH_CYCLES_HIP_BINARIES=$(usex cycles-bin-kernels $(usex rocm) no)
+		-DWITH_HIP_DYNLOAD=$(usex rocm $(usex cycles-bin-kernels no yes) no)
 		-DWITH_CYCLES_CUDA=$(usex cuda)
 		-DWITH_CYCLES_CUDA_BINARIES=$(usex cycles-bin-kernels $(usex cuda) no)	# build when install
 		-DWITH_CYCLES_CUDA_BUILD_SERIAL=$(usex cuda)			# Build cuda kernels in serial mode (if parallel build takes too much RAM or crash)
+		-DWITH_CUDA_DYNLOAD=$(usex cuda $(usex cycles-bin-kernels no yes) no)
 		-DWITH_CYCLES_DEVICE_ONEAPI=$(usex oneapi)
 		-DWITH_CYCLES_ONEAPI_BINARIES=$(usex cycles-bin-kernels $(usex oneapi) no)
 		-DWITH_CYCLES_EMBREE=$(usex embree)						# Speedup library for Cycles
@@ -427,9 +559,9 @@ src_configure() {
 		-DWITH_GHOST_XDND=$(usex X)								# drag-n-drop support on X11
 		-DWITH_GHOST_WAYLAND=$(usex wayland)					# Enable building against wayland
 		-DWITH_GHOST_WAYLAND_APP_ID=blender-${BV}
-		-DWITH_GHOST_WAYLAND_DBUS=$(usex wayland)
+		-DWITH_GHOST_WAYLAND_DBUS=$(usex dbus)
 		-DWITH_GHOST_WAYLAND_DYNLOAD=$(usex wayland)
-		-DWITH_GHOST_WAYLAND_LIBDECOR=no
+		-DWITH_GHOST_WAYLAND_LIBDECOR=YES
 		-DWITH_GMP=$(usex gmp)									# boolean engine
 		-DWITH_HARU=$(usex pdf)									# export format support
 		-DWITH_IO_GPENCIL=$(usex pdf)							# export format support
@@ -464,7 +596,6 @@ src_configure() {
 		-DWITH_IO_PLY=$(usex ply)								# export format support
 		-DWITH_IO_STL=$(usex stl)								# export format support
 		-DWITH_OPENCOLORIO=$(usex opencolorio)
-		-DWITH_OPENGL=$(usex opengl)
 		-DWITH_OPENIMAGEDENOISE=$(usex oidn)					# compositing node
 		-DWITH_OPENMP=$(usex openmp)
 		-DWITH_OPENSUBDIV=$(usex opensubdiv)					# for surface subdivision
@@ -491,11 +622,11 @@ src_configure() {
 		-DWITH_USD=$(usex usd)									# export format support
 		-DWITH_VULKAN_BACKEND=$(usex vulkan)
 		-DWITH_VULKAN_GUARDEDALLOC=$(usex vulkan)
-		-DWITH_XR_OPENXR=OFF									# VR interface
-		-DSYCL_LIBRARY="/usr/lib/llvm/intel"
-		-DSYCL_INCLUDE_DIR="/usr/lib/llvm/intel/include"
-		#-DUSD_ROOT_DIR=/opt/openusd
-		#-DUSD_LIBRARY=/opt/openusd/lib/libusd_ms.so
+		-DWITH_XR_OPENXR=$(usex openxr)							# VR interface
+		#-DSYCL_LIBRARY="/usr/lib/llvm/intel"
+		#-DSYCL_INCLUDE_DIR="/usr/lib/llvm/intel/include"
+		-DUSD_ROOT_DIR="${ESYSROOT}/usr/$(get_libdir)/openusd/lib"
+		-DMaterialX_DIR="${ESYSROOT}/usr/$(get_libdir)/materialx/lib/cmake/MaterialX"
 		-DWITH_NINJA_POOL_JOBS=no								# for machines with 16GB of RAM or less
 		-DBUILD_SHARED_LIBS=no
 		#-DWITH_EXPERIMENTAL_FEATURES=yes
@@ -506,14 +637,13 @@ src_configure() {
 		-DWITH_BUILDINFO=yes
 		-DWITH_UNITY_BUILD=no 									# Enable Unity build for modules (memory usage/compile time)
 		-DWITH_HYDRA=no 										# MacOS features enabled by default if WITH_STRICT_BUILD_OPTIONS=yes
-		-DWITH_MATERIALX=no
+		-DWITH_MATERIALX=$(usex materialx)
 	)
 
 	if use optix; then
 		mycmakeargs+=(
 			-DCYCLES_RUNTIME_OPTIX_ROOT_DIR="${EPREFIX}"/opt/optix
-			-DOPTIX_ROOT_DIR="${EPREFIX}"/opt/optix/SDK
-			-DOPTIX_INCLUDE_DIR="${EPREFIX}"/opt/optix/include
+			-DOPTIX_ROOT_DIR="${EPREFIX}"/opt/optix
 		)
 	fi
 

@@ -51,6 +51,7 @@ src_prepare() {
 src_configure() {
 	CMAKE_BUILD_TYPE=Release
 	local mycmakeargs=(
+		$(usex python "-DPython3_EXECUTABLE=${PYTHON}" "")
 		-DALEMBIC_USING_IMATH_3=ON
 		-DALEMBIC_BUILD_LIBS=ON
 		-DALEMBIC_DEBUG_WARNINGS_AS_ERRORS=OFF
@@ -67,8 +68,11 @@ src_configure() {
 		-DUSE_TESTS=$(usex test)
 	)
 
-	use python && mycmakeargs+=( -DPython3_EXECUTABLE=${PYTHON} )
-
 	cmake_src_configure
 }
 
+# Some tests may fail if run in parallel mode.
+# See https://github.com/alembic/alembic/issues/401
+src_test() {
+	cmake_src_test -j1
+}

@@ -1,0 +1,237 @@
+--- a/pxr/base/tf/diagnosticMgr.cpp
++++ b/pxr/base/tf/diagnosticMgr.cpp
+@@ -47,6 +47,7 @@
+ #include <signal.h>
+ #include <stdlib.h>
+ 
++#include <atomic>
+ #include <thread>
+ #include <memory>
+ 
+@@ -189,7 +190,7 @@ TfDiagnosticMgr::AppendError(TfError con
+     } else {
+         ErrorList &errorList = _errorList.local();
+         errorList.push_back(e);
+-        errorList.back()._serial = _nextSerial.fetch_add(1);
++        errorList.back()._serial = _nextSerial.fetch_add(1, std::memory_order_seq_cst);
+         _AppendErrorsToLogText(std::prev(errorList.end())); 
+     }
+ }
+@@ -204,7 +205,7 @@ TfDiagnosticMgr::_SpliceErrors(ErrorList
+         }
+     } else {
+         // Reassign new serial numbers to the errors.
+-        size_t serial = _nextSerial.fetch_add(src.size());
++        size_t serial = _nextSerial.fetch_add(src.size(), std::memory_order_seq_cst);
+         for (auto& error : src) {
+             error._serial = serial++;
+         }
+--- a/pxr/base/tf/error.cpp
++++ b/pxr/base/tf/error.cpp
+@@ -27,6 +27,7 @@
+ 
+ #include "pxr/base/tf/diagnosticMgr.h"
+ 
++#include <atomic>
+ #include <string>
+ 
+ using std::string;
+@@ -39,7 +40,7 @@ TfError::TfError(TfEnum errorCode, const
+     : TfDiagnosticBase(errorCode, errorCodeString, context, commentary, info,
+                        quiet)
+ {
+-    _serial = TfDiagnosticMgr::GetInstance()._nextSerial.fetch_add(1);
++    _serial = TfDiagnosticMgr::GetInstance()._nextSerial.fetch_add(1, std::memory_order_seq_cst);
+ }
+ 
+ PXR_NAMESPACE_CLOSE_SCOPE
+--- a/pxr/usd/pcp/cache.cpp
++++ b/pxr/usd/pcp/cache.cpp
+@@ -57,6 +57,7 @@
+ #include <tbb/spin_rw_mutex.h>
+ 
+ #include <algorithm>
++#include <atomic>
+ #include <iostream>
+ #include <utility>
+ #include <vector>
+--- a/pxr/usd/pcp/mapExpression.cpp
++++ b/pxr/usd/pcp/mapExpression.cpp
+@@ -29,6 +29,7 @@
+ 
+ #include "pxr/base/trace/trace.h"
+ 
++#include <atomic>
+ #include <tbb/concurrent_hash_map.h>
+ 
+ PXR_NAMESPACE_OPEN_SCOPE
+@@ -238,7 +239,7 @@ PcpMapExpression::_Node::New( _Op op_,
+         // Check for existing instance to re-use
+         _NodeMap::accessor accessor;
+         if (_nodeRegistry->map.insert(accessor, key) ||
+-            accessor->second->_refCount.fetch_and_increment() == 0) {
++            accessor->second->_refCount.fetch_add(1, std::memory_order_seq_cst) == 0) {
+             // Either there was no node in the table, or there was but it had
+             // begun dying (another client dropped its refcount to 0).  We have
+             // to create a new node in the table.  When the client that is
+@@ -388,7 +389,7 @@ intrusive_ptr_add_ref(PcpMapExpression::
+ void
+ intrusive_ptr_release(PcpMapExpression::_Node* p)
+ {
+-    if (p->_refCount.fetch_and_decrement() == 1)
++    if (p->_refCount.fetch_sub(1, std::memory_order_seq_cst) == 1)
+         delete p;
+ }
+ 
+--- a/pxr/usd/pcp/mapExpression.h
++++ b/pxr/usd/pcp/mapExpression.h
+@@ -267,7 +267,7 @@ private: // data
+         struct _NodeMap;
+         static TfStaticData<_NodeMap> _nodeRegistry;
+ 
+-        mutable tbb::atomic<int> _refCount;
++        mutable std::atomic<int> _refCount;
+         mutable Value _cachedValue;
+         mutable std::set<_Node*> _dependentExpressions;
+         Value _valueForVariable;
+--- a/pxr/usd/sdf/changeManager.cpp
++++ b/pxr/usd/sdf/changeManager.cpp
+@@ -33,11 +33,11 @@
+ #include "pxr/base/trace/trace.h"
+ #include "pxr/base/tf/instantiateSingleton.h"
+ #include "pxr/base/tf/stackTrace.h"
+-
+-#include <tbb/atomic.h>
++#include <atomic>
+ 
+ using std::string;
+ using std::vector;
++using std::atomic;
+ 
+ PXR_NAMESPACE_OPEN_SCOPE
+ 
+@@ -150,9 +150,9 @@ Sdf_ChangeManager::_ProcessRemoveIfInert
+     TF_VERIFY(data->outermostBlock);
+ }
+ 
+-static tbb::atomic<size_t> &
++static std::atomic<size_t> &
+ _InitChangeSerialNumber() {
+-    static tbb::atomic<size_t> value;
++    static std::atomic<size_t> value;
+     value = 1;
+     return value;
+ }
+@@ -191,8 +191,8 @@ Sdf_ChangeManager::_SendNotices(_Data *d
+     }
+ 
+     // Obtain a serial number for this round of change processing.
+-    static tbb::atomic<size_t> &changeSerialNumber = _InitChangeSerialNumber();
+-    size_t serialNumber = changeSerialNumber.fetch_and_increment();
++    static std::atomic<size_t> &changeSerialNumber = _InitChangeSerialNumber();
++    size_t serialNumber = changeSerialNumber.fetch_add(1, std::memory_order_seq_cst);
+ 
+     // Send global notice.
+     SdfNotice::LayersDidChange(changes, serialNumber).Send();
+--- a/pxr/usd/sdf/pathNode.cpp
++++ b/pxr/usd/sdf/pathNode.cpp
+@@ -47,6 +47,7 @@
+ 
+ using std::string;
+ using std::vector;
++using std::atomic;
+ 
+ PXR_NAMESPACE_OPEN_SCOPE
+ 
+@@ -62,6 +63,7 @@ struct Sdf_PathNodePrivateAccess
+ {
+     template <class Handle>
+     static inline std::atomic<unsigned int> &
++
+     GetRefCount(Handle h) {
+         Sdf_PathNode const *p =
+             reinterpret_cast<Sdf_PathNode const *>(h.GetPtr());
+@@ -264,7 +266,7 @@ _FindOrCreate(Table &table,
+     if (iresult.second ||
+         (Table::NodeHandle::IsCounted &&
+          (Access::GetRefCount(
+-             iresult.first->second).fetch_add(1) &
++             iresult.first->second).fetch_add(1, std::memory_order_seq_cst) &
+           Sdf_PathNode::RefCountMask) == 0)) {
+         // There was either no entry, or there was one but it had begun dying
+         // (another client dropped its refcount to 0).  We have to create a new
+--- a/pxr/usd/sdf/pathNode.h
++++ b/pxr/usd/sdf/pathNode.h
+@@ -30,6 +30,7 @@
+ #include "pxr/base/tf/token.h"
+ #include "pxr/base/tf/mallocTag.h"
+ 
++#include <atomic>
+ #include <boost/intrusive_ptr.hpp>
+ 
+ PXR_NAMESPACE_OPEN_SCOPE
+@@ -760,7 +761,7 @@ inline void intrusive_ptr_add_ref(const
+     p->_refCount.fetch_add(1, std::memory_order_relaxed);
+ }
+ inline void intrusive_ptr_release(const PXR_NS::Sdf_PathNode* p) {
+-    if ((p->_refCount.fetch_sub(1) & PXR_NS::Sdf_PathNode::RefCountMask) == 1) {
++    if ((p->_refCount.fetch_sub(1, std::memory_order_seq_cst) & PXR_NS::Sdf_PathNode::RefCountMask) == 1) {
+         p->_Destroy();
+     }
+ }
+--- a/pxr/usd/usdGeom/bboxCache.cpp
++++ b/pxr/usd/usdGeom/bboxCache.cpp
+@@ -46,6 +46,7 @@
+ 
+ #include <tbb/enumerable_thread_specific.h>
+ #include <algorithm>
++#include <atomic>
+ 
+ PXR_NAMESPACE_OPEN_SCOPE
+ 
+@@ -128,7 +129,7 @@ private:
+ 
+         // Number of dependencies -- prototype prims that must be resolved
+         // before this prototype can be resolved.
+-        tbb::atomic<size_t> numDependencies;
++        std::atomic<size_t> numDependencies;
+ 
+         // List of prototype prims that depend on this prototype.
+         std::vector<_PrimContext> dependentPrototypes;
+@@ -220,7 +221,7 @@ private:
+             _PrototypeTask& dependentPrototypeData =
+                 prototypeTasks->find(dependentPrototype)->second;
+             if (dependentPrototypeData.numDependencies
+-                .fetch_and_decrement() == 1){
++                .fetch_sub(1, std::memory_order_seq_cst) == 1){
+                 dispatcher->Run(
+                     &_PrototypeBBoxResolver::_ExecuteTaskForPrototype,
+                     this, dependentPrototype, prototypeTasks, xfCaches,
+--- a/pxr/usdImaging/usdImaging/resolvedAttributeCache.h
++++ b/pxr/usdImaging/usdImaging/resolvedAttributeCache.h
+@@ -39,6 +39,7 @@
+ #include <boost/functional/hash.hpp>
+ #include <tbb/concurrent_unordered_map.h>
+ #include <functional>
++#include <atomic>
+ 
+ PXR_NAMESPACE_OPEN_SCOPE
+ 
+@@ -298,7 +299,7 @@ private:
+ 
+         query_type query;
+         value_type value;
+-        tbb::atomic<unsigned> version;
++        std::atomic<unsigned> version;
+     };
+ 
+     // Returns the version number for a valid cache entry
+@@ -338,7 +339,7 @@ private:
+ 
+     // A serial number indicating the valid state of entries in the cache. When
+     // an entry has an equal or greater value, the entry is valid.
+-    tbb::atomic<unsigned> _cacheVersion;
++    std::atomic<unsigned> _cacheVersion;
+ 
+     // Value overrides for a set of descendents.
+     ValueOverridesMap _valueOverrides;

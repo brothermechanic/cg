@@ -1,0 +1,1197 @@
+From f4f181e8befa0bd2c815a7c19f38044833f3075d Mon Sep 17 00:00:00 2001
+From: Brecht Van Lommel <brecht@blender.org>
+Date: Fri, 8 Sep 2023 19:59:15 +0200
+Subject: [PATCH 01/13] LLVM 16 support
+
+* Bump minimum supported LLVM version to 16.
+* Rename `makeArrayRef` to `toArrayRef` to avoid `llvm::makeArrayRef`
+  deprecation warnings.
+* Minor required changes related to `llvm::Align`.
+* Disable `initializeInstrumentation` and `createPruneEHPass` which
+  were remove and appear to serve no purpose now.
+* Add assert when using default optimization levels with legacy pass
+  manager, which is no longer supported.
+
+This depends on both opaque pointers and new pass manager support.
+
+Signed-off-by: Brecht Van Lommel <brecht@blender.org>
+---
+ src/cmake/externalpackages.cmake |   6 +-
+ src/cmake/modules/FindLLVM.cmake |   5 +-
+ src/liboslexec/llvm_util.cpp     | 207 +++++++++++++++++--------------
+ 3 files changed, 117 insertions(+), 101 deletions(-)
+
+diff --git a/src/cmake/externalpackages.cmake b/src/cmake/externalpackages.cmake
+index ce47f2753..c056a2665 100644
+--- a/src/cmake/externalpackages.cmake
++++ b/src/cmake/externalpackages.cmake
+@@ -115,7 +115,7 @@ checked_find_package (pugixml REQUIRED
+ # LLVM library setup
+ checked_find_package (LLVM REQUIRED
+                       VERSION_MIN 9.0
+-                      VERSION_MAX 15.9
++                      VERSION_MAX 16.9
+                       PRINT LLVM_SYSTEM_LIBRARIES CLANG_LIBRARIES)
+ # ensure include directory is added (in case of non-standard locations
+ include_directories (BEFORE SYSTEM "${LLVM_INCLUDES}")
+@@ -145,8 +145,8 @@ if (LLVM_VERSION VERSION_GREATER_EQUAL 15.0
+          "If you are using LLVM 15 or higher, you should also use clang version "
+          "15 or higher, or you may get build errors.${ColorReset}\n")
+ endif ()
+-if (LLVM_VERSION VERSION_GREATER_EQUAL 16.0)
+-    message (ERROR "${ColorYellow}OSL is not yet compatible with LLVM 16.${ColorReset}\n")
++if (LLVM_VERSION VERSION_GREATER_EQUAL 17.0)
++    message (ERROR "${ColorYellow}OSL is not yet compatible with LLVM 17.${ColorReset}\n")
+     if (CMAKE_CXX_STANDARD VERSION_LESS 17)
+         message (WARNING "${ColorYellow}LLVM 16+ requires C++17 or higher. "
+             "Please set CMAKE_CXX_STANDARD to 17 or higher.${ColorReset}\n")
+diff --git a/src/cmake/modules/FindLLVM.cmake b/src/cmake/modules/FindLLVM.cmake
+index fbdee1657..7b6c97fa7 100644
+--- a/src/cmake/modules/FindLLVM.cmake
++++ b/src/cmake/modules/FindLLVM.cmake
+@@ -126,8 +126,9 @@ if (LLVM_VERSION VERSION_GREATER_EQUAL 9.0 AND (LLVM_SHARED_MODE STREQUAL "share
+ endif ()
+ 
+ foreach (COMPONENT clangFrontend clangDriver clangSerialization
+-                   clangParse clangSema clangAnalysis clangAST clangBasic
+-                   clangEdit clangLex clangSupport)
++                   clangParse clangSema clangAnalysis clangAST
++                   clangASTMatchers clangBasic clangEdit clangLex
++                   clangSupport)
+     find_library ( _CLANG_${COMPONENT}_LIBRARY
+                   NAMES ${COMPONENT}
+                   PATHS ${LLVM_LIB_DIR})
+diff --git a/src/liboslexec/llvm_util.cpp b/src/liboslexec/llvm_util.cpp
+index 41c1f3d81..6dae0cfec 100644
+--- a/src/liboslexec/llvm_util.cpp
++++ b/src/liboslexec/llvm_util.cpp
+@@ -98,22 +98,19 @@ OSL_NAMESPACE_ENTER
+ // Convert our cspan<> to llvm's ArrayRef.
+ template<class T>
+ inline llvm::ArrayRef<T>
+-makeArrayRef(cspan<T> A)
++toArrayRef(cspan<T> A)
+ {
+     return { A.data(), size_t(A.size()) };
+ }
+ 
+-
+-// Convert our span<> to llvm's MutableArrayRef.
+-template<typename T>
+-inline llvm::MutableArrayRef<T>
+-makeMutableArrayRef(span<T> A)
++template<typename T, size_t N>
++llvm::ArrayRef<T>
++toArrayRef(const T (&Arr)[N])
+ {
+-    return { A.data(), size_t(A.size()) };
++    return llvm::ArrayRef<T>(Arr);
+ }
+ 
+ 
+-
+ namespace pvt {
+ 
+ typedef llvm::SectionMemoryManager LLVMMemoryManager;
+@@ -260,10 +257,15 @@ class LLVM_Util::MemoryManager final : public LLVMMemoryManager {
+         mm->notifyObjectLoaded(RTDyld, Obj);
+     }
+ 
+-    void reserveAllocationSpace(uintptr_t CodeSize, uint32_t CodeAlign,
+-                                uintptr_t RODataSize, uint32_t RODataAlign,
+-                                uintptr_t RWDataSize,
+-                                uint32_t RWDataAlign) override
++    void reserveAllocationSpace(
++#if OSL_LLVM_VERSION >= 160
++        uintptr_t CodeSize, llvm::Align CodeAlign, uintptr_t RODataSize,
++        llvm::Align RODataAlign, uintptr_t RWDataSize, llvm::Align RWDataAlign
++#else
++        uintptr_t CodeSize, uint32_t CodeAlign, uintptr_t RODataSize,
++        uint32_t RODataAlign, uintptr_t RWDataSize, uint32_t RWDataAlign
++#endif
++        ) override
+     {
+         return mm->reserveAllocationSpace(CodeSize, CodeAlign, RODataSize,
+                                           RODataAlign, RWDataSize, RWDataAlign);
+@@ -321,7 +323,10 @@ class LLVM_Util::MemoryManager final : public LLVMMemoryManager {
+     {
+         mm->registerEHFrames(Addr, LoadAddr, Size);
+     }
+-    void deregisterEHFrames() override { mm->deregisterEHFrames(); }
++    void deregisterEHFrames() override
++    {
++        mm->deregisterEHFrames();
++    }
+ 
+     uint64_t getSymbolAddress(const std::string& Name) override
+     {
+@@ -554,7 +559,9 @@ LLVM_Util::SetupLLVM()
+     llvm::initializeAnalysis(registry);
+     llvm::initializeTransformUtils(registry);
+     llvm::initializeInstCombine(registry);
++#if OSL_LLVM_VERSION < 160
+     llvm::initializeInstrumentation(registry);
++#endif
+     llvm::initializeGlobalISel(registry);
+     llvm::initializeTarget(registry);
+     llvm::initializeCodeGen(registry);
+@@ -1801,6 +1808,7 @@ LLVM_Util::setup_optimization_passes(int optlevel, bool target_host)
+     // debugging, optlevel 10 adds next to no additional passes.
+     switch (optlevel) {
+     default: {
++#if OSL_LLVM_VERSION < 160
+         // For LLVM 3.0 and higher, llvm_optimize 1-3 means to use the
+         // same set of optimizations as clang -O1, -O2, -O3
+         llvm::PassManagerBuilder builder;
+@@ -1815,6 +1823,11 @@ LLVM_Util::setup_optimization_passes(int optlevel, bool target_host)
+ 
+         builder.populateFunctionPassManager(fpm);
+         builder.populateModulePassManager(mpm);
++#else
++        OSL_ASSERT(
++            0
++            && "legacy pass manager does not support default optimizations levels in LLVM 16+");
++#endif
+         break;
+     }
+     case 10:
+@@ -1967,7 +1980,11 @@ LLVM_Util::setup_optimization_passes(int optlevel, bool target_host)
+         mpm.add(llvm::createDeadArgEliminationPass());
+         mpm.add(llvm::createInstructionCombiningPass());
+         mpm.add(llvm::createCFGSimplificationPass());
++#if OSL_LLVM_VERSION < 160
++        // Replaced by CFGSimplification + PostOrderFunctionAttrs since LLVM 7.
++        // https://reviews.llvm.org/D44415
+         mpm.add(llvm::createPruneEHPass());
++#endif
+         mpm.add(llvm::createPostOrderFunctionAttrsLegacyPass());
+         mpm.add(llvm::createReversePostOrderFunctionAttrsPass());
+         mpm.add(llvm::createFunctionInliningPass());
+@@ -2064,6 +2081,7 @@ LLVM_Util::setup_optimization_passes(int optlevel, bool target_host)
+ }
+ 
+ 
++
+ void
+ LLVM_Util::do_optimize(std::string* out_err)
+ {
+@@ -2623,10 +2641,14 @@ LLVM_Util::type_union(cspan<llvm::Type*> types)
+     size_t max_size  = 0;
+     size_t max_align = 1;
+     for (auto t : types) {
+-        size_t size  = target.getTypeStoreSize(t);
++        size_t size = target.getTypeStoreSize(t);
++#if OSL_LLVM_VERSION >= 160
++        size_t align = target.getABITypeAlign(t).value();
++#else
+         size_t align = target.getABITypeAlignment(t);
+-        max_size     = size > max_size ? size : max_size;
+-        max_align    = align > max_align ? align : max_align;
++#endif
++        max_size  = size > max_size ? size : max_size;
++        max_align = align > max_align ? align : max_align;
+     }
+     size_t padding = (max_size % max_align) ? max_align - (max_size % max_align)
+                                             : 0;
+@@ -2654,7 +2676,7 @@ llvm::Type*
+ LLVM_Util::type_struct(cspan<llvm::Type*> types, const std::string& name,
+                        bool is_packed)
+ {
+-    return llvm::StructType::create(context(), makeArrayRef(types), name,
++    return llvm::StructType::create(context(), toArrayRef(types), name,
+                                     is_packed);
+ }
+ 
+@@ -2696,7 +2718,7 @@ llvm::FunctionType*
+ LLVM_Util::type_function(llvm::Type* rettype, cspan<llvm::Type*> params,
+                          bool varargs)
+ {
+-    return llvm::FunctionType::get(rettype, makeArrayRef(params), varargs);
++    return llvm::FunctionType::get(rettype, toArrayRef(params), varargs);
+ }
+ 
+ 
+@@ -3003,9 +3025,9 @@ LLVM_Util::mask_as_int(llvm::Value* mask)
+ 
+             llvm::Value* args[1] = { w8_float_masks[0] };
+             std::array<llvm::Value*, 2> int8_masks;
+-            int8_masks[0] = builder().CreateCall(func, makeArrayRef(args));
++            int8_masks[0] = builder().CreateCall(func, toArrayRef(args));
+             args[0]       = w8_float_masks[1];
+-            int8_masks[1] = builder().CreateCall(func, makeArrayRef(args));
++            int8_masks[1] = builder().CreateCall(func, toArrayRef(args));
+ 
+             llvm::Value* upper_mask = op_shl(int8_masks[1], constant(8));
+             return op_or(upper_mask, int8_masks[0]);
+@@ -3034,7 +3056,7 @@ LLVM_Util::mask_as_int(llvm::Value* mask)
+ 
+             llvm::Value* args[1] = { w8_float_mask };
+             llvm::Value* int8_mask;
+-            int8_mask = builder().CreateCall(func, makeArrayRef(args));
++            int8_mask = builder().CreateCall(func, toArrayRef(args));
+             return int8_mask;
+         }
+         default: {
+@@ -3072,13 +3094,13 @@ LLVM_Util::mask_as_int(llvm::Value* mask)
+ 
+             llvm::Value* args[1] = { w4_float_masks[0] };
+             std::array<llvm::Value*, 4> int4_masks;
+-            int4_masks[0] = builder().CreateCall(func, makeArrayRef(args));
++            int4_masks[0] = builder().CreateCall(func, toArrayRef(args));
+             args[0]       = w4_float_masks[1];
+-            int4_masks[1] = builder().CreateCall(func, makeArrayRef(args));
++            int4_masks[1] = builder().CreateCall(func, toArrayRef(args));
+             args[0]       = w4_float_masks[2];
+-            int4_masks[2] = builder().CreateCall(func, makeArrayRef(args));
++            int4_masks[2] = builder().CreateCall(func, toArrayRef(args));
+             args[0]       = w4_float_masks[3];
+-            int4_masks[3] = builder().CreateCall(func, makeArrayRef(args));
++            int4_masks[3] = builder().CreateCall(func, toArrayRef(args));
+ 
+             llvm::Value* bits12_15 = op_shl(int4_masks[3], constant(12));
+             llvm::Value* bits8_11  = op_shl(int4_masks[2], constant(8));
+@@ -3112,9 +3134,9 @@ LLVM_Util::mask_as_int(llvm::Value* mask)
+ 
+             llvm::Value* args[1] = { w4_float_masks[0] };
+             std::array<llvm::Value*, 2> int4_masks;
+-            int4_masks[0] = builder().CreateCall(func, makeArrayRef(args));
++            int4_masks[0] = builder().CreateCall(func, toArrayRef(args));
+             args[0]       = w4_float_masks[1];
+-            int4_masks[1] = builder().CreateCall(func, makeArrayRef(args));
++            int4_masks[1] = builder().CreateCall(func, toArrayRef(args));
+ 
+             llvm::Value* bits4_7 = op_shl(int4_masks[1], constant(4));
+             return op_or(bits4_7, int4_masks[0]);
+@@ -3142,7 +3164,7 @@ LLVM_Util::mask_as_int(llvm::Value* mask)
+ 
+             llvm::Value* args[1]   = { w4_float_mask };
+             llvm::Value* int4_mask = builder().CreateCall(func,
+-                                                          makeArrayRef(args));
++                                                          toArrayRef(args));
+ 
+             return int4_mask;
+         }
+@@ -3352,13 +3374,13 @@ LLVM_Util::op_1st_active_lane_of(llvm::Value* mask)
+     llvm::Type* types[] = { intMaskType };
+     llvm::Function* func_cttz
+         = llvm::Intrinsic::getDeclaration(module(), llvm::Intrinsic::cttz,
+-                                          makeArrayRef(types));
++                                          toArrayRef(types));
+ 
+     llvm::Value* int_mask = builder().CreateBitCast(mask, intMaskType);
+     llvm::Value* args[2]  = { int_mask, constant_bool(true) };
+ 
+     llvm::Value* firstNonZeroIndex = builder().CreateCall(func_cttz,
+-                                                          makeArrayRef(args));
++                                                          toArrayRef(args));
+     return firstNonZeroIndex;
+ }
+ 
+@@ -3857,9 +3879,10 @@ LLVM_Util::op_split_16x(llvm::Value* vector_val)
+ 
+     llvm::Value* half_vec_0
+         = builder().CreateShuffleVector(vector_val, vector_val,
+-                                        llvm::makeArrayRef(extractLanes0_to_7));
+-    llvm::Value* half_vec_1 = builder().CreateShuffleVector(
+-        vector_val, vector_val, llvm::makeArrayRef(extractLanes8_to_15));
++                                        toArrayRef(extractLanes0_to_7));
++    llvm::Value* half_vec_1
++        = builder().CreateShuffleVector(vector_val, vector_val,
++                                        toArrayRef(extractLanes8_to_15));
+     return { { half_vec_0, half_vec_1 } };
+ }
+ 
+@@ -3877,10 +3900,10 @@ LLVM_Util::op_split_8x(llvm::Value* vector_val)
+ 
+     llvm::Value* half_vec_0
+         = builder().CreateShuffleVector(vector_val, vector_val,
+-                                        llvm::makeArrayRef(extractLanes0_to_3));
++                                        toArrayRef(extractLanes0_to_3));
+     llvm::Value* half_vec_1
+         = builder().CreateShuffleVector(vector_val, vector_val,
+-                                        llvm::makeArrayRef(extractLanes4_to_7));
++                                        toArrayRef(extractLanes4_to_7));
+     return { { half_vec_0, half_vec_1 } };
+ }
+ 
+@@ -3902,14 +3925,16 @@ LLVM_Util::op_quarter_16x(llvm::Value* vector_val)
+ 
+     llvm::Value* quarter_vec_0
+         = builder().CreateShuffleVector(vector_val, vector_val,
+-                                        llvm::makeArrayRef(extractLanes0_to_3));
++                                        toArrayRef(extractLanes0_to_3));
+     llvm::Value* quarter_vec_1
+         = builder().CreateShuffleVector(vector_val, vector_val,
+-                                        llvm::makeArrayRef(extractLanes4_to_7));
+-    llvm::Value* quarter_vec_2 = builder().CreateShuffleVector(
+-        vector_val, vector_val, llvm::makeArrayRef(extractLanes8_to_11));
+-    llvm::Value* quarter_vec_3 = builder().CreateShuffleVector(
+-        vector_val, vector_val, llvm::makeArrayRef(extractLanes12_to_15));
++                                        toArrayRef(extractLanes4_to_7));
++    llvm::Value* quarter_vec_2
++        = builder().CreateShuffleVector(vector_val, vector_val,
++                                        toArrayRef(extractLanes8_to_11));
++    llvm::Value* quarter_vec_3
++        = builder().CreateShuffleVector(vector_val, vector_val,
++                                        toArrayRef(extractLanes12_to_15));
+     return { { quarter_vec_0, quarter_vec_1, quarter_vec_2, quarter_vec_3 } };
+ }
+ 
+@@ -3926,7 +3951,7 @@ LLVM_Util::op_combine_8x_vectors(llvm::Value* half_vec_1,
+     static constexpr index_t combineIndices[]
+         = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15 };
+     return builder().CreateShuffleVector(half_vec_1, half_vec_2,
+-                                         llvm::makeArrayRef(combineIndices));
++                                         toArrayRef(combineIndices));
+ }
+ 
+ llvm::Value*
+@@ -3940,7 +3965,7 @@ LLVM_Util::op_combine_4x_vectors(llvm::Value* half_vec_1,
+ #endif
+     static constexpr index_t combineIndices[] = { 0, 1, 2, 3, 4, 5, 6, 7 };
+     return builder().CreateShuffleVector(half_vec_1, half_vec_2,
+-                                         llvm::makeArrayRef(combineIndices));
++                                         toArrayRef(combineIndices));
+ }
+ 
+ 
+@@ -4009,7 +4034,7 @@ LLVM_Util::op_gather(llvm::Value* ptr, llvm::Value* wide_index)
+             llvm::Value* args[] = { unmasked_value, void_ptr(ptr), wide_index,
+                                     int_mask, constant(4) };
+             return builder().CreateCall(func_avx512_gather_pi,
+-                                        makeArrayRef(args));
++                                        toArrayRef(args));
+         } else if (m_supports_avx2) {
+             llvm::Function* func_avx2_gather_pi
+                 = llvm::Intrinsic::getDeclaration(
+@@ -4030,11 +4055,11 @@ LLVM_Util::op_gather(llvm::Value* ptr, llvm::Value* wide_index)
+                                          w8_int_indices[0], w8_int_masks[0],
+                                          constant8((uint8_t)4) };
+                 llvm::Value* gather1 = builder().CreateCall(func_avx2_gather_pi,
+-                                                            makeArrayRef(args));
++                                                            toArrayRef(args));
+                 args[2]              = w8_int_indices[1];
+                 args[3]              = w8_int_masks[1];
+                 llvm::Value* gather2 = builder().CreateCall(func_avx2_gather_pi,
+-                                                            makeArrayRef(args));
++                                                            toArrayRef(args));
+                 return op_combine_8x_vectors(gather1, gather2);
+             }
+             case 8: {
+@@ -4043,7 +4068,7 @@ LLVM_Util::op_gather(llvm::Value* ptr, llvm::Value* wide_index)
+                                         constant8((uint8_t)4) };
+                 llvm::Value* gather_result
+                     = builder().CreateCall(func_avx2_gather_pi,
+-                                           makeArrayRef(args));
++                                           toArrayRef(args));
+                 return gather_result;
+             }
+             default: OSL_ASSERT(0 && "unsupported width");
+@@ -4078,7 +4103,7 @@ LLVM_Util::op_gather(llvm::Value* ptr, llvm::Value* wide_index)
+                         constant(4)  // not sure why the scale
+             };
+             return builder().CreateCall(func_avx512_gather_ps,
+-                                        makeArrayRef(args));
++                                        toArrayRef(args));
+         } else if (m_supports_avx2) {
+             llvm::Function* func_avx2_gather_ps
+                 = llvm::Intrinsic::getDeclaration(
+@@ -4102,13 +4127,13 @@ LLVM_Util::op_gather(llvm::Value* ptr, llvm::Value* wide_index)
+                     constant8((uint8_t)4)
+                 };
+                 llvm::Value* gather1 = builder().CreateCall(func_avx2_gather_ps,
+-                                                            makeArrayRef(args));
++                                                            toArrayRef(args));
+                 args[2]              = w8_int_indices[1];
+                 args[3]              = builder().CreateBitCast(w8_int_masks[1],
+                                                                llvm_vector_type(type_float(),
+                                                                                 8));
+                 llvm::Value* gather2 = builder().CreateCall(func_avx2_gather_ps,
+-                                                            makeArrayRef(args));
++                                                            toArrayRef(args));
+                 return op_combine_8x_vectors(gather1, gather2);
+             }
+             case 8: {
+@@ -4119,7 +4144,7 @@ LLVM_Util::op_gather(llvm::Value* ptr, llvm::Value* wide_index)
+                     constant8((uint8_t)4)
+                 };
+                 llvm::Value* gather = builder().CreateCall(func_avx2_gather_ps,
+-                                                           makeArrayRef(args));
++                                                           toArrayRef(args));
+                 return gather;
+             }
+             }
+@@ -4148,12 +4173,12 @@ LLVM_Util::op_gather(llvm::Value* ptr, llvm::Value* wide_index)
+                         mask_as_int8(w8_bit_masks[0]), constant(8) };
+                 llvm::Value* gather1
+                     = builder().CreateCall(func_avx512_gather_dpq,
+-                                           makeArrayRef(args));
++                                           toArrayRef(args));
+                 args[2] = w8_int_indices[1];
+                 args[3] = mask_as_int8(w8_bit_masks[1]);
+                 llvm::Value* gather2
+                     = builder().CreateCall(func_avx512_gather_dpq,
+-                                           makeArrayRef(args));
++                                           toArrayRef(args));
+ 
+                 return builder().CreateIntToPtr(op_combine_8x_vectors(gather1,
+                                                                       gather2),
+@@ -4177,12 +4202,12 @@ LLVM_Util::op_gather(llvm::Value* ptr, llvm::Value* wide_index)
+                         mask4_as_int8(w4_bit_masks[0]), constant(8) };
+                 llvm::Value* gather1
+                     = builder().CreateCall(func_avx512_gather_dpq,
+-                                           makeArrayRef(args));
++                                           toArrayRef(args));
+                 args[2] = w4_int_indices[1];
+                 args[3] = mask4_as_int8(w4_bit_masks[1]);
+                 llvm::Value* gather2
+                     = builder().CreateCall(func_avx512_gather_dpq,
+-                                           makeArrayRef(args));
++                                           toArrayRef(args));
+ 
+                 return builder().CreateIntToPtr(op_combine_4x_vectors(gather1,
+                                                                       gather2),
+@@ -4208,7 +4233,7 @@ LLVM_Util::op_gather(llvm::Value* ptr, llvm::Value* wide_index)
+                                                 mask_as_int16(current_mask()),
+                                                 constant(4) };
+                 return builder().CreateCall(func_avx512_gather_ps,
+-                                            makeArrayRef(args));
++                                            toArrayRef(args));
+             }
+             case 8: {
+                 llvm::Function* func_avx512_gather_ps
+@@ -4222,7 +4247,7 @@ LLVM_Util::op_gather(llvm::Value* ptr, llvm::Value* wide_index)
+                                                 mask_as_int8(current_mask()),
+                                                 constant(4) };
+                 return builder().CreateCall(func_avx512_gather_ps,
+-                                            makeArrayRef(args));
++                                            toArrayRef(args));
+             }
+             default: OSL_ASSERT(0 && "unsupported native bit mask width");
+             };
+@@ -4250,13 +4275,13 @@ LLVM_Util::op_gather(llvm::Value* ptr, llvm::Value* wide_index)
+                     constant8((uint8_t)4)
+                 };
+                 llvm::Value* gather1 = builder().CreateCall(func_avx2_gather_ps,
+-                                                            makeArrayRef(args));
++                                                            toArrayRef(args));
+                 args[2]              = w8_int_indices[1];
+                 args[3]              = builder().CreateBitCast(w8_int_masks[1],
+                                                                llvm_vector_type(type_float(),
+                                                                                 8));
+                 llvm::Value* gather2 = builder().CreateCall(func_avx2_gather_ps,
+-                                                            makeArrayRef(args));
++                                                            toArrayRef(args));
+                 return op_combine_8x_vectors(gather1, gather2);
+             }
+             case 8: {
+@@ -4269,7 +4294,7 @@ LLVM_Util::op_gather(llvm::Value* ptr, llvm::Value* wide_index)
+                 };
+                 llvm::Value* gather_result
+                     = builder().CreateCall(func_avx2_gather_ps,
+-                                           makeArrayRef(args));
++                                           toArrayRef(args));
+                 return gather_result;
+             }
+             default:
+@@ -4293,7 +4318,7 @@ LLVM_Util::op_gather(llvm::Value* ptr, llvm::Value* wide_index)
+                                                 mask_as_int16(current_mask()),
+                                                 constant(4) };
+                 return builder().CreateCall(func_avx512_gather_pi,
+-                                            makeArrayRef(args));
++                                            toArrayRef(args));
+             }
+             case 8: {
+                 llvm::Function* func_avx512_gather_pi
+@@ -4307,7 +4332,7 @@ LLVM_Util::op_gather(llvm::Value* ptr, llvm::Value* wide_index)
+                                                 mask_as_int8(current_mask()),
+                                                 constant(4) };
+                 return builder().CreateCall(func_avx512_gather_pi,
+-                                            makeArrayRef(args));
++                                            toArrayRef(args));
+             }
+             default: OSL_ASSERT(0 && "unsupported native bit mask width");
+             }
+@@ -4331,11 +4356,11 @@ LLVM_Util::op_gather(llvm::Value* ptr, llvm::Value* wide_index)
+                                          w8_int_indices[0], w8_int_masks[0],
+                                          constant8((uint8_t)4) };
+                 llvm::Value* gather1 = builder().CreateCall(func_avx2_gather_pi,
+-                                                            makeArrayRef(args));
++                                                            toArrayRef(args));
+                 args[2]              = w8_int_indices[1];
+                 args[3]              = w8_int_masks[1];
+                 llvm::Value* gather2 = builder().CreateCall(func_avx2_gather_pi,
+-                                                            makeArrayRef(args));
++                                                            toArrayRef(args));
+                 return op_combine_8x_vectors(gather1, gather2);
+             }
+             case 8: {
+@@ -4355,7 +4380,7 @@ LLVM_Util::op_gather(llvm::Value* ptr, llvm::Value* wide_index)
+                                         constant8((uint8_t)4) };
+                 llvm::Value* gather_result
+                     = builder().CreateCall(func_avx2_gather_pi,
+-                                           makeArrayRef(args));
++                                           toArrayRef(args));
+                 return gather_result;
+             }
+             default:
+@@ -4389,12 +4414,12 @@ LLVM_Util::op_gather(llvm::Value* ptr, llvm::Value* wide_index)
+                         mask_as_int8(w8_bit_masks[0]), constant(8) };
+                 llvm::Value* gather1
+                     = builder().CreateCall(func_avx512_gather_dpq,
+-                                           makeArrayRef(args));
++                                           toArrayRef(args));
+                 args[2] = w8_int_indices[1];
+                 args[3] = mask_as_int8(w8_bit_masks[1]);
+                 llvm::Value* gather2
+                     = builder().CreateCall(func_avx512_gather_dpq,
+-                                           makeArrayRef(args));
++                                           toArrayRef(args));
+ 
+                 return builder().CreateIntToPtr(op_combine_8x_vectors(gather1,
+                                                                       gather2),
+@@ -4429,12 +4454,12 @@ LLVM_Util::op_gather(llvm::Value* ptr, llvm::Value* wide_index)
+                         mask4_as_int8(w4_bit_masks[0]), constant(8) };
+                 llvm::Value* gather1
+                     = builder().CreateCall(func_avx512_gather_dpq,
+-                                           makeArrayRef(args));
++                                           toArrayRef(args));
+                 args[2] = w4_int_indices[1];
+                 args[3] = mask4_as_int8(w4_bit_masks[1]);
+                 llvm::Value* gather2
+                     = builder().CreateCall(func_avx512_gather_dpq,
+-                                           makeArrayRef(args));
++                                           toArrayRef(args));
+ 
+                 return builder().CreateIntToPtr(op_combine_4x_vectors(gather1,
+                                                                       gather2),
+@@ -4543,7 +4568,7 @@ LLVM_Util::op_scatter(llvm::Value* wide_val, llvm::Value* ptr,
+ 
+             llvm::Value* args[] = { void_ptr(ptr), int_mask, wide_index,
+                                     wide_val, constant(4) };
+-            builder().CreateCall(func_avx512_scatter_ps, makeArrayRef(args));
++            builder().CreateCall(func_avx512_scatter_ps, toArrayRef(args));
+             return;
+         } else {
+             // AVX2, AVX, SSE4.2 fall through to here
+@@ -4574,7 +4599,7 @@ LLVM_Util::op_scatter(llvm::Value* wide_val, llvm::Value* ptr,
+             OSL_ASSERT(func_avx512_scatter_pi);
+             llvm::Value* args[] = { void_ptr(ptr), int_mask, wide_index,
+                                     wide_val, constant(4) };
+-            builder().CreateCall(func_avx512_scatter_pi, makeArrayRef(args));
++            builder().CreateCall(func_avx512_scatter_pi, toArrayRef(args));
+             return;
+         } else {
+             // AVX2, AVX, SSE4.2 fall through to here
+@@ -4611,13 +4636,11 @@ LLVM_Util::op_scatter(llvm::Value* wide_val, llvm::Value* ptr,
+                 llvm::Value* args[]
+                     = { void_ptr(ptr), mask_as_int8(w8_bit_masks[0]),
+                         w8_int_indices[0], w8_address_int_val[0], constant(8) };
+-                builder().CreateCall(func_avx512_scatter_dpq,
+-                                     makeArrayRef(args));
++                builder().CreateCall(func_avx512_scatter_dpq, toArrayRef(args));
+                 args[1] = mask_as_int8(w8_bit_masks[1]);
+                 args[2] = w8_int_indices[1];
+                 args[3] = w8_address_int_val[1];
+-                builder().CreateCall(func_avx512_scatter_dpq,
+-                                     makeArrayRef(args));
++                builder().CreateCall(func_avx512_scatter_dpq, toArrayRef(args));
+                 return;
+             }
+             case 8: {
+@@ -4636,8 +4659,7 @@ LLVM_Util::op_scatter(llvm::Value* wide_val, llvm::Value* ptr,
+                 llvm::Value* args[]
+                     = { void_ptr(ptr), mask_as_int8(current_mask()),
+                         linear_indices, address_int_val, constant(8) };
+-                builder().CreateCall(func_avx512_scatter_dpq,
+-                                     makeArrayRef(args));
++                builder().CreateCall(func_avx512_scatter_dpq, toArrayRef(args));
+                 return;
+             }
+             default:
+@@ -4663,8 +4685,7 @@ LLVM_Util::op_scatter(llvm::Value* wide_val, llvm::Value* ptr,
+                                         mask_as_int16(current_mask()),
+                                         op_linearize_16x_indices(wide_index),
+                                         wide_val, constant(4) };
+-                builder().CreateCall(func_avx512_scatter_ps,
+-                                     makeArrayRef(args));
++                builder().CreateCall(func_avx512_scatter_ps, toArrayRef(args));
+                 return;
+             }
+             case 8: {
+@@ -4677,8 +4698,7 @@ LLVM_Util::op_scatter(llvm::Value* wide_val, llvm::Value* ptr,
+                                         mask_as_int8(current_mask()),
+                                         op_linearize_8x_indices(wide_index),
+                                         wide_val, constant(4) };
+-                builder().CreateCall(func_avx512_scatter_ps,
+-                                     makeArrayRef(args));
++                builder().CreateCall(func_avx512_scatter_ps, toArrayRef(args));
+                 return;
+             }
+             default:
+@@ -4708,8 +4728,7 @@ LLVM_Util::op_scatter(llvm::Value* wide_val, llvm::Value* ptr,
+                                         mask_as_int16(current_mask()),
+                                         op_linearize_16x_indices(wide_index),
+                                         wide_val, constant(4) };
+-                builder().CreateCall(func_avx512_scatter_pi,
+-                                     makeArrayRef(args));
++                builder().CreateCall(func_avx512_scatter_pi, toArrayRef(args));
+                 return;
+             }
+             case 8: {
+@@ -4722,8 +4741,7 @@ LLVM_Util::op_scatter(llvm::Value* wide_val, llvm::Value* ptr,
+                                         mask_as_int8(current_mask()),
+                                         op_linearize_8x_indices(wide_index),
+                                         wide_val, constant(4) };
+-                builder().CreateCall(func_avx512_scatter_pi,
+-                                     makeArrayRef(args));
++                builder().CreateCall(func_avx512_scatter_pi, toArrayRef(args));
+                 return;
+             }
+             default:
+@@ -4768,13 +4786,11 @@ LLVM_Util::op_scatter(llvm::Value* wide_val, llvm::Value* ptr,
+                 llvm::Value* args[]
+                     = { void_ptr(ptr), mask_as_int8(w8_bit_masks[0]),
+                         w8_int_indices[0], w8_address_int_val[0], constant(8) };
+-                builder().CreateCall(func_avx512_scatter_dpq,
+-                                     makeArrayRef(args));
++                builder().CreateCall(func_avx512_scatter_dpq, toArrayRef(args));
+                 args[1] = mask_as_int8(w8_bit_masks[1]);
+                 args[2] = w8_int_indices[1];
+                 args[3] = w8_address_int_val[1];
+-                builder().CreateCall(func_avx512_scatter_dpq,
+-                                     makeArrayRef(args));
++                builder().CreateCall(func_avx512_scatter_dpq, toArrayRef(args));
+                 return;
+             }
+             case 8: {
+@@ -4794,8 +4810,7 @@ LLVM_Util::op_scatter(llvm::Value* wide_val, llvm::Value* ptr,
+                 llvm::Value* args[]
+                     = { void_ptr(ptr), mask_as_int8(current_mask()),
+                         linear_indices, address_int_val, constant(8) };
+-                builder().CreateCall(func_avx512_scatter_dpq,
+-                                     makeArrayRef(args));
++                builder().CreateCall(func_avx512_scatter_dpq, toArrayRef(args));
+                 return;
+             }
+             default:
+@@ -5685,11 +5700,11 @@ LLVM_Util::op_zero_if(llvm::Value* cond, llvm::Value* v)
+             llvm::Value* int_v
+                 = is_float ? builder().CreateBitCast(v, type_wide_int()) : v;
+             llvm::Value* args[] = { int_v, int_v, int_v, a_identity_mask };
+-            llvm::Value* identity_call
+-                = builder().CreateCall(func, makeArrayRef(args));
+-            v = is_float
+-                    ? builder().CreateBitCast(identity_call, type_wide_float())
+-                    : identity_call;
++            llvm::Value* identity_call = builder().CreateCall(func,
++                                                              toArrayRef(args));
++            v                          = is_float
++                                             ? builder().CreateBitCast(identity_call, type_wide_float())
++                                             : identity_call;
+         }
+     }
+     return op_select(cond, c_zero, v);
+
+From e7f2fb3f1900bff67f1c0b8525de671312a339be Mon Sep 17 00:00:00 2001
+From: Brecht Van Lommel <brecht@blender.org>
+Date: Mon, 18 Sep 2023 10:40:07 +0200
+Subject: [PATCH 02/13] Keep CMAKE_CXX_STANDARD warning for LLVM 16
+
+Co-authored-by: Larry Gritz <lg@larrygritz.com>
+Signed-off-by: Brecht Van Lommel <brecht@blender.org>
+---
+ src/cmake/externalpackages.cmake | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/src/cmake/externalpackages.cmake b/src/cmake/externalpackages.cmake
+index 5506c602b..0f9212e79 100644
+--- a/src/cmake/externalpackages.cmake
++++ b/src/cmake/externalpackages.cmake
+@@ -149,6 +149,8 @@ if (LLVM_VERSION VERSION_GREATER_EQUAL 15.0
+ endif ()
+ if (LLVM_VERSION VERSION_GREATER_EQUAL 17.0)
+     message (ERROR "${ColorYellow}OSL is not yet compatible with LLVM 17.${ColorReset}\n")
++endif ()
++if (LLVM_VERSION VERSION_GREATER_EQUAL 16.0)
+     if (CMAKE_CXX_STANDARD VERSION_LESS 17)
+         message (WARNING "${ColorYellow}LLVM 16+ requires C++17 or higher. "
+             "Please set CMAKE_CXX_STANDARD to 17 or higher.${ColorReset}\n")
+
+From c8e684e874d17572cd1d96e644d9655dabce50c7 Mon Sep 17 00:00:00 2001
+From: Brecht Van Lommel <brecht@blender.org>
+Date: Tue, 19 Sep 2023 02:27:56 +0200
+Subject: [PATCH 03/13] Enable LLVM 17 too, adjust for changes in new pass
+ manager PR
+
+Signed-off-by: Brecht Van Lommel <brecht@blender.org>
+---
+ src/cmake/externalpackages.cmake |  6 +++---
+ src/liboslexec/llvm_util.cpp     | 11 -----------
+ 2 files changed, 3 insertions(+), 14 deletions(-)
+
+diff --git a/src/cmake/externalpackages.cmake b/src/cmake/externalpackages.cmake
+index 0f9212e79..2a02378c2 100644
+--- a/src/cmake/externalpackages.cmake
++++ b/src/cmake/externalpackages.cmake
+@@ -117,7 +117,7 @@ checked_find_package (pugixml REQUIRED
+ # LLVM library setup
+ checked_find_package (LLVM REQUIRED
+                       VERSION_MIN 9.0
+-                      VERSION_MAX 16.9
++                      VERSION_MAX 17.9
+                       PRINT LLVM_SYSTEM_LIBRARIES CLANG_LIBRARIES)
+ # ensure include directory is added (in case of non-standard locations
+ include_directories (BEFORE SYSTEM "${LLVM_INCLUDES}")
+@@ -147,8 +147,8 @@ if (LLVM_VERSION VERSION_GREATER_EQUAL 15.0
+          "If you are using LLVM 15 or higher, you should also use clang version "
+          "15 or higher, or you may get build errors.${ColorReset}\n")
+ endif ()
+-if (LLVM_VERSION VERSION_GREATER_EQUAL 17.0)
+-    message (ERROR "${ColorYellow}OSL is not yet compatible with LLVM 17.${ColorReset}\n")
++if (LLVM_VERSION VERSION_GREATER_EQUAL 18.0)
++    message (ERROR "${ColorYellow}OSL is not yet compatible with LLVM 18.${ColorReset}\n")
+ endif ()
+ if (LLVM_VERSION VERSION_GREATER_EQUAL 16.0)
+     if (CMAKE_CXX_STANDARD VERSION_LESS 17)
+diff --git a/src/liboslexec/llvm_util.cpp b/src/liboslexec/llvm_util.cpp
+index b5fcba706..7f5dc00ae 100644
+--- a/src/liboslexec/llvm_util.cpp
++++ b/src/liboslexec/llvm_util.cpp
+@@ -1851,7 +1851,6 @@ LLVM_Util::setup_optimization_passes(int optlevel, bool target_host)
+     // debugging, optlevel 10 adds next to no additional passes.
+     switch (optlevel) {
+     default: {
+-#if OSL_LLVM_VERSION < 160
+         // For LLVM 3.0 and higher, llvm_optimize 1-3 means to use the
+         // same set of optimizations as clang -O1, -O2, -O3
+         llvm::PassManagerBuilder builder;
+@@ -1866,11 +1865,6 @@ LLVM_Util::setup_optimization_passes(int optlevel, bool target_host)
+ 
+         builder.populateFunctionPassManager(fpm);
+         builder.populateModulePassManager(mpm);
+-#else
+-        OSL_ASSERT(
+-            0
+-            && "legacy pass manager does not support default optimizations levels in LLVM 16+");
+-#endif
+         break;
+     }
+     case 10:
+@@ -2023,11 +2017,7 @@ LLVM_Util::setup_optimization_passes(int optlevel, bool target_host)
+         mpm.add(llvm::createDeadArgEliminationPass());
+         mpm.add(llvm::createInstructionCombiningPass());
+         mpm.add(llvm::createCFGSimplificationPass());
+-#if OSL_LLVM_VERSION < 160
+-        // Replaced by CFGSimplification + PostOrderFunctionAttrs since LLVM 7.
+-        // https://reviews.llvm.org/D44415
+         mpm.add(llvm::createPruneEHPass());
+-#endif
+         mpm.add(llvm::createPostOrderFunctionAttrsLegacyPass());
+         mpm.add(llvm::createReversePostOrderFunctionAttrsPass());
+         mpm.add(llvm::createFunctionInliningPass());
+@@ -2124,7 +2114,6 @@ LLVM_Util::setup_optimization_passes(int optlevel, bool target_host)
+ }
+ 
+ 
+-
+ void
+ LLVM_Util::do_optimize(std::string* out_err)
+ {
+
+From f38d0d7ae9830e56069cd5a0ab4a10e8e09085dc Mon Sep 17 00:00:00 2001
+From: Brecht Van Lommel <brecht@blender.org>
+Date: Thu, 28 Sep 2023 05:50:34 +0200
+Subject: [PATCH 05/13] Work around missing OptiX intrinsic with custom fmod
+
+Signed-off-by: Brecht Van Lommel <brecht@blender.org>
+---
+ src/liboslexec/llvm_util.cpp | 12 +++++++++++-
+ 1 file changed, 11 insertions(+), 1 deletion(-)
+
+diff --git a/src/liboslexec/llvm_util.cpp b/src/liboslexec/llvm_util.cpp
+index 7f5dc00ae..f90fd97a4 100644
+--- a/src/liboslexec/llvm_util.cpp
++++ b/src/liboslexec/llvm_util.cpp
+@@ -5527,8 +5527,18 @@ LLVM_Util::op_mod(llvm::Value* a, llvm::Value* b)
+ {
+     if ((a->getType() == type_float() && b->getType() == type_float())
+         || (a->getType() == type_wide_float()
+-            && b->getType() == type_wide_float()))
++            && b->getType() == type_wide_float())) {
++#if OSL_LLVM_VERSION >= 160
++        if (m_target_isa == TargetISA::NVPTX) {
++            // Since llvm/llvm-project@2c3f82b, FRem generates an
++            // optix.ptx.testp.infinite.f32 intrinsic that OptiX does not
++            // currently implement. Work around with custom code.
++            llvm::Value* N = op_float_to_int(op_div(a, b));
++            return op_sub(a, op_mul(op_int_to_float(N), b));
++        }
++#endif
+         return builder().CreateFRem(a, b);
++    }
+     if ((a->getType() == type_int() && b->getType() == type_int())
+         || (a->getType() == type_wide_int() && b->getType() == type_wide_int()))
+         return builder().CreateSRem(a, b);
+
+From f3ae105d8ddd08091dff1eb510dbfc15b847b98a Mon Sep 17 00:00:00 2001
+From: Brecht Van Lommel <brecht@blender.org>
+Date: Thu, 28 Sep 2023 13:24:13 +0200
+Subject: [PATCH 06/13] Work around OptiX parse error by shuffling code around
+
+Signed-off-by: Brecht Van Lommel <brecht@blender.org>
+---
+ src/liboslexec/opnoise.cpp | 28 ++++++++++++++--------------
+ 1 file changed, 14 insertions(+), 14 deletions(-)
+
+diff --git a/src/liboslexec/opnoise.cpp b/src/liboslexec/opnoise.cpp
+index 21a91f21e..cbb52d4af 100644
+--- a/src/liboslexec/opnoise.cpp
++++ b/src/liboslexec/opnoise.cpp
+@@ -704,6 +704,13 @@ struct GenericNoise {
+                    || name == STRING_PARAMS(snoise)) {
+             SNoise snoise;
+             snoise(result, s);
++        } else if (name == STRING_PARAMS(cell)) {
++            CellNoise cellnoise;
++            cellnoise(result.val(), s.val());
++            result.clear_d();
++        } else if (name == STRING_PARAMS(gabor)) {
++            GaborNoise gnoise;
++            gnoise(name, result, s, sg, opt);
+         } else if (name == STRING_PARAMS(simplexnoise)
+                    || name == STRING_PARAMS(simplex)) {
+             SimplexNoise simplexnoise;
+@@ -712,13 +719,6 @@ struct GenericNoise {
+                    || name == STRING_PARAMS(usimplex)) {
+             USimplexNoise usimplexnoise;
+             usimplexnoise(result, s);
+-        } else if (name == STRING_PARAMS(cell)) {
+-            CellNoise cellnoise;
+-            cellnoise(result.val(), s.val());
+-            result.clear_d();
+-        } else if (name == STRING_PARAMS(gabor)) {
+-            GaborNoise gnoise;
+-            gnoise(name, result, s, sg, opt);
+         } else if (name == STRING_PARAMS(null)) {
+             NullNoise noise;
+             noise(result, s);
+@@ -752,6 +752,13 @@ struct GenericNoise {
+                    || name == STRING_PARAMS(snoise)) {
+             SNoise snoise;
+             snoise(result, s, t);
++        } else if (name == STRING_PARAMS(cell)) {
++            CellNoise cellnoise;
++            cellnoise(result.val(), s.val(), t.val());
++            result.clear_d();
++        } else if (name == STRING_PARAMS(gabor)) {
++            GaborNoise gnoise;
++            gnoise(name, result, s, t, sg, opt);
+         } else if (name == STRING_PARAMS(simplexnoise)
+                    || name == STRING_PARAMS(simplex)) {
+             SimplexNoise simplexnoise;
+@@ -760,13 +767,6 @@ struct GenericNoise {
+                    || name == STRING_PARAMS(usimplex)) {
+             USimplexNoise usimplexnoise;
+             usimplexnoise(result, s, t);
+-        } else if (name == STRING_PARAMS(cell)) {
+-            CellNoise cellnoise;
+-            cellnoise(result.val(), s.val(), t.val());
+-            result.clear_d();
+-        } else if (name == STRING_PARAMS(gabor)) {
+-            GaborNoise gnoise;
+-            gnoise(name, result, s, t, sg, opt);
+         } else if (name == STRING_PARAMS(null)) {
+             NullNoise noise;
+             noise(result, s, t);
+
+diff --git a/src/liboslexec/llvm_util.cpp b/src/liboslexec/llvm_util.cpp
+index 98c1040ed..dd263af53 100644
+--- a/src/liboslexec/llvm_util.cpp
++++ b/src/liboslexec/llvm_util.cpp
+@@ -3320,7 +3320,11 @@ size_t
+ LLVM_Util::llvm_alignmentof(llvm::Type* type) const
+ {
+     const llvm::DataLayout& data_layout = m_llvm_exec->getDataLayout();
++#if OSL_LLVM_VERSION >= 160
++    return data_layout.getPrefTypeAlign(type).value();
++#else
+     return data_layout.getPrefTypeAlignment(type);
++#endif
+ }
+ 
+ std::string
+
+From 87524d3c4e0f81926a034a188659254f9f1d40a9 Mon Sep 17 00:00:00 2001
+From: Brecht Van Lommel <brecht@blender.org>
+Date: Fri, 29 Sep 2023 14:13:22 +0200
+Subject: [PATCH 09/13] Remove redundant LLVM version check, update CI job
+ names
+
+Signed-off-by: Brecht Van Lommel <brecht@blender.org>
+---
+ .github/workflows/ci.yml         | 4 ++--
+ src/cmake/externalpackages.cmake | 3 ---
+ 2 files changed, 2 insertions(+), 5 deletions(-)
+
+diff --git a/src/cmake/externalpackages.cmake b/src/cmake/externalpackages.cmake
+index 4e35ce877..61ce8c10a 100644
+--- a/src/cmake/externalpackages.cmake
++++ b/src/cmake/externalpackages.cmake
+@@ -147,9 +147,6 @@ if (LLVM_VERSION VERSION_GREATER_EQUAL 15.0
+          "If you are using LLVM 15 or higher, you should also use clang version "
+          "15 or higher, or you may get build errors.${ColorReset}\n")
+ endif ()
+-if (LLVM_VERSION VERSION_GREATER_EQUAL 18.0)
+-    message (ERROR "${ColorYellow}OSL is not yet compatible with LLVM 18.${ColorReset}\n")
+-endif ()
+ if (LLVM_VERSION VERSION_GREATER_EQUAL 16.0)
+     if (CMAKE_CXX_STANDARD VERSION_LESS 17)
+         message (WARNING "${ColorYellow}LLVM 16+ requires C++17 or higher. "
+
+From ad79d3812c7147714428fde10d23bef03e9ca1ef Mon Sep 17 00:00:00 2001
+From: Brecht Van Lommel <brecht@blender.org>
+Date: Sat, 30 Sep 2023 01:14:00 +0200
+Subject: [PATCH 10/13] Avoid invalid global name by forcing device strings to
+ be hashed
+
+And revert previous workaround.
+
+Signed-off-by: Brecht Van Lommel <brecht@blender.org>
+---
+ src/include/OSL/oslexec.h      |  3 ++-
+ src/liboslexec/opnoise.cpp     | 28 ++++++++++++++--------------
+ src/liboslexec/string_hash.h   |  3 +++
+ src/testrender/cuda/rend_lib.h |  3 ++-
+ 4 files changed, 21 insertions(+), 16 deletions(-)
+
+diff --git a/src/include/OSL/oslexec.h b/src/include/OSL/oslexec.h
+index f4193ef8b..3ec98ea53 100644
+--- a/src/include/OSL/oslexec.h
++++ b/src/include/OSL/oslexec.h
+@@ -51,7 +51,8 @@ class ShadingSystemImpl;
+ }
+ 
+ #ifdef __CUDA_ARCH__
+-#    define STRING_PARAMS(x) UStringHash::Hash(__OSL_STRINGIFY(x))
++#    define STRING_PARAMS(x) \
++        UStringHash::HashConstEval<UStringHash::Hash(__OSL_STRINGIFY(x))>
+ #else
+ #    define STRING_PARAMS(x) StringParams::x
+ #endif
+diff --git a/src/liboslexec/opnoise.cpp b/src/liboslexec/opnoise.cpp
+index cbb52d4af..21a91f21e 100644
+--- a/src/liboslexec/opnoise.cpp
++++ b/src/liboslexec/opnoise.cpp
+@@ -704,13 +704,6 @@ struct GenericNoise {
+                    || name == STRING_PARAMS(snoise)) {
+             SNoise snoise;
+             snoise(result, s);
+-        } else if (name == STRING_PARAMS(cell)) {
+-            CellNoise cellnoise;
+-            cellnoise(result.val(), s.val());
+-            result.clear_d();
+-        } else if (name == STRING_PARAMS(gabor)) {
+-            GaborNoise gnoise;
+-            gnoise(name, result, s, sg, opt);
+         } else if (name == STRING_PARAMS(simplexnoise)
+                    || name == STRING_PARAMS(simplex)) {
+             SimplexNoise simplexnoise;
+@@ -719,6 +712,13 @@ struct GenericNoise {
+                    || name == STRING_PARAMS(usimplex)) {
+             USimplexNoise usimplexnoise;
+             usimplexnoise(result, s);
++        } else if (name == STRING_PARAMS(cell)) {
++            CellNoise cellnoise;
++            cellnoise(result.val(), s.val());
++            result.clear_d();
++        } else if (name == STRING_PARAMS(gabor)) {
++            GaborNoise gnoise;
++            gnoise(name, result, s, sg, opt);
+         } else if (name == STRING_PARAMS(null)) {
+             NullNoise noise;
+             noise(result, s);
+@@ -752,13 +752,6 @@ struct GenericNoise {
+                    || name == STRING_PARAMS(snoise)) {
+             SNoise snoise;
+             snoise(result, s, t);
+-        } else if (name == STRING_PARAMS(cell)) {
+-            CellNoise cellnoise;
+-            cellnoise(result.val(), s.val(), t.val());
+-            result.clear_d();
+-        } else if (name == STRING_PARAMS(gabor)) {
+-            GaborNoise gnoise;
+-            gnoise(name, result, s, t, sg, opt);
+         } else if (name == STRING_PARAMS(simplexnoise)
+                    || name == STRING_PARAMS(simplex)) {
+             SimplexNoise simplexnoise;
+@@ -767,6 +760,13 @@ struct GenericNoise {
+                    || name == STRING_PARAMS(usimplex)) {
+             USimplexNoise usimplexnoise;
+             usimplexnoise(result, s, t);
++        } else if (name == STRING_PARAMS(cell)) {
++            CellNoise cellnoise;
++            cellnoise(result.val(), s.val(), t.val());
++            result.clear_d();
++        } else if (name == STRING_PARAMS(gabor)) {
++            GaborNoise gnoise;
++            gnoise(name, result, s, t, sg, opt);
+         } else if (name == STRING_PARAMS(null)) {
+             NullNoise noise;
+             noise(result, s, t);
+diff --git a/src/liboslexec/string_hash.h b/src/liboslexec/string_hash.h
+index 4c686d0b3..fd57bdf3c 100644
+--- a/src/liboslexec/string_hash.h
++++ b/src/liboslexec/string_hash.h
+@@ -30,4 +30,7 @@ Hash(const char* s)
+ 
+     return len ? OIIO::farmhash::inlined::Hash(s, len) : 0;
+ }
++
++// Template to ensure the hash is evaluated at compile time.
++template<size_t V> static constexpr size_t HashConstEval = V;
+ }  // namespace UStringHash
+diff --git a/src/testrender/cuda/rend_lib.h b/src/testrender/cuda/rend_lib.h
+index 322521a75..a35fe9060 100644
+--- a/src/testrender/cuda/rend_lib.h
++++ b/src/testrender/cuda/rend_lib.h
+@@ -13,7 +13,8 @@ OSL_NAMESPACE_ENTER
+ // Create an OptiX variable for each of the 'standard' strings declared in
+ // <OSL/strdecls.h>.
+ namespace DeviceStrings {
+-#define STRING_PARAMS(x) UStringHash::Hash(__OSL_STRINGIFY(x))
++#define STRING_PARAMS(x) \
++    UStringHash::HashConstEval<UStringHash::Hash(__OSL_STRINGIFY(x))>
+ // Don't declare anything
+ #define STRDECL(str, var_name)
+ 
+
+From d9fe4de8dd315e4e05baaffe31958ef7b56ea366 Mon Sep 17 00:00:00 2001
+From: Brecht Van Lommel <brecht@blender.org>
+Date: Sat, 30 Sep 2023 01:42:53 +0200
+Subject: [PATCH 11/13] Improve comment
+
+Signed-off-by: Brecht Van Lommel <brecht@blender.org>
+---
+ src/cmake/cuda_macros.cmake | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/src/cmake/cuda_macros.cmake b/src/cmake/cuda_macros.cmake
+index e66160309..20ceca24c 100644
+--- a/src/cmake/cuda_macros.cmake
++++ b/src/cmake/cuda_macros.cmake
+@@ -207,8 +207,8 @@ function ( CUDA_SHADEOPS_COMPILE prefix output_bc output_ptx input_srcs headers
+     endforeach ()
+ 
+     if (LLVM_NEW_PASS_MANAGER)
+-      # --nvptx-assign-valid-global-names does not appaer to be supported
+-      # by either opt or llc with the new pass manager.
++      # There is no --nvptx-assign-valid-global-names flag for the new
++      # pass manager, but it appears to run this pass by default.
+       string(REPLACE "-O" "O" opt_tool_flags ${CUDA_OPT_FLAG_CLANG})
+       set (opt_tool_flags -passes="default<${opt_tool_flags}>")
+     else()
+
+From 8e97f2b4cc3fd2e500df894a38cb1d2fb3444771 Mon Sep 17 00:00:00 2001
+From: Brecht Van Lommel <brecht@blender.org>
+Date: Mon, 2 Oct 2023 23:58:58 +0200
+Subject: [PATCH 12/13] Manually make global variable names valid for PTX
+
+Patch by Tim with minor code style changes.
+
+Co-authored-by: Tim Grant <tgrant@nvidia.com>
+Signed-off-by: Brecht Van Lommel <brecht@blender.org>
+---
+ src/liboslexec/llvm_instance.cpp | 18 ++++++++++++++++++
+ 1 file changed, 18 insertions(+)
+
+diff --git a/src/liboslexec/llvm_instance.cpp b/src/liboslexec/llvm_instance.cpp
+index 532ba40be..ca88caba6 100644
+--- a/src/liboslexec/llvm_instance.cpp
++++ b/src/liboslexec/llvm_instance.cpp
+@@ -1871,12 +1871,30 @@ BackendLLVM::run()
+                 fn.addFnAttr("osl-lib-function", "true");
+             }
+ 
++            // Replace characters not supported in ptx, matching the LLVM
++            // NVPTXAssignValidGlobalNames pass.
++            auto cleanup_name = [&](llvm::StringRef name) {
++                std::string valid_name;
++                llvm::raw_string_ostream valid_name_stream(valid_name);
++                for (char c : name) {
++                    if (c == '.' || c == '@') {
++                        valid_name_stream << "_$_";
++                    } else {
++                        valid_name_stream << c;
++                    }
++                }
++                return valid_name_stream.str();
++            };
++
+             // Mark all global variables extern and discard their initializers.
+             // Global variables are defined in the shadeops PTX file.
+             for (llvm::GlobalVariable& global : ll.module()->globals()) {
+                 global.setLinkage(llvm::GlobalValue::ExternalLinkage);
+                 global.setExternallyInitialized(true);
+                 global.setInitializer(nullptr);
++                std::string valid_name = cleanup_name(global.getName());
++                if (valid_name != global.getName())
++                    global.setName(valid_name);
+             }
+         }
+         OSL_ASSERT(ll.module());
+
+From 55cd92c5f276fa46f938a6274cbd46f6dc9eb191 Mon Sep 17 00:00:00 2001
+From: Brecht Van Lommel <brecht@blender.org>
+Date: Tue, 3 Oct 2023 21:45:10 +0200
+Subject: [PATCH 13/13] Fix build with older LLVM
+
+Signed-off-by: Brecht Van Lommel <brecht@blender.org>
+---
+ src/liboslexec/llvm_instance.cpp | 26 +++++++++-----------------
+ 1 file changed, 9 insertions(+), 17 deletions(-)
+
+diff --git a/src/liboslexec/llvm_instance.cpp b/src/liboslexec/llvm_instance.cpp
+index ca88caba6..158282bc2 100644
+--- a/src/liboslexec/llvm_instance.cpp
++++ b/src/liboslexec/llvm_instance.cpp
+@@ -1871,30 +1871,22 @@ BackendLLVM::run()
+                 fn.addFnAttr("osl-lib-function", "true");
+             }
+ 
+-            // Replace characters not supported in ptx, matching the LLVM
+-            // NVPTXAssignValidGlobalNames pass.
+-            auto cleanup_name = [&](llvm::StringRef name) {
+-                std::string valid_name;
+-                llvm::raw_string_ostream valid_name_stream(valid_name);
+-                for (char c : name) {
+-                    if (c == '.' || c == '@') {
+-                        valid_name_stream << "_$_";
+-                    } else {
+-                        valid_name_stream << c;
+-                    }
+-                }
+-                return valid_name_stream.str();
+-            };
+-
+             // Mark all global variables extern and discard their initializers.
+             // Global variables are defined in the shadeops PTX file.
+             for (llvm::GlobalVariable& global : ll.module()->globals()) {
+                 global.setLinkage(llvm::GlobalValue::ExternalLinkage);
+                 global.setExternallyInitialized(true);
+                 global.setInitializer(nullptr);
+-                std::string valid_name = cleanup_name(global.getName());
+-                if (valid_name != global.getName())
++                // Replace characters not supported in ptx, matching the LLVM
++                // NVPTXAssignValidGlobalNames pass.
++                string_view global_name(global.getName().data(),
++                                        global.getName().size());
++                if (Strutil::contains_any_char(global_name, ".@")) {
++                    std::string valid_name = global_name;
++                    valid_name = Strutil::replace(valid_name, ".", "_$_", true);
++                    valid_name = Strutil::replace(valid_name, "@", "_$_", true);
+                     global.setName(valid_name);
++                }
+             }
+         }
+         OSL_ASSERT(ll.module());

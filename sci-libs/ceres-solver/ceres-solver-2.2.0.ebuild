@@ -17,8 +17,8 @@ LICENSE="sparse? ( BSD ) !sparse? ( LGPL-2.1 ) cxsparse? ( BSD )"
 SLOT="0/1"
 KEYWORDS="amd64 ~x86 ~amd64-linux ~x86-linux"
 
-CUDA_ARCHS="sm_30 sm_35 sm_50 sm_52 sm_61 sm_70 sm_75 sm_86 sm_87 sm_89 sm_90"
-IUSE="cxsparse cuda doc examples gflags lapack openmp +schur sparse test ${CUDA_ARCHS}"
+CUDA_TARGETS_COMPAT=( sm_30 sm_35 sm_50 sm_52 sm_61 sm_70 sm_75 sm_86 sm_87 sm_89 sm_90 )
+IUSE="cxsparse cuda doc examples gflags lapack openmp +schur sparse test ${CUDA_TARGETS_COMPAT[@]/#/cuda_targets_}"
 RESTRICT="
 	mirror
 	!test? ( test )
@@ -99,12 +99,13 @@ src_configure() {
 	)
 
 	if use cuda; then
-		for CA in ${CUDA_ARCHS}; do
-			use ${CA} && CUDA_ARCH+="${CA##sm_};"
+		for CT in ${CUDA_TARGETS_COMPAT[@]}; do
+			use ${CT/#/cuda_targets_} && CUDA_TARGETS+="${CT##sm_}-real;"
 		done
+
 		mycmakeargs+=(
 			-DCMAKE_CUDA_FLAGS="-ccbin=$(cuda_gccdir)"
-			-DCMAKE_CUDA_ARCHITECTURES="${CUDA_ARCH%%;}"
+			-DCMAKE_CUDA_ARCHITECTURES="${CUDA_TARGETS%%;}"
 		)
 	fi
 	use sparse || use cxsparse || mycmakeargs+=( -DEIGENSPARSE=ON )
