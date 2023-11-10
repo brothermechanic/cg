@@ -68,7 +68,7 @@ MODIFIERS="+fluid +smoke +oceansim +remesh +gmp +quadriflow"
 IUSE_CPU="+openmp +simd +tbb -lld -gold +mold -cpu_flags_arm_neon llvm -valgrind +jemalloc"
 IUSE_GPU="cuda optix rocm oneapi +cycles-bin-kernels +opengl vulkan ${CUDA_TARGETS_COMPAT[@]/#/cuda_targets_} ${AMDGPU_TARGETS_COMPAT[@]/#/amdgpu_targets_}"
 IUSE_DESKTOP="+cg -portable +X headless +nls -ndof wayland ${MODIFIERS}"
-IUSE_LIBS="+bullet +boost +dbus +draco +materialx +opencolorio +oidn +opensubdiv +openvdb nanovdb openxr +libmv +freestyle ${COMPRESSION}"
+IUSE_LIBS="+bullet +boost +dbus +draco +materialx +color-management +oidn +opensubdiv +openvdb nanovdb openxr +libmv +freestyle ${COMPRESSION}"
 IUSE_CYC="+cycles osl +openpgl +embree +pugixml +potrace +fftw"
 IUSE_3DFILES="-alembic -usd +collada +obj +ply +stl"
 IUSE_IMAGE="-dpx +openexr jpeg2k webp +pdf"
@@ -81,7 +81,7 @@ IUSE="${IUSE_CPU} ${IUSE_GPU} ${IUSE_DESKTOP} ${IUSE_LIBS} ${IUSE_CYC} ${IUSE_3D
 REQUIRED_USE="${PYTHON_REQUIRED_USE}
 	^^ ( gold lld mold )
 	|| ( wayland X )
-	!boost? ( !alembic !opencolorio !cycles !nls !openvdb )
+	!boost? ( !alembic !color-management !cycles !nls !openvdb )
 	alembic? ( openexr )
 	dbus? (	wayland )
 	embree? ( cycles tbb )
@@ -100,7 +100,7 @@ REQUIRED_USE="${PYTHON_REQUIRED_USE}
 	osl? ( cycles llvm pugixml )
 	rocm? ( cycles llvm )
 	vulkan? ( llvm )
-	test? ( gtests opencolorio )
+	test? ( gtests color-management )
 	usd? ( tbb )
 "
 
@@ -217,11 +217,11 @@ RDEPEND="
 		virtual/glu
 	)
 	oidn? ( >=media-libs/oidn-1.4.1 )
-	<media-libs/openimageio-2.5[${PYTHON_SINGLE_USEDEP},${OPENVDB_SINGLE_USEDEP},color-management?,jpeg2k?,png,python,tools(+),webp?]
-	>=media-libs/openimageio-2.4.15.0[${PYTHON_SINGLE_USEDEP},${OPENVDB_SINGLE_USEDEP},color-management?,jpeg2k?,png,python,tools(+),webp?]
+	<media-libs/openimageio-2.5[${PYTHON_SINGLE_USEDEP},${OPENVDB_SINGLE_USEDEP},color-management(-)?,jpeg2k?,png(-),python,webp(-)?]
+	>=media-libs/openimageio-2.4.15.0[${PYTHON_SINGLE_USEDEP},${OPENVDB_SINGLE_USEDEP},color-management(-)?,jpeg2k?,png(-),python,webp(-)?]
 	>=dev-cpp/robin-map-0.6.2
 	>=dev-libs/libfmt-9.1.0
-	opencolorio? ( >=media-libs/opencolorio-2.1.1-r7:= )
+	color-management? ( >=media-libs/opencolorio-2.1.1-r7:= )
 	openexr? ( >=media-libs/openexr-3:= )
 	openpgl? (
 		<media-libs/openpgl-0.6[tbb?]
@@ -596,7 +596,7 @@ src_configure() {
 		-DWITH_IO_WAVEFRONT_OBJ=$(usex obj)						# export format support
 		-DWITH_IO_PLY=$(usex ply)								# export format support
 		-DWITH_IO_STL=$(usex stl)								# export format support
-		-DWITH_OPENCOLORIO=$(usex opencolorio)
+		-DWITH_OPENCOLORIO=$(usex color-management)
 		-DWITH_OPENIMAGEDENOISE=$(usex oidn)					# compositing node
 		-DWITH_OPENMP=$(usex openmp)
 		-DWITH_OPENSUBDIV=$(usex opensubdiv)					# for surface subdivision

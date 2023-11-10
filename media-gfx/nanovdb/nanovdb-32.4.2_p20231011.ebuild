@@ -3,7 +3,7 @@
 
 EAPI=8
 
-# This version corresponds to OpenVDB 11.0.0.
+# This version corresponds to OpenVDB 10.1.0.
 
 inherit cmake cuda flag-o-matic
 
