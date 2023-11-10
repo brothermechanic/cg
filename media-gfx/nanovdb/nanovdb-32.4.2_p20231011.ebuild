@@ -58,7 +58,7 @@ REQUIRED_USE+="
 "
 # For dependencies, see
 # https://github.com/AcademySoftwareFoundation/openvdb/blob/v10.0.1/doc/dependencies.txt
-EGIT_COMMIT="77f28d16114949dfbe2937aa2dae1379f6d2b653"
+EGIT_COMMIT="87a508ca48a69f06d149be6cb0d8289fc1314f72"
 GH_ORG_URI="https://github.com/AcademySoftwareFoundation"
 GTEST_PV="1.11.0"
 OGT_COMMIT="e1743d37cf7a8128568769cf71cf598166c2cd30"
@@ -217,8 +217,8 @@ src_prepare() {
 
 src_configure()
 {
-	export NINJAOPTS="-j2" # Prevent counterproductive swapping.  Observed a 3 GiB process.
-	ewarn "Switch to clang + lld if it takes more than 1.5 hrs to build."
+	#export NINJAOPTS="-j2" # Prevent counterproductive swapping.  Observed a 3 GiB process.
+	#ewarn "Switch to clang + lld if it takes more than 1.5 hrs to build."
 	# Completed build in 1 hr and 3 min in 32.x, but noticible stall with gcc.
 	if use opencl ; then
 		append-cppflags -DCL_TARGET_OPENCL_VERSION=120

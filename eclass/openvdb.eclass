@@ -187,7 +187,8 @@ unset -f _openvdb_set_globals
 # Ensure one and only one OpenVDB ABI version is selected
 openvdb_setup() {
     debug-print-function ${FUNCNAME} "${@}"
-    local i, version
+    local i
+    local version
     for i in "${OPENVDB_ABI[@]}"; do
         if use "abi${i}-compat"; then
             if [[ ${version} ]]; then
@@ -205,8 +206,8 @@ openvdb_setup() {
         eerror "the OPENVDB_ABI variable in your make.conf to one"
         eerror "of the values contained in all of:"
         eerror
-        eerror "- the entire list of ABI: ${_OPENVDB_ALL_ABI[*]}"
-        eerror "- the ABI supported by this package: ${OPENVDB_COMPAT}"
+        eerror "- the entire list of ABI: ${OPENVDB_ALL_ABI[*]}"
+        eerror "- the ABI supported by this package: ${OPENVDB_COMPAT[*]}"
         eerror "- and the ABI supported by all other packages on your system"
         echo
         die "No supported OpenVDB ABI version in OPENVDB_ABI."

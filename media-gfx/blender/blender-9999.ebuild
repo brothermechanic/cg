@@ -233,7 +233,8 @@ RDEPEND="
 		<media-gfx/openvdb-11.0.0:=[${OPENVDB_SINGLE_USEDEP},nanovdb?]
 		>=dev-libs/c-blosc-1.21.1[zlib]
 		nanovdb? (
-			>=media-gfx/nanovdb-32:0=
+			>=media-gfx/nanovdb-31:0=
+			<media-gfx/nanovdb-32.4.3:0=
 		)
 	)
 	openxr? (

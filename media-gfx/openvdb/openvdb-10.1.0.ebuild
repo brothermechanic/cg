@@ -3,8 +3,8 @@
 
 EAPI=8
 
-OPENVDB_COMPAT=( {7..11} )
-PYTHON_COMPAT=( python3_{10..12} )
+OPENVDB_COMPAT=( {7..10} )
+PYTHON_COMPAT=( python3_{10..11} )
 inherit cmake cuda flag-o-matic llvm python-single-r1 toolchain-funcs openvdb
 
 DESCRIPTION="Library for the efficient manipulation of volumetric data"
@@ -34,11 +34,6 @@ REQUIRED_USE="
 	?? (
 		jemalloc
 		tbbmalloc
-	)
-	cuda? (
-		|| (
-			${CUDA_TARGETS_COMPAT[@]/#/cuda_targets_}
-		)
 	)
 	jemalloc? (
 		|| (
@@ -108,7 +103,7 @@ RDEPEND+="
 	openexr? (
 		>=media-libs/openexr-3.1.5-r1
 	)
-	>=dev-cpp/tbb-2021.9:=
+	>=dev-cpp/tbb-2020.9:=
 "
 DEPEND+="
 	${RDEPEND}
@@ -142,7 +137,7 @@ BDEPEND+="
 "
 PDEPEND="
 	nanovdb? (
-		>=media-gfx/nanovdb-32[cuda?,openvdb]
+		>=media-gfx/nanovdb-31[cuda?,openvdb]
 	)
 "
 
@@ -162,7 +157,6 @@ RESTRICT="
 	mirror
 	!test? ( test )
 "
-
 QA_PRESTRIPPED="usr/lib.*/python.*/site-packages/pyopenvdb.*"
 
 pkg_setup() {
@@ -212,11 +206,10 @@ src_configure() {
 	openvdb_src_configure
 
 	CMAKE_BUILD_TYPE=$(usex debug 'Debug' 'Release')
-
 	local mycmakeargs=(
 		-DCMAKE_INSTALL_DOCDIR="share/doc/${PF}/"
 		-DCONCURRENT_MALLOC=$(usex jemalloc "Jemalloc" \
-					$(usex tbbmalloc "Tbbmalloc" "None")\
+			$(usex tbbmalloc "Tbbmalloc" "None")\
 		)
 		-DOPENVDB_BUILD_BINARIES=$(usex vdb_lod ON \
 			$(usex vdb_print ON \
@@ -259,10 +252,11 @@ src_configure() {
 			use ${CT/#/cuda_targets_} && CUDA_TARGETS+="${CT#sm_*};"
 		done
 		mycmakeargs=(
-			append_cppflags CMAKE_CUDA_ARCHITECTURES="${CUDA_TARGETS%%;}"
-			append_cppflags CMAKE_CUDA_FLAGS="-ccbin=$(cuda_gccdir)"
+			-DCMAKE_CUDA_ARCHITECTURES="${CUDA_TARGETS%%;}"
+			-DCMAKE_CUDA_FLAGS="-ccbin=$(cuda_gccdir)"
 		)
 	fi
+
 
 	if use python; then
 		mycmakeargs+=(
