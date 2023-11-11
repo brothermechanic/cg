@@ -124,7 +124,7 @@ RDEPEND+="
 			>=dev-libs/boost-1.70.0:=[python,${PYTHON_USEDEP}]
 			usdview? (
 				(
-					>=dev-python/pyside2-2.0.0[${PYTHON_USEDEP},quickcontrols2(+),script,scripttools]
+					>=dev-python/pyside2-2.0.0[${PYTHON_USEDEP},quickcontrols2(+)]
 					dev-qt/qtquickcontrols2:5
 				)
 				dev-python/pyside2-tools[${PYTHON_USEDEP},tools(+)]
@@ -200,7 +200,7 @@ EOF
 src_prepare() {
 	eapply "${FILESDIR}/${P}-tbb.patch"
 	has_version -b ">=media-libs/embree-4" && eapply "${FILESDIR}/${P}-embree-4.patch"
-	has_version -b ">=media-libs/openimageio-2.3" eapply "${FILESDIR}/${P}-openimageio-2.3.patch"
+	has_version -b ">=media-libs/openimageio-2.3" && eapply "${FILESDIR}/${P}-openimageio-2.3.patch"
 
 	# Fix for #2351
 	sed -i 's|CMAKE_CXX_STANDARD 14|CMAKE_CXX_STANDARD 17|g' \
@@ -227,8 +227,6 @@ src_configure() {
 	fi
     # See https://github.com/PixarAnimationStudios/USD/blob/v23.05/cmake/defaults/Options.cmake
 	local mycmakeargs+=(
-		-DTBB_INCLUDE_DIR=${ESYSROOT}/usr/include/oneapi
-		-DTBB_LIBRARY=${ESYSROOT}/usr/$(get_libdir)
 		$(usex jemalloc "-DPXR_MALLOC_LIBRARY=${ESYSROOT}/usr/$(get_libdir)/${PN}/$(get_libdir)/libjemalloc.so" "")
 		$(usex usdview "-DPYSIDEUICBINARY:PATH=${S}/pyside2-uic" "")
 		-DBUILD_SHARED_LIBS=ON

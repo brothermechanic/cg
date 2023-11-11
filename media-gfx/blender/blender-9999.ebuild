@@ -627,7 +627,7 @@ src_configure() {
 		#-DSYCL_LIBRARY="/usr/lib/llvm/intel"
 		#-DSYCL_INCLUDE_DIR="/usr/lib/llvm/intel/include"
 		-DUSD_ROOT_DIR="${ESYSROOT}/usr/$(get_libdir)/openusd/lib"
-		-DMaterialX_DIR="${ESYSROOT}/usr/$(get_libdir)/materialx/lib/cmake/MaterialX"
+		-DMaterialX_DIR="${ESYSROOT}/usr/$(get_libdir)/cmake/MaterialX"
 		-DWITH_NINJA_POOL_JOBS=no								# for machines with 16GB of RAM or less
 		-DBUILD_SHARED_LIBS=no
 		#-DWITH_EXPERIMENTAL_FEATURES=yes

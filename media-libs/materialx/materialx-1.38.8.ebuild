@@ -7,7 +7,7 @@ MY_PN="MaterialX"
 MY_P="${MY_PN}-${PV}"
 
 PYTHON_COMPAT=( python3_11 ) # CI does not list 3.10 for this package.
-inherit cmake python-single-r1
+inherit cmake python-single-r1 desktop
 if [[ ${PV} =~ 9999 ]] ; then
 	inherit git-r3
 else
@@ -44,7 +44,7 @@ https://github.com/Tessil/robin-map/archive/${EGIT_ROBIN_MAP_COMMIT}.tar.gz
 fi
 
 DESCRIPTION="MaterialX is an open standard for the exchange of rich material \
-and look-development content across applications and renderers."
+content across applications and renderers."
 HOMEPAGE="
 https://materialx.org/
 https://github.com/AcademySoftwareFoundation/MaterialX
@@ -58,38 +58,36 @@ LICENSE="
 	ZLIB
 "
 KEYWORDS="~amd64"
-SLOT="0/$(ver_cut 1-2 ${PV})"
-IUSE="-examples -openimageio -python test wayland X"
-REQUIRED_USE+="
+SLOT="0/$(ver_cut 1-2)"
+IUSE="doc debug -examples -openimageio -python test viewer graph-editor lto"
+REQUIRED_USE="
 	python? (
 		${PYTHON_REQUIRED_USE}
 	)
-	kernel_linux? (
-		X
-	)
 "
-RDEPEND+="
+RDEPEND="
 	openimageio? ( media-libs/openimageio )
 	virtual/opengl
-	kernel_linux? (
-		x11-libs/libX11
-	)
 	python? (
 		$(python_gen_cond_dep '
 			dev-python/pybind11[${PYTHON_USEDEP}]
 		')
 	)
-	wayland? (
-		dev-libs/wayland
-		dev-libs/wayland-protocols
-		dev-util/wayland-scanner
-		x11-libs/libxkbcommon
-	)
 "
-DEPEND+="
+#	X? (
+#		x11-libs/libX11
+#	)
+#	wayland? (
+#		dev-libs/wayland
+#		dev-libs/wayland-protocols
+#		dev-util/wayland-scanner
+#		x11-libs/libxkbcommon
+#	)
+
+DEPEND="
 	${RDEPEND}
 "
-BDEPEND+="
+BDEPEND="
 	>=dev-util/cmake-3.1
 	|| (
 		>=sys-devel/gcc-6
@@ -97,8 +95,8 @@ BDEPEND+="
 	)
 "
 RESTRICT="mirror"
+DOCS=( CHANGELOG.md LICENSE README.md THIRD-PARTY.md )
 S="${WORKDIR}/${MY_P}"
-DOCS=( )
 
 pkg_setup() {
 	use python && python_setup
@@ -167,17 +165,32 @@ src_unpack() {
 	fi
 }
 
+src_prepare() {
+	#sed -e "s/\(${CMAKE_BINARY_DIR}\)\/lib/\1\/$(get_libdir)/" -i CMakeLists.txt || die "Sed failed."
+	# Do not install docs by default
+	sed -e "/install(FILES LICENSE CHANGELOG.md README.md THIRD-PARTY.md/d" \
+        -e  "/DESTINATION .)/d" -i CMakeLists.txt || die "Sed failed."
+	cmake_src_prepare
+}
+
 src_configure() {
-	addpredict /usr/lib/materialx
+	#addpredict /usr/lib/materialx
+	CMAKE_BUILD_TYPE=$(usex debug 'Debug' 'Release')
+	append-cppflags $(usex debug '-DDEBUG' '-DNDEBUG')
+
 	local mycmakeargs=(
-		-DCMAKE_INSTALL_PREFIX="${EPREFIX}/usr/$(get_libdir)/${PN}"
-		-DGLFW_USE_OSMESA=OFF
-		-DGLFW_USE_WAYLAND=$(usex wayland "ON" "OFF")
-		-DMATERIALX_BUILD_OIIO=$(usex openimageio "ON" "OFF")
-		-DMATERIALX_BUILD_PYTHON=$(usex python "ON" "OFF")
+		-DMATERIALX_INSTALL_LIB_PATH="$(get_libdir)"
+		-DMATERIALX_INSTALL_STDLIB_PATH="$(get_libdir)/${PN}/libraries"
+		#-DGLFW_USE_OSMESA=OFF
+		#-DGLFW_USE_WAYLAND=$(usex wayland ON OFF)
+		#-DMATERIALX_BUILD_JS=$(usex javascript ON OFF)
+		-DMATERIALX_BUILD_OIIO=$(usex openimageio ON OFF)
+		-DMATERIALX_BUILD_PYTHON=$(usex python ON OFF)
 		-DMATERIALX_BUILD_SHARED_LIBS=ON
-		-DMATERIALX_BUILD_TESTS=$(usex test "ON" "OFF")
+		-DMATERIALX_BUILD_TESTS=$(usex test ON OFF)
 		-DMATERIALX_INSTALL_PYTHON=OFF
+		-DMATERIALX_BUILD_GRAPH_EDITOR=$(usex graph-editor)
+		-DMATERIALX_BUILD_VIEWER=$(usex viewer)
 	)
 	if use python ; then
 		mycmakeargs+=(
@@ -185,6 +198,7 @@ src_configure() {
 			-DMATERIALX_PYTHON_EXECUTABLE=${PYTHON}
 			-DMATERIALX_PYTHON_VERSION=${EPYTHON/python/}
 			-DPYTHON_EXECUTABLE=${PYTHON}
+			-DMATERIALX_PYTHON_LTO=$(usex lto)
 		)
 	fi
 	cmake_src_configure
@@ -193,6 +207,12 @@ src_configure() {
 src_install() {
 	cmake_src_install
 	rm -rf "${ED}/var/tmp" || die
+	echo "LDPATH=${EPREFIX}/usr/$(get_libdir)/${PN}/libraries" > 99-${PN} || die
+	doenvd 99-${PN}
+	use viewer && domenu "${FILESDIR}/viewer-grapheditor.desktop"
+	use graph-editor && domenu "${FILESDIR}/materialx-grapheditor.desktop"
+	use doc && einstalldocs
+
 	if use python ; then
 		python_domodule python/MaterialX
 		if use examples ; then
