@@ -1,10 +1,10 @@
-# Copyright 1999-2019 Gentoo Foundation
+# Copyright 1999-2023 Gentoo Foundation
 # Distributed under the terms of the GNU General Public License v2
 
-EAPI=7
-PYTHON_COMPAT=( python3_{9..10} )
+EAPI=8
+PYTHON_COMPAT=( python3_{10..12} )
 
-inherit git-r3 python-single-r1 desktop eutils
+inherit git-r3 python-single-r1 desktop
 
 DESCRIPTION="Open source tool for making 3d characters."
 HOMEPAGE="http://www.makehumancommunity.org/"

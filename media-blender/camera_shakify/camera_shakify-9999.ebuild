@@ -3,7 +3,7 @@
 
 EAPI=8
 
-BLENDER_COMPAT=( 2_93 3_{1..6} 4_0 )
+BLENDER_COMPAT=( 2_93 3_{1..6} 4_{0..1} )
 
 inherit blender-addon
 
@@ -11,5 +11,5 @@ DESCRIPTION="Add captured camera shake/wobble to your cameras"
 HOMEPAGE="https://github.com/EatTheFuture/camera_shakify"
 EGIT_REPO_URI="https://github.com/EatTheFuture/camera_shakify"
 
-LICENSE="GPL CC0-1.0"
+LICENSE="GPL-2 CC0-1.0"
 

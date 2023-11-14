@@ -20,6 +20,9 @@ case "${EAPI:-0}" in
 	*)     die "Unsupported EAPI=${EAPI} (unknown) for ${ECLASS}" ;;
 esac
 
+if [[ ! ${_BLENDER_ADDON_ECLASS} ]]; then
+_BLENDER_ADDON_ECLASS=1
+
 PYTHON_COMPAT=( python3_{10..12} )
 
 inherit git-r3 vcs-clean python-single-r1 cg-blender-scripts-dir
@@ -44,7 +47,7 @@ _GENTOO_BLENDER_ADDONS_HOME=()
 # @INTERNAL
 # @DESCRIPTION:
 # All possible implementations of blender
-_BLENDER_ALL_IMPLS=( 2_93 3_{1..6} 4_0 )
+_BLENDER_ALL_IMPLS=( 2_93 3_{0..6} 4_{0..1} )
 readonly _BLENDER_ALL_IMPLS
 
 # @ECLASS_VARIABLE: _BLENDER_ALL_IMPLS
@@ -90,7 +93,7 @@ blender-addon_pkg_pretend() {
 blender-addon_pkg_setup() {
 	debug-print-function ${FUNCNAME} "${@}"
 
-	python-single-r1_pkg_setup
+	[[ ${MERGE_TYPE} != binary ]] && python-single-r1_pkg_setup
 
 	for i in "${BLENDER_COMPAT[@]}"; do
 		has_version -r media-gfx\/blender\:${i/_/\.} && _BLENDER_SEL_IMPLS+=( ${i/_/\.} )
@@ -165,3 +168,7 @@ blender-addon_pkg_postrm() {
 		done
 	fi
 }
+
+fi
+
+EXPORT_FUNCTIONS pkg_setup pkg_pretend pkg_postrm pkg_postinst src_compile src_install

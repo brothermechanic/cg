@@ -1,4 +1,4 @@
-EAPI=7
+EAPI=8
 
 inherit git-r3
 
@@ -6,7 +6,7 @@ DESCRIPTION="Socket server for makehuman"
 HOMEPAGE="https://github.com/makehumancommunity/community-plugins-socket"
 EGIT_REPO_URI="https://github.com/makehumancommunity/community-plugins-socket.git"
 
-LICENSE="AGPL-3.0"
+LICENSE="AGPL-3"
 SLOT="0"
 KEYWORDS="~amd64 ~x86"
 IUSE=""

@@ -3,7 +3,7 @@
 
 EAPI=8
 
-BLENDER_COMPAT=( 2_93 3_{1..6} 4_0 )
+BLENDER_COMPAT=( 2_93 3_{1..6} 4_{0..1} )
 
 inherit blender-addon
 
@@ -15,5 +15,6 @@ LICENSE="GPL-3"
 
 RDEPEND="$(python_gen_cond_dep '
 	dev-python/numpy[${PYTHON_USEDEP}]
-	>=sci-libs/onnxruntime-0.14.0:=
+	>=sci-libs/onnxruntime-0.14.0:=[${PYTHON_USEDEP}]
+')
 "
