@@ -160,11 +160,11 @@ _openvdb_set_globals() {
         die 'OPENVDB_COMPAT must be an array.'
     fi
     local flags=()
-        for i in "${_OPENVDB_ALL_ABI[@]}"; do
-            if has "${i}" "${OPENVDB_COMPAT[@]}"; then
-                flags+=( "abi${i}-compat" )
-            fi
-        done
+    for i in "${_OPENVDB_ALL_ABI[@]}"; do
+        if has "${i}" "${OPENVDB_COMPAT[@]}"; then
+            flags+=( "abi${i}-compat" )
+        fi
+    done
     if [[ ${#supp[@]} -eq 1 ]]; then
         IUSE="+${flags[0]}"
     else
@@ -187,30 +187,26 @@ unset -f _openvdb_set_globals
 # Ensure one and only one OpenVDB ABI version is selected
 openvdb_setup() {
     debug-print-function ${FUNCNAME} "${@}"
-    local i
-    local version
-    for i in "${OPENVDB_ABI[@]}"; do
-        if use "abi${i}-compat"; then
-            if [[ ${version} ]]; then
-                eerror "Your OPENVDB_ABI setting lists more than a single OpenVDB"
-                eerror "ABI version. Please set it to just one value."
-                echo
-                die "More than one ABI in OPENVDB_ABI."
-            fi
-        fi
-        version="${i}"
-        echo "Using OpenVDB ABI ${version} to build"
-    done
-    if [[ ! ${version} ]]; then
+    local i; local version
+    if [[ -z ${OPENVDB_ABI} ]]; then
         eerror "No OpenVDB ABI Version selected for the system. Please set"
         eerror "the OPENVDB_ABI variable in your make.conf to one"
         eerror "of the values contained in all of:"
         eerror
-        eerror "- the entire list of ABI: ${OPENVDB_ALL_ABI[*]}"
+        eerror "- the entire list of ABI: ${_OPENVDB_ALL_ABI[*]}"
         eerror "- the ABI supported by this package: ${OPENVDB_COMPAT[*]}"
         eerror "- and the ABI supported by all other packages on your system"
         echo
         die "No supported OpenVDB ABI version in OPENVDB_ABI."
+    fi
+    if [[ $(declare -p OPENVDB_ABI) == "declare -a"* ]]; then
+        eerror "Your OPENVDB_ABI setting lists more than a single OpenVDB"
+        eerror "ABI version. Please set it to just one value."
+        echo
+        die "More than one ABI in OPENVDB_ABI."
+    else
+        version="${OPENVDB_ABI}"
+        echo "Using OpenVDB ABI ${version} to build"
     fi
 }
 
