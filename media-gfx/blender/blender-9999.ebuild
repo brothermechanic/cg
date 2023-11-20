@@ -86,8 +86,9 @@ REQUIRED_USE="${PYTHON_REQUIRED_USE}
 	dbus? (	wayland )
 	embree? ( cycles tbb )
 	smoke? ( fftw )
-	cuda? ( cycles cycles-bin-kernels nanovdb )
+	cuda? ( cycles cycles-bin-kernels )
 	fluid? ( fftw tbb )
+	nanovdb? ( cuda )
 	materialx? (
 		!python_single_target_python3_10
 		python_single_target_python3_11
@@ -343,7 +344,10 @@ PATCHES=(
 	"${FILESDIR}/${PN}-3.5.1-openusd-21.11-python.patch"
 	"${FILESDIR}/${PN}-3.0.0-boost_python.patch"
 	"${FILESDIR}/${PN}-3.5.1-tbb-rpath.patch"
-	"${FILESDIR}/${PN}-3.6.0-hip-flags.patch"
+	"${FILESDIR}/${PN}-3.2.2-findtbb2.patch"
+	"${FILESDIR}/x112.patch"
+	"${FILESDIR}/${PN}-fix-desktop.patch"
+	"${FILESDIR}/${PN}-fix-boost-1.81-iostream.patch"
 )
 
 blender_check_requirements() {
@@ -399,31 +403,21 @@ src_prepare() {
 
 	blender_get_version
 
-	use openvdb && openvdb_src_prepare
 	use cuda && cuda_src_prepare
 
 	use portable || eapply "${FILESDIR}/${SLOT}"/*.patch
-	use portable || eapply "${FILESDIR}"/blender-system-json.patch
-	eapply "${FILESDIR}"/x112.patch
-	eapply "${FILESDIR}"/blender-fix-desktop.patch
-	eapply "${FILESDIR}"/blender-3.2.2-findtbb2.patch
-
-	#eapply "${FILESDIR}"/blender-fix-buildinfo.patch
-	#eapply "${FILESDIR}"/blender-fix-usd-python.patch
-	eapply "${FILESDIR}"/blender-fix-boost-1.81-iostream.patch
-	use llvm && eapply "${FILESDIR}"/blender-fix-clang-build.patch
 	use optix && eapply "${FILESDIR}"/blender-fix-optix-build.patch
 
-	if use cg and [ ${CG_BLENDER_SCRIPTS_DIR} ]; then
+	if use cg && [ -d ${CG_BLENDER_SCRIPTS_DIR} ]; then
 		eapply "${FILESDIR}"/cg-defaults.patch
 		cp "${FILESDIR}"/splash.png release/datafiles/
 		cp "${FILESDIR}"/cg_environment.py "${S}"/scripts/startup/ || die
 		sed -i -e "s|cg_blender_scripts_dir =.*|cg_blender_scripts_dir = \"${CG_BLENDER_SCRIPTS_DIR}\"|" "${S}"/scripts/startup/cg_environment.py || die
-		elog "Bledner configured for CG overlay!"
+		elog "Blender configured for CG overlay!"
 	else
-		ewarn "Bledner don't configured for CG overlay!"
-		ewarn "Please setup <b>cg<b> use flag and"
-		ewarn "<b>CG_BLENDER_SCRIPTS_DIR<b> variable!"
+		ewarn "Blender is not configured for CG overlay!"
+		ewarn "Please enable cg use flag for media-gfx/blender and"
+		ewarn "set CG_BLENDER_SCRIPTS_DIR variable!"
 	fi
 
 	# remove some bundled deps

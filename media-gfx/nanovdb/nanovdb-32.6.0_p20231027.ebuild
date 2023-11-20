@@ -17,7 +17,7 @@ CUDA_TARGETS_COMPAT=( sm_30 sm_35 sm_50 sm_52 sm_61 sm_70 sm_75 sm_86 sm_87 sm_8
 KEYWORDS="~amd64"
 IUSE+="
 ${CUDA_TARGETS_COMPAT[@]/#/cuda_targets_}
-benchmark +blosc cuda debug doc +examples interactive-renderer -log4cplus -magicavoxel +intrinsics
+benchmark +blosc cuda debug doc examples interactive-renderer -log4cplus -magicavoxel +intrinsics
 +opencl optix +opengl openexr +openvdb +system-glfw +tbb test test-renderer tools +zlib
 "
 REQUIRED_USE+="

@@ -28,7 +28,6 @@ X86_CPU_FLAGS=(
 	avx512dq:avx512dq
 	avx512pf:avx512pf
 	avx512vl:avx512vl
-
 )
 ARM_CPU_FLAGS=(
 	neon:neon
@@ -103,11 +102,10 @@ src_configure() {
 		-DOPENPGL_BUILD_STATIC=$(usex static-libs)
 		-DOPENPGL_ISA_NEON=$(usex cpu_flags_arm_neon)
 		-DOPENPGL_ISA_NEON2X=$(usex cpu_flags_arm_neon2x)
-		-DOPENPGL_ISA_SSE4=$(usex cpu_flags_x86_sse4_2)
-		-DOPENPGL_ISA_SSE4=$(usex cpu_flags_x86_sse4_1)
+		-DOPENPGL_ISA_SSE4=$(usex cpu_flags_x86_sse4_2 "ON" $(usex cpu_flags_x86_sse4_1))
 		-DOPENPGL_ISA_AVX2=$(usex cpu_flags_x86_avx2)
 		-DOPENPGL_ISA_AVX512=$(usex cpu_flags_x86_avx512f)
-		-DOPENPGL_USE_OMP_THREADING=$(usex tbb "OFF" "ON")
+		-DOPENPGL_USE_OMP_THREADING=$(usex tbb)
 		-DOPENPGL_BUILD_TOOLS=$(usex tools)
 	)
 	cmake_src_configure
