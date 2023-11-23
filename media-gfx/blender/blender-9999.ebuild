@@ -727,7 +727,7 @@ src_install() {
 	# Fix doc installdir
 	docinto html
 	dodoc "${CMAKE_USE_DIR}"/release/text/readme.html
-	rm -r "${ED%/}"/usr/share/doc/blende.*
+	rm -r "${ED%/}"/usr/share/doc/blende*
 	python_optimize "${ED%/}/usr/share/blender/${SLOT}/scripts"
 
 	use portable && dodir "${ED%/}"/usr/bin
