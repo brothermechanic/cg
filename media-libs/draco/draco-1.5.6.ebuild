@@ -1,4 +1,4 @@
-# Copyright 1999-2021 Gentoo Authors
+# Copyright 1999-2023 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
 
 # FIXME:
@@ -12,7 +12,7 @@
 # - We don't add USE flags for ccache and distcc, because the library builds
 #   in minimal time (a few seconds)
 
-EAPI=7
+EAPI=8
 
 inherit cmake
 
@@ -24,7 +24,7 @@ LICENSE="Apache-2.0"
 SLOT="0"
 KEYWORDS="~amd64 ~x86"
 
-IUSE="+compat -gltf -usd"
+IUSE="+compat gltf usd"
 
 RDEPEND="
 	usd? ( media-libs/openusd )
@@ -37,27 +37,31 @@ DEPEND="${RDEPEND}
 RESTRICT="test mirror"
 DOCS=( AUTHORS CONTRIBUTING.md README.md )
 
+PATCHES=(
+	"${FILESDIR}/draco-fix-include-cstdint.patch"
+)
+
 src_configure() {
 	CMAKE_BUILD_TYPE=Release
 	local mycmakeargs=(
 		# currently only used for javascript/emscripten build
 		-DBUILD_ANIMATION_ENCODING=OFF # default
-		-DBUILD_FOR_GLTF=$(usex gltf)
-#		-DBUILD_MAYA_PLUGIN=OFF # default
+		-DDRACO_GLTF_BITSTREAM=$(usex gltf)
+#		-DDRACO_MAYA_PLUGIN=OFF # default
 		-DBUILD_SHARED_LIBS=ON
-#		-DBUILD_UNITY_PLUGIN=OFF # default (FIXME?)
+#		-DDRACO_UNITY_PLUGIN=OFF # default (FIXME?)
 		-DBUILD_USD_PLUGIN=$(usex usd) # default
 		-DEMSCRIPTEN=OFF # explicitly forbid this
-		-DENABLE_BACKWARDS_COMPATIBILITY=$(usex compat)
+		-DDRACO_BACKWARDS_COMPATIBILITY=$(usex compat)
 		# currently only used for javascript/emscripten build and by default
 		# set to on with C/C++ build
 		-DENABLE_DECODER_ATTRIBUTE_DEDUPLICATION=OFF
 		-DENABLE_EXTRA_SPEED=OFF # don't use -O3 optimization
 		#-DENABLE_EXTRA_WARNINGS=OFF
-		-DENABLE_MESH_COMPRESSION=ON # default
-		-DENABLE_POINT_CLOUD_COMPRESSION=ON # default
-		-DENABLE_PREDICTIVE_EDGEBREAKER=ON # default
-		-DENABLE_STANDARD_EDGEBREAKER=ON # default
+		-DDRACO_MESH_COMPRESSION=ON # default
+		-DDRACO_POINT_CLOUD_COMPRESSION=ON # default
+		-DDRACO_PREDICTIVE_EDGEBREAKER=ON # default
+		-DDRACO_STANDARD_EDGEBREAKER=ON # default
 		-DENABLE_TESTS=OFF
 		#-DENABLE_WERROR=OFF # default
 		#-DENABLE_WEXTRA=OFF # add extra compiler warnings

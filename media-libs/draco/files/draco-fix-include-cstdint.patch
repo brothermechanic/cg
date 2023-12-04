@@ -1,0 +1,10 @@
+--- a/src/draco/io/file_utils.h
++++ b/src/draco/io/file_utils.h
+@@ -17,6 +17,7 @@
+ 
+ #include <string>
+ #include <vector>
++#include <cstdint>
+ 
+ namespace draco {
+ 

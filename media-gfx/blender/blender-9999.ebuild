@@ -407,6 +407,7 @@ src_prepare() {
 
 	use portable || eapply "${FILESDIR}/${SLOT}"/*.patch
 	use optix && eapply "${FILESDIR}"/blender-fix-optix-build.patch
+	use lld && has_version "sys-devel/lld:17" && eapply "${FILESDIR}"/blender-fix-lld-17-linking.patch
 
 	if use cg && [ -d ${CG_BLENDER_SCRIPTS_DIR} ]; then
 		eapply "${FILESDIR}"/cg-defaults.patch
@@ -470,7 +471,6 @@ src_prepare() {
 			done
 		fi
 	fi
-
 }
 
 src_configure() {
