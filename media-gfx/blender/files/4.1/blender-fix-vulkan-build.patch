@@ -14,3 +14,56 @@
  
    add_definitions(-DWITH_VULKAN_BACKEND)
 
+--- a/intern/ghost/intern/GHOST_ContextVK.cc
++++ b/intern/ghost/intern/GHOST_ContextVK.cc
+@@ -13,7 +13,9 @@
+ #elif defined(__APPLE__)
+ #  include <MoltenVK/vk_mvk_moltenvk.h>
+ #else /* X11 */
+-#  include <vulkan/vulkan_xlib.h>
++#  ifdef WITH_GHOST_X11
++#    include <vulkan/vulkan_xlib.h>
++#  endif
+ #  ifdef WITH_GHOST_WAYLAND
+ #    include <vulkan/vulkan_wayland.h>
+ #  endif
+@@ -893,9 +895,11 @@ const char *GHOST_ContextVK::getPlatform
+   return VK_EXT_METAL_SURFACE_EXTENSION_NAME;
+ #else /* UNIX/Linux */
+   switch (m_platform) {
++#  ifdef WITH_GHOST_X11
+     case GHOST_kVulkanPlatformX11:
+       return VK_KHR_XLIB_SURFACE_EXTENSION_NAME;
+       break;
++#  endif
+ #  ifdef WITH_GHOST_WAYLAND
+     case GHOST_kVulkanPlatformWayland:
+       return VK_KHR_WAYLAND_SURFACE_EXTENSION_NAME;
+@@ -915,9 +919,11 @@ GHOST_TSuccess GHOST_ContextVK::initiali
+ #else /* UNIX/Linux */
+   bool use_window_surface = false;
+   switch (m_platform) {
++#  ifdef WITH_GHOST_X11
+     case GHOST_kVulkanPlatformX11:
+       use_window_surface = (m_display != nullptr) && (m_window != (Window) nullptr);
+       break;
++#  endif
+ #  ifdef WITH_GHOST_WAYLAND
+     case GHOST_kVulkanPlatformWayland:
+       use_window_surface = (m_wayland_display != nullptr) && (m_wayland_surface != nullptr);
+@@ -1011,6 +1017,7 @@ GHOST_TSuccess GHOST_ContextVK::initiali
+     VK_CHECK(vkCreateMetalSurfaceEXT(instance, &info, nullptr, &m_surface));
+ #else
+     switch (m_platform) {
++#  ifdef WITH_GHOST_X11
+       case GHOST_kVulkanPlatformX11: {
+         VkXlibSurfaceCreateInfoKHR surface_create_info = {};
+         surface_create_info.sType = VK_STRUCTURE_TYPE_XLIB_SURFACE_CREATE_INFO_KHR;
+@@ -1019,6 +1026,7 @@ GHOST_TSuccess GHOST_ContextVK::initiali
+         VK_CHECK(vkCreateXlibSurfaceKHR(instance, &surface_create_info, nullptr, &m_surface));
+         break;
+       }
++#  endif
+ #  ifdef WITH_GHOST_WAYLAND
+       case GHOST_kVulkanPlatformWayland: {
+         VkWaylandSurfaceCreateInfoKHR surface_create_info = {};

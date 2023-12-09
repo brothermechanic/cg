@@ -5,10 +5,6 @@ EAPI=8
 
 PYTHON_COMPAT=( python3_{10..12} )
 
-# Check this on updates
-LLVM_MAX_SLOT=17
-LLVM_SLOTS=( 15 16 17 )
-
 inherit cmake cuda flag-o-matic llvm multilib-minimal python-single-r1 toolchain-funcs
 
 DESCRIPTION="Advanced shading language for production GI renderers"
@@ -18,14 +14,21 @@ if [[ ${PV} = *9999 ]]; then
 	EGIT_REPO_URI="https://github.com/AcademySoftwareFoundation/OpenShadingLanguage"
 	EGIT_BRANCH="main"
 	KEYWORDS=""
+	# Check this on updates
+	LLVM_MAX_SLOT=17
+	LLVM_SLOTS=( 16 17 )
 else
 	SRC_URI="https://github.com/AcademySoftwareFoundation/OpenShadingLanguage/archive/v${PV}.tar.gz -> ${P}.tar.gz"
 	PATCHES+=(
-		"${FILESDIR}/osl-1.12.13.0-llvm-17.patch"
+		#"${FILESDIR}/osl-1.12.13.0-llvm-17.patch"
 		"${FILESDIR}/osl-1.12.13.0-cuda-noinline-fix.patch"
 	)
 	KEYWORDS="~amd64 ~x86 ~arm ~arm64"
 	S="${WORKDIR}/OpenShadingLanguage-${PV}"
+
+	# Check this on updates
+	LLVM_MAX_SLOT=15
+	LLVM_SLOTS=( 9 10 11 12 13 14 15 )
 fi
 
 SLOT="0/$(ver_cut 1-2 ${PV})"
@@ -65,6 +68,7 @@ RDEPEND="
 	>=dev-libs/boost-1.55:=[${MULTILIB_USEDEP}]
 	>=dev-libs/pugixml-1.8[${MULTILIB_USEDEP}]
 	dev-libs/libfmt[${MULTILIB_USEDEP}]
+	<sys-devel/llvm-$((${LLVM_MAX_SLOT} + 1)):=
 	sys-libs/zlib:=[${MULTILIB_USEDEP}]
 	optix? (
 		$(python_gen_cond_dep '

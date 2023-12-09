@@ -5,7 +5,7 @@ EAPI=8
 
 FONT_PN=OpenImageIO
 PYTHON_COMPAT=( python3_{10..12} )
-OPENVDB_COMPAT=( {7..10} )
+OPENVDB_COMPAT=( {7..11} )
 
 TEST_OIIO_IMAGE_COMMIT="aae37a54e31c0e719edcec852994d052ecf6541e"
 TEST_OEXR_IMAGE_COMMIT="df16e765fee28a947244657cae3251959ae63c00"
@@ -138,6 +138,8 @@ RDEPEND="
 DEPEND="${RDEPEND}"
 
 DOCS=( CHANGES.md CREDITS.md README.md )
+
+QA_PRESTRIPPED="usr/lib/python.*/site-packages/.*"
 
 pkg_pretend() {
 	use qt5 && use qt6 && einfo "The \"qt5\" USE flag has no effect when the \"qt6\" USE flag is also enabled."
