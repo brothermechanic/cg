@@ -122,7 +122,7 @@ BDEPEND="
 "
 RDEPEND="
 	>=media-libs/glfw-3.2.1
-	virtual/opengl
+	media-libs/libglvnd
 	tbb? ( >=dev-cpp/tbb-2021.9:= )
 	sycl? ( sys-devel/DPC++:= )
 	tutorials? (

@@ -66,7 +66,7 @@ COMPRESSION="lzma lzo"
 MODIFIERS="+fluid +smoke +oceansim +remesh +gmp +quadriflow"
 
 IUSE_CPU="+openmp +simd +tbb -lld -gold +mold -cpu_flags_arm_neon llvm -valgrind +jemalloc"
-IUSE_GPU="cuda optix rocm oneapi +cycles-bin-kernels +opengl vulkan ${CUDA_TARGETS_COMPAT[@]/#/cuda_targets_} ${AMDGPU_TARGETS_COMPAT[@]/#/amdgpu_targets_}"
+IUSE_GPU="cuda optix rocm oneapi +cycles-bin-kernels vulkan ${CUDA_TARGETS_COMPAT[@]/#/cuda_targets_} ${AMDGPU_TARGETS_COMPAT[@]/#/amdgpu_targets_}"
 IUSE_DESKTOP="+cg -portable +X headless +nls -ndof wayland ${MODIFIERS}"
 IUSE_LIBS="+bullet +boost +dbus +draco +materialx +color-management +oidn +opensubdiv +openvdb nanovdb openxr +libmv +freestyle ${COMPRESSION}"
 IUSE_CYC="+cycles osl +openpgl +embree +pugixml +potrace +fftw"
@@ -212,11 +212,8 @@ RDEPEND="
 	openal? (
 		media-libs/openal
 	)
-	opengl? (
-		virtual/opengl
-		media-libs/glew:*
-		virtual/glu
-	)
+	media-libs/glew:*
+	virtual/glu
 	oidn? ( >=media-libs/oidn-1.4.1 )
 	<media-libs/openimageio-2.5[${PYTHON_SINGLE_USEDEP},${OPENVDB_SINGLE_USEDEP},color-management(-)?,jpeg2k?,png(-),python,webp(-)?]
 	>=media-libs/openimageio-2.4.15.0[${PYTHON_SINGLE_USEDEP},${OPENVDB_SINGLE_USEDEP},color-management(-)?,jpeg2k?,png(-),python,webp(-)?]
@@ -259,8 +256,8 @@ RDEPEND="
 	sndfile? ( media-libs/libsndfile )
 	tbb? ( dev-cpp/tbb:= )
 	usd? (
-		<media-libs/openusd-24[imaging,monolithic,opengl,openvdb?,openimageio,python]
-		>=media-libs/openusd-23.11[imaging,monolithic,opengl,openvdb?,openimageio,python]
+		<media-libs/openusd-24[imaging,monolithic,openvdb?,openimageio,python]
+		>=media-libs/openusd-23.11[imaging,monolithic,openvdb?,openimageio,python]
 	)
 	valgrind? ( dev-util/valgrind )
 	webp? ( >=media-libs/libwebp-1.3.2:= )
@@ -268,6 +265,8 @@ RDEPEND="
 		>=dev-libs/wayland-1.12
 		>=dev-libs/wayland-protocols-1.15
 		>=x11-libs/libxkbcommon-0.2.0
+		dev-util/wayland-scanner
+		media-libs/mesa[wayland]
 		>=gui-libs/libdecor-0.1.0
 	)
 	X? (
@@ -407,7 +406,7 @@ src_prepare() {
 
 	use portable || eapply "${FILESDIR}/${SLOT}"/*.patch
 	use optix && eapply "${FILESDIR}"/blender-fix-optix-build.patch
-	use lld && has_version "sys-devel/lld:17" && eapply "${FILESDIR}"/blender-fix-lld-17-linking.patch
+	eapply "${FILESDIR}"/blender-fix-lld-17-linking.patch
 
 	if use cg && [ -d ${CG_BLENDER_SCRIPTS_DIR} ]; then
 		eapply "${FILESDIR}"/cg-defaults.patch
@@ -430,9 +429,11 @@ src_prepare() {
 		-i doc/doxygen/Doxyfile || die
 
 	# Prepare icons and .desktop files for slotting.
-	sed -e "s|blender.svg|blender-${SLOT}.svg|" -i source/creator/CMakeLists.txt || die
-	sed -e "s|blender-symbolic.svg|blender-${SLOT}-symbolic.svg|" -i source/creator/CMakeLists.txt || die
-	sed -e "s|blender.desktop|blender-${SLOT}.desktop|" -i source/creator/CMakeLists.txt || die
+	sed \
+		-e "s|blender.svg|blender-${SLOT}.svg|" \
+		-e "s|blender-symbolic.svg|blender-${SLOT}-symbolic.svg|" \
+		-e "s|blender.desktop|blender-${SLOT}.desktop|" \
+		-i source/creator/CMakeLists.txt || die
 
 	sed -e "s|Name=Blender|Name=Blender ${SLOT}|" -i release/freedesktop/blender.desktop || die
 	sed -e "s|Exec.*|Exec=blender-${SLOT}|" -i release/freedesktop/blender.desktop || die
@@ -451,8 +452,8 @@ src_prepare() {
 
 	if use test; then
 		# Without this the tests will try to use /usr/bin/blender and /usr/share/blender/ to run the tests.
-		sed -e "s|set(TEST_INSTALL_DIR.*|set(TEST_INSTALL_DIR ${ED}/usr/)|g" -i tests/CMakeLists.txt || die
-		sed -e "s|string(REPLACE.*|set(TEST_INSTALL_DIR ${ED}/usr/)|g" -i build_files/cmake/Modules/GTestTesting.cmake || die
+		sed -e "s|set(TEST_INSTALL_DIR.*|set(TEST_INSTALL_DIR ${T}/usr)|g" -i tests/CMakeLists.txt || die
+		sed -e "s|string(REPLACE.*|set(TEST_INSTALL_DIR ${T}/usr)|g" -i build_files/cmake/Modules/GTestTesting.cmake || die
 	fi
 
 	ewarn "$(echo "Remaining bundled dependencies:";
@@ -562,9 +563,9 @@ src_configure() {
 		-DWITH_IO_GPENCIL=$(usex pdf)							# export format support
 		-DWITH_INSTALL_PORTABLE=$(usex portable)
 		-DWITH_IMAGE_CINEON=$(usex dpx)
-		-DWITH_IMAGE_WEBP=$(usex webp)
 		-DWITH_IMAGE_OPENEXR=$(usex openexr)
 		-DWITH_IMAGE_OPENJPEG=$(usex jpeg2k)
+		-DWITH_IMAGE_WEBP=$(usex webp)
 		-DWITH_INPUT_NDOF=$(usex ndof)
 		-DWITH_INPUT_IME=no
 		-DWITH_IK_SOLVER=no 									# Disable legacy IK solver
@@ -656,13 +657,25 @@ src_configure() {
 		)
 	fi
 
+	if use test ; then
+		local CYCLES_TEST_DEVICES=( "CPU" )
+		if use cycles-bin-kernels; then
+			use cuda && CYCLES_TEST_DEVICES+=( "CUDA" )
+			use optix && CYCLES_TEST_DEVICES+=( "OPTIX" )
+		fi
+		mycmakeargs+=(
+			-DCYCLES_TEST_DEVICES:STRING="$(local IFS=";"; echo "${CYCLES_TEST_DEVICES[*]}")"
+			-DWITH_COMPOSITOR_REALTIME_TESTS=yes
+		)
+	fi
+
 	cmake_src_configure
 }
 
 src_test() {
 	# A lot of tests needs to have access to the installed data files.
 	# So install them into the image directory now.
-	cmake_src_install
+	DESTDIR="${T}" cmake_build install "$@"
 
 	blender_get_version
 	# Define custom blender data/script file paths not be able to find them otherwise during testing.
@@ -678,7 +691,7 @@ src_test() {
 	cmake_src_test
 
 	# Clean up the image directory for src_install
-	rm -fr "${ED}"/* || die
+	rm -fr "${T}"/usr || die
 }
 
 src_install() {

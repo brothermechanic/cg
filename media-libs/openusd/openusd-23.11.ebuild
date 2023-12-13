@@ -22,8 +22,8 @@ SLOT="0"
 KEYWORDS="~amd64"
 # test USE flag is enabled upstream
 IUSE="alembic debug -doc draco embree examples hdf5 +imaging +jemalloc
-materialx -monolithic opencolorio +opengl openimageio openvdb openexr osl
--ptex +python safety-over-speed -static-libs tutorials -test tools usdview vulkan"
+materialx -monolithic opencolorio opengl openimageio openvdb openexr osl
+ptex +python safety-over-speed -static-libs tutorials -test tools usdview vulkan"
 
 REQUIRED_USE+="
 	${PYTHON_REQUIRED_USE}
@@ -259,7 +259,7 @@ src_configure() {
 		-DPXR_PREFER_SAFETY_OVER_SPEED=$(usex safety-over-speed ON OFF)
 		-DPXR_PYTHON_SHEBANG="${PYTHON}"
 		-DPXR_SET_INTERNAL_NAMESPACE="usdBlender"
-		-DPXR_USE_PYTHON_3=ON
+		#-DPXR_USE_PYTHON_3=ON
 		#-DCMAKE_FIND_DEBUG_MODE=yes
 	)
 	cmake_src_configure

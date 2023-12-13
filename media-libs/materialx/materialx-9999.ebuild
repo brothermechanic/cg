@@ -73,7 +73,7 @@ REQUIRED_USE="
 "
 RDEPEND="
 	openimageio? ( media-libs/openimageio )
-	virtual/opengl
+	media-libs/libglvnd
 	python? (
 		$(python_gen_cond_dep '
 			dev-python/pybind11[${PYTHON_USEDEP}]
