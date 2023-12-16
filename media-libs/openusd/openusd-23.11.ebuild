@@ -22,7 +22,7 @@ SLOT="0"
 KEYWORDS="~amd64"
 # test USE flag is enabled upstream
 IUSE="alembic debug -doc draco embree examples hdf5 +imaging +jemalloc
-materialx -monolithic opencolorio opengl openimageio openvdb openexr osl
+materialx -monolithic color-management opengl openimageio openvdb openexr osl
 ptex +python safety-over-speed -static-libs tutorials -test tools usdview vulkan"
 
 REQUIRED_USE+="
@@ -36,7 +36,7 @@ REQUIRED_USE+="
 	hdf5? (
 		alembic
 	)
-	opencolorio? (
+	color-management? (
 		imaging
 	)
 	opengl? (
@@ -93,7 +93,7 @@ RDEPEND+="
 	materialx? (
 		>=media-libs/materialx-1.38.4
 	)
-	opencolorio? (
+	color-management? (
 		>=media-libs/opencolorio-1.0.9
 	)
 	openexr? (
@@ -239,7 +239,7 @@ src_configure() {
 		-DPXR_BUILD_EXAMPLES=$(usex examples ON OFF)
 		-DPXR_BUILD_IMAGING=$(usex imaging ON OFF)
 		-DPXR_BUILD_MONOLITHIC=$(usex monolithic ON OFF)
-		-DPXR_BUILD_OPENCOLORIO_PLUGIN=$(usex opencolorio ON OFF)
+		-DPXR_BUILD_OPENCOLORIO_PLUGIN=$(usex color-management ON OFF)
 		-DPXR_BUILD_OPENIMAGEIO_PLUGIN=$(usex openimageio ON OFF)
 		-DPXR_BUILD_PRMAN_PLUGIN=OFF
 		-DPXR_BUILD_TESTS=$(usex test ON OFF)
@@ -326,8 +326,6 @@ EOF
 				doexe "${T}/${u}"
 			fi
 		done
-
-
 	fi
 	if use python ; then
 		dodir /usr/lib/${EPYTHON}

@@ -96,8 +96,9 @@ REQUIRED_USE="${PYTHON_REQUIRED_USE}
 	oceansim? ( fftw )
 	oidn? ( cycles tbb )
 	oneapi? ( cycles )
-	optix? ( cycles cuda )
+	optix? ( cycles cuda osl )
 	openvdb? ( ${OPENVDB_REQUIRED_USE} cycles tbb )
+	opensubdiv? ( X )
 	osl? ( cycles llvm pugixml )
 	rocm? ( cycles llvm )
 	vulkan? ( llvm )
@@ -225,7 +226,7 @@ RDEPEND="
 		<media-libs/openpgl-0.6[tbb?]
 		>=media-libs/openpgl-0.5[tbb?]
 	)
-	opensubdiv? ( >=media-libs/opensubdiv-3.4.0[cuda?,openmp?,tbb?] )
+	opensubdiv? ( >=media-libs/opensubdiv-3.4.0[cuda?,openmp?,tbb?,opengl] )
 	openvdb? (
 		>=media-gfx/openvdb-9.0.0:=[${OPENVDB_SINGLE_USEDEP},nanovdb?]
 		<media-gfx/openvdb-11.0.0:=[${OPENVDB_SINGLE_USEDEP},nanovdb?]
@@ -240,8 +241,6 @@ RDEPEND="
 	)
 	optix? (
 		>=dev-libs/optix-7.5.0
-		>=media-libs/osl-1.11.16.0-r3:=[optix,cuda_targets_sm_50]
-		<media-libs/osl-1.13:=[optix,cuda_targets_sm_50]
 	)
 	osl? (
 		>=media-libs/osl-1.11.16.0-r3:=
@@ -256,8 +255,8 @@ RDEPEND="
 	sndfile? ( media-libs/libsndfile )
 	tbb? ( dev-cpp/tbb:= )
 	usd? (
-		<media-libs/openusd-24[imaging,monolithic,openvdb?,openimageio,python]
-		>=media-libs/openusd-23.11[imaging,monolithic,openvdb?,openimageio,python]
+		<media-libs/openusd-24[monolithic,imaging,python,alembic?,draco?,embree?,materialx?,color-management?,openexr?,openimageio,openvdb?,osl?]
+		>=media-libs/openusd-23.11[monolithic,imaging,python,alembic?,draco?,embree?,materialx?,color-management?,openexr?,openimageio,openvdb?,osl?]
 	)
 	valgrind? ( dev-util/valgrind )
 	webp? ( >=media-libs/libwebp-1.3.2:= )

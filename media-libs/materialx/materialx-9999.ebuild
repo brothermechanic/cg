@@ -65,7 +65,7 @@ LICENSE="
 	ZLIB
 "
 SLOT="0/$(ver_cut 1-2)"
-IUSE="doc debug -examples graph-editor lto openimageio python -resources test viewer"
+IUSE="doc debug -examples graph-editor lto openimageio python renderer -resources test viewer"
 REQUIRED_USE="
 	python? (
 		${PYTHON_REQUIRED_USE}
@@ -74,6 +74,9 @@ REQUIRED_USE="
 RDEPEND="
 	openimageio? ( media-libs/openimageio )
 	media-libs/libglvnd
+	renderer? (
+		x11-libs/libXt
+	)
 	python? (
 		$(python_gen_cond_dep '
 			dev-python/pybind11[${PYTHON_USEDEP}]
@@ -200,6 +203,7 @@ src_configure() {
 		#-DMATERIALX_BUILD_JS=$(usex javascript ON OFF)
 		-DMATERIALX_BUILD_OIIO=$(usex openimageio ON OFF)
 		-DMATERIALX_BUILD_PYTHON=$(usex python ON OFF)
+		-DMATERIALX_BUILD_RENDER=$(usex renderer ON OFF)
 		-DMATERIALX_BUILD_SHARED_LIBS=ON
 		-DMATERIALX_BUILD_TESTS=$(usex test ON OFF)
 		-DMATERIALX_INSTALL_PYTHON=OFF
