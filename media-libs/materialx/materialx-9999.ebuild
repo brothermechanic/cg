@@ -65,7 +65,7 @@ LICENSE="
 	ZLIB
 "
 SLOT="0/$(ver_cut 1-2)"
-IUSE="doc debug -examples graph-editor lto openimageio python renderer -resources test viewer"
+IUSE="doc debug -examples graph-editor lto openimageio python +renderer -resources test viewer"
 REQUIRED_USE="
 	python? (
 		${PYTHON_REQUIRED_USE}
