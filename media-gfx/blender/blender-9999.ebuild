@@ -106,10 +106,11 @@ REQUIRED_USE="${PYTHON_REQUIRED_USE}
 	usd? ( tbb )
 "
 
-LANGS="en ar bg ca cs de el es es_ES fa fi fr he hr hu id it ja ky ne nl pl pt pt_BR ru sr sr@latin sv tr uk zh_CN zh_TW"
+LANGS="en ab ar bg ca cs de el eo es eu fa fi fr ha he hi hr hu id it ja ka km ko ky ne nl pl pt_BR pt ru sk sr@latin sr sv sw ta th tr uk vi zh_HANS zh_HANT"
+
 for X in ${LANGS} ; do
-	IUSE+=" linguas_${X}"
-	REQUIRED_USE+=" linguas_${X}? ( nls )"
+	IUSE+=" l10n_${X}"
+	REQUIRED_USE+=" l10n_${X}? ( nls )"
 done
 
 CODECS="
@@ -216,7 +217,7 @@ RDEPEND="
 	media-libs/glew:*
 	virtual/glu
 	oidn? ( >=media-libs/oidn-1.4.1 )
-	<media-libs/openimageio-2.5[${PYTHON_SINGLE_USEDEP},${OPENVDB_SINGLE_USEDEP},color-management(-)?,jpeg2k?,png(-),python,webp(-)?]
+	<media-libs/openimageio-2.6[${PYTHON_SINGLE_USEDEP},${OPENVDB_SINGLE_USEDEP},color-management(-)?,jpeg2k?,png(-),python,webp(-)?]
 	>=media-libs/openimageio-2.4.15.0[${PYTHON_SINGLE_USEDEP},${OPENVDB_SINGLE_USEDEP},color-management(-)?,jpeg2k?,png(-),python,webp(-)?]
 	>=dev-cpp/robin-map-0.6.2
 	>=dev-libs/libfmt-9.1.0
@@ -463,13 +464,12 @@ src_prepare() {
 	if ! use nls; then
 		rm -r "${S}"/release/datafiles/locale || die
 	else
-		if [[ -n "${LINGUAS+x}" ]] ; then
-			cd "${S}"/locale/po
-			for i in *.po ; do
-				mylang=${i%.po}
-				has ${mylang} ${LINGUAS} || { rm -r ${i} || die ; }
-			done
-		fi
+		pushd "${S}"/locale/po
+		for i in *.po ; do
+			mylang=${i%.po}
+			use l10n_${mylang} || { rm -r ${i} || die ; }
+		done
+		popd
 	fi
 }
 
