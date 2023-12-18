@@ -1,0 +1,34 @@
+--- a/src/cmake/compiler.cmake
++++ b/src/cmake/compiler.cmake
+@@ -111,31 +111,6 @@ endif ()
+ 
+ 
+ ###########################################################################
+-# Control symbol visibility
+-#
+-# We try hard to make default symbol visibility be "hidden", except for
+-# symbols that are part of the public API, which should be marked in the
+-# source code with a special decorator, OSL_API.
+-#
+-# Additionally, there is a hidesymbols.map file that on some platforms may
+-# give more fine-grained control for hiding symbols, because sometimes
+-# dependent libraries may not be well behaved and need extra hiding.
+-#
+-set (CXX_VISIBILITY_PRESET "hidden" CACHE STRING "Symbol visibility (hidden or default")
+-option (VISIBILITY_INLINES_HIDDEN "Hide symbol visibility of inline functions" ON)
+-set (VISIBILITY_MAP_FILE "${PROJECT_SOURCE_DIR}/src/build-scripts/hidesymbols.map" CACHE FILEPATH "Visibility map file")
+-set (C_VISIBILITY_PRESET ${CXX_VISIBILITY_PRESET})
+-if (${CXX_VISIBILITY_PRESET} STREQUAL "hidden" AND VISIBILITY_MAP_FILE AND
+-    (CMAKE_COMPILER_IS_GNUCC OR CMAKE_COMPILER_IS_CLANG) AND
+-    (CMAKE_SYSTEM_NAME MATCHES "Linux|kFreeBSD" OR CMAKE_SYSTEM_NAME STREQUAL "GNU"))
+-    # Linux/FreeBSD/Hurd: also hide all the symbols of dependent libraries
+-    # to prevent clashes if an app using this project is linked against
+-    # other versions of our dependencies.
+-    set (VISIBILITY_MAP_COMMAND "-Wl,--version-script=${VISIBILITY_MAP_FILE}")
+-endif ()
+-
+-
+-###########################################################################
+ # Compiler-specific and platform-specific options.
+ #
+ # Here is where we add a whole bunch of options for specific compilers or

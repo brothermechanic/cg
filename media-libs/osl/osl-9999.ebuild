@@ -42,7 +42,7 @@ X86_CPU_FEATURES=(
 CPU_FEATURES=( ${X86_CPU_FEATURES[@]/#/cpu_flags_x86_} )
 CUDA_TARGETS_COMPAT=( sm_30 sm_35 sm_50 sm_52 sm_61 sm_70 sm_75 sm_86 )
 
-IUSE="clang doc debug optix partio python plugins qt5 qt6 static-libs test wayland X ${CPU_FEATURES[@]%:*} ${CUDA_TARGETS_COMPAT[@]/#/cuda_targets_}"
+IUSE="doc debug optix partio python plugins qt5 qt6 static-libs test wayland X ${CPU_FEATURES[@]%:*} ${CUDA_TARGETS_COMPAT[@]/#/cuda_targets_}"
 RESTRICT="
 	!test (test)
 	mirror
@@ -62,13 +62,13 @@ RDEPEND="
 	>=media-libs/openexr-3.1.0:=
 	$(python_gen_cond_dep '
 		>=media-libs/openimageio-2.4.12.0:=[${PYTHON_SINGLE_USEDEP}]
-		<media-libs/openimageio-2.5:=[${PYTHON_SINGLE_USEDEP}]
+		<media-libs/openimageio-2.6:=[${PYTHON_SINGLE_USEDEP}]
 	')
-	clang? ( <sys-devel/clang-$((${LLVM_MAX_SLOT} + 1)):= )
 	>=dev-libs/boost-1.55:=[${MULTILIB_USEDEP}]
 	>=dev-libs/pugixml-1.8[${MULTILIB_USEDEP}]
 	dev-libs/libfmt[${MULTILIB_USEDEP}]
 	<sys-devel/llvm-$((${LLVM_MAX_SLOT} + 1)):=
+	<sys-devel/clang-$((${LLVM_MAX_SLOT} + 1)):=
 	sys-libs/zlib:=[${MULTILIB_USEDEP}]
 	optix? (
 		$(python_gen_cond_dep '
@@ -112,11 +112,8 @@ BDEPEND="
 
 PATCHES+=(
 	"${FILESDIR}/osl-1.12.13.0-change-ci-test.bash.patch"
+	"${FILESDIR}/osl-1.12.14.0-lld-fix-linking.patch"
 )
-
-llvm_check_deps() {
-	has_version -r "sys-devel/clang:${LLVM_SLOT}"
-}
 
 get_lib_type() {
 	use static-libs && echo "static"
@@ -126,28 +123,6 @@ get_lib_type() {
 pkg_setup() {
 	use python && python-single-r1_pkg_setup
 	llvm_pkg_setup
-}
-
-check_clang() {
-	local found=0
-	local s
-	for s in ${LLVM_SLOTS[@]} ; do
-		if has_version "sys-devel/clang:${s}" ; then
-			found=1
-			export CC="${CHOST}-clang-${s}"
-			export CXX="${CHOST}-clang++-${s}"
-			break
-		fi
-	done
-	if (( ${found} == 0 )) ; then
-		eerror
-		eerror "${PN} requires either clang ${LLVM_SLOTS[@]}"
-		eerror
-		eerror "Either use GCC or install and use one of those clang slots."
-		eerror
-		die
-	fi
-	clang --version || die
 }
 
 src_prepare() {
@@ -177,10 +152,6 @@ src_configure() {
 			fi
 		done
 
-		export CC="${CHOST}-clang-${llvm_slot}"
-		export CXX="${CHOST}-clang++-${llvm_slot}"
-		strip-unsupported-flags
-
 		local lib_type
 		for lib_type in $(get_lib_type) ; do
 			export CMAKE_USE_DIR="${S}"
@@ -192,8 +163,6 @@ src_configure() {
 			for cpufeature in "${CPU_FEATURES[@]}"; do
 				use "${cpufeature%:*}" && mysimd+=("${cpufeature#*:}")
 			done
-
-			use clang && check_clang
 
 			use debug && CMAKE_BUILD_TYPE=Debug || CMAKE_BUILD_TYPE=Release
 
@@ -209,6 +178,7 @@ src_configure() {
 			local gcc="$(tc-getCC)"
 			local mycmakeargs=(
 				-DCMAKE_CXX_STANDARD=17
+				-DLLVM_ROOT="${EPREFIX}/usr/lib/llvm/${llvm_slot}"
 				-DCMAKE_INSTALL_BINDIR="${EPREFIX}/usr/$(get_libdir)/osl/bin"
 				-DCMAKE_INSTALL_DOCDIR="share/doc/${PF}"
 				-DINSTALL_DOCS=$(usex doc)
@@ -221,7 +191,7 @@ src_configure() {
 				-DSTOP_ON_WARNING=OFF
 				-DUSE_CCACHE=OFF
 				-DUSE_CUDA=$(usex optix)
-				-DOSL_USE_OPTIX=$(usex optix)
+				-DUSE_OPTIX=$(usex optix)
 				-DUSE_PARTIO=$(usex partio)
 				-DUSE_QT=$(usex qt6 ON $(usex qt5 ON OFF))
 				-DUSE_PYTHON=$(usex python)

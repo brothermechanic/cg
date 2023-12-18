@@ -37,11 +37,10 @@ diff -urp OpenShadingLanguage-1.12.13.0.orig/src/include/OSL/oslexec.h OpenShadi
 diff -urp OpenShadingLanguage-1.12.13.0.orig/src/include/OSL/platform.h OpenShadingLanguage-1.12.13.0/src/include/OSL/platform.h
 --- OpenShadingLanguage-1.12.13.0.orig/src/include/OSL/platform.h	2023-07-01 15:34:49.000000000 -0700
 +++ OpenShadingLanguage-1.12.13.0/src/include/OSL/platform.h	2023-07-19 16:42:24.914987467 -0700
-@@ -18,11 +18,21 @@
- 
+@@ -18,11 +18,19 @@
+
  #pragma once
- 
-+
+
 +#if defined(__CUDACC__)
 +#  pragma push_macro("__noinline__")
 +#  undef __noinline__
@@ -49,38 +48,35 @@ diff -urp OpenShadingLanguage-1.12.13.0.orig/src/include/OSL/platform.h OpenShad
 +
  #include <cstring>
  #include <memory>
- 
+
  #include <OSL/oslversion.h>
- 
+
 +#if defined(__CUDACC__)
 +#  pragma pop_macro("__noinline__")
 +#endif
-+
- 
+
  /////////////////////////////////////////////////////////////////////////
  // Detect which compiler and version we're using
 diff -urp OpenShadingLanguage-1.12.13.0.orig/src/include/osl_pvt.h OpenShadingLanguage-1.12.13.0/src/include/osl_pvt.h
 --- OpenShadingLanguage-1.12.13.0.orig/src/include/osl_pvt.h	2023-07-01 15:34:49.000000000 -0700
 +++ OpenShadingLanguage-1.12.13.0/src/include/osl_pvt.h	2023-07-19 16:42:25.986987439 -0700
-@@ -4,10 +4,20 @@
- 
+@@ -4,10 +4,18 @@
+
  #pragma once
- 
-+
+
 +#if defined(__CUDACC__)
 +#  pragma push_macro("__noinline__")
 +#  undef __noinline__
 +#endif
 +
  #include <memory>
- 
+
  #include <OSL/oslconfig.h>
- 
+
 +#if defined(__CUDACC__)
 +#  pragma pop_macro("__noinline__")
 +#endif
-+
- 
+
  OSL_NAMESPACE_ENTER
  namespace pvt {
 diff -urp OpenShadingLanguage-1.12.13.0.orig/src/liboslcomp/symtab.h OpenShadingLanguage-1.12.13.0/src/liboslcomp/symtab.h
@@ -225,11 +221,10 @@ diff -urp OpenShadingLanguage-1.12.13.0.orig/src/liboslexec/typespec.cpp OpenSha
 diff -urp OpenShadingLanguage-1.12.13.0.orig/src/liboslquery/py_osl.h OpenShadingLanguage-1.12.13.0/src/liboslquery/py_osl.h
 --- OpenShadingLanguage-1.12.13.0.orig/src/liboslquery/py_osl.h	2023-07-01 15:34:49.000000000 -0700
 +++ OpenShadingLanguage-1.12.13.0/src/liboslquery/py_osl.h	2023-07-19 16:42:13.410987765 -0700
-@@ -4,6 +4,12 @@
+@@ -4,6 +4,11 @@
  
  #pragma once
  
-+
 +#if defined(__CUDACC__)
 +#  pragma push_macro("__noinline__")
 +#  undef __noinline__
@@ -238,21 +233,18 @@ diff -urp OpenShadingLanguage-1.12.13.0.orig/src/liboslquery/py_osl.h OpenShadin
  // Python.h uses the 'register' keyword, don't warn about it being
  // deprecated in C++17.
  #if (__cplusplus >= 201703L && defined(__GNUC__))
-@@ -35,8 +41,13 @@
+@@ -35,6 +40,11 @@
  #include <pybind11/operators.h>
  #include <pybind11/pybind11.h>
  #include <pybind11/stl.h>
--namespace py = pybind11;
- 
++
 +#if defined(__CUDACC__)
 +#  pragma pop_macro("__noinline__")
 +#endif
 +
-+
-+namespace py = pybind11;
+ namespace py = pybind11;
  
- #if PY_MAJOR_VERSION == 2
- // Preferred Python string caster for Python2 is py::bytes, so it's a byte
+ 
 diff -urp OpenShadingLanguage-1.12.13.0.orig/src/osltoy/osltoyrenderer.h OpenShadingLanguage-1.12.13.0/src/osltoy/osltoyrenderer.h
 --- OpenShadingLanguage-1.12.13.0.orig/src/osltoy/osltoyrenderer.h	2023-07-01 15:34:49.000000000 -0700
 +++ OpenShadingLanguage-1.12.13.0/src/osltoy/osltoyrenderer.h	2023-07-19 16:42:14.322987741 -0700
@@ -390,3 +382,75 @@ diff -urp OpenShadingLanguage-1.12.13.0.orig/src/testshade/testshade.cpp OpenSha
  
  extern int testshade_llvm_compiled_rs_size;
  extern unsigned char testshade_llvm_compiled_rs_block[];
+--- a/src/liboslnoise/simplexnoise.cpp
++++ b/src/liboslnoise/simplexnoise.cpp
+@@ -42,7 +42,10 @@
+  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+  */
+ 
+-
++#if defined(__CUDACC__)
++#  pragma push_macro("__noinline__")
++#  undef __noinline__
++#endif
+ 
+ #include <cmath>
+ #include <iostream>
+@@ -50,6 +53,10 @@
+ #include <OSL/oslnoise.h>
+ #include <OpenImageIO/fmath.h>
+ 
++#if defined(__CUDACC__)
++#  pragma pop_macro("__noinline__")
++#endif
++
+ OSL_NAMESPACE_ENTER
+ 
+ namespace pvt {
+--- a/src/liboslexec/llvm_ops.cpp
++++ b/src/liboslexec/llvm_ops.cpp
+@@ -74,6 +74,11 @@ namespace {
+ typedef long double max_align_t;
+ }
+ 
++#if defined(__CUDACC__)
++#  pragma push_macro("__noinline__")
++#  undef __noinline__
++#endif
++
+ #include <cstddef>
+ #include <iostream>
+ 
+@@ -86,6 +91,10 @@ using namespace OSL;
+ #include <OpenImageIO/fmath.h>
+ #include <OpenImageIO/simd.h>
+ 
++#if defined(__CUDACC__)
++#  pragma pop_macro("__noinline__")
++#endif
++
+ #if defined(__FreeBSD__)
+ #    include <sys/param.h>
+ #    if __FreeBSD_version < 803000
+--- a/src/liboslnoise/gabornoise.cpp
++++ b/src/liboslnoise/gabornoise.cpp
+@@ -2,10 +2,19 @@
+ // SPDX-License-Identifier: BSD-3-Clause
+ // https://github.com/AcademySoftwareFoundation/OpenShadingLanguage
+ 
++#if defined(__CUDACC__)
++#  pragma push_macro("__noinline__")
++#  undef __noinline__
++#endif
++
+ #include <OSL/sfmath.h>
+ 
+ #include "gabornoise.h"
+ 
++#if defined(__CUDACC__)
++#  pragma pop_macro("__noinline__")
++#endif
++
+ OSL_NAMESPACE_ENTER
+ 
+ namespace pvt {
