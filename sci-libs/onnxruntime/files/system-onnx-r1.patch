@@ -1,0 +1,49 @@
+--- a/cmake/CMakeLists.txt	2023-11-22 21:48:44.000000000 +0000
++++ b/cmake/CMakeLists.txt	2023-11-22 21:59:24.054327727 +0000
+@@ -1360,6 +1360,15 @@
+   configure_file(../requirements.txt.in ${CMAKE_CURRENT_BINARY_DIR}/requirements.txt)
+ endif()
+ 
++Find_Package(ONNX)
++if (ONNX_FOUND)
++  message( STATUS "ONNX Version: ${ONNX_VERSION}")
++  mark_as_advanced(ONNX_INCLUDE_DIRS ONNX_LIBRARIES)
++  list(APPEND onnxruntime_EXTERNAL_LIBRARIES ${ONNX_LINK_FLAGS})
++else ()
++    message(FATAL_ERROR "This build is patched to only use system ONNX, but it can't be found.")
++endif()
++
+ if (onnxruntime_USE_CUDA)
+   set(CMAKE_CUDA_RUNTIME_LIBRARY Shared)
+   set(CMAKE_CUDA_STANDARD 17)
+--- a/cmake/external/onnxruntime_external_deps.cmake	2023-11-18 04:58:21.000000000 +0000
++++ b/cmake/external/onnxruntime_external_deps.cmake	2023-11-22 21:56:28.330989550 +0000
+@@ -428,12 +428,6 @@
+ include(eigen)
+ include(wil)
+ 
+-if (NOT onnxruntime_MINIMAL_BUILD)
+-    onnxruntime_fetchcontent_makeavailable(onnx)
+-else()
+-  include(onnx_minimal)
+-endif()
+-
+ set(GSL_TARGET "Microsoft.GSL::GSL")
+ set(GSL_INCLUDE_DIR "$<TARGET_PROPERTY:${GSL_TARGET},INTERFACE_INCLUDE_DIRECTORIES>")
+ 
+@@ -461,15 +461,6 @@
+ # The other libs do not have the problem. All the sources are already there. We can compile them in any order.
+ set(onnxruntime_EXTERNAL_DEPENDENCIES onnx_proto flatbuffers::flatbuffers)
+ 
+-target_compile_definitions(onnx PUBLIC $<TARGET_PROPERTY:onnx_proto,INTERFACE_COMPILE_DEFINITIONS> PRIVATE "__ONNX_DISABLE_STATIC_REGISTRATION")
+-if (NOT onnxruntime_USE_FULL_PROTOBUF)
+-  target_compile_definitions(onnx PUBLIC "__ONNX_NO_DOC_STRINGS")
+-endif()
+-
+-if (onnxruntime_RUN_ONNX_TESTS)
+-  add_definitions(-DORT_RUN_EXTERNAL_ONNX_TESTS)
+-endif()
+-
+ 
+ if(onnxruntime_ENABLE_ATEN)
+   message("Aten fallback is enabled.")

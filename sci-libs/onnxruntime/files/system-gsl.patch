@@ -1,0 +1,73 @@
+--- a/cmake/CMakeLists.txt
++++ b/cmake/CMakeLists.txt
+@@ -560,6 +560,17 @@ if(protobuf_VERBOSE)
+   message(STATUS "Using Protocol Buffers ${Protobuf_VERSION}")
+ endif()
+ 
++if (onnxruntime_ENABLE_PYTHON OR onnxruntime_USE_CUDA)
++  Find_Package(Microsoft.GSL)
++  if (Microsoft.GSL_FOUND)
++    message( STATUS "Microsoft.GSL Version: ${Microsoft.GSL_VERSION}")
++    mark_as_advanced(GSL_INCLUDE_DIRS)
++    list(APPEND onnxruntime_EXTERNAL_LIBRARIES ${Microsoft.GSL_LINK_FLAGS})
++  else ()
++    message(FATAL_ERROR "This build is patched to only use system GSL, but it can't be found.")
++  endif()
++endif()
++
+ include(external/onnxruntime_external_deps.cmake)
+ 
+ set(ORT_WARNING_FLAGS)
+--- a/cmake/external/onnxruntime_external_deps.cmake
++++ b/cmake/external/onnxruntime_external_deps.cmake
+@@ -304,22 +304,6 @@ if (NOT WIN32)
+   endif()
+ endif()
+ 
+-if(onnxruntime_USE_CUDA)
+-  FetchContent_Declare(
+-    GSL
+-    URL ${DEP_URL_microsoft_gsl}
+-    URL_HASH SHA1=${DEP_SHA1_microsoft_gsl}
+-    PATCH_COMMAND ${Patch_EXECUTABLE} --binary --ignore-whitespace -p1 < ${PROJECT_SOURCE_DIR}/patches/gsl/1064.patch
+-  )
+-else()
+-  FetchContent_Declare(
+-    GSL
+-    URL ${DEP_URL_microsoft_gsl}
+-    URL_HASH SHA1=${DEP_SHA1_microsoft_gsl}
+-    FIND_PACKAGE_ARGS 4.0 NAMES Microsoft.GSL
+-  )
+-endif()
+-
+ FetchContent_Declare(
+     safeint
+     URL ${DEP_URL_safeint}
+@@ -327,7 +311,7 @@ FetchContent_Declare(
+ )
+ 
+ # The next line will generate an error message "fatal: not a git repository", but it is ok. It is from flatbuffers
+-onnxruntime_fetchcontent_makeavailable(Protobuf nlohmann_json mp11 safeint GSL flatbuffers)
++onnxruntime_fetchcontent_makeavailable(Protobuf nlohmann_json mp11 safeint flatbuffers)
+ if(NOT re2_FOUND)
+   onnxruntime_fetchcontent_makeavailable(re2)
+ endif()
+@@ -443,9 +427,6 @@ endif()
+ include(eigen)
+ include(wil)
+ 
+-set(GSL_TARGET "Microsoft.GSL::GSL")
+-set(GSL_INCLUDE_DIR "$<TARGET_PROPERTY:${GSL_TARGET},INTERFACE_INCLUDE_DIRECTORIES>")
+-
+ add_library(safeint_interface INTERFACE)
+ target_include_directories(safeint_interface INTERFACE ${safeint_SOURCE_DIR})
+ 
+@@ -471,7 +452,7 @@ endif()
+ #onnxruntime_EXTERNAL_LIBRARIES could contain onnx, onnx_proto,libprotobuf, cuda/cudnn,
+ # dnnl/mklml, onnxruntime_codegen_tvm, tvm and pthread
+ # pthread is always at the last
+-set(onnxruntime_EXTERNAL_LIBRARIES ${onnxruntime_EXTERNAL_LIBRARIES_XNNPACK} ${WIL_TARGET} nlohmann_json::nlohmann_json onnx onnx_proto ${PROTOBUF_LIB} re2::re2 Boost::mp11 safeint_interface flatbuffers::flatbuffers ${GSL_TARGET} ${ABSEIL_LIBS} date_interface)
++set(onnxruntime_EXTERNAL_LIBRARIES ${onnxruntime_EXTERNAL_LIBRARIES_XNNPACK} ${WIL_TARGET} nlohmann_json::nlohmann_json onnx onnx_proto ${PROTOBUF_LIB} re2::re2 Boost::mp11 safeint_interface flatbuffers::flatbuffers ${ABSEIL_LIBS} date_interface)
+ # The source code of onnx_proto is generated, we must build this lib first before starting to compile the other source code that uses ONNX protobuf types.
+ # The other libs do not have the problem. All the sources are already there. We can compile them in any order.
+ set(onnxruntime_EXTERNAL_DEPENDENCIES onnx_proto flatbuffers::flatbuffers)

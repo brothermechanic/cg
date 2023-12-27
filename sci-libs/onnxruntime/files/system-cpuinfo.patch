@@ -1,0 +1,11 @@
+--- a/cmake/external/onnxruntime_external_deps.cmake	2023-11-22 22:06:29.000000000 +0000
++++ b/cmake/external/onnxruntime_external_deps.cmake	2023-11-22 22:37:48.647724418 +0000
+@@ -420,6 +420,8 @@
+     # https://github.com/pytorch/cpuinfo/commit/082deffc80ce517f81dc2f3aebe6ba671fcd09c9
+     add_library(cpuinfo::cpuinfo ALIAS cpuinfo)
+     add_library(cpuinfo::clog ALIAS clog)
++  else()
++    Find_Package(cpuinfo)
+   endif()
+ endif()
+ 

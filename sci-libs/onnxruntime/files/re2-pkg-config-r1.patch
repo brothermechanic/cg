@@ -1,0 +1,43 @@
+--- a/camke/external/onnxruntime_external_deps.cmake	2023-11-25 16:23:26.748802039 +0000
++++ b/cmake/external/onnxruntime_external_deps.cmake	2023-11-25 16:26:32.085469051 +0000
+@@ -23,13 +23,19 @@
+   include(external/abseil-cpp.cmake)
+ endif()
+ 
+-set(RE2_BUILD_TESTING OFF CACHE BOOL "" FORCE)
+-FetchContent_Declare(
+-    re2
+-    URL ${DEP_URL_re2}
+-    URL_HASH SHA1=${DEP_SHA1_re2}
+-    FIND_PACKAGE_ARGS NAMES re2
+-)
++include(FindPkgConfig)
++pkg_check_modules(re2 IMPORTED_TARGET re2)
++if (re2_FOUND)
++    add_library(re2::re2 ALIAS PkgConfig::re2)
++else()
++    set(RE2_BUILD_TESTING OFF CACHE BOOL "" FORCE)
++    FetchContent_Declare(
++        re2
++        URL ${DEP_URL_re2}
++        URL_HASH SHA1=${DEP_SHA1_re2}
++        FIND_PACKAGE_ARGS NAMES re2
++    )
++endif()
+ 
+ if (onnxruntime_BUILD_UNIT_TESTS)
+   # WebAssembly threading support in Node.js is still an experimental feature and
+--- a/cmake/external/onnxruntime_external_deps.cmake	2023-11-25 16:33:12.000000000 +0000
++++ b/cmake/external/onnxruntime_external_deps.cmake	2023-11-25 16:37:58.888803489 +0000
+@@ -322,7 +322,10 @@
+ )
+ 
+ # The next line will generate an error message "fatal: not a git repository", but it is ok. It is from flatbuffers
+-onnxruntime_fetchcontent_makeavailable(Protobuf nlohmann_json mp11 re2 safeint GSL flatbuffers)
++onnxruntime_fetchcontent_makeavailable(Protobuf nlohmann_json mp11 safeint GSL flatbuffers)
++if(NOT re2_FOUND)
++  onnxruntime_fetchcontent_makeavailable(re2)
++endif()
+ if(NOT flatbuffers_FOUND)
+   if(NOT TARGET flatbuffers::flatbuffers)
+     add_library(flatbuffers::flatbuffers ALIAS flatbuffers)

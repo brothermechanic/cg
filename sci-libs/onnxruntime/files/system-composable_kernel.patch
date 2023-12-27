@@ -1,0 +1,51 @@
+--- a/cmake/external/composable_kernel.cmake	2023-11-18 04:58:21.000000000 +0000
++++ b/cmake/external/composable_kernel.cmake	2023-11-24 01:06:11.210292286 +0000
+@@ -1,23 +1 @@
+-set(composable_kernel_URL https://github.com/ROCmSoftwarePlatform/composable_kernel.git)
+-set(composable_kernel_TAG ed3a2e52265e11daa366f47b082141a652b67c58) # 2023-04-10 21:02:17 +0800
+-
+-set(PATCH ${PROJECT_SOURCE_DIR}/patches/composable_kernel/Fix_Clang_Build.patch)
+-
+-include(FetchContent)
+-FetchContent_Declare(composable_kernel
+-  GIT_REPOSITORY ${composable_kernel_URL}
+-  GIT_TAG        ${composable_kernel_TAG}
+-  PATCH_COMMAND  git apply --reverse --check ${PATCH} || git apply --ignore-space-change --ignore-whitespace ${PATCH}
+-)
+-
+-FetchContent_GetProperties(composable_kernel)
+-if(NOT composable_kernel_POPULATED)
+-  FetchContent_Populate(composable_kernel)
+-  set(BUILD_DEV OFF CACHE BOOL "Disable -Weverything, otherwise, error: 'constexpr' specifier is incompatible with C++98 [-Werror,-Wc++98-compat]" FORCE)
+-  add_subdirectory(${composable_kernel_SOURCE_DIR} ${composable_kernel_BINARY_DIR} EXCLUDE_FROM_ALL)
+-
+-  add_library(onnxruntime_composable_kernel_includes INTERFACE)
+-  target_include_directories(onnxruntime_composable_kernel_includes INTERFACE
+-    ${composable_kernel_SOURCE_DIR}/include
+-    ${composable_kernel_SOURCE_DIR}/library/include)
+-endif()
++find_package(composable_kernel REQUIRED)
+--- a/cmake/onnxruntime_providers.cmake	2023-12-08 14:05:39.876545264 +0000
++++ b/cmake/onnxruntime_providers.cmake	2023-12-08 14:15:14.333210492 +0000
+@@ -1686,18 +1686,10 @@
+   endif()
+ 
+   if (onnxruntime_USE_COMPOSABLE_KERNEL)
++    add_library(composable_kernel::device_operations SHARED IMPORTED GLOBAL)
++    set_property(TARGET composable_kernel::device_operations PROPERTY IMPORTED_LOCATION "/usr/${CMAKE_INSTALL_LIBDIR}/libdevice_operations.a")
+-    include(composable_kernel)
+     target_link_libraries(onnxruntime_providers_rocm PRIVATE
+-      onnxruntime_composable_kernel_includes
+-      # Currently we shall not use composablekernels::device_operations, the target includes all conv dependencies, which
+-      # are extremely slow to compile. Instead, we only link all gemm related objects. See the following directory on
+-      # updating.
+-      # https://github.com/ROCmSoftwarePlatform/composable_kernel/tree/develop/library/src/tensor_operation_instance/gpu
+-      device_gemm_instance
+-      device_gemm_add_fastgelu_instance
+-      device_gemm_fastgelu_instance
+-      device_batched_gemm_instance
+-      device_softmax_instance
++      composable_kernel::device_operations
+     )
+     target_compile_definitions(onnxruntime_providers_rocm PRIVATE USE_COMPOSABLE_KERNEL)
+   endif()
