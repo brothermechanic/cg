@@ -66,7 +66,7 @@ COMPRESSION="lzma lzo"
 MODIFIERS="+fluid +smoke +oceansim +remesh +gmp +quadriflow"
 
 IUSE_CPU="+openmp +simd +tbb -lld -gold +mold -cpu_flags_arm_neon llvm -valgrind +jemalloc"
-IUSE_GPU="cuda optix rocm oneapi +cycles-bin-kernels vulkan ${CUDA_TARGETS_COMPAT[@]/#/cuda_targets_} ${AMDGPU_TARGETS_COMPAT[@]/#/amdgpu_targets_}"
+IUSE_GPU="cuda optix rocm oneapi -cycles-bin-kernels vulkan ${CUDA_TARGETS_COMPAT[@]/#/cuda_targets_} ${AMDGPU_TARGETS_COMPAT[@]/#/amdgpu_targets_}"
 IUSE_DESKTOP="+cg -portable +X headless +nls -ndof wayland ${MODIFIERS}"
 IUSE_LIBS="+bullet +boost +dbus +draco +materialx +color-management +oidn +opensubdiv +openvdb nanovdb openxr +libmv +freestyle ${COMPRESSION}"
 IUSE_CYC="+cycles osl +openpgl +embree +pugixml +potrace +fftw"
@@ -86,7 +86,7 @@ REQUIRED_USE="${PYTHON_REQUIRED_USE}
 	dbus? (	wayland )
 	embree? ( cycles tbb )
 	smoke? ( fftw )
-	cuda? ( cycles cycles-bin-kernels )
+	cuda? ( cycles )
 	fluid? ( fftw tbb )
 	nanovdb? ( cuda )
 	materialx? (
@@ -96,7 +96,7 @@ REQUIRED_USE="${PYTHON_REQUIRED_USE}
 	oceansim? ( fftw )
 	oidn? ( cycles tbb )
 	oneapi? ( cycles )
-	optix? ( cycles cuda osl )
+	optix? ( cycles )
 	openvdb? ( ${OPENVDB_REQUIRED_USE} cycles tbb )
 	opensubdiv? ( X )
 	osl? ( cycles llvm pugixml )
