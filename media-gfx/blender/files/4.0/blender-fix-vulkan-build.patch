@@ -1,0 +1,16 @@
+--- a/source/blender/gpu/CMakeLists.txt
++++ b/source/blender/gpu/CMakeLists.txt
+@@ -351,6 +351,12 @@ if(WITH_VULKAN_BACKEND)
+     ${SHADERC_LIBRARIES}
+     ${MOLTENVK_LIBRARIES}
+     extern_vulkan_memory_allocator
++    SPIRV-Tools-opt
++    SPIRV-Tools
++    SPIRV-Tools-link
++    glslang
++    SPIRV
++    SPVRemapper
+   )
+ 
+   add_definitions(-DWITH_VULKAN_BACKEND)
+
