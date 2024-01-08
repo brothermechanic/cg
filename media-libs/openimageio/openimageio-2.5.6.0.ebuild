@@ -33,7 +33,7 @@ CPU_FEATURES=( ${X86_CPU_FEATURES[@]/#/cpu_flags_x86_} )
 # building test enabled upstream
 IUSE="
 ${CPU_FEATURES[@]%:*}
-aom avif clang color-management cxx17 dicom +doc ffmpeg gif heif icc jpeg2k opencv
+aom avif clang color-management +cxx17 dicom +doc ffmpeg gif heif icc jpeg2k opencv
 tools openvdb png ptex +python qt5 qt6 raw rav1e tbb test +truetype wayland webp X"
 
 REQUIRED_USE="
@@ -99,7 +99,7 @@ RDEPEND="
 	>=media-libs/libwebp-0.2.1:=
 	>=dev-libs/imath-3.1.2-r4:=
 	>=media-libs/opencolorio-2.1.1-r4:=
-	>=media-libs/openexr-3:0=
+	>=media-libs/openexr-3:0=[threads]
 	media-libs/tiff:=
 	sys-libs/zlib:=
 	virtual/jpeg:0
