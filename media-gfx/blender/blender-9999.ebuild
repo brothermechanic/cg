@@ -18,6 +18,7 @@ EGIT_SUBMODULES=()
 if [[ ${PV} == 9999 ]]; then
 	EGIT_BRANCH="main"
 	#EGIT_COMMIT="fe3110a2859d84401dceda06fd41f3b082eae790"
+	EGIT_CLONE_TYPE="shallow"
 	MY_PV="4.1"
 	KEYWORDS=""
 else
@@ -206,8 +207,7 @@ RDEPEND="
 	nls? ( virtual/libiconv )
 	media-libs/audaspace:=[python,openal?,sdl?,pulseaudio?]
 	oneapi? (
-		<dev-libs/level-zero-2
-		>=dev-libs/level-zero-1.8.8
+		sys-devel/DPC++
 	)
 	openal? (
 		media-libs/openal
@@ -215,8 +215,8 @@ RDEPEND="
 	media-libs/glew:*
 	virtual/glu
 	oidn? ( >=media-libs/oidn-1.4.1 )
-	<media-libs/openimageio-2.6[${PYTHON_SINGLE_USEDEP},python]
-	>=media-libs/openimageio-2.4.15.0[${PYTHON_SINGLE_USEDEP},python]
+	<media-libs/openimageio-2.6[${PYTHON_SINGLE_USEDEP},${OPENVDB_SINGLE_USEDEP},python,color-management?]
+	>=media-libs/openimageio-2.4.15.0[${PYTHON_SINGLE_USEDEP},${OPENVDB_SINGLE_USEDEP},python,color-management?]
 	>=dev-cpp/robin-map-0.6.2
 	>=dev-libs/libfmt-9.1.0
 	color-management? ( >=media-libs/opencolorio-2.1.1-r7:= )
@@ -227,8 +227,8 @@ RDEPEND="
 	)
 	opensubdiv? ( >=media-libs/opensubdiv-3.4.0[cuda?,openmp?,tbb?,opengl] )
 	openvdb? (
-		>=media-gfx/openvdb-9.0.0:=[nanovdb?]
-		<=media-gfx/openvdb-11.0.0:=[nanovdb?]
+		>=media-gfx/openvdb-9.0.0:=[${OPENVDB_SINGLE_USEDEP},nanovdb?]
+		<=media-gfx/openvdb-12.0.0:=[${OPENVDB_SINGLE_USEDEP},nanovdb?]
 		>=dev-libs/c-blosc-1.21.1[zlib]
 		nanovdb? (
 			>=media-gfx/nanovdb-32:0=
@@ -266,7 +266,6 @@ RDEPEND="
 		dev-util/wayland-scanner
 		media-libs/mesa[wayland]
 		>=gui-libs/libdecor-0.1.0
-		sys-apps/dbus
 	)
 	X? (
 		x11-libs/libX11
@@ -420,7 +419,7 @@ src_prepare() {
 	fi
 
 	# remove some bundled deps
-	use portable || rm -rf extern/{audaspace,Eigen3,lzo,gflags,glog,gtest,gmock,draco,ceres} || die
+	use portable || rm -rf extern/{audaspace,json,Eigen3,lzo,gflags,glog,gtest,gmock,draco,ceres} || die
 
 	# Disable MS Windows help generation. The variable doesn't do what it
 	# it sounds like.
@@ -480,7 +479,7 @@ src_configure() {
 
 	# FIX: forcing '-funsigned-char' fixes an anti-aliasing issue with menu
 	# shadows, see bug #276338 for reference
-	append-flags -funsigned-char -fno-strict-aliasing
+	append-cppflags -funsigned-char -fno-strict-aliasing
 	append-lfs-flags
 
 	local mycmakeargs=()
@@ -498,10 +497,6 @@ src_configure() {
 				-DCYCLES_CUDA_BINARIES_ARCH=${CUDA_TARGETS%%*;}
 			)
 		fi
-		mycmakeargs+=(
-			-DCUDA_NVCC_EXECUTABLE=/opt/cuda/bin/nvcc
-			-DCUDA_HOST_COMPILER="$(cuda_gccdir)\/$(tc-getCC)"
-		)
 	fi
 
 	mycmakeargs+=(
@@ -530,7 +525,7 @@ src_configure() {
 		-DWITH_CYCLES_DEVICE_HIP=$(usex rocm)
 		-DWITH_CYCLES_HIP_BINARIES=$(usex cycles-bin-kernels $(usex rocm) no)
 		-DWITH_HIP_DYNLOAD=$(usex rocm $(usex cycles-bin-kernels no yes) no)
-		-DWITH_CYCLES_CUDA_BINARIES=$(usex cycles-bin-kernels $(usex cuda) no)	# build when install
+		-DWITH_CYCLES_CUDA_BINARIES=$(usex cycles-bin-kernels $(usex cuda) no)	# build cuda kernels now, not in runtime
 		-DWITH_CYCLES_CUDA_BUILD_SERIAL=$(usex cuda)			# Build cuda kernels in serial mode (if parallel build takes too much RAM or crash)
 		-DWITH_CUDA_DYNLOAD=$(usex cuda $(usex cycles-bin-kernels no yes) no)
 		-DWITH_CYCLES_DEVICE_ONEAPI=$(usex oneapi)
@@ -554,7 +549,7 @@ src_configure() {
 		-DWITH_GHOST_WAYLAND_APP_ID=blender-${BV}
 		-DWITH_GHOST_WAYLAND_DBUS=$(usex wayland)
 		-DWITH_GHOST_WAYLAND_DYNLOAD=$(usex wayland)
-		-DWITH_GHOST_WAYLAND_LIBDECOR=YES
+		-DWITH_GHOST_WAYLAND_LIBDECOR=$(usex wayland)
 		-DWITH_GMP=$(usex gmp)									# boolean engine
 		-DWITH_HARU=$(usex pdf)									# export format support
 		-DWITH_IO_GPENCIL=$(usex pdf)							# export format support
@@ -643,7 +638,7 @@ src_configure() {
 	# This is currently needed on arm64 to get the NEON SIMD wrapper to compile the code successfully
 	use arm64 && append-flags -flax-vector-conversions
 
-	append-flags $(usex debug '-DDEBUG' '-DNDEBUG')
+	append-cppflags $(usex debug '-DDEBUG' '-DNDEBUG')
 
 	if tc-is-gcc ; then
 		# These options only exist when GCC is detected.
