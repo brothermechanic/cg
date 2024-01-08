@@ -1,14 +1,14 @@
 --- a/source/blender/blenlib/CMakeLists.txt
 +++ b/source/blender/blenlib/CMakeLists.txt
 @@ -13,7 +13,7 @@ set(INC
- 
+
  set(INC_SYS
    ../../../extern/wcwidth
 -  ../../../extern/json/include
 +  /usr/include/nlohmann
-   ../../../extern/fmtlib/include
-  
+
    ${EIGEN3_INCLUDE_DIRS}
+   ${ZLIB_INCLUDE_DIRS}
 @@ -386,7 +386,7 @@ set(SRC
    PIL_time_utildefines.h
  
