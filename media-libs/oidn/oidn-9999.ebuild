@@ -23,7 +23,7 @@ fi
 
 LICENSE="Apache-2.0"
 SLOT="0"
-IUSE="static-libs"
+IUSE="static-libs cuda"
 REQUIRED_USE="${PYTHON_REQUIRED_USE}"
 RESTRICT="mirror"
 
@@ -47,6 +47,7 @@ src_configure() {
 	local mycmakeargs=(
 		-DOIDN_APPS=OFF
 		-DOIDN_STATIC_LIB=$(usex static-libs ON OFF)
+		-DOIDN_DEVICE_CUDA=$(usex cuda ON OFF)
 	)
 	cmake_src_configure
 }

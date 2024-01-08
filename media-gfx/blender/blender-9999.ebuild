@@ -4,7 +4,7 @@
 EAPI=8
 
 PYTHON_COMPAT=( python3_{10..12} )
-OPENVDB_COMPAT=( {7..10} )
+OPENVDB_COMPAT=( {7..11} )
 LLVM_MAX_SLOT="17"
 
 inherit check-reqs cmake cuda flag-o-matic git-r3 pax-utils python-single-r1 toolchain-funcs xdg-utils llvm openvdb cg-blender-scripts-dir
@@ -62,28 +62,27 @@ AMDGPU_TARGETS_COMPAT=(
 	gfx1102
 )
 
-COMPRESSION="lzma lzo"
-MODIFIERS="+fluid +smoke +oceansim +remesh +gmp +quadriflow"
+
 
 IUSE_CPU="+openmp +simd +tbb -lld -gold +mold -cpu_flags_arm_neon llvm -valgrind +jemalloc"
-IUSE_GPU="cuda optix rocm oneapi -cycles-bin-kernels vulkan ${CUDA_TARGETS_COMPAT[@]/#/cuda_targets_} ${AMDGPU_TARGETS_COMPAT[@]/#/amdgpu_targets_}"
-IUSE_DESKTOP="+cg -portable +X headless +nls -ndof wayland ${MODIFIERS}"
-IUSE_LIBS="+bullet +boost +dbus +draco +materialx +color-management +oidn +opensubdiv +openvdb nanovdb openxr +libmv +freestyle ${COMPRESSION}"
-IUSE_CYC="+cycles osl +openpgl +embree +pugixml +potrace +fftw"
+IUSE_GPU="cuda optix rocm oneapi -cycles-bin-kernels ${CUDA_TARGETS_COMPAT[@]/#/cuda_targets_} ${AMDGPU_TARGETS_COMPAT[@]/#/amdgpu_targets_}"
+IUSE_DESKTOP="+cg -portable +X headless +nls -ndof wayland vulkan"
+IUSE_LIBS="+bullet +boost +draco +materialx +color-management +oidn +opensubdiv +openvdb nanovdb openxr +libmv +freestyle lzma lzo"
+IUSE_MOD="+fluid +smoke +oceansim +remesh +gmp +quadriflow"
+IUSE_RENDER="+cycles osl +openpgl +embree +pugixml +potrace +fftw"
 IUSE_3DFILES="-alembic -usd +collada +obj +ply +stl"
 IUSE_IMAGE="-dpx +openexr jpeg2k webp +pdf"
 IUSE_CODEC="avi +ffmpeg flac -sndfile +quicktime aom mp3 opus theora vorbis vpx x264 xvid"
 IUSE_SOUND="jack openal -pulseaudio sdl"
 IUSE_TEST="-debug -doc -man -gtests -test icu"
 
-IUSE="${IUSE_CPU} ${IUSE_GPU} ${IUSE_DESKTOP} ${IUSE_LIBS} ${IUSE_CYC} ${IUSE_3DFILES} ${IUSE_IMAGE} ${IUSE_CODEC} ${IUSE_SOUND} ${IUSE_TEST}"
+IUSE="${IUSE_CPU} ${IUSE_GPU} ${IUSE_DESKTOP} ${IUSE_LIBS} ${IUSE_MOD} ${IUSE_RENDER} ${IUSE_3DFILES} ${IUSE_IMAGE} ${IUSE_CODEC} ${IUSE_SOUND} ${IUSE_TEST}"
 
 REQUIRED_USE="${PYTHON_REQUIRED_USE}
 	^^ ( gold lld mold )
 	|| ( wayland X )
 	!boost? ( !alembic !color-management !cycles !nls !openvdb )
 	alembic? ( openexr )
-	dbus? (	wayland )
 	embree? ( cycles tbb )
 	smoke? ( fftw )
 	cuda? ( cycles )
@@ -106,7 +105,7 @@ REQUIRED_USE="${PYTHON_REQUIRED_USE}
 	usd? ( tbb )
 "
 
-LANGS="en ab ar bg ca cs de el eo es eu fa fi fr ha he hi hr hu id it ja ka km ko ky ne nl pl pt_BR pt ru sk sr@latin sr sv sw ta th tr uk vi zh_HANS zh_HANT"
+LANGS="en ab ar be bg ca cs de el eo es es_ES eu fa fi fr ha he hi hr hu id it ja ka km ko ky ne nl pl pt_BR pt ru sk sr@latin sr sv sw ta th tr zh_TW uk vi zh_CN zh_HANS zh_HANT"
 
 for X in ${LANGS} ; do
 	IUSE+=" l10n_${X}"
@@ -175,7 +174,6 @@ RDEPEND="
 	collada? ( >=media-libs/opencollada-1.6.68 )
 	cuda? ( dev-util/nvidia-cuda-toolkit:= )
 	draco? ( >=media-libs/draco-1.5.2:= )
-	dbus? ( sys-apps/dbus )
 	embree? (
 		>=media-libs/embree-3.1.0[raymask,tbb?]
 		<media-libs/embree-5
@@ -217,8 +215,8 @@ RDEPEND="
 	media-libs/glew:*
 	virtual/glu
 	oidn? ( >=media-libs/oidn-1.4.1 )
-	<media-libs/openimageio-2.6[${PYTHON_SINGLE_USEDEP},${OPENVDB_SINGLE_USEDEP},color-management(-)?,jpeg2k?,png(-),python,webp(-)?]
-	>=media-libs/openimageio-2.4.15.0[${PYTHON_SINGLE_USEDEP},${OPENVDB_SINGLE_USEDEP},color-management(-)?,jpeg2k?,png(-),python,webp(-)?]
+	<media-libs/openimageio-2.6[${PYTHON_SINGLE_USEDEP},python]
+	>=media-libs/openimageio-2.4.15.0[${PYTHON_SINGLE_USEDEP},python]
 	>=dev-cpp/robin-map-0.6.2
 	>=dev-libs/libfmt-9.1.0
 	color-management? ( >=media-libs/opencolorio-2.1.1-r7:= )
@@ -229,8 +227,8 @@ RDEPEND="
 	)
 	opensubdiv? ( >=media-libs/opensubdiv-3.4.0[cuda?,openmp?,tbb?,opengl] )
 	openvdb? (
-		>=media-gfx/openvdb-9.0.0:=[${OPENVDB_SINGLE_USEDEP},nanovdb?]
-		<media-gfx/openvdb-11.0.0:=[${OPENVDB_SINGLE_USEDEP},nanovdb?]
+		>=media-gfx/openvdb-9.0.0:=[nanovdb?]
+		<=media-gfx/openvdb-11.0.0:=[nanovdb?]
 		>=dev-libs/c-blosc-1.21.1[zlib]
 		nanovdb? (
 			>=media-gfx/nanovdb-32:0=
@@ -268,6 +266,7 @@ RDEPEND="
 		dev-util/wayland-scanner
 		media-libs/mesa[wayland]
 		>=gui-libs/libdecor-0.1.0
+		sys-apps/dbus
 	)
 	X? (
 		x11-libs/libX11
@@ -421,7 +420,7 @@ src_prepare() {
 	fi
 
 	# remove some bundled deps
-	use portable || rm -rf extern/{audaspace,json,Eigen3,lzo,gflags,glog,gtest,gmock,draco,ceres} || die
+	use portable || rm -rf extern/{audaspace,Eigen3,lzo,gflags,glog,gtest,gmock,draco,ceres} || die
 
 	# Disable MS Windows help generation. The variable doesn't do what it
 	# it sounds like.
@@ -531,7 +530,6 @@ src_configure() {
 		-DWITH_CYCLES_DEVICE_HIP=$(usex rocm)
 		-DWITH_CYCLES_HIP_BINARIES=$(usex cycles-bin-kernels $(usex rocm) no)
 		-DWITH_HIP_DYNLOAD=$(usex rocm $(usex cycles-bin-kernels no yes) no)
-		-DWITH_CYCLES_CUDA=$(usex cuda)
 		-DWITH_CYCLES_CUDA_BINARIES=$(usex cycles-bin-kernels $(usex cuda) no)	# build when install
 		-DWITH_CYCLES_CUDA_BUILD_SERIAL=$(usex cuda)			# Build cuda kernels in serial mode (if parallel build takes too much RAM or crash)
 		-DWITH_CUDA_DYNLOAD=$(usex cuda $(usex cycles-bin-kernels no yes) no)
@@ -554,7 +552,7 @@ src_configure() {
 		-DWITH_GHOST_XDND=$(usex X)								# drag-n-drop support on X11
 		-DWITH_GHOST_WAYLAND=$(usex wayland)					# Enable building against wayland
 		-DWITH_GHOST_WAYLAND_APP_ID=blender-${BV}
-		-DWITH_GHOST_WAYLAND_DBUS=$(usex dbus)
+		-DWITH_GHOST_WAYLAND_DBUS=$(usex wayland)
 		-DWITH_GHOST_WAYLAND_DYNLOAD=$(usex wayland)
 		-DWITH_GHOST_WAYLAND_LIBDECOR=YES
 		-DWITH_GMP=$(usex gmp)									# boolean engine
