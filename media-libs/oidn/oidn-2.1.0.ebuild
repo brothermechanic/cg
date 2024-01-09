@@ -134,6 +134,7 @@ DEPEND+="
 "
 BDEPEND+="
 	${PYTHON_DEPS}
+	media-libs/openimageio
 	>=dev-lang/ispc-1.17.0
 	>=dev-util/cmake-3.15
 	cuda? (
