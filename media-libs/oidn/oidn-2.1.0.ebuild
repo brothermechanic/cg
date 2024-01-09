@@ -24,6 +24,7 @@ CUDA_TARGETS_COMPAT=(
 	sm_70
 	sm_75
 	sm_80
+	sm_86
 	sm_90
 )
 

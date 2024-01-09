@@ -47,10 +47,6 @@ DEPEND="
 	tbb? ( dev-cpp/tbb:= )
 "
 
-REQUIRED_USE="
-	|| ( ${CUDA_TARGETS_COMPAT[@]/#/cuda_targets_} )
-"
-
 PATCHES=(
 	"${FILESDIR}/${PN}-3.3.0-use-gnuinstalldirs.patch"
 	"${FILESDIR}/${PN}-3.4.3-install-tutorials-into-bin.patch"

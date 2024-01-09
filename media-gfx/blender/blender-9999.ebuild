@@ -87,6 +87,7 @@ REQUIRED_USE="${PYTHON_REQUIRED_USE}
 	embree? ( cycles tbb )
 	smoke? ( fftw )
 	cuda? ( cycles )
+	optix? ( cuda )
 	fluid? ( fftw tbb )
 	nanovdb? ( cuda )
 	materialx? (
@@ -520,6 +521,7 @@ src_configure() {
 		-DWITH_CODEC_FFMPEG=$(usex ffmpeg)
 		-DWITH_CODEC_SNDFILE=$(usex sndfile)
 		-DWITH_CYCLES=$(usex cycles)							# Enable Cycles Render Engine
+		-DWITH_CUDA=$(usex cuda)
 		-DWITH_CYCLES_DEVICE_CUDA=$(usex cuda)
 		-DWITH_CYCLES_DEVICE_OPTIX=$(usex optix)
 		-DWITH_CYCLES_DEVICE_HIP=$(usex rocm)
