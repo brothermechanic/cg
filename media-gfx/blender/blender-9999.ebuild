@@ -215,7 +215,7 @@ RDEPEND="
 	)
 	media-libs/glew:*
 	virtual/glu
-	oidn? ( >=media-libs/oidn-1.4.1 )
+	oidn? ( >=media-libs/oidn-1.4.1[cuda?] )
 	<media-libs/openimageio-2.6[${PYTHON_SINGLE_USEDEP},${OPENVDB_SINGLE_USEDEP},python,color-management?]
 	>=media-libs/openimageio-2.4.15.0[${PYTHON_SINGLE_USEDEP},${OPENVDB_SINGLE_USEDEP},python,color-management?]
 	>=dev-cpp/robin-map-0.6.2
@@ -228,8 +228,8 @@ RDEPEND="
 	)
 	opensubdiv? ( >=media-libs/opensubdiv-3.4.0[cuda?,openmp?,tbb?,opengl] )
 	openvdb? (
-		>=media-gfx/openvdb-9.0.0:=[${OPENVDB_SINGLE_USEDEP},nanovdb?]
-		<=media-gfx/openvdb-12.0.0:=[${OPENVDB_SINGLE_USEDEP},nanovdb?]
+		>=media-gfx/openvdb-9.0.0:=[${OPENVDB_SINGLE_USEDEP},cuda?,nanovdb?]
+		<=media-gfx/openvdb-12.0.0:=[${OPENVDB_SINGLE_USEDEP},cuda?,nanovdb?]
 		>=dev-libs/c-blosc-1.21.1[zlib]
 		nanovdb? (
 			>=media-gfx/nanovdb-32:0=
@@ -243,7 +243,7 @@ RDEPEND="
 		>=dev-libs/optix-7.5.0
 	)
 	osl? (
-		>=media-libs/osl-1.11.16.0-r3:=
+		>=media-libs/osl-1.11.16.0-r3:=[optix?]
 		<media-libs/osl-1.13:=
 	)
 	pdf? ( >=media-libs/libharu-2.3.0 )
@@ -286,7 +286,7 @@ RDEPEND="
 "
 
 DEPEND="
-	dev-cpp/eigen:=
+	dev-cpp/eigen:=[cuda?]
 	vulkan? (
 		>=media-libs/shaderc-2022.3
 		>=media-libs/vulkan-loader-1.2.198[X?,wayland?,layers]
