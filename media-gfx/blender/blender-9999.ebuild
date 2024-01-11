@@ -244,7 +244,6 @@ RDEPEND="
 	)
 	osl? (
 		>=media-libs/osl-1.11.16.0-r3:=[optix?]
-		<media-libs/osl-1.13:=
 	)
 	pdf? ( >=media-libs/libharu-2.3.0 )
 	potrace? ( >=media-gfx/potrace-1.16 )

@@ -4,8 +4,9 @@
 EAPI=8
 
 PYTHON_COMPAT=( python3_{10..12} )
+OPENVDB_COMPAT=( {7..11} )
 
-inherit cmake cuda flag-o-matic llvm multilib-minimal python-single-r1 toolchain-funcs
+inherit cmake cuda flag-o-matic llvm multilib-minimal python-single-r1 toolchain-funcs openvdb
 
 DESCRIPTION="Advanced shading language for production GI renderers"
 HOMEPAGE="http://opensource.imageworks.com/?p=osl"
@@ -22,13 +23,14 @@ else
 	PATCHES+=(
 		#"${FILESDIR}/osl-1.12.13.0-llvm-17.patch"
 		"${FILESDIR}/osl-1.12.13.0-cuda-noinline-fix.patch"
+		"${FILESDIR}/osl-1.12.14.0-lld-fix-linking.patch"
 	)
 	KEYWORDS="~amd64 ~x86 ~arm ~arm64"
 	S="${WORKDIR}/OpenShadingLanguage-${PV}"
 
 	# Check this on updates
-	LLVM_MAX_SLOT=15
-	LLVM_SLOTS=( 9 10 11 12 13 14 15 )
+	LLVM_MAX_SLOT=16
+	LLVM_SLOTS=( 9 10 11 12 13 14 15 16 )
 fi
 
 SLOT="0/$(ver_cut 1-2 ${PV})"
@@ -42,7 +44,7 @@ X86_CPU_FEATURES=(
 CPU_FEATURES=( ${X86_CPU_FEATURES[@]/#/cpu_flags_x86_} )
 CUDA_TARGETS_COMPAT=( sm_30 sm_35 sm_50 sm_52 sm_61 sm_70 sm_75 sm_86 )
 
-IUSE="doc debug optix partio python plugins qt5 qt6 static-libs test wayland X ${CPU_FEATURES[@]%:*} ${CUDA_TARGETS_COMPAT[@]/#/cuda_targets_}"
+IUSE="doc debug cuda partio python plugins openvdb qt5 qt6 static-libs test wayland X ${CPU_FEATURES[@]%:*} ${CUDA_TARGETS_COMPAT[@]/#/cuda_targets_}"
 RESTRICT="
 	!test (test)
 	mirror
@@ -50,7 +52,7 @@ RESTRICT="
 
 REQUIRED_USE="
 	${PYTHON_REQUIRED_USE}
-	optix? (
+	cuda? (
 		^^ ( ${CUDA_TARGETS_COMPAT[@]/#/cuda_targets_} )
 	)
 	?? ( qt5 qt6 )
@@ -60,6 +62,7 @@ REQUIRED_USE="
 
 RDEPEND="
 	>=media-libs/openexr-3.1.0:=
+	openvdb? ( >=media-gfx/openvdb-9.0.0:=[${OPENVDB_SINGLE_USEDEP},cuda?] )
 	$(python_gen_cond_dep '
 		>=media-libs/openimageio-2.4.12.0:=[${PYTHON_SINGLE_USEDEP}]
 		<media-libs/openimageio-2.6:=[${PYTHON_SINGLE_USEDEP}]
@@ -70,7 +73,7 @@ RDEPEND="
 	<sys-devel/llvm-$((${LLVM_MAX_SLOT} + 1)):=
 	<sys-devel/clang-$((${LLVM_MAX_SLOT} + 1)):=
 	sys-libs/zlib:=[${MULTILIB_USEDEP}]
-	optix? (
+	cuda? (
 		$(python_gen_cond_dep '
 			>=media-libs/openimageio-1.8:=[${PYTHON_SINGLE_USEDEP}]
 		')
@@ -112,7 +115,6 @@ BDEPEND="
 
 PATCHES+=(
 	"${FILESDIR}/osl-1.12.13.0-change-ci-test.bash.patch"
-	"${FILESDIR}/osl-1.12.14.0-lld-fix-linking.patch"
 )
 
 get_lib_type() {
@@ -132,7 +134,7 @@ src_prepare() {
 	fi
 
 	# optix 7.4 build fix
-	if use optix && has_version ">=dev-libs/optix-7.4"; then
+	if use cuda && has_version ">=dev-libs/optix-7.4"; then
 		sed -i -e 's/OPTIX_COMPILE_DEBUG_LEVEL_LINEINFO/OPTIX_COMPILE_DEBUG_LEVEL_MINIMAL/g' src/testshade/optixgridrender.cpp src/testrender/optixraytracer.cpp || die
 		cuda_src_prepare
 	fi
@@ -190,8 +192,9 @@ src_configure() {
 				-DOSL_PTX_INSTALL_DIR="${EPREFIX}/usr/include/${PN^^}/ptx"
 				-DSTOP_ON_WARNING=OFF
 				-DUSE_CCACHE=OFF
-				-DUSE_CUDA=$(usex optix)
-				-DUSE_OPTIX=$(usex optix)
+				-DUSE_CUDA=$(usex cuda)
+				-DUSE_OPTIX=$(usex cuda)
+				-DOSL_USE_OPTIX=$(usex cuda)
 				-DUSE_PARTIO=$(usex partio)
 				-DUSE_QT=$(usex qt6 ON $(usex qt5 ON OFF))
 				-DUSE_PYTHON=$(usex python)
@@ -199,7 +202,7 @@ src_configure() {
 				-DUSE_SIMD="$(IFS=","; echo "${mysimd[*]}")"
 			)
 
-			if use optix; then
+			if use cuda; then
 				for CT in ${CUDA_TARGETS_COMPAT[@]}; do
 					use ${CT/#/cuda_targets_} && CUDA_TARGETS+="${CT};"
 				done
