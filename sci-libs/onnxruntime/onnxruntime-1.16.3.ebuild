@@ -26,12 +26,14 @@ SLOT="0"
 KEYWORDS="~amd64"
 RESTRICT="mirror test"
 CPU_FLAGS="cpu_flags_x86_avx cpu_flags_x86_avx2 cpu_flags_x86_avx512"
-IUSE="benchmark cuda rocm onednn cudnn debug javascript +python migraphx +mpi mimalloc lto test tensorrt llvm xnnpack
+IUSE="benchmark cuda onednn cudnn debug hip javascript +python migraphx +mpi mimalloc lto test tensorrt llvm xnnpack
 ${CPU_FLAGS}
 ${CUDA_TARGETS_COMPAT[@]/#/cuda_targets_}
 ${AMDGPU_TARGETS_COMPAT[@]/#/amdgpu_targets_}"
 REQUIRED_USE="
-	?? ( rocm cuda )
+	cuda? ( cudnn )
+	hip? ( migraphx )
+	|| ( cudnn migraphx onednn tensorrt )
 "
 RDEPEND="
 	dev-libs/protobuf:=
@@ -61,16 +63,11 @@ BDEPEND="
 	javascript? ( dev-util/emscripten )
 	migraphx? ( >=sci-libs/MIGraphX-${ROCM_VERSION}:= )
 	onednn? ( dev-libs/oneDNN:= )
-	rocm? (
+	hip? (
 		sci-libs/hipFFT:=
 		sci-libs/hipCUB:=
-		dev-util/hipify-clang
-		sci-libs/composable_kernel
 		>=dev-libs/rocr-runtime-${ROCM_VERSION}:=
 		>=dev-util/hip-${ROCM_VERSION}:=
-		>=dev-libs/rccl-${ROCM_VERSION}:=
-		>=sci-libs/miopen-${ROCM_VERSION}:=
-		>=dev-util/roctracer-${ROCM_VERSION}:=
 	)
 	xnnpack? ( sci-libs/XNNPACK )
 	tensorrt? ( sci-libs/tensorboard:= )
@@ -182,7 +179,7 @@ src_configure() {
     	-Donnxruntime_USE_PREINSTALLED_EIGEN=ON
     	-Donnxruntime_USE_DNNL=$(usex onednn)
 		-Donnxruntime_USE_CUDA=$(usex cuda)
-		-Donnxruntime_USE_ROCM=$(usex rocm)
+		-Donnxruntime_USE_ROCM=$(usex hip)
 		-Donnxruntime_USE_AVX=$(usex cpu_flags_x86_avx)
 		-Donnxruntime_USE_AVX2=$(usex cpu_flags_x86_avx2)
 		-Donnxruntime_USE_AVX512=$(usex cpu_flags_x86_avx512)
@@ -277,14 +274,14 @@ src_configure() {
 		mycmakeargs+=(
 			-DCMAKE_CUDA_ARCHITECTURES="${CUDA_ARCH%%;}"
 			-DCMAKE_CUDA_HOST_COMPILER="$(cuda_gccdir)"
-			-DCMAKE_CUDA_FLAGS="-Xcompiler -fno-lto -Xlinker -fno-lto "
+			-DCMAKE_CUDA_FLAGS="-forward-unknown-opts -fno-lto ${NVCCFLAGS}"
     		-DCMAKE_CUDA_STANDARD_REQUIRED=ON
     		-DCMAKE_CXX_STANDARD_REQUIRED=ON
     		-Donnxruntime_NVCC_THREADS=1
     	)
 	fi
 
-	if use rocm; then
+	if use hip; then
 		mycmakeargs+=(
 			-DCMAKE_HIP_COMPILER="$(get_llvm_prefix)/bin/clang++"
 			-DCMAKE_HIP_ARCHITECTURES="$(get_amdgpu_flags)"

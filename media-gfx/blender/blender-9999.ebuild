@@ -233,7 +233,7 @@ RDEPEND="
 		>=dev-libs/c-blosc-1.21.1[zlib]
 		nanovdb? (
 			>=media-gfx/nanovdb-32:0=
-			<media-gfx/nanovdb-32.4.3:0=
+			<media-gfx/nanovdb-32.7.0:0=
 		)
 	)
 	openxr? (

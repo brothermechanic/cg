@@ -52,7 +52,7 @@ LLVM_MAX_SLOT=17
 IUSE="
 -${CUDA_TARGETS_COMPAT[@]/#/cuda_targets_}
 -${AMDGPU_TARGETS_COMPAT[@]/#/amdgpu_targets_}
-+apps +built-in-weights +cpu -cuda doc -rocm +openimageio static-libs
+examples +built-in-weights +cpu -cuda doc -hip static-libs sycl
 "
 
 gen_required_use_cuda_targets() {
@@ -71,7 +71,7 @@ gen_required_use_hip_targets() {
 	for x in ${AMDGPU_TARGETS_COMPAT[@]} ; do
 		echo "
 			amdgpu_targets_${x}? (
-				rocm
+				hip
 			)
 		"
 	done
@@ -86,7 +86,7 @@ REQUIRED_USE+="
 			${CUDA_TARGETS_COMPAT[@]/#/cuda_targets_}
 		)
 	)
-	rocm? (
+	hip? (
 		${ROCM_REQUIRED_USE}
 	)
 "
@@ -121,7 +121,7 @@ RDEPEND+="
 	cuda? (
 		>=dev-util/nvidia-cuda-toolkit-11.8:=
 	)
-	rocm? (
+	hip? (
 		|| (
 			$(gen_hip_depends)
 		)
@@ -134,13 +134,15 @@ DEPEND+="
 "
 BDEPEND+="
 	${PYTHON_DEPS}
-	media-libs/openimageio
 	>=dev-lang/ispc-1.17.0
 	>=dev-util/cmake-3.15
+	examples? (
+		>=media-libs/openimageio-2.4.15.0[${PYTHON_SINGLE_USEDEP}]
+	)
 	cuda? (
 		>=dev-util/nvidia-cuda-toolkit-11.8
 	)
-	rocm? (
+	hip? (
 		>=dev-util/cmake-3.21
 		|| (
 			$(gen_hip_depends)
@@ -202,7 +204,7 @@ pkg_setup() {
 	elif has_version "dev-util/hip:5.6" ; then
 		ROCM_SLOT="5.6"
 	fi
-	rocm_pkg_setup
+	#rocm_pkg_setup
 }
 
 src_unpack() {
@@ -241,6 +243,7 @@ src_prepare() {
 
 src_configure() {
 	CMAKE_BUILD_TYPE=Release
+
 	mycmakeargs=()
 
 	strip-unsupported-flags
@@ -251,6 +254,9 @@ src_configure() {
 	# error: Illegal instruction detected: Operand has incorrect register class.
 	replace-flags '-O0' '-O1'
 
+	export CC=$(tc-getCC)
+	export CXX=$(tc-getCXX)
+
 	einfo
 	einfo "CC:\t${CC}"
 	einfo "CXX:\t${CXX}"
@@ -258,21 +264,17 @@ src_configure() {
 	einfo
 
 	mycmakeargs+=(
-		-DCMAKE_CXX_COMPILER="${CXX}"
-		-DCMAKE_C_COMPILER="${CC}"
-		-DOIDN_APPS=$(usex apps)
-		-DOIDN_APPS_OPENIMAGEIO=$(usex openimageio)
+		-DOIDN_APPS=$(usex examples)
+		-DOIDN_INSTALL_DEPENDENCIES=OFF
+		-DOIDN_FILTER_RT=$(usex built-in-weights)
+		-DOIDN_FILTER_RTLIGHTMAP=$(usex built-in-weights)
 		-DOIDN_DEVICE_CPU=$(usex cpu)
 		-DOIDN_DEVICE_CUDA=$(usex cuda)
-		-DOIDN_DEVICE_HIP=$(usex rocm)
-		-DOIDN_DEVICE_SYCL=OFF # no packages
+		-DOIDN_DEVICE_HIP=$(usex hip)
+		-DOIDN_DEVICE_SYCL=$(usex sycl)
 	)
 
-	if use rocm ; then
-		ewarn
-		ewarn "All APU + GPU HIP targets on the device must be built/installed to avoid"
-		ewarn "a crash."
-		ewarn
+	if use hip ; then
 		local llvm_slot=$(grep -e "HIP_CLANG_ROOT.*/lib/llvm" \
 				"/usr/$(get_libdir)/cmake/hip/hip-config.cmake" \
 			| grep -E -o -e  "[0-9]+")
@@ -286,25 +288,28 @@ src_configure() {
 		mycmakeargs+=(
 			-DGPU_TARGETS="$(get_amdgpu_flags)"
 		)
-		einfo "AMDGPU_TARGETS:  ${targets}"
+		einfo "AMDGPU_TARGETS:\t${targets}"
 	fi
 
 	if use cuda ; then
-		#CCBIN="$(cuda_gccdir -f)"
 		for CT in ${CUDA_TARGETS_COMPAT[@]}; do
 			use ${CT/#/cuda_targets_} && CUDA_TARGETS+="-gencode arch=compute_${CT#sm_*},code=${CT} "
 		done
-		mycmakeargs+=(
-			-DCMAKE_CUDA_HOST_COMPILER="/usr/x86_64-pc-linux-gnu/gcc-bin/12"
-			-DCMAKE_CUDA_ARCHITECTURES="${CUDA_TARGETS//*=/}"
-		)
 		( use cuda_targets_sm_80 || use cuda_targets_sm_90 ) && \
 			sed -e 's/cuda_engine.cu/&\n  cutlass_conv_sm80.cu/' -i devices/cuda/CMakeLists.txt
 		use cuda_targets_sm_75 && sed -e 's/cuda_engine.cu/&\n  cutlass_conv_sm75.cu/' -i devices/cuda/CMakeLists.txt
 		use cuda_targets_sm_70 && sed -e 's/cuda_engine.cu/&\n  cutlass_conv_sm70.cu/' -i devices/cuda/CMakeLists.txt
 
-		sed -e "33i\set(OIDN_NVCC_FLAGS \"${CUDA_TARGETS%% } ${NVCCFLAGS//\"/}\")" -i devices/cuda/CMakeLists.txt || die
-		einfo "CUDA_TARGETS:  ${CUDA_TARGETS//*=/}"
+		sed -e "33i\set(OIDN_NVCC_FLAGS \"-forward-unknown-opts -fno-lto ${NVCCFLAGS//\"/} ${CUDA_TARGETS%% }\")" -i devices/cuda/CMakeLists.txt || die "Sed failed"
+		mycmakeargs+=(
+			-DCUDAToolkit_ROOT="/opt/cuda"
+			-DOIDN_DEVICE_CUDA_COMPILER="/opt/cuda/bin/nvcc"
+			-DCUDA_COMPILER_PATH="$(cuda_gccdir)"
+			-DCMAKE_CUDA_HOST_COMPILER="$(cuda_gccdir)\/g++"
+		)
+
+		einfo "CUDA_TARGETS:\t${CUDA_TARGETS//*=/}"
+		einfo "NVCCFLAGS:\t${NVCCFLAGS}"
 	fi
 
 	cmake_src_configure
@@ -324,7 +329,7 @@ src_install() {
 }
 
 pkg_postinst() {
-	if use rocm ; then
+	if use hip ; then
 		ewarn
 		ewarn "All APU + GPU HIP targets on the device must be built/installed to avoid"
 		ewarn "a crash."

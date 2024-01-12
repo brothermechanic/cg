@@ -29,8 +29,8 @@ else
 	S="${WORKDIR}/OpenShadingLanguage-${PV}"
 
 	# Check this on updates
-	LLVM_MAX_SLOT=16
-	LLVM_SLOTS=( 9 10 11 12 13 14 15 16 )
+	LLVM_MAX_SLOT=15
+	LLVM_SLOTS=( 9 10 11 12 13 14 15 )
 fi
 
 SLOT="0/$(ver_cut 1-2 ${PV})"
@@ -44,7 +44,7 @@ X86_CPU_FEATURES=(
 CPU_FEATURES=( ${X86_CPU_FEATURES[@]/#/cpu_flags_x86_} )
 CUDA_TARGETS_COMPAT=( sm_30 sm_35 sm_50 sm_52 sm_61 sm_70 sm_75 sm_86 )
 
-IUSE="doc debug cuda partio python plugins openvdb qt5 qt6 static-libs test wayland X ${CPU_FEATURES[@]%:*} ${CUDA_TARGETS_COMPAT[@]/#/cuda_targets_}"
+IUSE="doc debug cuda partio python plugins openvdb optix qt5 qt6 static-libs test wayland X ${CPU_FEATURES[@]%:*} ${CUDA_TARGETS_COMPAT[@]/#/cuda_targets_}"
 RESTRICT="
 	!test (test)
 	mirror
@@ -134,7 +134,7 @@ src_prepare() {
 	fi
 
 	# optix 7.4 build fix
-	if use cuda && has_version ">=dev-libs/optix-7.4"; then
+	if use optix && has_version ">=dev-libs/optix-7.4"; then
 		sed -i -e 's/OPTIX_COMPILE_DEBUG_LEVEL_LINEINFO/OPTIX_COMPILE_DEBUG_LEVEL_MINIMAL/g' src/testshade/optixgridrender.cpp src/testrender/optixraytracer.cpp || die
 		cuda_src_prepare
 	fi
@@ -193,8 +193,7 @@ src_configure() {
 				-DSTOP_ON_WARNING=OFF
 				-DUSE_CCACHE=OFF
 				-DUSE_CUDA=$(usex cuda)
-				-DUSE_OPTIX=$(usex cuda)
-				-DOSL_USE_OPTIX=$(usex cuda)
+				-DUSE_OPTIX=$(usex optix)
 				-DUSE_PARTIO=$(usex partio)
 				-DUSE_QT=$(usex qt6 ON $(usex qt5 ON OFF))
 				-DUSE_PYTHON=$(usex python)
