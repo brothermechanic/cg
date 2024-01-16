@@ -135,7 +135,7 @@ DEPEND+="
 BDEPEND+="
 	${PYTHON_DEPS}
 	>=dev-lang/ispc-1.17.0
-	>=dev-util/cmake-3.15
+	>=dev-build/cmake-3.15
 	examples? (
 		>=media-libs/openimageio-2.4.15.0[${PYTHON_SINGLE_USEDEP}]
 	)
@@ -143,7 +143,6 @@ BDEPEND+="
 		>=dev-util/nvidia-cuda-toolkit-11.8
 	)
 	hip? (
-		>=dev-util/cmake-3.21
 		|| (
 			$(gen_hip_depends)
 		)

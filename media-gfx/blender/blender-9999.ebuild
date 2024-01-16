@@ -300,8 +300,8 @@ BDEPEND="
 		>=dev-python/pycodestyle-2.8.0[${PYTHON_USEDEP}]
 	')
 	>=dev-cpp/yaml-cpp-0.7.0
-	>=dev-util/cmake-3.10
-	>=dev-util/meson-0.63.0
+	>=dev-build/cmake-3.10
+	>=dev-build/meson-0.63.0
 	>=dev-util/vulkan-headers-1.2.198
 	dev-util/patchelf
 	virtual/pkgconfig
