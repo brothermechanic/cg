@@ -116,7 +116,7 @@ RDEPEND="
 
 DEPEND="${RDEPEND}"
 BDEPEND="
-	>=dev-util/cmake-3.12
+	>=dev-build/cmake-3.12
 	>=dev-util/pkgconf-1.3.7[${MULTILIB_USEDEP},pkg-config(+)]
 	>=sys-devel/bison-2.7
 	>=sys-devel/flex-2.5.35[${MULTILIB_USEDEP}]
@@ -202,8 +202,8 @@ src_configure() {
 				-DSTOP_ON_WARNING=OFF
 				-DUSE_CCACHE=OFF
 				-DUSE_CUDA=$(usex cuda)
-				-DUSE_OPTIX=$(usex optix) # 1.12
-				-DOSL_USE_OPTIX=$(usex optix)
+				-DUSE_OPTIX=$(usex optix) # for v1.12
+				-DOSL_USE_OPTIX=$(usex optix) # for v1.13
 				-DUSE_PARTIO=$(usex partio)
 				-DUSE_QT=$(usex qt6 ON $(usex qt5 ON OFF))
 				-DUSE_PYTHON=$(usex python)

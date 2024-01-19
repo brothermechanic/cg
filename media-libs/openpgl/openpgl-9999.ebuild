@@ -83,7 +83,7 @@ RDEPEND+="
 	${DEPEND}
 "
 BDEPEND+="
-	>=dev-util/cmake-3.1
+	>=dev-build/cmake-3.1
 "
 RESTRICT="mirror test"
 S="${WORKDIR}/${PN}-${PV/_/-}"

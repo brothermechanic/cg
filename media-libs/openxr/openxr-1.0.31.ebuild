@@ -78,7 +78,7 @@ RDEPEND="
 BDEPEND="
 	${PYTHON_DEPS}
 	$(python_gen_any_dep '>=dev-python/jinja-2[${PYTHON_USEDEP}]')
-	>=dev-util/cmake-3.0
+	>=dev-build/cmake-3.0
 	virtual/pkgconfig
 	|| (
 		sys-devel/clang

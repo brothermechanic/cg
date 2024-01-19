@@ -22,7 +22,7 @@ IUSE=""
 DEPEND=">=sys-devel/clang-8.0.0
 	>=dev-lang/mono-5.20.1.19
 	app-text/dos2unix
-	dev-util/cmake
+	dev-build/cmake
 	dev-vcs/git"
 RDEPEND="${DEPEND}
 	dev-libs/icu

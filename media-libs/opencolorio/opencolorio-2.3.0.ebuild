@@ -46,7 +46,7 @@ RDEPEND="
 DEPEND="${RDEPEND}"
 BDEPEND="
 	dev-util/ninja
-	>=dev-util/cmake-3.13
+	>=dev-build/cmake-3.13
 	virtual/pkgconfig
 	doc? (
 		$(python_gen_cond_dep '

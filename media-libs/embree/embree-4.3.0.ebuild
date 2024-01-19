@@ -102,7 +102,7 @@ REQUIRED_USE+="
 
 
 BDEPEND="
-	>=dev-util/cmake-3.2.0
+	>=dev-build/cmake-3.2.0
 	virtual/pkgconfig
 	doc? (
 		app-text/pandoc
