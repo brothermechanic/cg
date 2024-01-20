@@ -91,7 +91,7 @@ RDEPEND+="
 		dev-libs/jemalloc-usd
 	)
 	materialx? (
-		>=media-libs/materialx-1.38.4
+		>=media-libs/materialx-1.38.4:=[renderer]
 	)
 	color-management? (
 		>=media-libs/opencolorio-1.0.9
@@ -203,7 +203,7 @@ src_prepare() {
 	cmake_src_prepare
 
 	eapply "${FILESDIR}/${P}-tbb.patch"
-	[[ "$(get_libdir)" =~ "lib64" ]] && eapply "${FILESDIR}/${P}-lib64.patch"
+	#[[ "$(get_libdir)" =~ "lib64" ]] && eapply "${FILESDIR}/${P}-lib64.patch"
 	has_version -b ">=media-libs/embree-4" && eapply "${FILESDIR}/${P}-embree-4.patch"
 	has_version -b ">=media-libs/openimageio-2.3" && eapply "${FILESDIR}/${P}-openimageio-2.3.patch"
 
@@ -212,12 +212,12 @@ src_prepare() {
 		cmake/defaults/CXXDefaults.cmake || die
 
   	# Change directories to standard
-  	sed -i 's|plugin/usd|'$(get_libdir)'/usd/plugin|g' cmake/macros/{Private,Public}.cmake
- 	sed -i 's|/pxrConfig.cmake|'$(get_libdir)'/cmake/pxr/pxrConfig.cmake|g' pxr/CMakeLists.txt
-  	sed -i 's|${CMAKE_INSTALL_PREFIX}|${CMAKE_INSTALL_PREFIX}/lib/cmake/pxr|g' pxr/CMakeLists.txt
-  	sed -i 's|"cmake"|"'$(get_libdir)'/cmake/pxr"|g' pxr/CMakeLists.txt
-  	sed -i 's|${PXR_CMAKE_DIR}/cmake|${PXR_CMAKE_DIR}|g' pxr/pxrConfig.cmake.in
-  	sed -i 's|${PXR_CMAKE_DIR}/include|/usr/include|g' pxr/pxrConfig.cmake.in
+  	#sed -i 's|plugin/usd|'$(get_libdir)'/usd/plugin|g' cmake/macros/{Private,Public}.cmake
+ 	#sed -i 's|/pxrConfig.cmake|'$(get_libdir)'/cmake/pxr/pxrConfig.cmake|g' pxr/CMakeLists.txt
+  	#sed -i 's|${CMAKE_INSTALL_PREFIX}|${CMAKE_INSTALL_PREFIX}/lib/cmake/pxr|g' pxr/CMakeLists.txt
+  	#sed -i 's|"cmake"|"'$(get_libdir)'/cmake/pxr"|g' pxr/CMakeLists.txt
+  	#sed -i 's|${PXR_CMAKE_DIR}/cmake|${PXR_CMAKE_DIR}|g' pxr/pxrConfig.cmake.in
+  	#sed -i 's|${PXR_CMAKE_DIR}/include|/usr/include|g' pxr/pxrConfig.cmake.in
 
 	# Fix python dirs
 	if use python ; then
@@ -351,9 +351,9 @@ EOF
 		done
 	fi
 	if use python ; then
-		dodir /usr/lib/${EPYTHON}
-		mv "${ED}/usr/lib64/openusd/lib/python/pxr" \
-			"${ED}/usr/lib/${EPYTHON}" || die
+		cp -rp "${ED}/usr/lib64/openusd/lib/${EPYTHON}/site-packages/pxr/" \
+			"${ED}$(python_get_sitedir)/" || die
+		rm -r "${ED}/usr/lib64/openusd/lib/${EPYTHON}/site-packages/pxr"
 	fi
 	use doc && einstalldocs
 	use usdview && domenu "${FILESDIR}/org.openusd.usdview.desktop"

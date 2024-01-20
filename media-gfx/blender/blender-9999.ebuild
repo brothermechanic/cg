@@ -20,11 +20,13 @@ if [[ ${PV} == 9999 ]]; then
 	#EGIT_COMMIT="fe3110a2859d84401dceda06fd41f3b082eae790"
 	EGIT_CLONE_TYPE="shallow"
 	MY_PV="4.1"
+	OSL_PV="13"
 	KEYWORDS=""
 else
 	MY_PV="$(ver_cut 1-2)"
 	#EGIT_BRANCH="blender-v${MY_PV}-release"
 	EGIT_COMMIT="v${PV}"
+	OSL_PV="12"
 	KEYWORDS="~amd64 ~arm ~arm64"
 fi
 
@@ -243,7 +245,8 @@ RDEPEND="
 		>=dev-libs/optix-7.5.0
 	)
 	osl? (
-		>=media-libs/osl-1.13:=[optix?]
+		>=media-libs/osl-1.${OSL_PV}:=[optix?]
+		<media-libs/osl-1.$((${OSL_PV}+1)):=[optix?]
 	)
 	pdf? ( >=media-libs/libharu-2.3.0 )
 	potrace? ( >=media-gfx/potrace-1.16 )
