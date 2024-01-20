@@ -1,0 +1,11 @@
+--- a/pxr/usdImaging/bin/usdrecord/CMakeLists.txt
++++ b/pxr/usdImaging/bin/usdrecord/CMakeLists.txt
+@@ -4,7 +4,7 @@ set(PXR_PACKAGE usdrecord)
+ pxr_python_bin(usdrecord
+     DEPENDENCIES
+         usd
+-        usdAppUtils)
++        ../../usdAppUtils)
+ 
+ pxr_install_test_dir(
+     SRC testenv/RecordTest

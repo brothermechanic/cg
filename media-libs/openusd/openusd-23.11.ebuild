@@ -171,6 +171,8 @@ RESTRICT="mirror"
 
 PATCHES=(
 	"${FILESDIR}/algorithm.patch"
+	"${FILESDIR}/packageUtils.cpp.patch"
+	"${FILESDIR}/openusd-23.11-defaultfonts.patch"
 	"${FILESDIR}/openusd-21.11-gcc-11-numeric_limits.patch"
 	"${FILESDIR}/openusd-21.11-use-whole-archive-for-lld.patch"
 )
@@ -198,7 +200,10 @@ EOF
 }
 
 src_prepare() {
+	cmake_src_prepare
+
 	eapply "${FILESDIR}/${P}-tbb.patch"
+	[[ "$(get_libdir)" =~ "lib64" ]] && eapply "${FILESDIR}/${P}-lib64.patch"
 	has_version -b ">=media-libs/embree-4" && eapply "${FILESDIR}/${P}-embree-4.patch"
 	has_version -b ">=media-libs/openimageio-2.3" && eapply "${FILESDIR}/${P}-openimageio-2.3.patch"
 
@@ -206,7 +211,24 @@ src_prepare() {
 	sed -i 's|CMAKE_CXX_STANDARD 14|CMAKE_CXX_STANDARD 17|g' \
 		cmake/defaults/CXXDefaults.cmake || die
 
-	cmake_src_prepare
+  	# Change directories to standard
+  	sed -i 's|plugin/usd|'$(get_libdir)'/usd/plugin|g' cmake/macros/{Private,Public}.cmake
+ 	sed -i 's|/pxrConfig.cmake|'$(get_libdir)'/cmake/pxr/pxrConfig.cmake|g' pxr/CMakeLists.txt
+  	sed -i 's|${CMAKE_INSTALL_PREFIX}|${CMAKE_INSTALL_PREFIX}/lib/cmake/pxr|g' pxr/CMakeLists.txt
+  	sed -i 's|"cmake"|"'$(get_libdir)'/cmake/pxr"|g' pxr/CMakeLists.txt
+  	sed -i 's|${PXR_CMAKE_DIR}/cmake|${PXR_CMAKE_DIR}|g' pxr/pxrConfig.cmake.in
+  	sed -i 's|${PXR_CMAKE_DIR}/include|/usr/include|g' pxr/pxrConfig.cmake.in
+
+	# Fix python dirs
+	if use python ; then
+		eapply "${FILESDIR}/${P}-fix-python.patch"
+		sed -i 's|/python|/python'${EPYTHON/python}/site-packages'|g' cmake/macros/Private.cmake
+  		sed -i 's|lib/python/pxr|'$(python_get_sitedir)'/pxr|' cmake/macros/{Private,Public}.cmake pxr/usdImaging/usdviewq/CMakeLists.txt
+  	fi
+
+	# Support Embree4
+	find . -type f -exec gawk '/embree3/ { print FILENAME }' '{}' '+' | xargs -r sed -r -i 's/(embree)3/\14/'
+
 	# make dummy pyside-uid
 	if use usdview ; then
 		gen_pyside2_uic_file
@@ -231,6 +253,7 @@ src_configure() {
 		$(usex usdview "-DPYSIDEUICBINARY:PATH=${S}/pyside2-uic" "")
 		-DBUILD_SHARED_LIBS=ON
 		-DCMAKE_CXX_STANDARD=17
+		-DPXR_VALIDATE_GENERATED_CODE=OFF
 		-DCMAKE_INSTALL_PREFIX="${EPREFIX}${USD_PATH}"
 		-DPXR_BUILD_ALEMBIC_PLUGIN=$(usex alembic ON OFF)
 		-DPXR_BUILD_DOCUMENTATION=$(usex doc ON OFF)

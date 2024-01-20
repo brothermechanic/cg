@@ -154,7 +154,7 @@ RDEPEND="
 		>=dev-python/certifi-2021.10.8[${PYTHON_USEDEP}]
 		>=dev-python/charset-normalizer-2.0.6[${PYTHON_USEDEP}]
 		>=dev-python/idna-3.2[${PYTHON_USEDEP}]
-		>=dev-python/numpy-1.23.5[${PYTHON_USEDEP}]
+		>=dev-python/numpy-1.24.3[${PYTHON_USEDEP}]
 		>=dev-python/pybind11-2.10.1[${PYTHON_USEDEP}]
 		>=dev-python/zstandard-0.16.0[${PYTHON_USEDEP}]
 		>=dev-python/requests-2.26.0[${PYTHON_USEDEP}]
@@ -203,7 +203,7 @@ RDEPEND="
 		app-misc/spacenavd
 	)
 	materialx? (
-		media-libs/materialx[${PYTHON_SINGLE_USEDEP},python]
+		>=media-libs/materialx-1.38.8[${PYTHON_SINGLE_USEDEP},python]
 	)
 	nls? ( virtual/libiconv )
 	media-libs/audaspace:=[python,openal?,sdl?,pulseaudio?]
@@ -211,24 +211,24 @@ RDEPEND="
 		sys-devel/DPC++
 	)
 	openal? (
-		media-libs/openal
+		>=media-libs/openal-1.23.1
 	)
 	media-libs/glew:*
 	virtual/glu
-	oidn? ( >=media-libs/oidn-1.4.1[cuda?] )
+	oidn? ( >=media-libs/oidn-2.1.0[cuda?] )
 	<media-libs/openimageio-2.6[${PYTHON_SINGLE_USEDEP},${OPENVDB_SINGLE_USEDEP},python,color-management?]
-	>=media-libs/openimageio-2.4.15.0[${PYTHON_SINGLE_USEDEP},${OPENVDB_SINGLE_USEDEP},python,color-management?]
+	>=media-libs/openimageio-2.5.6.0[${PYTHON_SINGLE_USEDEP},${OPENVDB_SINGLE_USEDEP},python,color-management?]
 	>=dev-cpp/robin-map-0.6.2
 	>=dev-libs/libfmt-9.1.0
-	color-management? ( >=media-libs/opencolorio-2.1.1-r7:= )
-	openexr? ( >=media-libs/openexr-3:= )
+	color-management? ( >=media-libs/opencolorio-2.3.0:= )
+	openexr? ( >=media-libs/openexr-3.2.1:= )
 	openpgl? (
 		<media-libs/openpgl-0.6[tbb?]
 		>=media-libs/openpgl-0.5[tbb?]
 	)
-	opensubdiv? ( >=media-libs/opensubdiv-3.4.0[cuda?,openmp?,tbb?,opengl] )
+	opensubdiv? ( >=media-libs/opensubdiv-3.6.0[cuda?,openmp?,tbb?,opengl] )
 	openvdb? (
-		>=media-gfx/openvdb-9.0.0:=[${OPENVDB_SINGLE_USEDEP},cuda?,nanovdb?]
+		>=media-gfx/openvdb-11.0.0:=[${OPENVDB_SINGLE_USEDEP},cuda?,nanovdb?]
 		<=media-gfx/openvdb-12.0.0:=[${OPENVDB_SINGLE_USEDEP},cuda?,nanovdb?]
 		>=dev-libs/c-blosc-1.21.1[zlib]
 		nanovdb? (
@@ -243,7 +243,7 @@ RDEPEND="
 		>=dev-libs/optix-7.5.0
 	)
 	osl? (
-		>=media-libs/osl-1.11.16.0-r3:=[optix?]
+		>=media-libs/osl-1.13:=[optix?]
 	)
 	pdf? ( >=media-libs/libharu-2.3.0 )
 	potrace? ( >=media-gfx/potrace-1.16 )
@@ -261,7 +261,7 @@ RDEPEND="
 	webp? ( >=media-libs/libwebp-1.3.2:= )
 	wayland? (
 		>=dev-libs/wayland-1.12
-		>=dev-libs/wayland-protocols-1.15
+		>=dev-libs/wayland-protocols-1.32
 		>=x11-libs/libxkbcommon-0.2.0
 		dev-util/wayland-scanner
 		media-libs/mesa[wayland]
@@ -272,7 +272,7 @@ RDEPEND="
 		x11-libs/libXi
 		x11-libs/libXxf86vm
 	)
-	media-libs/mesa[X?,wayland?,llvm?,vulkan?]
+	>=media-libs/mesa-23.3.0[X?,wayland?,llvm?,vulkan?]
 	cg? ( media-blender/cg_preferences )
 	|| (
 		virtual/glu
@@ -288,7 +288,7 @@ DEPEND="
 	dev-cpp/eigen:=[cuda?]
 	vulkan? (
 		>=media-libs/shaderc-2022.3
-		>=media-libs/vulkan-loader-1.2.198[X?,wayland?,layers]
+		>=media-libs/vulkan-loader-1.3.268[X?,wayland?,layers]
 	)
 "
 
@@ -302,7 +302,7 @@ BDEPEND="
 	>=dev-cpp/yaml-cpp-0.7.0
 	>=dev-build/cmake-3.10
 	>=dev-build/meson-0.63.0
-	>=dev-util/vulkan-headers-1.2.198
+	>=dev-util/vulkan-headers-1.3.268
 	dev-util/patchelf
 	virtual/pkgconfig
 	lld? ( <sys-devel/lld-$((${LLVM_MAX_SLOT} + 1)):= )
@@ -624,7 +624,7 @@ src_configure() {
 		-DWITH_STRICT_BUILD_OPTIONS=yes
 		-DWITH_LIBS_PRECOMPILED=no
 		-DWITH_BUILDINFO=yes
-		-DWITH_UNITY_BUILD=no 									# Enable Unity build for modules (memory usage/compile time)
+		-DWITH_UNITY_BUILD=no 									# Enable Unity build for blender modules (memory usage/compile time)
 		-DWITH_HYDRA=no 										# MacOS features enabled by default if WITH_STRICT_BUILD_OPTIONS=yes
 		-DWITH_MATERIALX=$(usex materialx)
 	)
@@ -655,10 +655,13 @@ src_configure() {
 		if use cycles-bin-kernels; then
 			use cuda && CYCLES_TEST_DEVICES+=( "CUDA" )
 			use optix && CYCLES_TEST_DEVICES+=( "OPTIX" )
+			use hip && CYCLES_TEST_DEVICES+=( "HIP" )
 		fi
 		mycmakeargs+=(
 			-DCYCLES_TEST_DEVICES:STRING="$(local IFS=";"; echo "${CYCLES_TEST_DEVICES[*]}")"
 			-DWITH_COMPOSITOR_REALTIME_TESTS=yes
+			-DWITH_OPENGL_DRAW_TESTS=yes
+			-DWITH_OPENGL_RENDER_TESTS=yes
 		)
 	fi
 
@@ -733,7 +736,7 @@ src_install() {
 	# Fix doc installdir
 	docinto html
 	dodoc "${CMAKE_USE_DIR}"/release/text/readme.html
-	rm -r "${ED%/}"/usr/share/doc/blende*
+	rm -r "${ED%/}"/usr/share/doc/blender*
 	python_optimize "${ED%/}/usr/share/blender/${SLOT}/scripts"
 
 	use portable && dodir "${ED%/}"/usr/bin

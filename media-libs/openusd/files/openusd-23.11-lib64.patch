@@ -1,20 +1,20 @@
 --- a/cmake/macros/Public.cmake	2020-11-14 00:30:42.241274460 +0300
 +++ b/cmake/macros/Public.cmake	2020-11-14 00:33:28.117941719 +0300
-@@ -409,7 +409,7 @@
+@@ -432,7 +432,7 @@
              RENAME 
                  __init__.py
              DESTINATION 
--                tests/${tm_INSTALL_PREFIX}/lib/python/${MODULE_NAME}
-+                tests/${tm_INSTALL_PREFIX}/lib64/python/${MODULE_NAME}
+-                tests/${tm_INSTALL_PREFIX}/lib/python/${tm_DEST_DIR}
++                tests/${tm_INSTALL_PREFIX}/lib64/python/${tm_DEST_DIR}
          )
      endif()
      if (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/${plugInfoFile}")
-@@ -419,7 +419,7 @@
+@@ -442,7 +442,7 @@
              RENAME 
                  plugInfo.json
              DESTINATION 
--                tests/${tm_INSTALL_PREFIX}/lib/python/${MODULE_NAME}
-+                tests/${tm_INSTALL_PREFIX}/lib64/python/${MODULE_NAME}
+-                tests/${tm_INSTALL_PREFIX}/lib/python/${tm_DEST_DIR}
++                tests/${tm_INSTALL_PREFIX}/lib64/python/${tm_DEST_DIR}
          )
      endif()
  endfunction() # pxr_create_test_module
@@ -109,6 +109,6 @@
 -    list(FIND CMAKE_PLATFORM_IMPLICIT_LINK_DIRECTORIES "${CMAKE_INSTALL_PREFIX}/lib" isSystemDir)
 +    set(CMAKE_DYLIB_INSTALL_NAME_DIR "${CMAKE_INSTALL_PREFIX}/lib64" CACHE STRING "install_name path for dylib.")
 +    list(FIND CMAKE_PLATFORM_IMPLICIT_LINK_DIRECTORIES "${CMAKE_INSTALL_PREFIX}/lib64" isSystemDir)
-     message(WARNING "Building USD on Mac OSX is currently experimental.")
- elseif(WIN32)
-     # Windows specific set up
+ 
+     # Workaround for code signing issues that show up as warnings at the end
+     # of the build like:
