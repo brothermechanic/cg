@@ -13,12 +13,12 @@ DESCRIPTION="Nonlinear least-squares minimizer"
 HOMEPAGE="http://ceres-solver.org/"
 SRC_URI="https://github.com/${PN}/${PN}/archive/${PV}.tar.gz"
 
-LICENSE="sparse? ( BSD ) !sparse? ( LGPL-2.1 ) cxsparse? ( BSD )"
-SLOT="0/1"
+LICENSE="sparse? ( BSD ) !sparse? ( LGPL-2.1 )"
+SLOT="0/4" # Based on soname libceres.so.4
 KEYWORDS="amd64 ~x86 ~amd64-linux ~x86-linux"
 
 CUDA_TARGETS_COMPAT=( sm_30 sm_35 sm_50 sm_52 sm_61 sm_70 sm_75 sm_86 sm_87 sm_89 sm_90 )
-IUSE="cxsparse cuda doc examples gflags lapack openmp +schur sparse test ${CUDA_TARGETS_COMPAT[@]/#/cuda_targets_}"
+IUSE="cuda debug doc examples gflags lapack metis openmp +schur sparse test ${CUDA_TARGETS_COMPAT[@]/#/cuda_targets_}"
 RESTRICT="
 	mirror
 	!test? ( test )
@@ -30,18 +30,18 @@ BDEPEND="${PYTHON_DEPS}
 	>=dev-cpp/eigen-3.3.4:3
 	cuda? ( dev-util/nvidia-cuda-toolkit:= )
 	lapack? ( virtual/pkgconfig )
-	doc? ( dev-libs/mathjax )
+	doc? ( <dev-libs/mathjax-3 )
 "
 RDEPEND="
 	dev-cpp/glog[gflags?,${MULTILIB_USEDEP}]
-	cxsparse? ( sci-libs/cxsparse )
 	lapack? ( virtual/lapack )
+	metis? ( sci-libs/metis[-int64] )
 	sparse? (
+		sci-libs/cxsparse
 		sci-libs/amd
 		sci-libs/camd
 		sci-libs/ccolamd
-		sci-libs/cholmod[metis(+)]
-		sci-libs/metis[-int64]
+		sci-libs/cholmod
 		sci-libs/colamd
 		sci-libs/spqr
 	)
@@ -78,7 +78,7 @@ src_prepare() {
 
 src_configure() {
 	# CUSTOM_BLAS=OFF EIGENSPARSE=OFF MINIGLOG=OFF CXX11=OFF
-	CMAKE_BUILD_TYPE=Release
+	CMAKE_BUILD_TYPE=$(usex debug RelWithDebInfo Release)
 	local mycmakeargs=(
 		-DBUILD_BENCHMARKS=OFF
 		-DBUILD_EXAMPLES=$(usex examples)
@@ -86,10 +86,12 @@ src_configure() {
 		-DBUILD_DOCUMENTATION=$(usex doc)
 		-DBUILD_SHARED_LIBS=ON
 		-DUSE_CUDA=$(usex cuda)
+		-DEIGENMETIS=$(usex metis)
 		-DGFLAGS=$(usex gflags)
 		-DLAPACK=$(usex lapack)
 		-DSCHUR_SPECIALIZATIONS=$(usex schur)
 		-DSUITESPARSE=$(usex sparse)
+		-DEIGENSPARSE=$(usex sparse)
 		-DEigen3_DIR=/usr/$(get_libdir)/cmake/eigen3
 		-DCERES_THREADING_MODEL=$(usex openmp OPENMP CXX_THREADS)
 	)
@@ -108,7 +110,6 @@ src_configure() {
 			-DCMAKE_CUDA_ARCHITECTURES="${CUDA_TARGETS%%;}"
 		)
 	fi
-	use sparse || use cxsparse || mycmakeargs+=( -DEIGENSPARSE=ON )
 
 	cmake-multilib_src_configure
 }
