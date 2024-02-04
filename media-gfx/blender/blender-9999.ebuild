@@ -341,7 +341,6 @@ QA_FLAGS_IGNORED="${QA_EXECSTACK}"
 QA_PRESTRIPPED="${QA_EXECSTACK}"
 
 PATCHES=(
-	"${FILESDIR}/${PN}-3.5.1-openusd-21.11-python.patch"
 	"${FILESDIR}/${PN}-3.0.0-boost_python.patch"
 	"${FILESDIR}/${PN}-3.5.1-tbb-rpath.patch"
 	"${FILESDIR}/${PN}-3.2.2-findtbb2.patch"
