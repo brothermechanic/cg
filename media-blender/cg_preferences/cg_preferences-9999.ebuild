@@ -13,3 +13,4 @@ EGIT_REPO_URI="https://gitflic.ru/project/brothermechanic/cg_preferences.git"
 
 LICENSE="GPL-3"
 
+ADDON_SOURCE_SUBDIR=${S}/${PN}

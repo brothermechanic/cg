@@ -17,7 +17,7 @@ EGIT_REPO_URI_LIST="https://projects.blender.org/blender/blender-addons.git http
 EGIT_SUBMODULES=()
 if [[ ${PV} == 9999 ]]; then
 	EGIT_BRANCH="main"
-	#EGIT_COMMIT="fe3110a2859d84401dceda06fd41f3b082eae790"
+	EGIT_COMMIT="45a73827b0ad1f17189e144618bb1d9c781909f7"
 	EGIT_CLONE_TYPE="shallow"
 	MY_PV="4.1"
 	OSL_PV="13"
@@ -395,6 +395,12 @@ src_unpack() {
 		mkdir -p lib || die
 		mv "${WORKDIR}"/blender-${TEST_TARBALL_VERSION}-tests/tests lib || die
 	fi
+	if use cg; then
+		unset EGIT_BRANCH EGIT_COMMIT
+		EGIT_CHECKOUT_DIR="${WORKDIR}"/cg_preferences/ \
+		EGIT_REPO_URI="https://gitflic.ru/project/brothermechanic/cg_preferences.git" \
+		git-r3_src_unpack
+	fi
 }
 
 src_prepare() {
@@ -409,10 +415,12 @@ src_prepare() {
 	eapply "${FILESDIR}"/blender-fix-lld-17-linking.patch
 
 	if use cg && [ -d ${CG_BLENDER_SCRIPTS_DIR} ]; then
-		eapply "${FILESDIR}"/cg-defaults.patch
-		cp "${FILESDIR}"/splash.png release/datafiles/
-		cp "${FILESDIR}"/cg_environment.py "${S}"/scripts/startup/ || die
-		sed -i -e "s|cg_blender_scripts_dir =.*|cg_blender_scripts_dir = \"${CG_BLENDER_SCRIPTS_DIR}\"|" "${S}"/scripts/startup/cg_environment.py || die
+		eapply "${WORKDIR}"/cg_preferences/patches/cg-defaults.patch
+		cp "${WORKDIR}"/cg_preferences/share/cg_preferences_service.py "${S}"/scripts/startup/ || die
+		cp "${WORKDIR}"/cg_preferences/share/startup.blend release/datafiles/ || die
+		cp "${WORKDIR}"/cg_preferences/share/splash.png release/datafiles/ || die
+		cp "${FILESDIR}"/cg_blender_scripts_dir_service.py "${S}"/scripts/startup/ || die
+		sed -i -e "s|cg_blender_scripts_dir =.*|cg_blender_scripts_dir = \"${CG_BLENDER_SCRIPTS_DIR}\"|" "${S}"/scripts/startup/cg_blender_scripts_dir_service.py || die
 		elog "Blender configured for CG overlay!"
 	else
 		ewarn "Blender is not configured for CG overlay!"
