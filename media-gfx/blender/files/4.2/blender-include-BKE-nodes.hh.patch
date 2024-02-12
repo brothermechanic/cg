@@ -1,0 +1,11 @@
+--- a/source/blender/compositor/COM_profile.hh
++++ b/source/blender/compositor/COM_profile.hh
+@@ -7,7 +7,7 @@
+ #include "BLI_map.hh"
+ #include "BLI_timeit.hh"
+ 
+-#include "DNA_node_types.h"
++#include "BKE_node.hh"
+ 
+ struct bNodeTree;
+ 

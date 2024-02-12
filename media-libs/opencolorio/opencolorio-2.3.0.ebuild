@@ -45,7 +45,7 @@ RDEPEND="
 "
 DEPEND="${RDEPEND}"
 BDEPEND="
-	dev-build/ninja
+	app-alternatives/ninja
 	>=dev-build/cmake-3.13
 	virtual/pkgconfig
 	doc? (

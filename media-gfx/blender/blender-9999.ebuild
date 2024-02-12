@@ -17,17 +17,21 @@ EGIT_REPO_URI_LIST="https://projects.blender.org/blender/blender-addons.git http
 EGIT_SUBMODULES=()
 if [[ ${PV} == 9999 ]]; then
 	EGIT_BRANCH="main"
-	EGIT_COMMIT="45a73827b0ad1f17189e144618bb1d9c781909f7"
-	EGIT_CLONE_TYPE="shallow"
-	MY_PV="4.1"
-	OSL_PV="13"
+	EGIT_COMMIT="8f09fffef7a2fad67c8111b31c9bd0206657f26c"
+	#EGIT_CLONE_TYPE="shallow"
+	MY_PV="4.2"
 	KEYWORDS=""
 else
 	MY_PV="$(ver_cut 1-2)"
-	#EGIT_BRANCH="blender-v${MY_PV}-release"
-	EGIT_COMMIT="v${PV}"
-	OSL_PV="12"
+	EGIT_BRANCH="blender-v${MY_PV}-release"
+	#EGIT_COMMIT="v${PV}"
 	KEYWORDS="~amd64 ~arm ~arm64"
+fi
+
+if [[ "4.0 3.6 2.93" =~ "${MY_PV}"  ]]; then
+	OSL_PV="12"
+else
+	OSL_PV="13"
 fi
 
 SLOT="$MY_PV"
@@ -381,9 +385,13 @@ src_unpack() {
 	git-r3_src_unpack
 
 	for repo in $(echo ${EGIT_REPO_URI_LIST}); do
-		EGIT_BRANCH="main"
-		EGIT_COMMIT="v${PV}"
-		if [[ "${PV}" == "9999" ]]; then EGIT_COMMIT=""; fi
+		if [[ "${PV}" == "9999" ]]; then
+			EGIT_BRANCH="main";
+			EGIT_COMMIT=""
+		else
+			EGIT_BRANCH="blender-v${MY_PV}-release"
+			#EGIT_COMMIT="v${PV}"
+		fi
 		EGIT_REPO_URI="${repo}"
 		EGIT_CHECKOUT_DIR=${WORKDIR}/${P}/scripts/$(echo -n "${repo}" | sed -rne 's/^http.*\/blender-([a-z-]*).*/\1/p')
 		git-r3_src_unpack
@@ -410,7 +418,7 @@ src_prepare() {
 
 	use cuda && cuda_src_prepare
 
-	use portable || eapply "${FILESDIR}/${SLOT}"/*.patch
+	use portable || eapply "${FILESDIR}/${SLOT}"
 	use optix && eapply "${FILESDIR}"/blender-fix-optix-build.patch
 	eapply "${FILESDIR}"/blender-fix-lld-17-linking.patch
 
