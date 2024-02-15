@@ -113,7 +113,7 @@ REQUIRED_USE="${PYTHON_REQUIRED_USE}
 	usd? ( tbb )
 "
 
-LANGS="en ab ar be bg ca cs de el eo es es_ES eu fa fi fr ha he hi hr hu id it ja ka km ko ky ne nl pl pt_BR pt ru sk sr@latin sr sv sw ta th tr zh_TW uk vi zh_CN zh_HANS zh_HANT"
+LANGS="en ab ar be bg ca cs da de el eo es es_ES eu fa fi fr ha he hi hr hu id it ja ka km ko ky ne nl pl pt_BR pt ru sk sr@latin sr sv sw ta th tr zh_TW uk vi zh_CN zh_HANS zh_HANT"
 
 for X in ${LANGS} ; do
 	IUSE+=" l10n_${X}"
