@@ -1,0 +1,92 @@
+diff --git a/build_files/cmake/have_features.cmake b/build_files/cmake/have_features.cmake
+index de90d7fcdd2..816f771966c 100644
+--- a/build_files/cmake/have_features.cmake
++++ b/build_files/cmake/have_features.cmake
+@@ -12,7 +12,7 @@ include(CheckSymbolExists)
+ # Function `malloc_stats` is only available on GLIBC,
+ # so check that before defining `HAVE_MALLOC_STATS`.
+ check_symbol_exists(malloc_stats "malloc.h" HAVE_MALLOC_STATS_H)
+-
++add_definitions(-DHAVE_MALLOC_STATS_H)
+ # Used for: `source/creator/creator_signals.c`.
+ # The function `feenableexcept` is not present non-GLIBC systems,
+ # hence we need to check if it's available in the `fenv.h` file.
+diff --git a/intern/guardedalloc/intern/mallocn_lockfree_impl.c b/intern/guardedalloc/intern/mallocn_lockfree_impl.c
+index c7ebc9b5a96..ce8a2733bf1 100644
+--- a/intern/guardedalloc/intern/mallocn_lockfree_impl.c
++++ b/intern/guardedalloc/intern/mallocn_lockfree_impl.c
+@@ -387,10 +387,10 @@ void MEM_lockfree_printmemlist_stats(void)
+       "\nFor more detailed per-block statistics run Blender with memory debugging command line "
+       "argument.\n");
+ 
+-#ifdef HAVE_MALLOC_STATS
+-  printf("System Statistics:\n");
+-  malloc_stats();
+-#endif
++//#ifdef HAVE_MALLOC_STATS
++//  printf("System Statistics:\n");
++//  malloc_stats();
++//#endif
+ }
+ 
+ void MEM_lockfree_set_error_callback(void (*func)(const char *))
+diff --git a/intern/guardedalloc/intern/mallocn_guarded_impl.c b/intern/guardedalloc/intern/mallocn_guarded_impl.c
+index acd47ed5ad2..b2ecc1ab61f 100644
+--- a/intern/guardedalloc/intern/mallocn_guarded_impl.c
++++ b/intern/guardedalloc/intern/mallocn_guarded_impl.c
+@@ -744,10 +744,10 @@ void MEM_guarded_printmemlist_stats(void)
+ 
+   mem_unlock_thread();
+ 
+-#ifdef HAVE_MALLOC_STATS
+-  printf("System Statistics:\n");
+-  malloc_stats();
+-#endif
++//#ifdef HAVE_MALLOC_STATS
++//  printf("System Statistics:\n");
++//  malloc_stats();
++//#endif
+ }
+ 
+ static const char mem_printmemlist_pydict_script[] =
+ diff --git a/source/blender/freestyle/intern/geometry/VecMat.h b/source/blender/freestyle/intern/geometry/VecMat.h
+index ba5ad84a156..3b0c2ec5a81 100644
+--- a/source/blender/freestyle/intern/geometry/VecMat.h
++++ b/source/blender/freestyle/intern/geometry/VecMat.h
+@@ -36,6 +36,9 @@ template<> struct is_false<false> {
+ //
+ /////////////////////////////////////////////////////////////////////////////
+ 
++#define _GNU_SOURCE 1
++typedef unsigned u_int, uint;
++
+ template<class T, uint N> class Vec {
+  public:
+   typedef T value_type;
+diff --git a/source/blender/freestyle/intern/system/Id.h b/source/blender/freestyle/intern/system/Id.h
+index 6f0d2b3c4f4..f266f2feaad 100644
+--- a/source/blender/freestyle/intern/system/Id.h
++++ b/source/blender/freestyle/intern/system/Id.h
+@@ -20,6 +20,8 @@ namespace Freestyle {
+  */
+ class Id {
+  public:
++  #define _GNU_SOURCE 1
++  typedef unsigned u_int, uint;
+   typedef uint id_type;
+ 
+   /** Default constructor */
+diff --git a/source/blender/freestyle/intern/geometry/Geom.h b/source/blender/freestyle/intern/geometry/Geom.h
+index 53104aa792a..5dd0911fd55 100644
+--- a/source/blender/freestyle/intern/geometry/Geom.h
++++ b/source/blender/freestyle/intern/geometry/Geom.h
+@@ -17,6 +17,9 @@ namespace Freestyle {
+ 
+ namespace Geometry {
+ 
++#define _GNU_SOURCE 1
++typedef unsigned u_int, uint;
++
+ typedef VecMat::Vec2<uint> Vec2u;
+ typedef VecMat::Vec2<int> Vec2i;
+ typedef VecMat::Vec2<float> Vec2f;
