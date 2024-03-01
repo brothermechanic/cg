@@ -3,7 +3,7 @@
 
 EAPI=8
 
-BLENDER_COMPAT=( 2_93 3_{0..6} 4_{0..1} )
+BLENDER_COMPAT=( 2_93 3_{0..6} 4_{0..2} )
 
 inherit blender-addon
 
