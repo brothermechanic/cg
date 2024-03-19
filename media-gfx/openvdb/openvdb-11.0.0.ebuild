@@ -1,4 +1,4 @@
-# Copyright 1999-2023 Gentoo Authors
+# Copyright 1999-2024 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
 
 EAPI=8
@@ -134,7 +134,7 @@ BDEPEND+="
 	|| (
 		>=sys-devel/gcc-6.3.1
 		(
-			<sys-devel/clang-17
+			<sys-devel/clang-19
 			>=sys-devel/clang-3.8
 		)
 		>=dev-lang/icc-17
