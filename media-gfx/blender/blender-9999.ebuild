@@ -5,7 +5,7 @@ EAPI=8
 
 PYTHON_COMPAT=( python3_{10..12} )
 OPENVDB_COMPAT=( {7..11} )
-LLVM_MAX_SLOT="17"
+LLVM_MAX_SLOT="18"
 
 inherit check-reqs cmake cuda flag-o-matic git-r3 pax-utils python-single-r1 toolchain-funcs xdg-utils llvm openvdb cg-blender-scripts-dir
 
@@ -220,7 +220,6 @@ RDEPEND="
 		>=media-libs/openal-1.23.1
 	)
 	media-libs/glew:*
-	virtual/glu
 	oidn? ( >=media-libs/oidn-2.1.0[cuda?] )
 	<media-libs/openimageio-2.6[${PYTHON_SINGLE_USEDEP},${OPENVDB_SINGLE_USEDEP},python,color-management?]
 	>=media-libs/openimageio-2.5.6.0[${PYTHON_SINGLE_USEDEP},${OPENVDB_SINGLE_USEDEP},python,color-management?]
@@ -271,13 +270,13 @@ RDEPEND="
 		>=dev-libs/wayland-protocols-1.32
 		>=x11-libs/libxkbcommon-0.2.0
 		dev-util/wayland-scanner
-		media-libs/mesa[wayland]
 		>=gui-libs/libdecor-0.1.0
 	)
 	X? (
 		x11-libs/libX11
 		x11-libs/libXi
 		x11-libs/libXxf86vm
+		virtual/glu
 	)
 	>=media-libs/mesa-23.3.0[X?,wayland?,llvm?,vulkan?]
 	cg? ( media-blender/cg_preferences )
@@ -633,6 +632,7 @@ src_configure() {
 		-DWITH_XR_OPENXR=$(usex openxr)							# VR interface
 		#-DSYCL_LIBRARY="/usr/lib/llvm/intel"
 		#-DSYCL_INCLUDE_DIR="/usr/lib/llvm/intel/include"
+		-DLLVM_LIBRARY="/usr/lib/llvm/${LLVM_SLOT}/lib64/libLLVM.so"
 		-DUSD_ROOT_DIR="${ESYSROOT}/usr/$(get_libdir)/openusd/lib"
 		-DMaterialX_DIR="${ESYSROOT}/usr/$(get_libdir)/cmake/MaterialX"
 		-DWITH_NINJA_POOL_JOBS=no								# for machines with 16GB of RAM or less

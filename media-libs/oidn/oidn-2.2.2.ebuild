@@ -1,4 +1,4 @@
-# Copyright 1999-2023 Gentoo Authors
+# Copyright 1999-2024 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
 
 EAPI=8
@@ -30,7 +30,7 @@ CUDA_TARGETS_COMPAT=(
 )
 
 ROCM_VERSION="5.7.1"
-PYTHON_COMPAT=( python3_{10..11} )
+PYTHON_COMPAT=( python3_{10..12} )
 
 inherit cmake cuda flag-o-matic llvm python-single-r1 rocm toolchain-funcs
 
@@ -49,7 +49,7 @@ ORG_GH="https://github.com/OpenImageDenoise"
 MIN_CLANG_PV="3.3"
 MIN_GCC_PV="4.8.1"
 SLOT="0/$(ver_cut 1-2)"
-LLVM_MAX_SLOT=17
+LLVM_MAX_SLOT=18
 IUSE="
 -${CUDA_TARGETS_COMPAT[@]/#/cuda_targets_}
 -${AMDGPU_TARGETS_COMPAT[@]/#/amdgpu_targets_}
@@ -176,7 +176,7 @@ fi
 RESTRICT="mirror"
 DOCS=( CHANGELOG.md README.md readme.pdf )
 PATCHES=(
-	"${FILESDIR}/${PN}-2.0.1-hip-buildfiles-changes.patch"
+	"${FILESDIR}/${PN}-2.2.1-hip-buildfiles-changes.patch"
 	"${FILESDIR}/${PN}-2.0.1-set-rocm-path.patch"
 	"${FILESDIR}/${PN}-2.1.0-cuda-nvcc-flags.patch"
 )

@@ -29,13 +29,16 @@ fi
 
 if [[ "${PV}" =~ "1.12" ]]; then
 	PATCHES+=(
-		#"${FILESDIR}/osl-1.12.13.0-llvm-17.patch"
 		"${FILESDIR}/osl-1.12.13.0-cuda-noinline-fix.patch"
 		"${FILESDIR}/osl-1.12.14.0-lld-fix-linking.patch"
 	)
 	# Check this on updates
 	LLVM_MAX_SLOT=15
 	LLVM_SLOTS=( 9 10 11 12 13 14 15 )
+else
+	PATCHES+=(
+		"${FILESDIR}/osl-1.13.6.0-lld-fix-linking.patch"
+	)
 fi
 
 LICENSE="BSD"

@@ -1,9 +1,9 @@
 --- a/devices/CMakeLists.txt
 +++ b/devices/CMakeLists.txt
 @@ -21,19 +21,23 @@ if(OIDN_DEVICE_SYCL)
- endif()
+   set_property(CACHE OIDN_DEVICE_CUDA_API PROPERTY STRINGS "Driver" "RuntimeStatic" "RuntimeShared")
+   mark_as_advanced(OIDN_DEVICE_CUDA_API)
 
- if(OIDN_DEVICE_CUDA)
 -  # We need to build this an external project because we might need to switch to clang-cl
 -  # CMake does not support GNU-like compilers for CUDA
 -  if(WIN32 AND CMAKE_CXX_COMPILER_ID MATCHES "Clang" AND NOT MSVC)
