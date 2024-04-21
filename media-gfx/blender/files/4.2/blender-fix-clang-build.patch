@@ -3,7 +3,7 @@
 @@ -54,37 +54,7 @@ find_path(CLANG_INCLUDE_DIR
  
  
- set(_CLANG_FIND_COMPONENTS
+ set(_clang_FIND_COMPONENTS
 -  clangDependencyScanning
 -  clangDynamicASTMatchers
 -  clangFrontendTool
@@ -38,4 +38,4 @@
 +  clang-cpp
  )
  
- set(_CLANG_LIBRARIES)
+ set(_clang_LIBRARIES)

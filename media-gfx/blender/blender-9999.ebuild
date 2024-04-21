@@ -17,7 +17,8 @@ EGIT_REPO_URI_LIST="https://projects.blender.org/blender/blender-addons.git http
 EGIT_SUBMODULES=()
 if [[ ${PV} == 9999 ]]; then
 	EGIT_BRANCH="main"
-	EGIT_COMMIT="8f09fffef7a2fad67c8111b31c9bd0206657f26c"
+	EGIT_COMMIT="463a4c6211e5df2fa7e2a9a9ca8347262266c44e"
+	#EGIT_COMMIT="8f09fffef7a2fad67c8111b31c9bd0206657f26c"
 	#EGIT_CLONE_TYPE="shallow"
 	MY_PV="4.2"
 	KEYWORDS=""
@@ -212,7 +213,7 @@ RDEPEND="
 		>=media-libs/materialx-1.38.8[${PYTHON_SINGLE_USEDEP},python]
 	)
 	nls? ( virtual/libiconv )
-	media-libs/audaspace:=[python,openal?,sdl?,pulseaudio?]
+	>=media-libs/audaspace-1.5.0:=[python,openal?,sdl?,pulseaudio?]
 	oneapi? (
 		sys-devel/DPC++
 	)
@@ -573,6 +574,7 @@ src_configure() {
 		-DWITH_HARU=$(usex pdf)									# export format support
 		-DWITH_IO_GPENCIL=$(usex pdf)							# export format support
 		-DWITH_INSTALL_PORTABLE=$(usex portable)
+		-DWITH_CPU_CHECK=$(usex portable)
 		-DWITH_IMAGE_CINEON=$(usex dpx)
 		-DWITH_IMAGE_OPENEXR=$(usex openexr)
 		-DWITH_IMAGE_OPENJPEG=$(usex jpeg2k)

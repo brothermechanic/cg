@@ -1,4 +1,4 @@
-# Copyright 1999-2023 Gentoo Authors
+# Copyright 1999-2024 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
 
 EAPI=8
@@ -204,8 +204,8 @@ src_prepare() {
 
 	eapply "${FILESDIR}/${P}-tbb.patch"
 	#[[ "$(get_libdir)" =~ "lib64" ]] && eapply "${FILESDIR}/${P}-lib64.patch"
-	has_version -b ">=media-libs/embree-4" && eapply "${FILESDIR}/${P}-embree-4.patch"
-	has_version -b ">=media-libs/openimageio-2.3" && eapply "${FILESDIR}/${P}-openimageio-2.3.patch"
+	has_version -b ">=media-libs/embree-4" && eapply "${FILESDIR}/${PN}-23.11-embree-4.patch"
+	#has_version -b ">=media-libs/openimageio-2.3" && eapply "${FILESDIR}/${PN}-23.11-openimageio-2.3.patch"
 
 	# Fix for #2351
 	sed -i 's|CMAKE_CXX_STANDARD 14|CMAKE_CXX_STANDARD 17|g' \
@@ -221,7 +221,7 @@ src_prepare() {
 
 	# Fix python dirs
 	if use python ; then
-		eapply "${FILESDIR}/${P}-fix-python.patch"
+		eapply "${FILESDIR}/${PN}-23.11-fix-python.patch"
 		sed -i 's|/python|/python'${EPYTHON/python}/site-packages'|g' cmake/macros/Private.cmake
   		sed -i 's|lib/python/pxr|'$(python_get_sitedir)'/pxr|' cmake/macros/{Private,Public}.cmake pxr/usdImaging/usdviewq/CMakeLists.txt
   	fi
@@ -255,6 +255,7 @@ src_configure() {
 		-DCMAKE_CXX_STANDARD=17
 		-DPXR_VALIDATE_GENERATED_CODE=OFF
 		-DCMAKE_INSTALL_PREFIX="${EPREFIX}${USD_PATH}"
+		-DCMAKE_FIND_PACKAGE_PREFER_CONFIG="yes"
 		-DPXR_BUILD_ALEMBIC_PLUGIN=$(usex alembic ON OFF)
 		-DPXR_BUILD_DOCUMENTATION=$(usex doc ON OFF)
 		-DPXR_BUILD_DRACO_PLUGIN=$(usex draco ON OFF)
@@ -282,7 +283,6 @@ src_configure() {
 		-DPXR_PREFER_SAFETY_OVER_SPEED=$(usex safety-over-speed ON OFF)
 		-DPXR_PYTHON_SHEBANG="${PYTHON}"
 		-DPXR_SET_INTERNAL_NAMESPACE="usdBlender"
-		#-DPXR_USE_PYTHON_3=ON
 		#-DCMAKE_FIND_DEBUG_MODE=yes
 	)
 	cmake_src_configure
