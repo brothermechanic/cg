@@ -29,11 +29,8 @@ else
 	KEYWORDS="~amd64 ~arm ~arm64"
 fi
 
-if [[ "4.0 3.6 2.93" =~ "${MY_PV}"  ]]; then
-	OSL_PV="12"
-else
-	OSL_PV="13"
-fi
+[[ "4.0 3.6" =~ "${MY_PV}"  ]] && OSL_PV="12" || OSL_PV="13"
+[[ "4.2" == "${MY_PV}"  ]] && AUD_PV="1.5.0" || AUD_PV="1.4.0"
 
 SLOT="$MY_PV"
 LICENSE="|| ( GPL-3 BL )"
@@ -213,7 +210,7 @@ RDEPEND="
 		>=media-libs/materialx-1.38.8[${PYTHON_SINGLE_USEDEP},python]
 	)
 	nls? ( virtual/libiconv )
-	>=media-libs/audaspace-1.5.0:=[python,openal?,sdl?,pulseaudio?]
+	>=media-libs/audaspace-${AUD_PV}:=[python,openal?,sdl?,pulseaudio?]
 	oneapi? (
 		sys-devel/DPC++
 	)
