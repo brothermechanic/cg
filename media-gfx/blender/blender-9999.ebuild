@@ -30,7 +30,7 @@ else
 fi
 
 [[ "4.0 3.6" =~ "${MY_PV}"  ]] && OSL_PV="12" || OSL_PV="13"
-[[ "4.2" == "${MY_PV}"  ]] && AUD_PV="1.5.0" || AUD_PV="1.4.0"
+[[ "${MY_PV}" == "4.2"  ]] && AUD_PV="1.5.0" || AUD_PV="1.4.0"
 
 SLOT="$MY_PV"
 LICENSE="|| ( GPL-3 BL )"
@@ -258,7 +258,7 @@ RDEPEND="
 	sndfile? ( media-libs/libsndfile )
 	tbb? ( dev-cpp/tbb:= )
 	usd? (
-		<media-libs/openusd-24[monolithic,imaging,python,alembic?,draco?,embree?,materialx?,color-management?,openexr?,openimageio,openvdb?,osl?]
+		<media-libs/openusd-25[monolithic,imaging,python,alembic?,draco?,embree?,materialx?,color-management?,openexr?,openimageio,openvdb?,osl?]
 		>=media-libs/openusd-23.11[monolithic,imaging,python,alembic?,draco?,embree?,materialx?,color-management?,openexr?,openimageio,openvdb?,osl?]
 	)
 	valgrind? ( dev-util/valgrind )

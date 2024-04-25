@@ -1,4 +1,4 @@
-# Copyright 1999-2022 Gentoo Authors
+# Copyright 1999-2024 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
 
 EAPI=8
@@ -34,24 +34,24 @@ RDEPEND="
 DEPEND="${RDEPEND}"
 
 PATCHES=(
-	#"${FILESDIR}/${PN}-1.8.0-0001-set-correct-libdir.patch"
 	"${FILESDIR}/${PN}-1.8.3-0001-find-py-ilmbase-in-config-mode.patch"
+	"${FILESDIR}/${PN}-1.8.5-0001-fix-cmake.patch"
 )
 
 DOCS=( ACKNOWLEDGEMENTS.txt FEEDBACK.txt NEWS.txt README.txt )
 
 src_prepare() {
+	cmake_src_prepare
 	# Fix libdir
 	sed -i -r -e 's|(SET[^"]+ lib)(.*)|\1\$\{LIB_SUFFIX\}\2|' CMakeLists.txt lib/Alembic/CMakeLists.txt || die
-	cmake_src_prepare
 	# PyAlembic test doesn't properly find Imath, comment it for now
 	cmake_run_in python/PyAlembic cmake_comment_add_subdirectory Tests
 }
 
 src_configure() {
 	CMAKE_BUILD_TYPE=Release
+	CMAKE_CXX_STANDARD=17
 	local mycmakeargs=(
-		$(usex python "-DPython3_EXECUTABLE=${PYTHON}" "")
 		-DALEMBIC_USING_IMATH_3=ON
 		-DALEMBIC_BUILD_LIBS=ON
 		-DALEMBIC_DEBUG_WARNINGS_AS_ERRORS=OFF
@@ -66,6 +66,7 @@ src_configure() {
 		-DUSE_PRMAN=OFF
 		-DUSE_PYALEMBIC=$(usex python)
 		-DUSE_TESTS=$(usex test)
+		$(usex python "-DPython3_EXECUTABLE=${PYTHON}" "")
 	)
 
 	cmake_src_configure

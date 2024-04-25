@@ -1,9 +1,9 @@
-# Copyright 1999-2023 Gentoo Authors
+# Copyright 1999-2024 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
 
 EAPI=8
 
-inherit cmake flag-o-matic linux-info
+inherit cmake flag-o-matic linux-info toolchain-funcs
 
 DESCRIPTION="Collection of high-performance ray tracing kernels"
 HOMEPAGE="https://github.com/embree/embree"
@@ -21,10 +21,9 @@ LICENSE="
 		Apache-2.0
 		MIT
 	)
-
 "
-KEYWORDS="~amd64 ~arm64 ~x86"
 SLOT="$(ver_cut 1)"
+KEYWORDS="~amd64 ~arm64"
 X86_CPU_FLAGS=(
 	avx:avx
 	avx2:avx2
@@ -100,7 +99,6 @@ REQUIRED_USE+="
 	)
 "
 
-
 BDEPEND="
 	>=dev-build/cmake-3.2.0
 	virtual/pkgconfig
@@ -168,9 +166,23 @@ src_prepare() {
 	# disable RPM package building
 	sed -e 's|CPACK_RPM_PACKAGE_RELEASE 1|CPACK_RPM_PACKAGE_RELEASE 0|' \
 		-i CMakeLists.txt || die
+
+	# raise cmake minimum version to silence warning
+	sed -e 's#CMAKE_MINIMUM_REQUIRED(VERSION 3.[0-9].0)#CMAKE_MINIMUM_REQUIRED(VERSION 3.5)#I' \
+	    -i \
+	        CMakeLists.txt \
+	        kernels/rthwif/CMakeLists.txt \
+	        tutorials/embree_info/CMakeLists.txt \
+	        tutorials/minimal/CMakeLists.txt \
+	    || die
 }
 
 src_configure() {
+	# -Werror=odr
+	# https://bugs.gentoo.org/859838
+	# https://github.com/embree/embree/issues/481
+	filter-lto
+
 	# NOTE: You can make embree accept custom CXXFLAGS by turning off
 	# EMBREE_IGNORE_CMAKE_CXX_FLAGS. However, the linking will fail if you use
 	# any "m*" compile flags. This is because embree builds modules for the
@@ -277,4 +289,31 @@ src_configure() {
 	cmake_src_configure
 }
 
+src_test() {
+	# NOTE Some Embree tests will fail due to EMBREE_BACKFACE_CULLING settings for blender...
+	local CMAKE_SKIP_TESTS=(
+		'^embree_verify$'
+		'^embree_verify_i2$'
+		'^viewer_models_curves_round_line_segments_3.ecs$'
+		'^viewer_models_curves_round_line_segments_7.ecs$'
+		'^viewer_models_curves_round_line_segments_8.ecs$'
+		'^viewer_models_curves_round_line_segments_9.ecs$'
+		'^viewer_coherent_models_curves_round_line_segments_3.ecs$'
+		'^viewer_coherent_models_curves_round_line_segments_7.ecs$'
+		'^viewer_coherent_models_curves_round_line_segments_8.ecs$'
+		'^viewer_coherent_models_curves_round_line_segments_9.ecs$'
+		'^viewer_quad_coherent_models_curves_round_line_segments_3.ecs$'
+		'^viewer_quad_coherent_models_curves_round_line_segments_7.ecs$'
+		'^viewer_quad_coherent_models_curves_round_line_segments_8.ecs$'
+		'^viewer_quad_coherent_models_curves_round_line_segments_9.ecs$'
+		'^viewer_grid_coherent_models_curves_round_line_segments_3.ecs$'
+		'^viewer_grid_coherent_models_curves_round_line_segments_7.ecs$'
+		'^viewer_grid_coherent_models_curves_round_line_segments_8.ecs$'
+		'^viewer_grid_coherent_models_curves_round_line_segments_9.ecs$'
+		'^hair_geometry$'
+		'^embree_tests$'
+	)
+
+	cmake_src_test
+}
 
