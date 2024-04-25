@@ -30,7 +30,7 @@ else
 fi
 
 [[ "4.0 3.6" =~ "${MY_PV}"  ]] && OSL_PV="12" || OSL_PV="13"
-[[ "${MY_PV}" == "4.2"  ]] && AUD_PV="1.5.0" || AUD_PV="1.4.0"
+[[ "${MY_PV}" == "4.2"  ]] && AUD_PV="1.5.1" || AUD_PV="1.4.1"
 
 SLOT="$MY_PV"
 LICENSE="|| ( GPL-3 BL )"
@@ -210,7 +210,7 @@ RDEPEND="
 		>=media-libs/materialx-1.38.8[${PYTHON_SINGLE_USEDEP},python]
 	)
 	nls? ( virtual/libiconv )
-	>=media-libs/audaspace-${AUD_PV}:=[python,openal?,sdl?,pulseaudio?]
+	<=media-libs/audaspace-${AUD_PV}:=[python,openal?,sdl?,pulseaudio?]
 	oneapi? (
 		sys-devel/DPC++
 	)
