@@ -423,7 +423,7 @@ src_prepare() {
 	if use cg && [ -d ${CG_BLENDER_SCRIPTS_DIR} ]; then
 		eapply "${WORKDIR}"/cg_preferences/patches/cg-defaults.patch
 		cp "${WORKDIR}"/cg_preferences/share/startup.blend release/datafiles/ || die
-		cp "${WORKDIR}"/cg_preferences/share/splash.png release/datafiles/ || die
+		# cp "${WORKDIR}"/cg_preferences/share/splash.png release/datafiles/ || die
 		cp "${WORKDIR}"/cg_preferences/share/00_cg_preferences_service.py "${S}"/scripts/startup/ || die
 		cp "${FILESDIR}"/99_cg_scripts_dir_service.py "${S}"/scripts/startup/ || die
 		sed -i -e "s|cg_blender_scripts_dir =.*|cg_blender_scripts_dir = \"${CG_BLENDER_SCRIPTS_DIR}\"|" "${S}"/scripts/startup/99_cg_scripts_dir_service.py || die
