@@ -19,7 +19,7 @@ LICENSE="
 # custom - https://github.com/PixarAnimationStudios/OpenUSD/blob/v23.05/pxr/usdImaging/usdImaging/drawModeStandin.cpp#L9
 # custom - search "In consideration of your agreement"
 SLOT="0"
-KEYWORDS="~amd64"
+KEYWORDS=""
 # test USE flag is enabled upstream
 IUSE="alembic debug -doc draco embree examples hdf5 +imaging +jemalloc
 materialx -monolithic color-management opengl openimageio openvdb openexr osl
@@ -71,7 +71,7 @@ RDEPEND+="
 	)
 	>=sys-libs/zlib-1.2.11
 	alembic? (
-		>=media-gfx/alembic-1.7.10[hdf5?]
+		>=media-gfx/alembic-1.8.5[hdf5?]
 	)
 	draco? (
 		>=media-libs/draco-1.4.3
@@ -84,17 +84,17 @@ RDEPEND+="
 		>=sci-libs/hdf5-1.10[cxx,hl]
 	)
 	imaging? (
-		>=media-libs/opensubdiv-3.5.0
+		>=media-libs/opensubdiv-3.5.1
 		x11-libs/libX11
 	)
 	jemalloc? (
 		dev-libs/jemalloc-usd
 	)
 	materialx? (
-		>=media-libs/materialx-1.38.4:=[renderer]
+		>=media-libs/materialx-1.38.7:=[renderer]
 	)
 	color-management? (
-		>=media-libs/opencolorio-1.0.9
+		>=media-libs/opencolorio-2.1.3
 	)
 	openexr? (
 		>=media-libs/openexr-3.1.5-r1:=
@@ -104,19 +104,19 @@ RDEPEND+="
 	)
 	openimageio? (
 		>=media-libs/libpng-1.6.29
-		>=media-libs/openimageio-2.1.16.0:=
+		>=media-libs/openimageio-2.3.21.0:=
 		>=media-libs/tiff-4.0.7
 		virtual/jpeg
 	)
 	openvdb? (
 		>=dev-libs/c-blosc-1.17
-		>=media-gfx/openvdb-7.1.0[${OPENVDB_SINGLE_USEDEP}]
+		>=media-gfx/openvdb-9.1.0[${OPENVDB_SINGLE_USEDEP}]
 	)
 	osl? (
 		>=media-libs/osl-1.10.9
 	)
 	ptex? (
-		>=media-libs/ptex-2.3.2
+		>=media-libs/ptex-2.4.2
 	)
 	python? (
 		${PYTHON_DEPS}
@@ -239,6 +239,7 @@ src_prepare() {
 src_configure() {
 	CMAKE_BUILD_TYPE=$(usex debug 'Debug' 'Release')
 	append-cppflags $(usex debug '-DDEBUG' '-DNDEBUG')
+	append-cppflags -DTBB_ALLOCATOR_TRAITS_BROKEN
 	export USD_PATH="/usr/$(get_libdir)/${PN}"
 	use openvdb && openvdb_src_configure
 	if use draco; then

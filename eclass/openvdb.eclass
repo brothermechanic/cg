@@ -215,7 +215,7 @@ openvdb_setup() {
 # Set cppflags to match selected OpenVDB ABI version
 openvdb_configure() {
     debug-print-function ${FUNCNAME} "${@}"
-    has_version -b =media-gfx/openvdb-${OPENVDB_ABI} && \
+    has_version -b =media-gfx/openvdb-${OPENVDB_ABI}* && \
         append-cppflags -DOPENVDB_ABI_VERSION_NUMBER="${OPENVDB_ABI}" || \
         append-cppflags -DOPENVDB_USE_DEPRECATED_ABI_${OPENVDB_ABI}=ON
 }

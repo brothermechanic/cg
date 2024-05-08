@@ -645,6 +645,7 @@ src_configure() {
 		-DWITH_UNITY_BUILD=no 									# Enable Unity build for blender modules (memory usage/compile time)
 		-DWITH_HYDRA=no 										# MacOS features enabled by default if WITH_STRICT_BUILD_OPTIONS=yes
 		-DWITH_MATERIALX=$(usex materialx)
+		-DHIP_HIPCC_FLAGS="-fcf-protection=none"
 	)
 
 	if use optix; then
