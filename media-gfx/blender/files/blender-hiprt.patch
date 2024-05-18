@@ -1,0 +1,64 @@
+diff --git a/build_files/cmake/Modules/FindHIPRT.cmake b/build_files/cmake/Modules/FindHIPRT.cmake
+index d57784e5531..75ed5e3d4c7 100644
+--- a/build_files/cmake/Modules/FindHIPRT.cmake
++++ b/build_files/cmake/Modules/FindHIPRT.cmake
+@@ -40,7 +40,7 @@ if(HIPRT_INCLUDE_DIR)
+ 
+   find_file(HIPRT_BITCODE
+     NAMES
+-      hiprt${_hiprt_version}_amd_lib_win.bc
++      hiprt${_hiprt_version}_amd_lib_linux.bc
+     HINTS
+       ${HIPRT_ROOT_DIR}/bin
+       ${HIPRT_ROOT_DIR}/dist/bin/Release
+diff --git a/extern/hipew/src/hiprtew.cc b/extern/hipew/src/hiprtew.cc
+index 5844d6466b3..f556f56c521 100644
+--- a/extern/hipew/src/hiprtew.cc
++++ b/extern/hipew/src/hiprtew.cc
+@@ -61,7 +61,6 @@ bool hiprtewInit()
+     return result;
+   }
+ 
+-#ifdef _WIN32
+   initialized = true;
+ 
+   if (atexit(hipewHipRtExit)) {
+@@ -69,7 +68,7 @@ bool hiprtewInit()
+   }
+ 
+   std::string hiprt_ver(HIPRT_VERSION_STR);
+-  std::string hiprt_path = "hiprt" + hiprt_ver + "64.dll";
++  std::string hiprt_path = "hiprt" + hiprt_ver + "64.so";
+ 
+   hiprt_lib = dynamic_library_open(hiprt_path.c_str());
+ 
+@@ -93,7 +92,6 @@ bool hiprtewInit()
+   HIPRT_LIBRARY_FIND(hiprtSetLogLevel)
+ 
+   result = true;
+-#endif
+ 
+   return result;
+ }
+diff --git a/intern/cycles/device/hiprt/device_impl.cpp b/intern/cycles/device/hiprt/device_impl.cpp
+index bd723c97d04..137419c0e57 100644
+--- a/intern/cycles/device/hiprt/device_impl.cpp
++++ b/intern/cycles/device/hiprt/device_impl.cpp
+@@ -217,7 +217,7 @@ string HIPRTDevice::compile_kernel(const uint kernel_features, const char *name,
+ 
+   double starttime = time_dt();
+ 
+-  const string hiprt_path = getenv("HIPRT_ROOT_DIR");
++  const string hiprt_path = "/opt/hiprt";
+   // First, app kernels are compiled into bitcode, without access to implementation of HIP RT
+   // functions
+   if (!path_exists(bitcode)) {
+@@ -258,7 +258,7 @@ string HIPRTDevice::compile_kernel(const uint kernel_features, const char *name,
+   linker_options.append(" --offload-arch=").append(arch.c_str());
+   linker_options.append(" -fgpu-rdc --hip-link --cuda-device-only ");
+   string hiprt_ver(HIPRT_VERSION_STR);
+-  string hiprt_bc = hiprt_path + "\\dist\\bin\\Release\\hiprt" + hiprt_ver + "_amd_lib_win.bc";
++  string hiprt_bc = hiprt_path + "/bin/hiprt" + hiprt_ver + "_amd_lib_linux.bc";
+ 
+   string linker_command = string_printf("clang++ %s \"%s\" %s -o \"%s\"",
+                                         linker_options.c_str(),

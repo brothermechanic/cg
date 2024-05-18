@@ -42,13 +42,13 @@
 # OPENVDB_ABI
 # eg. openvdb? ( media-gfx/openvdb[${OPENVDB_SINGLE_USEDEP}] )
 # When OPENVDB_COMPAT="X Y" the variable evaluates to
-# abiX-compat(-)? abiY-compat(-)?
+# openvdb_abi_X(-)? openvdb_abi_Y(-)?
 #
 # The client can pass the ABI version to the build system as follows:
 # append-cppflags -DOPENVDB_ABI_VERSION_NUMBER="${OPENVDB_ABI}"
 #
 # This eclass includes pkg_setup which ensures that the package will
-# only compile if only one abiX-compat USE flag is set
+# only compile if only one openvdb_abi_X USE flag is set
 #
 # @EXAMPLE:
 # The user needs to choose which version of the ABI supports all packages
@@ -109,7 +109,7 @@ _OPENVDB_ECLASS=1
 #
 # Example value:
 # @CODE
-# abi3-compat(-)?,abi4-compat(-)?,abi5-compat(-)?...
+# openvdb_abi_9(-)?,openvdb_abi_10(-)?,openvdb_abi_11(-)?...
 # @CODE
 # @ECLASS-VARIABLE: OPENVDB_REQUIRED_USE
 # @DESCRIPTION:
@@ -123,7 +123,7 @@ _OPENVDB_ECLASS=1
 #
 # Example value:
 # @CODE
-# ^^ ( abi3-compat abi3-compat abi5-compat abi6-compat abi7-compat )
+# ^^ ( openvdb_abi6 openvdb_abi_7 openvdb_abi_8 openvdb_abi_9 openvdb_abi_10 openvdb_abi_11 )
 # @CODE
 # @ECLASS-VARIABLE: _OPENVDB_ALL_ABI
 # @INTERNAL
@@ -162,7 +162,7 @@ _openvdb_set_globals() {
     local flags=()
     for i in "${_OPENVDB_ALL_ABI[@]}"; do
         if has "${i}" "${OPENVDB_COMPAT[@]}"; then
-            flags+=( "abi${i}-compat" )
+            flags+=( "openvdb_abi_${i}" )
         fi
     done
     if [[ ${#supp[@]} -eq 1 ]]; then

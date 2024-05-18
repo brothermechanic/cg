@@ -1,0 +1,82 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index c98b2d6a3e2..17d84e104d6 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -1521,7 +1521,7 @@ if(NOT WITH_SYSTEM_EIGEN3)
+ endif()
+ 
+ if(WITH_OPENVDB)
+-  list(APPEND OPENVDB_DEFINITIONS -DWITH_OPENVDB)
++  list(APPEND OPENVDB_DEFINITIONS -DWITH_OPENVDB -DNANOVDB_USE_OPENVDB)
+ 
+   if(WITH_OPENVDB_3_ABI_COMPATIBLE)
+     list(APPEND OPENVDB_DEFINITIONS -DOPENVDB_3_ABI_COMPATIBLE)
+diff --git a/intern/cycles/scene/image_vdb.cpp b/intern/cycles/scene/image_vdb.cpp
+index d94a7973adc..f95a7595dce 100644
+--- a/intern/cycles/scene/image_vdb.cpp
++++ b/intern/cycles/scene/image_vdb.cpp
+@@ -12,7 +12,14 @@
+ #endif
+ #ifdef WITH_NANOVDB
+ #  define NANOVDB_USE_OPENVDB
+-#  include <nanovdb/util/OpenToNanoVDB.h>
++#  include <nanovdb/NanoVDB.h>
++#  define NANOVDB_VERSION(major, minor, patch) (major << 21 | minor << 10 | patch)
++#  if NANOVDB_VERSION(NANOVDB_MAJOR_VERSION_NUMBER, NANOVDB_MINOR_VERSION_NUMBER, NANOVDB_PATCH_VERSION_NUMBER) >= NANOVDB_VERSION(32, 6, 0)
++#    include <nanovdb/util/CreateNanoGrid.h>
++#  else
++#    include <nanovdb/util/OpenToNanoVDB.h>
++#  endif
++#  undef NANOVDB_VERSION
+ #endif
+ 
+ CCL_NAMESPACE_BEGIN
+@@ -78,22 +85,40 @@ struct ToNanoOp {
+         if constexpr (std::is_same_v<FloatGridType, openvdb::FloatGrid>) {
+           openvdb::FloatGrid floatgrid(*openvdb::gridConstPtrCast<GridType>(grid));
+           if (precision == 0) {
+-            nanogrid =
+-                nanovdb::openToNanoVDB<nanovdb::HostBuffer, openvdb::FloatTree, nanovdb::FpN>(
+-                    floatgrid);
++            if constexpr (nanovdb::Version() >= nanovdb::Version(32,6,0)) {
++              nanogrid = nanovdb::createNanoGrid(floatgrid);
++            }
++            else {
++              nanogrid =
++                  nanovdb::openToNanoVDB<nanovdb::HostBuffer, openvdb::FloatTree, nanovdb::FpN>(
++                      floatgrid);
++            }
+           }
+           else if (precision == 16) {
+-            nanogrid =
+-                nanovdb::openToNanoVDB<nanovdb::HostBuffer, openvdb::FloatTree, nanovdb::Fp16>(
+-                    floatgrid);
++            if constexpr (nanovdb::Version() >= nanovdb::Version(32,6,0)) {
++              nanogrid = nanovdb::createNanoGrid(floatgrid);
++            }
++            else {
++              nanogrid =
++                  nanovdb::openToNanoVDB<nanovdb::HostBuffer, openvdb::FloatTree, nanovdb::Fp16>(
++                      floatgrid);
++            }
+           }
+           else {
+-            nanogrid = nanovdb::openToNanoVDB(floatgrid);
++            if constexpr (nanovdb::Version() >= nanovdb::Version(32,6,0)) {
++              nanogrid = nanovdb::createNanoGrid(floatgrid);
++            } else {
++              nanogrid = nanovdb::openToNanoVDB(floatgrid);
++            }
+           }
+         }
+         else if constexpr (std::is_same_v<FloatGridType, openvdb::Vec3fGrid>) {
+           openvdb::Vec3fGrid floatgrid(*openvdb::gridConstPtrCast<GridType>(grid));
+-          nanogrid = nanovdb::openToNanoVDB(floatgrid);
++          if constexpr (nanovdb::Version() >= nanovdb::Version(32,6,0)) {
++            nanogrid = nanovdb::createNanoGrid(floatgrid);
++          else {
++            nanogrid = nanovdb::openToNanoVDB(floatgrid);
++          }
+         }
+ #    endif
+       }

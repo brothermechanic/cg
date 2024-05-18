@@ -3,16 +3,17 @@
 
 EAPI=8
 
-OPENVDB_COMPAT=( {7..11} )
-PYTHON_COMPAT=( python3_{10..12} )
-inherit cmake cuda flag-o-matic llvm python-single-r1 toolchain-funcs openvdb
+OPENVDB_COMPAT=( {7..10} )
+PYTHON_COMPAT=( python3_{10..11} )
+LLVM_COMPAT=( 16 17 18 )
+
+inherit cmake cuda flag-o-matic llvm-r1 python-single-r1 toolchain-funcs openvdb
 
 DESCRIPTION="Library for the efficient manipulation of volumetric data"
 LICENSE="MPL-2.0"
 HOMEPAGE="https://www.openvdb.org"
-KEYWORDS="~amd64 ~arm ~arm64 ~ppc64 ~x86"
+KEYWORDS="~amd64 ~arm ~arm64 ~ppc64 ~riscv ~x86"
 SLOT="0/$(ver_cut 1-2)"
-LLVM_SLOTS=( 16 17 )
 X86_CPU_FLAGS=( avx sse4_2 )
 CUDA_TARGETS_COMPAT=( sm_30 sm_35 sm_50 sm_52 sm_61 sm_70 sm_75 sm_86 sm_87 sm_89 sm_90 )
 IUSE="
@@ -71,9 +72,6 @@ REQUIRED_USE="
 RDEPEND+="
 	>=dev-libs/boost-1.66:=
 	zlib? ( >=sys-libs/zlib-1.2.7:= )
-	ax? (
-		<sys-devel/llvm-15:=
-	)
 	blosc? (
 		>=dev-libs/c-blosc-1.17:=
 	)
@@ -131,18 +129,10 @@ BDEPEND+="
 		>=dev-cpp/gtest-1.10
 		>=dev-util/cppunit-1.10
 	)
-	|| (
-		>=sys-devel/gcc-6.3.1
-		(
-			<sys-devel/clang-19
-			>=sys-devel/clang-3.8
-		)
-		>=dev-lang/icc-17
-	)
 "
 PDEPEND="
 	nanovdb? (
-		>=media-gfx/nanovdb-32[cuda?,openvdb]
+		>=media-gfx/nanovdb-31[cuda?,openvdb]
 	)
 "
 
@@ -173,40 +163,18 @@ pkg_setup() {
 			ewarn "jemalloc may need rebuild if vdb_print -version stalls."
 		fi
 	fi
-	use ax && llvm_pkg_setup
+	use ax && llvm-r1_pkg_setup
 }
 
 src_prepare() {
+	use cuda && cuda_src_prepare
 	cmake_src_prepare
 	sed -i -e "s|DESTINATION doc|DESTINATION share/doc/${P}|g" doc/CMakeLists.txt || die
 	sed -i -e "s|DESTINATION lib|DESTINATION $(get_libdir)|g" {,${PN}/${PN}/}CMakeLists.txt || die
 	sed -i -e "s|lib/cmake|$(get_libdir)/cmake|g" cmake/OpenVDBGLFW3Setup.cmake || die
 }
 
-check_clang() {
-	local found=0
-	local s
-	for s in ${LLVM_SLOTS[@]} ; do
-		if has_version "sys-devel/clang:${s}" ; then
-			found=1
-			export CC="${CHOST}-clang-${s}"
-			export CXX="${CHOST}-clang++-${s}"
-			break
-		fi
-	done
-	if (( ${found} == 0 )) ; then
-		eerror
-		eerror "${PN} requires either clang ${LLVM_SLOTS[@]}"
-		eerror
-		eerror "Either use GCC or install and use one of those clang slots."
-		eerror
-		die
-	fi
-	clang --version || die
-}
-
 src_configure() {
-	use clang && check_clang
 	export NINJAOPTS="-j2" # prevent stall
 
 	openvdb_src_configure
@@ -214,6 +182,7 @@ src_configure() {
 	CMAKE_BUILD_TYPE=$(usex debug 'Debug' 'Release')
 
 	local mycmakeargs=(
+		-DCMAKE_CXX_STANDARD=17
 		-DCMAKE_INSTALL_DOCDIR="share/doc/${PF}/"
 		-DCONCURRENT_MALLOC=$(usex jemalloc "Jemalloc" \
 					$(usex tbbmalloc "Tbbmalloc" "None")\
@@ -259,8 +228,8 @@ src_configure() {
 			use ${CT/#/cuda_targets_} && CUDA_TARGETS+="${CT#sm_*};"
 		done
 		mycmakeargs=(
-			append_cppflags CMAKE_CUDA_ARCHITECTURES="${CUDA_TARGETS%%;}"
-			append_cppflags CMAKE_CUDA_FLAGS="-ccbin=$(cuda_gccdir)"
+			-DCMAKE_CUDA_ARCHITECTURES="${CUDA_TARGETS%%;}"
+			-DCMAKE_CUDA_FLAGS="-ccbin=$(cuda_gccdir)"
 		)
 	fi
 
