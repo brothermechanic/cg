@@ -187,13 +187,13 @@ RDEPEND="
 	rocm? ( >=dev-util/hip-5.4.0 )
 	ffmpeg? (
 		<media-video/ffmpeg-7:=[encode,jpeg2k?,mp3?,opus?,sdl,theora?,vorbis?,vpx?,x264?,xvid?,zlib]
-		>=media-video/ffmpeg-4:=[encode,jpeg2k?,mp3?,opus?,sdl,theora?,vorbis?,vpx?,x264?,xvid?,zlib]
+		>media-video/ffmpeg-5:=[encode,jpeg2k?,mp3?,opus?,sdl,theora?,vorbis?,vpx?,x264?,xvid?,zlib]
 	)
 	fftw? ( sci-libs/fftw:3.0=[openmp?] )
 	flac? (	>=media-libs/flac-1.4.2	)
 	gmp? ( >=dev-libs/gmp-6.2.1[cxx] )
+	dev-cpp/gflags:=
 	gtests? (
-		dev-cpp/gflags:=
 		dev-cpp/glog:=[gflags]
 		dev-cpp/gmock:=
 	)
@@ -420,10 +420,12 @@ src_prepare() {
 	use elibc_musl && eapply "${FILESDIR}/blender-4.0.0-support-building-with-musl-libc.patch"
 	eapply "${FILESDIR}/blender-fix-lld-17-linking.patch"
 
-	if use cg && [ -d ${CG_BLENDER_SCRIPTS_DIR} ]; then
+	#no need `if use cg && [ -d ${CG_BLENDER_SCRIPTS_DIR} ]; then`
+	#because CG_BLENDER_SCRIPTS_DIR set in cg/eclass/cg-blender-scripts-dir.eclass
+	if use cg; then
 		eapply "${WORKDIR}"/cg_preferences/patches/cg-defaults.patch
 		cp "${WORKDIR}"/cg_preferences/share/startup.blend release/datafiles/ || die
-		# cp "${WORKDIR}"/cg_preferences/share/splash.png release/datafiles/ || die
+		cp "${WORKDIR}"/cg_preferences/share/splash.png release/datafiles/ || die
 		cp "${WORKDIR}"/cg_preferences/share/00_cg_preferences_service.py "${S}"/scripts/startup/ || die
 		cp "${FILESDIR}"/99_cg_scripts_dir_service.py "${S}"/scripts/startup/ || die
 		sed -i -e "s|cg_blender_scripts_dir =.*|cg_blender_scripts_dir = \"${CG_BLENDER_SCRIPTS_DIR}\"|" "${S}"/scripts/startup/99_cg_scripts_dir_service.py || die
