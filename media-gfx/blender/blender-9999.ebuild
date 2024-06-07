@@ -5,9 +5,10 @@ EAPI=8
 
 PYTHON_COMPAT=( python3_{10..12} )
 OPENVDB_COMPAT=( {7..11} )
-LLVM_MAX_SLOT="18"
+LLVM_COMPAT=( 17 18 )
+LLVM_OPTIONAL=1
 
-inherit check-reqs cmake cuda flag-o-matic git-r3 pax-utils python-single-r1 toolchain-funcs xdg-utils llvm openvdb cg-blender-scripts-dir
+inherit check-reqs cmake cuda flag-o-matic git-r3 pax-utils python-single-r1 toolchain-funcs xdg-utils llvm-r1 openvdb cg-blender-scripts-dir
 
 DESCRIPTION="Blender is a free and open-source 3D creation suite."
 HOMEPAGE="https://www.blender.org"
@@ -66,8 +67,6 @@ AMDGPU_TARGETS_COMPAT=(
 	gfx1101
 	gfx1102
 )
-
-
 
 IUSE_CPU="+openmp +simd +tbb -lld -gold +mold -cpu_flags_arm_neon llvm -valgrind +jemalloc"
 IUSE_GPU="cuda optix rocm oneapi -cycles-bin-kernels ${CUDA_TARGETS_COMPAT[@]/#/cuda_targets_} ${AMDGPU_TARGETS_COMPAT[@]/#/amdgpu_targets_}"
@@ -309,12 +308,14 @@ BDEPEND="
 	>=dev-util/vulkan-headers-1.3.268
 	dev-util/patchelf
 	virtual/pkgconfig
-	lld? ( <sys-devel/lld-$((${LLVM_MAX_SLOT} + 1)):= )
+	lld? ( <sys-devel/lld-$((${LLVM_SLOT} + 1)):= )
 	mold? ( sys-devel/mold:= )
-	gold? ( <sys-devel/llvm-$((${LLVM_MAX_SLOT} + 1)):=[binutils-plugin] )
+	gold? ( <sys-devel/llvm-$((${LLVM_SLOT} + 1)):=[binutils-plugin] )
 	llvm? (
-		<sys-devel/llvm-$((${LLVM_MAX_SLOT} + 1)):=
-		<sys-devel/clang-$((${LLVM_MAX_SLOT} + 1)):=
+		$(llvm_gen_dep '
+			sys-devel/clang:${LLVM_SLOT}=
+			sys-devel/llvm:${LLVM_SLOT}=
+		')
 	)
 	doc? (
 		>=dev-python/sphinx-3.3.1[latex]
@@ -376,6 +377,7 @@ pkg_pretend() {
 
 pkg_setup() {
 	python-single-r1_pkg_setup
+	use llvm && llvm-r1_pkg_setup
 }
 
 src_unpack() {
@@ -490,11 +492,6 @@ src_prepare() {
 }
 
 src_configure() {
-	CMAKE_BUILD_TYPE=$(usex debug "Debug" "Release")
-	for slot in $(seq 10 ${LLVM_MAX_SLOT}); do
-		has_version "sys-devel/llvm:${slot}" && LLVM_SLOT="${slot}"
-	done
-
 	# FIX: forcing '-funsigned-char' fixes an anti-aliasing issue with menu
 	# shadows, see bug #276338 for reference
 	append-cppflags -funsigned-char -fno-strict-aliasing
@@ -633,7 +630,7 @@ src_configure() {
 		-DWITH_XR_OPENXR=$(usex openxr)							# VR interface
 		#-DSYCL_LIBRARY="/usr/lib/llvm/intel"
 		#-DSYCL_INCLUDE_DIR="/usr/lib/llvm/intel/include"
-		-DLLVM_LIBRARY="/usr/lib/llvm/${LLVM_SLOT}/lib64/libLLVM.so"
+		#-DLLVM_LIBRARY="/usr/lib/llvm/${LLVM_SLOT}/lib64/libLLVM.so"
 		-DUSD_ROOT_DIR="${ESYSROOT}/usr/$(get_libdir)/openusd/lib"
 		-DMaterialX_DIR="${ESYSROOT}/usr/$(get_libdir)/cmake/MaterialX"
 		-DWITH_NINJA_POOL_JOBS=no								# for machines with 16GB of RAM or less

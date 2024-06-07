@@ -1,18 +1,16 @@
-# Copyright 1999-2023 Gentoo Authors
+# Copyright 1999-2024 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
 
 EAPI=8
 
+# Check this on updates
 PYTHON_COMPAT=( python3_{10..12} )
 OPENVDB_COMPAT=( {7..11} )
 
-inherit cmake cuda flag-o-matic llvm multilib-minimal python-single-r1 toolchain-funcs openvdb
+inherit cmake cuda flag-o-matic multilib-minimal python-single-r1 toolchain-funcs openvdb
 
 DESCRIPTION="Advanced shading language for production GI renderers"
 HOMEPAGE="http://opensource.imageworks.com/?p=osl"
-# Check this on updates
-LLVM_MAX_SLOT=17
-LLVM_SLOTS=( 16 17 )
 if [[ ${PV} = *9999 ]]; then
 	inherit git-r3
 	EGIT_REPO_URI="https://github.com/AcademySoftwareFoundation/OpenShadingLanguage"
@@ -33,12 +31,15 @@ if [[ "${PV}" =~ "1.12" ]]; then
 		"${FILESDIR}/osl-1.12.14.0-lld-fix-linking.patch"
 	)
 	# Check this on updates
-	LLVM_MAX_SLOT=15
-	LLVM_SLOTS=( 9 10 11 12 13 14 15 )
+	LLVM_COMPAT=( 16 17 )
+	inherit llvm-r1
 else
 	PATCHES+=(
 		"${FILESDIR}/osl-1.13.6.0-lld-fix-linking.patch"
 	)
+	# Check this on updates
+	LLVM_COMPAT=( 16 17 18 )
+	inherit llvm-r1
 fi
 
 LICENSE="BSD"
@@ -69,6 +70,10 @@ REQUIRED_USE="
 "
 
 RDEPEND="
+    $(llvm_gen_dep '
+      sys-devel/clang:${LLVM_SLOT}=
+      sys-devel/llvm:${LLVM_SLOT}=
+    ')
 	>=dev-libs/boost-1.55:=[${MULTILIB_USEDEP}]
 	>=dev-libs/pugixml-1.8[${MULTILIB_USEDEP}]
 	>=media-libs/openexr-3.1.0:=
@@ -78,8 +83,6 @@ RDEPEND="
 		<media-libs/openimageio-2.6:=[${PYTHON_SINGLE_USEDEP}]
 	')
 	dev-libs/libfmt[${MULTILIB_USEDEP}]
-	<sys-devel/llvm-$((${LLVM_MAX_SLOT} + 1)):=
-	<sys-devel/clang-$((${LLVM_MAX_SLOT} + 1)):=
 	sys-libs/zlib:=[${MULTILIB_USEDEP}]
 	cuda? (
 		$(python_gen_cond_dep '
@@ -121,8 +124,8 @@ DEPEND="${RDEPEND}"
 BDEPEND="
 	>=dev-build/cmake-3.12
 	>=dev-util/pkgconf-1.3.7[${MULTILIB_USEDEP},pkg-config(+)]
-	>=sys-devel/bison-2.7
-	>=sys-devel/flex-2.5.35[${MULTILIB_USEDEP}]
+	app-alternatives/yacc
+	app-alternatives/lex
 "
 
 PATCHES+=(
@@ -135,7 +138,7 @@ get_lib_type() {
 }
 
 pkg_setup() {
-	llvm_pkg_setup
+	llvm-r1_pkg_setup
 	use python && python-single-r1_pkg_setup
 }
 
@@ -158,14 +161,6 @@ src_prepare() {
 
 src_configure() {
 	configure_abi() {
-		local llvm_slot
-		for llvm_slot in ${LLVM_SLOTS[@]} ; do
-			if has_version -b =sys-devel/llvm-${llvm_slot} ; then
-				einfo "Linking with LLVM-${llvm_slot}"
-				break
-			fi
-		done
-
 		local lib_type
 		for lib_type in $(get_lib_type) ; do
 			export CMAKE_USE_DIR="${S}"
@@ -192,7 +187,7 @@ src_configure() {
 			local gcc="$(tc-getCC)"
 			local mycmakeargs=(
 				-DCMAKE_CXX_STANDARD=17
-				-DLLVM_ROOT="${EPREFIX}/usr/lib/llvm/${llvm_slot}"
+				#-DLLVM_ROOT="${EPREFIX}/usr/lib/llvm/${LLVM_SLOT}"
 				-DCMAKE_INSTALL_BINDIR="${EPREFIX}/usr/$(get_libdir)/osl/bin"
 				-DCMAKE_INSTALL_DOCDIR="share/doc/${PF}"
 				-DINSTALL_DOCS=$(usex doc)
@@ -249,7 +244,6 @@ src_test() {
 	local myctestargs=(
 		-E "(osl-imageio|osl-imageio.opt|render-background|render-bumptest|render-mx-furnace-burley-diffuse|render-mx-furnace-sheen|render-mx-burley-diffuse|render-mx-conductor|render-mx-generalized-schlick|render-mx-generalized-schlick-glass|render-microfacet|render-oren-nayar|render-uv|render-veachmis|render-ward|render-raytypes.opt|color|color.opt|example-deformer)"
 	)
-
 	cmake_src_test
 }
 

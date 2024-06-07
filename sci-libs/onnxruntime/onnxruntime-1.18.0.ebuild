@@ -1,4 +1,4 @@
-# Copyright 2022-2023 Gentoo Authors
+# Copyright 2022-2024 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
 
 EAPI=8
@@ -6,8 +6,10 @@ PYTHON_COMPAT=( python3_{10..12} )
 CUDA_TARGETS_COMPAT=( sm_50 sm_52 sm_53 sm_60 sm_61 sm_62 sm_70 sm_72 sm_75 sm_80 sm_86 sm_87 sm_89 sm_90 )
 ROCM_VERSION="5.7.1"
 AMDGPU_TARGETS_COMPAT=( gfx1030 gfx1031 gfx1032 gfx1033 gfx1034 gfx1035 gfx1036 gfx1100 gfx1101	gfx1102	gfx1103 )
+LLVM_COMPAT=( 17 18 )
+LLVM_OPTIONAL=1
 
-inherit python-single-r1 cmake cuda llvm rocm
+inherit python-single-r1 cmake cuda llvm-r1 rocm
 
 DESCRIPTION="Cross-platform inference and training machine-learning accelerator."
 HOMEPAGE="https://onnxruntime.ai"
@@ -88,15 +90,15 @@ BDEPEND="
 
 PATCHES=(
 	"${FILESDIR}/${PN}-system-dnnl.patch"
-	"${FILESDIR}/re2-pkg-config-r1.patch"
+	"${FILESDIR}/re2-pkg-config-r2.patch"
 	"${FILESDIR}/system-onnx-r1.patch"
-	"${FILESDIR}/system-cpuinfo.patch"
+	#"${FILESDIR}/system-cpuinfo.patch"
 	"${FILESDIR}/system-nsync.patch"
-	"${FILESDIR}/system-composable_kernel.patch"
+	"${FILESDIR}/system-composable_kernel-r1.patch"
 	"${FILESDIR}/system-protobuf.patch"
 	"${FILESDIR}/system-mp11.patch"
-	"${FILESDIR}/system-gsl.patch"
-	"${FILESDIR}/rocm-version-override-r2.patch"
+	"${FILESDIR}/system-gsl-r1.patch"
+	#"${FILESDIR}/rocm-version-override-r2.patch"
 	"${FILESDIR}/hip-gentoo.patch"
 	"${FILESDIR}/shared-build-fix.patch"
 	"${FILESDIR}/hip-libdir.patch"
@@ -104,6 +106,7 @@ PATCHES=(
 
 pkg_setup() {
 	use python && python-single-r1_pkg_setup
+	use llvm && llvm-r1_pkg_setup
 }
 
 src_prepare() {

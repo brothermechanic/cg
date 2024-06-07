@@ -9,7 +9,7 @@ OPENVDB_COMPAT=( {7..11} )
 
 TEST_OIIO_IMAGE_COMMIT="aae37a54e31c0e719edcec852994d052ecf6541e"
 TEST_OEXR_IMAGE_COMMIT="df16e765fee28a947244657cae3251959ae63c00"
-inherit cmake flag-o-matic font python-single-r1 virtualx openvdb
+inherit cmake flag-o-matic python-single-r1 virtualx openvdb
 
 DESCRIPTION="A library for reading and writing images"
 HOMEPAGE="https://sites.google.com/site/openimageio/ https://github.com/OpenImageIO"
@@ -83,6 +83,10 @@ REQUIRED_USE="
 	)
 	rav1e? (
 		avif
+	)
+	test? (
+		tools
+		truetype
 	)
 "
 
@@ -164,9 +168,9 @@ DOCS=(
 QA_PRESTRIPPED="usr/lib/python.*/site-packages/.*"
 
 PATCHES=(
-	"${FILESDIR}/${PN}-2.5.8.0-fits.patch"
 	"${FILESDIR}/${PN}-2.5.8.0-fix-unit_simd.patch"
 	"${FILESDIR}/${PN}-2.5.8.0-fix-tests.patch"
+	"${FILESDIR}/${PN}-2.5.12.0-tests-optional.patch"
 )
 
 pkg_pretend() {
@@ -183,21 +187,47 @@ src_prepare() {
 		rm -r "${S}/src/dicom.imageio/" || die
 	fi
 
+	if ! use gif; then
+		rm src/gif.imageio -r || die
+	fi
+
+	if ! use jpeg2k; then
+		rm src/jpeg2000.imageio -r || die
+	fi
+
+	if ! use raw; then
+		rm src/raw.imageio -r || die
+	fi
+
 	cmake_src_prepare
 	cmake_comment_add_subdirectory src/fonts
 
 	if use test ; then
 		mv -v "${WORKDIR}/OpenImageIO-images-${TEST_OIIO_IMAGE_COMMIT}" "${WORKDIR}/oiio-images" || die
 		mv -v "${WORKDIR}/openexr-images-${TEST_OEXR_IMAGE_COMMIT}" "${WORKDIR}/openexr-images" || die
+
+		if use fits; then
+			mkdir -p "${WORKDIR}/fits-images/"{ftt4b,pg93} || die
+			for a in ${A}; do
+				if [[ "${a}" == file*.fits ]]; then
+					cp "${DISTDIR}/${a}" "${WORKDIR}/fits-images/ftt4b/" || die
+				fi
+				if [[ "${a}" == tst*.fits ]]; then
+					cp "${DISTDIR}/${a}" "${WORKDIR}/fits-images/pg93/" || die
+				fi
+			done
+		fi
+
 		if use jpeg2k; then
 			mv -v "${WORKDIR}/J2KP4files" "${WORKDIR}/j2kp4files_v1_5" || die
 		fi
+
+		cp testsuite/heif/ref/out-libheif1.1{2,5}-orient.txt || die
+		eapply "${FILESDIR}/${PN}-2.5.12.0_heif_test.patch"
 	fi
 }
 
 src_configure() {
-	CMAKE_BUILD_TYPE=Release
-
 	use openvdb && openvdb_src_configure
 	# Build with SIMD support
 	local cpufeature
@@ -214,55 +244,65 @@ src_configure() {
 	use arm64 && append-flags -flax-vector-conversions
 
 	local mycmakeargs=(
+		-DVERBOSE="yes"
+		-DINTERNALIZE_FMT="no"
+		# -DALWAYS_PREFER_CONFIG="yes"
+		# -DGLIBCXX_USE_CXX11_ABI="yes"
+		# -DTEX_BATCH_SIZE="8" # TODO AVX512 -> 16
+		-DSTOP_ON_WARNING="OFF"
+
 		-DCMAKE_UNITY_BUILD_MODE="BATCH"
 		-DUNITY_SMALL_BATCH_SIZE="$(nproc)"
 
-		-DOIIO_BUILD_TOOLS="$(usex tools)"
-		-DOIIO_BUILD_TESTS="$(usex test)"
-		-DOIIO_DOWNLOAD_MISSING_TESTDATA="OFF"
-
-		-DBUILD_TESTING="$(usex test)"
 		-DBUILD_DOCS="$(usex doc)"
+		-DBUILD_TESTING="$(usex test)"
 
 		-DINSTALL_FONTS="OFF"
 		-DINSTALL_DOCS="$(usex doc)"
-		-DSTOP_ON_WARNING="OFF"
-		-DUSE_CCACHE="OFF"
-		-DUSE_EXTERNAL_PUGIXML="ON"
+
 		-DENABLE_DCMTK="$(usex dicom)"
-		-DENABLE_FFMPEG="$(usex ffmpeg)"
-		-DENABLE_GIF="$(usex gif)"
-		-DENABLE_NUKE="OFF" # not in Gentoo
-		-DENABLE_OPENCOLORIO="$(usex color-management)"
-		-DENABLE_OPENJPEG="$(usex jpeg2k)"
-		-DENABLE_OPENCV="$(usex opencv)"
-		-DENABLE_OPENVDB="$(usex openvdb)"
-		-DENABLE_PNG="$(usex png)"
-		-DENABLE_PTEX="$(usex ptex)"
-		-DUSE_PYTHON="$(usex python)"
-		-DENABLE_LIBRAW="$(usex raw)"
-		-DENABLE_FREETYPE="$(usex truetype)"
-		-DUSE_TBB="$(usex tbb)"
-		-DENABLE_WEBP="$(usex webp)"
-		-DLINKSTATIC="OFF"
-		-DUSE_SIMD="$(local IFS=','; echo "${mysimd[*]}")"
-
-		-DVERBOSE="yes"
+		-DENABLE_FFmpeg="$(usex ffmpeg)"
 		-DENABLE_FITS="$(usex fits)"
+		-DENABLE_FREETYPE="$(usex truetype)"
+		-DENABLE_GIF="$(usex gif)"
+		-DENABLE_LibRaw="$(usex raw)"
+		-DENABLE_Nuke="no" # not in Gentoo
+		-DENABLE_OpenCV="$(usex opencv)"
+		-DENABLE_OpenJPEG="$(usex jpeg2k)"
+		-DENABLE_OpenVDB="$(usex openvdb)"
+		-DENABLE_TBB="$(usex tbb)"
+		-DENABLE_Ptex="$(usex ptex)"
+		-DENABLE_PNG="$(usex png)"
+		-DENABLE_WEBP="$(usex webp)"
 
+		-DENABLE_GIF="$(usex gif)"
+		-DENABLE_LIBRAW="$(usex raw)"
+		-DENABLE_PTEX="$(usex ptex)"
+		-DENABLE_OPENJPEG="$(usex jpeg2k)"
+
+		-DOIIO_BUILD_TOOLS="$(usex tools)"
+		-DOIIO_BUILD_TESTS="$(usex test)"
+		-DOIIO_DOWNLOAD_MISSING_TESTDATA="no"
+
+		-DUSE_CCACHE="no"
+		-DUSE_EXTERNAL_PUGIXML="yes"
+		-DENABLE_OPENCOLORIO="$(usex color-management)"
+		-DLINKSTATIC="OFF"
+		-DUSE_PYTHON="$(usex python)"
+		-DUSE_SIMD="$(local IFS=','; echo "${mysimd[*]}")"
 	)
 
 	if use gui; then
-		mycmakeargs+=( -DENABLE_IV=ON -DUSE_OPENGL=ON -DUSE_QT=ON )
+		mycmakeargs+=( -DUSE_IV="yes" -DUSE_OPENGL="yes" -DUSE_QT="yes" )
 		if ! use qt6; then
-			mycmakeargs+=( -DCMAKE_DISABLE_FIND_PACKAGE_Qt6=ON )
+			mycmakeargs+=( -DCMAKE_DISABLE_FIND_PACKAGE_Qt6="yes" )
 		fi
 	else
 		mycmakeargs+=(
-			# -DENABLE_IV=OFF
-			-DUSE_QT=OFF
+			-DUSE_QT="no"
 		)
 	fi
+
 
 	use cxx17 && mycmakeargs+=(
 		-DCMAKE_CXX_STANDARD=17
@@ -308,7 +348,10 @@ src_test() {
 }
 
 src_install() {
-	# NOTE both eclasses export src_install so we ran both by hand.
-	font_src_install
 	cmake_src_install
+
+	# remove Windows loader file
+	if use python; then
+		rm "${D}$(python_get_sitedir)/__init__.py" || die
+	fi
 }

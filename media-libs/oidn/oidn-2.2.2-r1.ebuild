@@ -4,13 +4,16 @@
 EAPI=8
 
 AMDGPU_TARGETS_COMPAT=(
+	gfx902
+	gfx909
+	gfx90c
 	gfx1030
 	gfx1031
 	gfx1032
-#	gfx1033
+	gfx1033
 	gfx1034
 	gfx1035
-#	gfx1036
+	gfx1036
 	gfx1100
 	gfx1101
 	gfx1102
@@ -31,8 +34,9 @@ CUDA_TARGETS_COMPAT=(
 
 ROCM_VERSION="5.7.1"
 PYTHON_COMPAT=( python3_{10..12} )
+LLVM_COMPAT=( 17 18 )
 
-inherit cmake cuda flag-o-matic llvm python-single-r1 rocm toolchain-funcs
+inherit cmake cuda flag-o-matic llvm-r1 python-single-r1 rocm toolchain-funcs
 
 DESCRIPTION="Intel(R) Open Image Denoise library"
 HOMEPAGE="http://www.openimagedenoise.org/"
@@ -41,19 +45,13 @@ LICENSE="Apache-2.0"
 COMPOSABLE_KERNEL_COMMIT="e85178b4ca892a78344271ae64103c9d4d1bfc40"
 CUTLASS_COMMIT="66d9cddc832c1cdc2b30a8755274f7f74640cfe6"
 MKL_DNN_COMMIT="9bea36e6b8e341953f922ce5c6f5dbaca9179a86"
-OIDN_WEIGHTS_COMMIT="4322c25e25a05584f65da1a4be5cef40a4b2e90b"
+OIDN_WEIGHTS_COMMIT="44ff866123ffd6c26bbc27e5e48e8cd4ec8a1a66"
 ORG_GH="https://github.com/OpenImageDenoise"
-# SSE4.1 hardware was released in 2008.
-# See scripts/build.py for release versioning.
-# Clang is more smoother multitask-wise.
-MIN_CLANG_PV="3.3"
-MIN_GCC_PV="4.8.1"
 SLOT="0/$(ver_cut 1-2)"
-LLVM_MAX_SLOT=18
 IUSE="
 -${CUDA_TARGETS_COMPAT[@]/#/cuda_targets_}
 -${AMDGPU_TARGETS_COMPAT[@]/#/amdgpu_targets_}
-examples +built-in-weights +cpu -cuda doc -hip static-libs sycl
+examples +built-in-weights +cpu -cuda doc -hip static-libs sycl openimageio
 "
 
 gen_required_use_cuda_targets() {
@@ -82,6 +80,7 @@ REQUIRED_USE+="
 	$(gen_required_use_cuda_targets)
 	$(gen_required_use_hip_targets)
 	${PYTHON_REQUIRED_USE}
+	openimageio? ( examples )
 	cuda? (
 		|| (
 			${CUDA_TARGETS_COMPAT[@]/#/cuda_targets_}
@@ -128,13 +127,21 @@ RDEPEND+="
 		)
 		dev-util/hip:=
 	)
+	sycl? (
+		sys-devel/DPC++:=
+	)
 	>=dev-cpp/tbb-2021.5:0=
+	openimageio? ( media-libs/openimageio:= )
 "
 DEPEND+="
 	${RDEPEND}
 "
 BDEPEND+="
 	${PYTHON_DEPS}
+    $(llvm_gen_dep '
+      sys-devel/clang:${LLVM_SLOT}=
+      sys-devel/llvm:${LLVM_SLOT}=
+    ')
 	>=dev-lang/ispc-1.17.0
 	>=dev-build/cmake-3.15
 	examples? (
@@ -148,14 +155,12 @@ BDEPEND+="
 			$(gen_hip_depends)
 		)
 	)
-	<sys-devel/clang-$((LLVM_MAX_SLOT+1))
-	<sys-devel/llvm-$((LLVM_MAX_SLOT+1))
 "
 if [[ ${PV} = *9999 ]]; then
-	inherit git-r3
 	EGIT_REPO_URI="${ORG_GH}/oidn.git"
 	EGIT_BRANCH="master"
 	KEYWORDS=""
+	inherit git-r3
 else
 	SRC_URI="
 ${ORG_GH}/${PN}/releases/download/v${PV}/${P}.src.tar.gz
@@ -176,6 +181,7 @@ fi
 RESTRICT="mirror"
 DOCS=( CHANGELOG.md README.md readme.pdf )
 PATCHES=(
+	"${FILESDIR}/${PN}-2.2.2-amdgpu-targets.patch"
 	"${FILESDIR}/${PN}-2.2.1-hip-buildfiles-changes.patch"
 	"${FILESDIR}/${PN}-2.0.1-set-rocm-path.patch"
 	"${FILESDIR}/${PN}-2.1.0-cuda-nvcc-flags.patch"
@@ -205,6 +211,10 @@ pkg_setup() {
 		ROCM_SLOT="5.6"
 	fi
 	#rocm_pkg_setup
+	llvm-r1_pkg_setup
+	if use cuda ; then
+		cuda_add_sandbox
+	fi
 }
 
 src_unpack() {
@@ -233,19 +243,20 @@ src_unpack() {
 }
 
 src_prepare() {
-	cmake_src_prepare
 	pushd "${S}/external/composable_kernel" || die
 		eapply "${FILESDIR}/composable_kernel-1.0.0_p9999-fix-missing-libstdcxx-expf.patch"
 	popd
-	use cuda && cuda_src_prepare
-	#use rocm && check_amdgpu
+	if use cuda; then
+		cuda_src_prepare
+		addpredict "/proc/self/task/"
+	fi
+
+	sed -e "/^install.*llvm_macros.cmake.*cmake/d" -i CMakeLists.txt || die
+
+	cmake_src_prepare
 }
 
 src_configure() {
-	CMAKE_BUILD_TYPE=Release
-
-	mycmakeargs=()
-
 	strip-unsupported-flags
 	test-flags-CXX "-std=c++17" 2>/dev/null 1>/dev/null \
                 || die "Switch to a c++17 compatible compiler."
@@ -264,14 +275,15 @@ src_configure() {
 	einfo
 
 	mycmakeargs+=(
-		-DOIDN_APPS=$(usex examples)
+		-DOIDN_APPS="$(usex examples)"
+		-DOIDN_APPS_OPENIMAGEIO="$(usex openimageio)"
 		-DOIDN_INSTALL_DEPENDENCIES=OFF
-		-DOIDN_FILTER_RT=$(usex built-in-weights)
-		-DOIDN_FILTER_RTLIGHTMAP=$(usex built-in-weights)
-		-DOIDN_DEVICE_CPU=$(usex cpu)
-		-DOIDN_DEVICE_CUDA=$(usex cuda)
-		-DOIDN_DEVICE_HIP=$(usex hip)
-		-DOIDN_DEVICE_SYCL=$(usex sycl)
+		-DOIDN_FILTER_RT="$(usex built-in-weights)"
+		-DOIDN_FILTER_RTLIGHTMAP="$(usex built-in-weights)"
+		-DOIDN_DEVICE_CPU="$(usex cpu)"
+		-DOIDN_DEVICE_CUDA="$(usex cuda)"
+		-DOIDN_DEVICE_HIP="$(usex hip)"
+		-DOIDN_DEVICE_SYCL="$(usex sycl)"
 	)
 
 	if use hip ; then
@@ -279,9 +291,9 @@ src_configure() {
 				"/usr/$(get_libdir)/cmake/hip/hip-config.cmake" \
 			| grep -E -o -e  "[0-9]+")
 		[[ -n "${llvm_slot}" ]] && "HIP_CLANG_ROOT is missing.  emerge hip."
-		einfo "${ESYSROOT}/usr/lib/llvm/${llvm_slot}"
+		einfo "${ESYSROOT}/usr/lib/llvm/${LLVM_SLOT}"
 		mycmakeargs+=(
-			-DHIP_COMPILER_PATH="${ESYSROOT}/usr/lib/llvm/${llvm_slot}"
+			-DHIP_COMPILER_PATH="${ESYSROOT}/usr/lib/llvm/${LLVM_SLOT}"
 			-DOIDN_DEVICE_HIP_COMPILER="${CXX}"
 		)
 
@@ -324,8 +336,12 @@ src_install() {
 	docinto licenses
 	dodoc LICENSE.txt
 
-	# Generated when hip is enabled.
+	# remove garbage in /var/tmp left by subprojects
 	rm -rf "${ED}/var"
+}
+
+src_test() {
+	"${BUILD_DIR}/oidnTest" || die "There were test faliures!"
 }
 
 pkg_postinst() {
