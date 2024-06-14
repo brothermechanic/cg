@@ -1,14 +1,13 @@
-# Copyright 1999-2023 Gentoo Authors
+# Copyright 1999-2024 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
 
 EAPI=8
 
 DOCS_BUILDER="doxygen"
 DOCS_DEPEND="media-gfx/graphviz"
+LLVM_COMPAT=( 17 18 )
 
-inherit cmake docs llvm prefix
-
-LLVM_MAX_SLOT=16
+inherit cmake docs llvm-r1 prefix
 
 DESCRIPTION="C++ Heterogeneous-Compute Interface for Portability"
 HOMEPAGE="https://github.com/ROCm-Developer-Tools/hipamd"
@@ -25,14 +24,18 @@ IUSE="debug"
 
 DEPEND="
 	>=dev-util/rocminfo-5
-	sys-devel/clang:${LLVM_MAX_SLOT}
+	$(llvm_gen_dep '
+	    sys-devel/clang:${LLVM_SLOT}=
+	    sys-devel/llvm:${LLVM_SLOT}=
+	')
 	dev-libs/rocm-comgr:${SLOT}
 	virtual/opengl
 "
 RDEPEND="${DEPEND}
 	dev-perl/URI-Encode
 	sys-devel/clang-runtime:=
-	>=dev-libs/roct-thunk-interface-5"
+	>=dev-libs/roct-thunk-interface-5
+"
 
 RESTRICT="mirror"
 
@@ -112,16 +115,13 @@ src_prepare() {
 }
 
 src_configure() {
-	use debug && CMAKE_BUILD_TYPE="Debug"
-
 	# TODO: Currently a GENTOO configuration is build,
 	# this is also used in the cmake configuration files
 	# which will be installed to find HIP;
 	# Other ROCm packages expect a "RELEASE" configuration,
 	# see "hipBLAS"
 	local mycmakeargs=(
-		-DCMAKE_PREFIX_PATH="$(get_llvm_prefix "${LLVM_MAX_SLOT}")"
-		-DCMAKE_BUILD_TYPE=${buildtype}
+		-DCMAKE_PREFIX_PATH="$(get_llvm_prefix)"
 		-DCMAKE_INSTALL_PREFIX="${EPREFIX}/usr"
 		-DCMAKE_SKIP_RPATH=ON
 		-DBUILD_HIPIFY_CLANG=OFF

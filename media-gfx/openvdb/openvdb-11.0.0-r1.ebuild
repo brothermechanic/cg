@@ -113,10 +113,16 @@ DEPEND+="
 "
 BDEPEND+="
 	>=dev-build/cmake-3.16.2-r1
-	>=sys-devel/bison-3
-	>=sys-devel/flex-2.6
+	app-alternatives/yacc
+	app-alternatives/lex
 	dev-util/patchelf
 	virtual/pkgconfig
+	ax? (
+		$(llvm_gen_dep '
+		    sys-devel/clang:${LLVM_SLOT}=
+    		sys-devel/llvm:${LLVM_SLOT}=
+   		')
+	)
 	doc? (
 		>=app-doc/doxygen-1.8.8
 		dev-texlive/texlive-bibtexextra

@@ -120,6 +120,12 @@ BDEPEND+="
 	>=sys-devel/flex-2.6
 	dev-util/patchelf
 	virtual/pkgconfig
+	ax? (
+		$(llvm_gen_dep '
+		    sys-devel/clang:${LLVM_SLOT}=
+    		sys-devel/llvm:${LLVM_SLOT}=
+   		')
+	)
 	doc? (
 		>=app-doc/doxygen-1.8.8
 		dev-texlive/texlive-bibtexextra
