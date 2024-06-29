@@ -1,6 +1,7 @@
---- a/cmake/CMakeLists.txt
-+++ b/cmake/CMakeLists.txt
-@@ -560,6 +560,17 @@ if(protobuf_VERBOSE)
+diff '--color=auto' -ur onnxruntime-1.18.0.orig/cmake/CMakeLists.txt onnxruntime-1.18.0/cmake/CMakeLists.txt
+--- onnxruntime-1.18.0.orig/cmake/CMakeLists.txt	2024-06-24 15:26:32.593489015 +0200
++++ onnxruntime-1.18.0/cmake/CMakeLists.txt	2024-06-24 15:27:40.131083581 +0200
+@@ -588,6 +588,17 @@
    message(STATUS "Using Protocol Buffers ${Protobuf_VERSION}")
  endif()
  
@@ -18,9 +19,11 @@
  include(external/onnxruntime_external_deps.cmake)
  
  set(ORT_WARNING_FLAGS)
---- a/cmake/external/onnxruntime_external_deps.cmake
-+++ b/cmake/external/onnxruntime_external_deps.cmake
-@@ -359,23 +359,6 @@ if (NOT WIN32)
+Only in onnxruntime-1.18.0/cmake: CMakeLists.txt.orig
+diff '--color=auto' -ur onnxruntime-1.18.0.orig/cmake/external/onnxruntime_external_deps.cmake onnxruntime-1.18.0/cmake/external/onnxruntime_external_deps.cmake
+--- onnxruntime-1.18.0.orig/cmake/external/onnxruntime_external_deps.cmake	2024-06-24 15:26:32.541489328 +0200
++++ onnxruntime-1.18.0/cmake/external/onnxruntime_external_deps.cmake	2024-06-24 15:28:46.758683610 +0200
+@@ -359,23 +359,6 @@
    endif()
  endif()
  
@@ -44,7 +47,7 @@
  FetchContent_Declare(
      safeint
      URL ${DEP_URL_safeint}
-@@ -389,7 +372,7 @@ onnxruntime_fetchcontent_makeavailable(u
+@@ -389,7 +372,7 @@
  # protobuf's cmake/utf8_range.cmake has the following line
  include_directories(${utf8_range_SOURCE_DIR})
  
@@ -53,7 +56,7 @@
  if(NOT re2_FOUND)
    onnxruntime_fetchcontent_makeavailable(re2)
  endif()
-@@ -443,9 +427,6 @@ endif()
+@@ -495,9 +478,6 @@
  include(eigen)
  include(wil)
  
@@ -63,12 +66,13 @@
  add_library(safeint_interface INTERFACE)
  target_include_directories(safeint_interface INTERFACE ${safeint_SOURCE_DIR})
  
-@@ -520,7 +503,7 @@ endif()
+@@ -523,7 +503,7 @@
  #onnxruntime_EXTERNAL_LIBRARIES could contain onnx, onnx_proto,libprotobuf, cuda/cudnn,
  # dnnl/mklml, onnxruntime_codegen_tvm, tvm and pthread
  # pthread is always at the last
--set(onnxruntime_EXTERNAL_LIBRARIES ${onnxruntime_EXTERNAL_LIBRARIES_XNNPACK} ${WIL_TARGET} nlohmann_json::nlohmann_json onnx onnx_proto ${PROTOBUF_LIB} re2::re2 Boost::mp11 safeint_interface flatbuffers::flatbuffers ${GSL_TARGET} ${ABSEIL_LIBS} date::date ${ONNXRUNTIME_CLOG_TARGET_NAME})
-+set(onnxruntime_EXTERNAL_LIBRARIES ${onnxruntime_EXTERNAL_LIBRARIES_XNNPACK} ${WIL_TARGET} nlohmann_json::nlohmann_json onnx onnx_proto ${PROTOBUF_LIB} re2::re2 Boost::mp11 safeint_interface flatbuffers::flatbuffers ${ABSEIL_LIBS} date::date ${ONNXRUNTIME_CLOG_TARGET_NAME})
+-set(onnxruntime_EXTERNAL_LIBRARIES ${onnxruntime_EXTERNAL_LIBRARIES_XNNPACK} ${WIL_TARGET} nlohmann_json::nlohmann_json ONNX::onnx ONNX::onnx_proto ${PROTOBUF_LIB} re2::re2 Boost::mp11 safeint_interface flatbuffers::flatbuffers ${GSL_TARGET} ${ABSEIL_LIBS} date::date ${ONNXRUNTIME_CLOG_TARGET_NAME})
++set(onnxruntime_EXTERNAL_LIBRARIES ${onnxruntime_EXTERNAL_LIBRARIES_XNNPACK} ${WIL_TARGET} nlohmann_json::nlohmann_json ONNX::onnx ONNX::onnx_proto ${PROTOBUF_LIB} re2::re2 Boost::mp11 safeint_interface flatbuffers::flatbuffers ${ABSEIL_LIBS} date::date ${ONNXRUNTIME_CLOG_TARGET_NAME})
  # The source code of onnx_proto is generated, we must build this lib first before starting to compile the other source code that uses ONNX protobuf types.
  # The other libs do not have the problem. All the sources are already there. We can compile them in any order.
- set(onnxruntime_EXTERNAL_DEPENDENCIES onnx_proto flatbuffers::flatbuffers)
+ set(onnxruntime_EXTERNAL_DEPENDENCIES ONNX::onnx_proto flatbuffers::flatbuffers)
+Only in onnxruntime-1.18.0/cmake/external: onnxruntime_external_deps.cmake.orig
