@@ -1,37 +1,37 @@
-# Copyright 1999-2023 Gentoo Authors
+# Copyright 1999-2024 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
 
 EAPI=8
 
-PYTHON_COMPAT=( python3_{10..12} )
+PYTHON_COMPAT=( python3_{10..13} )
 OPENVDB_COMPAT=( {7..11} )
 LLVM_COMPAT=( 17 18 )
 LLVM_OPTIONAL=1
 
-inherit check-reqs cmake cuda flag-o-matic git-r3 pax-utils python-single-r1 toolchain-funcs xdg-utils llvm-r1 openvdb cg-blender-scripts-dir
+inherit check-reqs cmake cuda flag-o-matic llvm-r1  git-r3 pax-utils python-single-r1 toolchain-funcs xdg-utils openvdb cg-blender-scripts-dir
 
 DESCRIPTION="Blender is a free and open-source 3D creation suite."
 HOMEPAGE="https://www.blender.org"
 
 EGIT_REPO_URI="https://projects.blender.org/blender/blender.git"
-EGIT_REPO_URI_LIST="https://projects.blender.org/blender/blender-addons.git https://projects.blender.org/blender/blender-addons-contrib.git"
-EGIT_SUBMODULES=()
+EGIT_SUBMODULES=( blender-assets )
+EGIT_REPO_URI_LIST=""
 if [[ ${PV} == 9999 ]]; then
 	EGIT_BRANCH="main"
-	EGIT_COMMIT="463a4c6211e5df2fa7e2a9a9ca8347262266c44e"
-	#EGIT_COMMIT="8f09fffef7a2fad67c8111b31c9bd0206657f26c"
+	EGIT_COMMIT="f0ec207e9c7de5762ff23ea1a6897f90829fb478"
 	#EGIT_CLONE_TYPE="shallow"
-	MY_PV="4.2"
+	MY_PV="4.3"
 	KEYWORDS=""
 else
 	MY_PV="$(ver_cut 1-2)"
 	EGIT_BRANCH="blender-v${MY_PV}-release"
 	#EGIT_COMMIT="v${PV}"
 	KEYWORDS="~amd64 ~arm ~arm64"
+	[[ "4.1 4.0 3.6" =~ "${MY_PV}"  ]] && EGIT_REPO_URI_LIST="https://projects.blender.org/blender/blender-addons.git https://projects.blender.org/blender/blender-addons-contrib.git"
 fi
 
 [[ "4.0 3.6" =~ "${MY_PV}"  ]] && OSL_PV="12" || OSL_PV="13"
-[[ "${MY_PV}" == "4.2"  ]] && AUD_PV="1.5.1" || AUD_PV="1.4.1"
+[[ "4.2 4.3" =~ "${MY_PV}" ]] && AUD_PV="1.5.1" || AUD_PV="1.4.1"
 
 SLOT="$MY_PV"
 LICENSE="|| ( GPL-3 BL )"
@@ -63,22 +63,26 @@ AMDGPU_TARGETS_COMPAT=(
 	gfx1032
 	gfx1034
 	gfx1035
+	gfx1036
 	gfx1100
 	gfx1101
 	gfx1102
+	gfx1103
+	gfx1150
+	gfx1151
 )
 
 IUSE_CPU="+openmp +simd +tbb -lld -gold +mold -cpu_flags_arm_neon llvm -valgrind +jemalloc"
-IUSE_GPU="cuda optix rocm oneapi -cycles-bin-kernels ${CUDA_TARGETS_COMPAT[@]/#/cuda_targets_} ${AMDGPU_TARGETS_COMPAT[@]/#/amdgpu_targets_}"
-IUSE_DESKTOP="+cg -portable +X headless +nls -ndof wayland vulkan"
-IUSE_LIBS="+bullet +boost +draco +materialx +color-management +oidn +opensubdiv +openvdb nanovdb openxr +libmv +freestyle lzma lzo"
+IUSE_GPU="cuda optix hip oneapi -cycles-bin-kernels ${CUDA_TARGETS_COMPAT[@]/#/cuda_targets_} ${AMDGPU_TARGETS_COMPAT[@]/#/amdgpu_targets_}"
+IUSE_DESKTOP="+cg -portable +X headless +nls icu -ndof wayland vulkan"
+IUSE_LIBS="+bullet +boost +draco +materialx +color-management +oidn +opensubdiv +openvdb nanovdb openxr +libmv lzma lzo osl +fftw +potrace +pugixml"
 IUSE_MOD="+fluid +smoke +oceansim +remesh +gmp +quadriflow"
-IUSE_RENDER="+cycles osl +openpgl +embree +pugixml +potrace +fftw"
-IUSE_3DFILES="-alembic -usd +collada +obj +ply +stl"
+IUSE_RENDER="+cycles +openpgl +embree +freestyle"
+IUSE_3DFILES="-alembic usd +collada +obj +ply +stl"
 IUSE_IMAGE="-dpx +openexr jpeg2k webp +pdf"
 IUSE_CODEC="avi +ffmpeg flac -sndfile +quicktime aom mp3 opus theora vorbis vpx x264 xvid"
 IUSE_SOUND="jack openal -pulseaudio sdl"
-IUSE_TEST="-debug -doc -man -gtests -test icu"
+IUSE_TEST="-debug -doc -man -gtests renderdoc -test -experimental"
 
 IUSE="${IUSE_CPU} ${IUSE_GPU} ${IUSE_DESKTOP} ${IUSE_LIBS} ${IUSE_MOD} ${IUSE_RENDER} ${IUSE_3DFILES} ${IUSE_IMAGE} ${IUSE_CODEC} ${IUSE_SOUND} ${IUSE_TEST}"
 
@@ -87,16 +91,13 @@ REQUIRED_USE="${PYTHON_REQUIRED_USE}
 	|| ( wayland X )
 	!boost? ( !alembic !color-management !cycles !nls !openvdb )
 	alembic? ( openexr )
+	cycles? ( openexr tbb )
 	embree? ( cycles tbb )
 	smoke? ( fftw )
 	cuda? ( cycles )
 	optix? ( cuda )
 	fluid? ( fftw tbb )
 	nanovdb? ( cuda )
-	materialx? (
-		!python_single_target_python3_10
-		python_single_target_python3_11
-	)
 	oceansim? ( fftw )
 	oidn? ( cycles tbb )
 	oneapi? ( cycles )
@@ -104,13 +105,13 @@ REQUIRED_USE="${PYTHON_REQUIRED_USE}
 	openvdb? ( ${OPENVDB_REQUIRED_USE} cycles tbb )
 	opensubdiv? ( X )
 	osl? ( cycles llvm pugixml )
-	rocm? ( cycles llvm )
+	hip? ( cycles llvm )
 	vulkan? ( llvm )
 	test? ( gtests color-management )
 	usd? ( tbb )
 "
 
-LANGS="en ab ar be bg ca cs da de el eo es es_ES eu fa fi fr ha he hi hr hu id it ja ka km ko ky ne nl pl pt_BR pt ru sk sr@latin sr sv sw ta th tr zh_TW uk vi zh_CN zh_HANS zh_HANT"
+LANGS="en ab ar be bg ca cs da de el eo es es_ES eu fa fi fr ha he hi hr hu id it ja ka km ko ky ne nl pl pt_BR pt ru sl sk sr@latin sr sv sw ta th tr zh_TW uk vi zh_CN zh_HANS zh_HANT"
 
 for X in ${LANGS} ; do
 	IUSE+=" l10n_${X}"
@@ -170,6 +171,7 @@ RDEPEND="
 	>=dev-libs/fribidi-1.0.12
 	>=media-libs/libpng-1.6.37:0=
 	>=sys-libs/minizip-ng-3.0.7
+	>=media-libs/tiff-4.6.0
 	>=sys-libs/zlib-1.2.13
 	dev-libs/lzo:2
 	media-libs/libglvnd
@@ -180,12 +182,19 @@ RDEPEND="
 	cuda? ( dev-util/nvidia-cuda-toolkit:= )
 	draco? ( >=media-libs/draco-1.5.2:= )
 	embree? (
-		>=media-libs/embree-3.1.0[raymask,tbb?]
+		>=media-libs/embree-4.3.2[raymask,tbb?]
 		<media-libs/embree-5
 	)
-	rocm? ( >=dev-util/hip-5.4.0 )
+	hip? (
+		llvm_slot_17? (
+			dev-util/hip:0/5.7
+		)
+		llvm_slot_18? (
+			>=dev-util/hip-6.1:=[llvm_slot_18(-)]
+		)
+	)
 	ffmpeg? (
-		<media-video/ffmpeg-7:=[encode,jpeg2k?,mp3?,opus?,sdl,theora?,vorbis?,vpx?,x264?,xvid?,zlib]
+		<media-video/ffmpeg-8:=[encode,jpeg2k?,mp3?,opus?,sdl,theora?,vorbis?,vpx?,x264?,xvid?,zlib]
 		>media-video/ffmpeg-5:=[encode,jpeg2k?,mp3?,opus?,sdl,theora?,vorbis?,vpx?,x264?,xvid?,zlib]
 	)
 	fftw? ( sci-libs/fftw:3.0=[openmp?] )
@@ -210,22 +219,20 @@ RDEPEND="
 	)
 	nls? ( virtual/libiconv )
 	<=media-libs/audaspace-${AUD_PV}:=[python,openal?,sdl?,pulseaudio?]
-	oneapi? (
-		sys-devel/DPC++
-	)
+	oneapi? ( dev-libs/intel-compute-runtime[l0] )
 	openal? (
 		>=media-libs/openal-1.23.1
 	)
 	media-libs/glew:*
 	oidn? ( >=media-libs/oidn-2.1.0[cuda?] )
 	<media-libs/openimageio-2.6[${PYTHON_SINGLE_USEDEP},${OPENVDB_SINGLE_USEDEP},python,color-management?]
-	>=media-libs/openimageio-2.5.6.0[${PYTHON_SINGLE_USEDEP},${OPENVDB_SINGLE_USEDEP},python,color-management?]
+	>=media-libs/openimageio-2.5.11.0[${PYTHON_SINGLE_USEDEP},${OPENVDB_SINGLE_USEDEP},python,color-management?]
 	>=dev-cpp/robin-map-0.6.2
 	>=dev-libs/libfmt-9.1.0
 	color-management? ( >=media-libs/opencolorio-2.3.0:= )
 	openexr? ( >=media-libs/openexr-3.2.1:= )
 	openpgl? (
-		<media-libs/openpgl-0.6[tbb?]
+		<media-libs/openpgl-0.7[tbb?]
 		>=media-libs/openpgl-0.5[tbb?]
 	)
 	opensubdiv? ( >=media-libs/opensubdiv-3.6.0[cuda?,openmp?,tbb?,opengl] )
@@ -257,23 +264,25 @@ RDEPEND="
 	sndfile? ( media-libs/libsndfile )
 	tbb? ( dev-cpp/tbb:= )
 	usd? (
-		<media-libs/openusd-25[monolithic,imaging,python,alembic?,draco?,embree?,materialx?,color-management?,openexr?,openimageio,openvdb?,osl?]
-		>=media-libs/openusd-23.11[monolithic,imaging,python,alembic?,draco?,embree?,materialx?,color-management?,openexr?,openimageio,openvdb?,osl?]
+		<media-libs/openusd-25[${PYTHON_SINGLE_USEDEP},monolithic,imaging,python,alembic?,draco?,embree?,materialx?,color-management?,openexr?,openimageio,openvdb?,osl?]
+		>=media-libs/openusd-23.11[${PYTHON_SINGLE_USEDEP},monolithic,imaging,python,alembic?,draco?,embree?,materialx?,color-management?,openexr?,openimageio,openvdb?,osl?]
 	)
 	valgrind? ( dev-util/valgrind )
 	webp? ( >=media-libs/libwebp-1.3.2:= )
 	wayland? (
-		>=dev-libs/wayland-1.12
-		>=dev-libs/wayland-protocols-1.32
+		>=dev-libs/wayland-1.23
+		>=dev-libs/wayland-protocols-1.36
 		>=x11-libs/libxkbcommon-0.2.0
 		dev-util/wayland-scanner
-		>=gui-libs/libdecor-0.1.0
+		>=gui-libs/libdecor-0.2.2
+	)
+	renderdoc? (
+		media-gfx/renderdoc
 	)
 	X? (
 		x11-libs/libX11
 		x11-libs/libXi
 		x11-libs/libXxf86vm
-		virtual/glu
 	)
 	>=media-libs/mesa-23.3.0[X?,wayland?,llvm?,vulkan?]
 	cg? ( media-blender/cg_preferences )
@@ -308,15 +317,15 @@ BDEPEND="
 	>=dev-util/vulkan-headers-1.3.268
 	dev-util/patchelf
 	virtual/pkgconfig
-	lld? ( <sys-devel/lld-$((${LLVM_SLOT} + 1)):= )
 	mold? ( sys-devel/mold:= )
-	gold? ( <sys-devel/llvm-$((${LLVM_SLOT} + 1)):=[binutils-plugin] )
-	llvm? (
-		$(llvm_gen_dep '
+	$(llvm_gen_dep '
+		lld? ( sys-devel/lld:${LLVM_SLOT}= )
+		gold? ( sys-devel/llvm:${LLVM_SLOT}=[binutils-plugin] )
+		llvm? (
 			sys-devel/clang:${LLVM_SLOT}=
 			sys-devel/llvm:${LLVM_SLOT}=
-		')
-	)
+		)
+	')
 	doc? (
 		>=dev-python/sphinx-3.3.1[latex]
 		>=dev-python/sphinx_rtd_theme-0.5.0
@@ -330,6 +339,9 @@ BDEPEND="
 	nls? ( sys-devel/gettext )
 	wayland? (
 		dev-util/wayland-scanner
+	)
+	X? (
+		x11-base/xorg-proto
 	)
 "
 
@@ -373,6 +385,12 @@ blender_get_version() {
 
 pkg_pretend() {
 	blender_check_requirements
+
+	if use oneapi; then
+		einfo "The Intel oneAPI support is rudimentary."
+		einfo ""
+		einfo "Please report any bugs you find to https://bugs.gentoo.org/"
+	fi
 }
 
 pkg_setup() {
@@ -381,6 +399,9 @@ pkg_setup() {
 }
 
 src_unpack() {
+	if use test; then
+		EGIT_SUBMODULES+=( 'tests' )
+	fi
 	git-r3_src_unpack
 
 	for repo in $(echo ${EGIT_REPO_URI_LIST}); do
@@ -395,13 +416,6 @@ src_unpack() {
 		EGIT_CHECKOUT_DIR=${WORKDIR}/${P}/scripts/$(echo -n "${repo}" | sed -rne 's/^http.*\/blender-([a-z-]*).*/\1/p')
 		git-r3_src_unpack
 	done
-	if use test; then
-		inherit subversion
-		TESTS_SVN_URL=https://svn.blender.org/svnroot/bf-blender/trunk/lib/tests
-		subversion_fetch ${TESTS_SVN_URL} ../lib/tests
-		mkdir -p lib || die
-		mv "${WORKDIR}"/blender-${TEST_TARBALL_VERSION}-tests/tests lib || die
-	fi
 	if use cg; then
 		unset EGIT_BRANCH EGIT_COMMIT
 		EGIT_CHECKOUT_DIR="${WORKDIR}"/cg_preferences/ \
@@ -411,11 +425,11 @@ src_unpack() {
 }
 
 src_prepare() {
+	use cuda && cuda_src_prepare
+
 	cmake_src_prepare
 
 	blender_get_version
-
-	use cuda && cuda_src_prepare
 
 	use portable || eapply "${FILESDIR}/${SLOT}"
 	use optix && eapply "${FILESDIR}/blender-fix-optix-build.patch"
@@ -500,19 +514,6 @@ src_configure() {
 	local mycmakeargs=()
 
 	use openvdb && openvdb_src_configure
-	# CUDA Kernel Selection
-	if use cuda; then
-		for CT in ${CUDA_TARGETS_COMPAT[@]}; do
-			use ${CT/#/cuda_targets_} && CUDA_TARGETS+="${CT};"
-		done
-
-		#If a kernel isn't selected then all of them are built by default
-		if [ -n "${CUDA_TARGETS}" ] ; then
-			mycmakeargs+=(
-				-DCYCLES_CUDA_BINARIES_ARCH=${CUDA_TARGETS%%*;}
-			)
-		fi
-	fi
 
 	mycmakeargs+=(
 		-DSUPPORT_NEON_BUILD=$(usex cpu_flags_arm_neon)
@@ -538,9 +539,9 @@ src_configure() {
 		-DWITH_CUDA=$(usex cuda)
 		-DWITH_CYCLES_DEVICE_CUDA=$(usex cuda)
 		-DWITH_CYCLES_DEVICE_OPTIX=$(usex optix)
-		-DWITH_CYCLES_DEVICE_HIP=$(usex rocm)
-		-DWITH_CYCLES_HIP_BINARIES=$(usex cycles-bin-kernels $(usex rocm) no)
-		-DWITH_HIP_DYNLOAD=$(usex rocm $(usex cycles-bin-kernels no yes) no)
+		-DWITH_CYCLES_DEVICE_HIP=$(usex hip)
+		-DWITH_CYCLES_HIP_BINARIES=$(usex cycles-bin-kernels $(usex hip) no)
+		-DWITH_HIP_DYNLOAD=$(usex hip $(usex cycles-bin-kernels no yes) no)
 		-DWITH_CYCLES_CUDA_BINARIES=$(usex cycles-bin-kernels $(usex cuda) no)	# build cuda kernels now, not in runtime
 		-DWITH_CYCLES_CUDA_BUILD_SERIAL=$(usex cuda)			# Build cuda kernels in serial mode (if parallel build takes too much RAM or crash)
 		-DWITH_CUDA_DYNLOAD=$(usex cuda $(usex cycles-bin-kernels no yes) no)
@@ -556,6 +557,8 @@ src_configure() {
 		-DWITH_CYCLES_LOGGING=yes
 		#-DWITH_CYCLES_NETWORK=no
 		-DWITH_DOC_MANPAGE=$(usex man)
+		-DWITH_RENDERDOC="$(usex renderdoc)"
+		-DWITH_EXPERIMENTAL_FEATURES="$(usex experimental)"
 		-DWITH_FFTW3=$(usex fftw)
 		-DWITH_FREESTYLE=$(usex freestyle)						# advanced edges rendering
 		-DWITH_SYSTEM_FREETYPE=$(usex !portable)
@@ -563,7 +566,6 @@ src_configure() {
 		-DWITH_GHOST_XDND=$(usex X)								# drag-n-drop support on X11
 		-DWITH_GHOST_WAYLAND=$(usex wayland)					# Enable building against wayland
 		-DWITH_GHOST_WAYLAND_APP_ID=blender-${BV}
-		-DWITH_GHOST_WAYLAND_DBUS=$(usex wayland)
 		-DWITH_GHOST_WAYLAND_DYNLOAD=$(usex wayland)
 		-DWITH_GHOST_WAYLAND_LIBDECOR=$(usex wayland)
 		-DWITH_GMP=$(usex gmp)									# boolean engine
@@ -630,22 +632,52 @@ src_configure() {
 		-DWITH_XR_OPENXR=$(usex openxr)							# VR interface
 		#-DSYCL_LIBRARY="/usr/lib/llvm/intel"
 		#-DSYCL_INCLUDE_DIR="/usr/lib/llvm/intel/include"
-		#-DLLVM_LIBRARY="/usr/lib/llvm/${LLVM_SLOT}/lib64/libLLVM.so"
 		-DUSD_ROOT_DIR="${ESYSROOT}/usr/$(get_libdir)/openusd/lib"
-		-DMaterialX_DIR="${ESYSROOT}/usr/$(get_libdir)/cmake/MaterialX"
+		#-DMaterialX_DIR="${ESYSROOT}/usr/$(get_libdir)/cmake/MaterialX"
+		-DWITH_MATERIALX=$(usex materialx)
 		-DWITH_NINJA_POOL_JOBS=no								# for machines with 16GB of RAM or less
 		-DBUILD_SHARED_LIBS=no
 		#-DWITH_EXPERIMENTAL_FEATURES=yes
 		-Wno-dev
 		#-DCMAKE_FIND_DEBUG_MODE=yes
+		#-DCMAKE_FIND_PACKAGE_PREFER_CONFIG=yes
 		-DWITH_STRICT_BUILD_OPTIONS=yes
 		-DWITH_LIBS_PRECOMPILED=no
 		-DWITH_BUILDINFO=yes
 		-DWITH_UNITY_BUILD=no 									# Enable Unity build for blender modules (memory usage/compile time)
 		-DWITH_HYDRA=no 										# MacOS features enabled by default if WITH_STRICT_BUILD_OPTIONS=yes
-		-DWITH_MATERIALX=$(usex materialx)
-		-DHIP_HIPCC_FLAGS="-fcf-protection=none"
 	)
+
+	# CUDA Kernel Selection
+	if use cuda; then
+		for CT in ${CUDA_TARGETS_COMPAT[@]}; do
+			use ${CT/#/cuda_targets_} && CUDA_TARGETS+="${CT};"
+		done
+
+		#If a kernel isn't selected then all of them are built by default
+		if [ -n "${CUDA_TARGETS}" ] ; then
+			mycmakeargs+=(
+				-DCYCLES_CUDA_BINARIES_ARCH=${CUDA_TARGETS%%*;}
+
+			)
+		fi
+		mycmakeargs+=(
+			-DCUDA_NVCC_FLAGS="--compiler-bindir;$(cuda_gccdir)"
+		)
+	fi
+
+	if use hip; then
+		mycmakeargs+=(
+			-DROCM_PATH="$(hipconfig -R)"
+			-DHIP_HIPCC_FLAGS="-fcf-protection=none"
+		)
+	fi
+
+	if use llvm; then
+		mycmakeargs+=(
+			-DLLVM_LIBRARY="/usr/lib/llvm/${LLVM_SLOT}/lib64/libLLVM.so"
+		)
+	fi
 
 	if use optix; then
 		mycmakeargs+=(
@@ -657,16 +689,14 @@ src_configure() {
 	# This is currently needed on arm64 to get the NEON SIMD wrapper to compile the code successfully
 	use arm64 && append-flags -flax-vector-conversions
 
-	append-cppflags $(usex debug '-DDEBUG' '-DNDEBUG')
+	append-cflags "$(usex debug '-DDEBUG' '-DNDEBUG')"
+	append-cppflags "$(usex debug '-DDEBUG' '-DNDEBUG')"
 
-	if tc-is-gcc ; then
-		# These options only exist when GCC is detected.
-		mycmakeargs+=(
-			-DWITH_LINKER_LLD=$(usex lld)
-			-DWITH_LINKER_GOLD=$(usex gold)
-			-DWITH_LINKER_MOLD=$(usex mold)
-		)
-	fi
+	mycmakeargs+=(
+		-DWITH_LINKER_LLD=$(usex lld)
+		-DWITH_LINKER_GOLD=$(usex gold)
+		-DWITH_LINKER_MOLD=$(usex mold)
+	)
 
 	if use test ; then
 		local CYCLES_TEST_DEVICES=( "CPU" )
@@ -678,8 +708,8 @@ src_configure() {
 		mycmakeargs+=(
 			-DCYCLES_TEST_DEVICES:STRING="$(local IFS=";"; echo "${CYCLES_TEST_DEVICES[*]}")"
 			-DWITH_COMPOSITOR_REALTIME_TESTS=yes
-			-DWITH_OPENGL_DRAW_TESTS=yes
-			-DWITH_OPENGL_RENDER_TESTS=yes
+			-DWITH_GPU_DRAW_TESTS=yes
+			-DWITH_GPU_RENDER_TESTS=yes
 		)
 	fi
 
@@ -689,7 +719,7 @@ src_configure() {
 src_test() {
 	# A lot of tests needs to have access to the installed data files.
 	# So install them into the image directory now.
-	DESTDIR="${T}" cmake_build install "$@"
+	DESTDIR="${T}" cmake_build install
 
 	blender_get_version
 	# Define custom blender data/script file paths not be able to find them otherwise during testing.
@@ -702,10 +732,20 @@ src_test() {
 	[ -d "$BLENDER_SYSTEM_SCRIPTS" ] || die "The custom script path is invalid, fix the ebuild!"
 	[ -d "$BLENDER_SYSTEM_DATAFILES" ] || die "The custom datafiles path is invalid, fix the ebuild!"
 
+	if use cuda; then
+		cuda_add_sandbox -w
+		addwrite "/dev/dri/renderD128"
+		addwrite "/dev/char/"
+	fi
+
+	if use X; then
+		xdg_environment_reset
+	fi
+
 	cmake_src_test
 
 	# Clean up the image directory for src_install
-	rm -fr "${T}"/usr || die
+	rm -fr "${T}/usr" || die
 }
 
 src_install() {
@@ -797,7 +837,7 @@ pkg_postinst() {
 		elog "You are building Blender with a newer python version than"
 		elog "supported by this version upstream."
 		elog "If you experience breakages with e.g. plugins, please switch to"
-		elog "python_single_target_python3_11 instead."
+		elog "python_single_target_python3_12 instead."
 		elog
 	fi
 

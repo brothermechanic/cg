@@ -1,4 +1,4 @@
-# Copyright 1999-2023 Gentoo Authors
+# Copyright 1999-2024 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
 
 EAPI=8
@@ -79,8 +79,8 @@ RDEPEND="
 		>=dev-cpp/tbb-2017
 	)
 "
-RDEPEND+="
-	${DEPEND}
+DEPEND+="
+	${RDEPEND}
 "
 BDEPEND+="
 	>=dev-build/cmake-3.1
@@ -89,10 +89,8 @@ RESTRICT="mirror test"
 S="${WORKDIR}/${PN}-${PV/_/-}"
 DOCS=( CHANGELOG.md README.md )
 
-
-
 src_configure() {
-	use debug && CMAKE_BUILD_TYPE="Debug" || CMAKE_BUILD_TYPE="Release"
+	CMAKE_BUILD_TYPE=(usex debug "Debug" "Release")
 	# Disable asserts
 	append-cppflags $(usex debug '' '-DNDEBUG')
 	# This is currently needed on arm64 to get the NEON SIMD wrapper to compile the code successfully
@@ -105,7 +103,7 @@ src_configure() {
 		-DOPENPGL_ISA_SSE4=$(usex cpu_flags_x86_sse4_2 "ON" $(usex cpu_flags_x86_sse4_1))
 		-DOPENPGL_ISA_AVX2=$(usex cpu_flags_x86_avx2)
 		-DOPENPGL_ISA_AVX512=$(usex cpu_flags_x86_avx512f)
-		-DOPENPGL_USE_OMP_THREADING=$(usex tbb)
+		-DOPENPGL_USE_OMP_THREADING=$(usex tbb "OFF" "ON")
 		-DOPENPGL_BUILD_TOOLS=$(usex tools)
 	)
 	cmake_src_configure

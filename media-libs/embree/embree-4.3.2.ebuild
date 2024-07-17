@@ -6,8 +6,8 @@ EAPI=8
 inherit cmake flag-o-matic linux-info toolchain-funcs
 
 DESCRIPTION="Collection of high-performance ray tracing kernels"
-HOMEPAGE="https://github.com/embree/embree"
-SRC_URI="https://github.com/embree/embree/archive/v${PV}.tar.gz -> ${P}.tar.gz"
+HOMEPAGE="https://www.embree.org"
+SRC_URI="https://github.com/RenderKit/embree/archive/v${PV}.tar.gz -> ${P}.tar.gz"
 
 LICENSE="
 	Apache-2.0
@@ -97,6 +97,9 @@ REQUIRED_USE+="
 	|| (
 		${CPU_FLAGS[@]%:*}
 	)
+	test? (
+		tutorials
+	)
 "
 
 BDEPEND="
@@ -122,7 +125,7 @@ RDEPEND="
 	>=media-libs/glfw-3.2.1
 	media-libs/libglvnd
 	tbb? ( >=dev-cpp/tbb-2021.9:= )
-	sycl? ( sys-devel/DPC++:= )
+	sycl? ( dev-libs/intel-compute-runtime[l0] )
 	tutorials? (
 		<media-libs/openimageio-2.3.5.0[-cxx17(-),-abi8-compat,-abi9-compat]
 		media-libs/libpng:0=
@@ -194,12 +197,13 @@ src_configure() {
 	filter-flags -m*
     CMAKE_BUILD_TYPE=Release
 	local mycmakeargs=(
-		-DBUILD_TESTING=$(usex test)
 		-DBUILD_DOC=$(usex doc)
 		-DCMAKE_SKIP_INSTALL_RPATH:BOOL=ON
-		-DEMBREE_ZIP_MODE=OFF
 		# default
 		-DEMBREE_BACKFACE_CULLING=$(usex backface-culling)
+		-DEMBREE_BACKFACE_CULLING_CURVES=$(usex backface-culling)
+		-DEMBREE_BACKFACE_CULLING_SPHERES=$(usex backface-culling)
+
 		-DEMBREE_COMPACT_POLYS=$(usex compact-polys)
 		-DEMBREE_FILTER_FUNCTION=$(usex filter-function)
 		-DEMBREE_GEOMETRY_CURVE=ON 			# default
@@ -210,8 +214,8 @@ src_configure() {
 		-DEMBREE_GEOMETRY_SUBDIVISION=ON	# default
 		-DEMBREE_GEOMETRY_TRIANGLE=ON		# default
 		-DEMBREE_GEOMETRY_USER=ON			# default
-		-DEMBREE_IGNORE_CMAKE_CXX_FLAGS=$(use custom-cflags OFF ON)
-		-DEMBREE_IGNORE_INVALID_RAYS=OFF
+		-DEMBREE_IGNORE_CMAKE_CXX_FLAGS=OFF
+		-DEMBREE_IGNORE_INVALID_RAYS=ON
 
 		# Set to NONE so we can manually switch on ISAs below
 		-DEMBREE_MAX_ISA:STRING="NONE"
@@ -225,15 +229,16 @@ src_configure() {
 		-DEMBREE_ISA_SSE42=$(usex cpu_flags_x86_sse4_2)
 		-DEMBREE_ISPC_SUPPORT=$(usex ispc)
 		-DEMBREE_RAY_MASK=$(usex raymask)
+		-DEMBREE_SYCL_SUPPORT=$(usex sycl)
+		-DEMBREE_SYCL_LARGEGRF=$(usex sycl)
 		-DEMBREE_RAY_PACKETS=ON
 		-DEMBREE_STACK_PROTECTOR=$(usex ssp)
 		-DEMBREE_STATIC_LIB=$(usex static-libs)
 		-DEMBREE_STAT_COUNTERS=OFF
 		-DEMBREE_TASKING_SYSTEM:STRING=$(usex tbb "TBB" "INTERNAL")
-		-DEMBREE_TUTORIALS=$(usex tutorials)
-		-DEMBREE_SYCL_SUPPORT=$(usex sycl)
-		-DEMBREE_SYCL_LARGEGRF=$(usex sycl)
 		-DHARDENED=$(usex hardened)
+		-DEMBREE_TUTORIALS=$(usex tutorials)
+		-DEMBREE_ZIP_MODE=OFF
 	)
 
 	local last_o=$(echo "${CFLAGS}" \
@@ -243,7 +248,6 @@ src_configure() {
 	if use custom-optimization ; then
 		mycmakeargs+=( -DCUSTOM_OPTIMIZATION_LEVEL="${last_o}" )
 	fi
-
 
 	if use tutorials; then
 		use ispc && \
@@ -286,6 +290,21 @@ src_configure() {
 		)
 	fi
 
+	if use test; then
+		mycmakeargs+=(
+			-DBUILD_TESTING=ON
+			-DEMBREE_TESTING_INSTALL_TESTS=OFF
+			-DEMBREE_TESTING_INTENSITY=4
+			# These tutorials are not used by the default tests
+			-DEMBREE_TUTORIALS_GLFW=OFF
+			-DEMBREE_TUTORIALS_INSTALL=OFF
+			-DEMBREE_TUTORIALS_LIBJPEG=OFF
+			-DEMBREE_TUTORIALS_LIBPNG=OFF
+			-DEMBREE_TUTORIALS_OPENIMAGEIO=OFF
+			-DCMAKE_DISABLE_FIND_PACKAGE_OpenImageIO="yes"
+		)
+	fi
+
 	cmake_src_configure
 }
 
@@ -316,4 +335,3 @@ src_test() {
 
 	cmake_src_test
 }
-

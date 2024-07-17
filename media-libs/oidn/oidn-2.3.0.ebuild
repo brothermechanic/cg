@@ -4,6 +4,7 @@
 EAPI=8
 
 AMDGPU_TARGETS_COMPAT=(
+	gfx900
 	gfx902
 	gfx909
 	gfx90c
@@ -17,7 +18,7 @@ AMDGPU_TARGETS_COMPAT=(
 	gfx1100
 	gfx1101
 	gfx1102
-#	gfx1103
+	gfx1103
 )
 
 CUDA_TARGETS_COMPAT=(
@@ -33,7 +34,7 @@ CUDA_TARGETS_COMPAT=(
 )
 
 ROCM_VERSION="5.7.1"
-PYTHON_COMPAT=( python3_{10..12} )
+PYTHON_COMPAT=( python3_{10..13} )
 LLVM_COMPAT=( 17 18 )
 
 inherit cmake cuda flag-o-matic llvm-r1 python-single-r1 rocm toolchain-funcs
@@ -46,7 +47,7 @@ COMPOSABLE_KERNEL_COMMIT="e85178b4ca892a78344271ae64103c9d4d1bfc40"
 CUTLASS_COMMIT="66d9cddc832c1cdc2b30a8755274f7f74640cfe6"
 MKL_DNN_COMMIT="9bea36e6b8e341953f922ce5c6f5dbaca9179a86"
 OIDN_WEIGHTS_COMMIT="44ff866123ffd6c26bbc27e5e48e8cd4ec8a1a66"
-ORG_GH="https://github.com/OpenImageDenoise"
+ORG_GH="https://github.com/RenderKit"
 SLOT="0/$(ver_cut 1-2)"
 IUSE="
 -${CUDA_TARGETS_COMPAT[@]/#/cuda_targets_}
@@ -128,7 +129,7 @@ RDEPEND+="
 		dev-util/hip:=
 	)
 	sycl? (
-		sys-devel/DPC++:=
+		dev-libs/intel-compute-runtime[l0]
 	)
 	>=dev-cpp/tbb-2021.5:0=
 	openimageio? ( media-libs/openimageio:= )
@@ -251,6 +252,12 @@ src_prepare() {
 		addpredict "/proc/self/task/"
 	fi
 
+	if use hip; then
+		# https://bugs.gentoo.org/930391
+		sed "/-Wno-unused-result/s:): --rocm-path=${EPREFIX}/usr/lib):" \
+			-i devices/hip/CMakeLists.txt || die
+	fi
+
 	sed -e "/^install.*llvm_macros.cmake.*cmake/d" -i CMakeLists.txt || die
 
 	cmake_src_prepare
@@ -276,8 +283,7 @@ src_configure() {
 
 	mycmakeargs+=(
 		-DOIDN_APPS="$(usex examples)"
-		-DOIDN_APPS_OPENIMAGEIO="$(usex openimageio)"
-		-DOIDN_INSTALL_DEPENDENCIES=OFF
+		-DOIDN_INSTALL_DEPENDENCIES="OFF"
 		-DOIDN_FILTER_RT="$(usex built-in-weights)"
 		-DOIDN_FILTER_RTLIGHTMAP="$(usex built-in-weights)"
 		-DOIDN_DEVICE_CPU="$(usex cpu)"
@@ -285,6 +291,12 @@ src_configure() {
 		-DOIDN_DEVICE_HIP="$(usex hip)"
 		-DOIDN_DEVICE_SYCL="$(usex sycl)"
 	)
+
+	if use examples ; then
+		mycmakeargs+=(
+			-DOIDN_APPS_OPENIMAGEIO="$(usex openimageio)"
+		)
+	fi
 
 	if use hip ; then
 		local llvm_slot=$(grep -e "HIP_CLANG_ROOT.*/lib/llvm" \

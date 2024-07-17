@@ -1,4 +1,4 @@
-# Copyright 1999-2023 Gentoo Authors
+# Copyright 1999-2024 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
 
 EAPI=8
@@ -7,7 +7,7 @@ PYTHON_COMPAT=( python3_{10..12} )
 DOCS_BUILDER="sphinx"
 DOCS_DEPEND="dev-python/sphinx-rtd-theme"
 DOCS_DIR="docs/source"
-inherit cmake-multilib cuda python-any-r1 docs toolchain-funcs
+inherit cmake-multilib cuda flag-o-matic python-any-r1 docs toolchain-funcs
 
 DESCRIPTION="Nonlinear least-squares minimizer"
 HOMEPAGE="http://ceres-solver.org/"
@@ -25,15 +25,16 @@ RESTRICT="
 "
 
 REQUIRED_USE="test? ( gflags ) sparse? ( lapack ) abi_x86_32? ( !sparse !lapack )"
+RESTRICT="!test? ( test )"
 
 BDEPEND="${PYTHON_DEPS}
 	>=dev-cpp/eigen-3.3.4:3
-	cuda? ( dev-util/nvidia-cuda-toolkit:= )
 	lapack? ( virtual/pkgconfig )
 	doc? ( <dev-libs/mathjax-3 )
 "
 RDEPEND="
 	dev-cpp/glog[gflags?,${MULTILIB_USEDEP}]
+	cuda? ( dev-util/nvidia-cuda-toolkit:= )
 	lapack? ( virtual/lapack )
 	metis? ( sci-libs/metis[-int64] )
 	sparse? (
@@ -41,7 +42,7 @@ RDEPEND="
 		sci-libs/amd
 		sci-libs/camd
 		sci-libs/ccolamd
-		sci-libs/cholmod
+		sci-libs/cholmod[metis(+)]
 		sci-libs/colamd
 		sci-libs/spqr
 	)
@@ -65,6 +66,7 @@ pkg_setup() {
 
 src_prepare() {
 	cmake_src_prepare
+
 	use cuda && cuda_src_prepare
 
 	# search paths work for prefix
@@ -77,13 +79,14 @@ src_prepare() {
 }
 
 src_configure() {
-	# CUSTOM_BLAS=OFF EIGENSPARSE=OFF MINIGLOG=OFF CXX11=OFF
-	CMAKE_BUILD_TYPE=$(usex debug RelWithDebInfo Release)
+	# CUSTOM_BLAS=OFF EIGENSPARSE=OFF MINIGLOG=OFF
 	local mycmakeargs=(
 		-DBUILD_BENCHMARKS=OFF
 		-DBUILD_EXAMPLES=$(usex examples)
 		-DBUILD_TESTING=$(usex test)
 		-DBUILD_DOCUMENTATION=$(usex doc)
+		-DCUSTOM_BLAS="yes"
+		-DMINIGLOG="no"
 		-DBUILD_SHARED_LIBS=ON
 		-DUSE_CUDA=$(usex cuda)
 		-DEIGENMETIS=$(usex metis)
@@ -104,14 +107,21 @@ src_configure() {
 		for CT in ${CUDA_TARGETS_COMPAT[@]}; do
 			use ${CT/#/cuda_targets_} && CUDA_TARGETS+="${CT##sm_}-real;"
 		done
-
 		mycmakeargs+=(
-			-DCMAKE_CUDA_FLAGS="-ccbin=$(cuda_gccdir)"
 			-DCMAKE_CUDA_ARCHITECTURES="${CUDA_TARGETS%%;}"
 		)
+		: "${CUDAHOSTCXX:=$(cuda_gccdir)}"
+		: "${CUDAARCHS:=all}"
+		export CUDAHOSTCXX
+		export CUDAARCHS
 	fi
 
 	cmake-multilib_src_configure
+}
+
+src_test() {
+	use cuda && cuda_add_sandbox -w
+	cmake_src_test
 }
 
 src_install() {
