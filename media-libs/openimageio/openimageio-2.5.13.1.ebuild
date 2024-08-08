@@ -3,11 +3,10 @@
 
 EAPI=8
 
-#FONT_PN=OpenImageIO
 PYTHON_COMPAT=( python3_{10..12} )
 OPENVDB_COMPAT=( {7..11} )
 
-TEST_OIIO_IMAGE_COMMIT="aae37a54e31c0e719edcec852994d052ecf6541e"
+TEST_OIIO_IMAGE_COMMIT="7d821f02c848022b2ee703d6bee48ca2acbfae70"
 TEST_OEXR_IMAGE_COMMIT="df16e765fee28a947244657cae3251959ae63c00"
 inherit cmake flag-o-matic python-single-r1 virtualx openvdb
 
@@ -171,6 +170,7 @@ PATCHES=(
 	"${FILESDIR}/${PN}-2.5.8.0-fix-unit_simd.patch"
 	"${FILESDIR}/${PN}-2.5.8.0-fix-tests.patch"
 	"${FILESDIR}/${PN}-2.5.12.0-tests-optional.patch"
+	"${FILESDIR}/${PN}-2.5.12.0-heif-find-fix.patch"
 )
 
 pkg_pretend() {
@@ -184,7 +184,7 @@ pkg_setup() {
 
 src_prepare() {
 	if ! use dicom; then
-		rm -r "${S}/src/dicom.imageio/" || die
+		rm "src/dicom.imageio" -r || die
 	fi
 
 	if ! use gif; then
@@ -288,6 +288,7 @@ src_configure() {
 		-DUSE_EXTERNAL_PUGIXML="yes"
 		-DENABLE_OPENCOLORIO="$(usex color-management)"
 		-DLINKSTATIC="OFF"
+		-DUSE_R3DSDK="no" # not in Gentoo
 		-DUSE_PYTHON="$(usex python)"
 		-DUSE_SIMD="$(local IFS=','; echo "${mysimd[*]}")"
 	)
