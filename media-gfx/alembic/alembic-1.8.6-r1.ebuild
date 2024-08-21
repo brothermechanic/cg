@@ -3,7 +3,7 @@
 
 EAPI=8
 
-PYTHON_COMPAT=( python3_{9..11} )
+PYTHON_COMPAT=( python3_{10..12} )
 
 inherit cmake python-single-r1
 
@@ -13,17 +13,17 @@ SRC_URI="https://github.com/${PN}/${PN}/archive/${PV}.tar.gz -> ${P}.tar.gz"
 
 LICENSE="BSD"
 SLOT="0"
-KEYWORDS="~amd64 ~arm ~arm64 ~x86"
+KEYWORDS="amd64 ~arm ~arm64 ~ppc64 ~x86"
 IUSE="examples hdf5 python test"
-REQUIRED_USE="${PYTHON_REQUIRED_USE}"
-RESTRICT="
-	mirror
-	!test? ( test )
+REQUIRED_USE="
+	${PYTHON_REQUIRED_USE}
+	examples? ( python )
 "
+RESTRICT="!test? ( test )"
 
 RDEPEND="
 	${PYTHON_DEPS}
-	>=dev-libs/imath-3.1.6:=
+	>=dev-libs/imath-3.1.11-r1:=
 	python? ( dev-libs/imath:=[python,${PYTHON_SINGLE_USEDEP}] )
 	hdf5? (
 		>=sci-libs/hdf5-1.10.2:=[zlib(+)]
@@ -36,6 +36,8 @@ DEPEND="${RDEPEND}"
 PATCHES=(
 	"${FILESDIR}/${PN}-1.8.3-0001-find-py-ilmbase-in-config-mode.patch"
 	"${FILESDIR}/${PN}-1.8.5-0001-fix-cmake.patch"
+	"${FILESDIR}/${PN}-1.8.5-set-correct-libdir.patch"
+	"${FILESDIR}/${PN}-1.8.6-py312.patch"
 )
 
 DOCS=( ACKNOWLEDGEMENTS.txt FEEDBACK.txt NEWS.txt README.txt )
@@ -45,7 +47,7 @@ src_prepare() {
 	# Fix libdir
 	sed -i -r -e 's|(SET[^"]+ lib)(.*)|\1\$\{LIB_SUFFIX\}\2|' CMakeLists.txt lib/Alembic/CMakeLists.txt || die
 	# PyAlembic test doesn't properly find Imath, comment it for now
-	cmake_run_in python/PyAlembic cmake_comment_add_subdirectory Tests
+	# cmake_run_in python/PyAlembic cmake_comment_add_subdirectory Tests
 }
 
 src_configure() {
