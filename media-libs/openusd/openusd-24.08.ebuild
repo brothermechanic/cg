@@ -5,7 +5,7 @@ EAPI=8
 
 PYTHON_COMPAT=( python3_{10..12} )
 OPENVDB_COMPAT=( {7..11} )
-inherit cmake desktop python-single-r1 flag-o-matic openvdb
+inherit cmake desktop python-single-r1 flag-o-matic openvdb xdg-utils
 
 DESCRIPTION="Universal Scene Description"
 HOMEPAGE="http://www.openusd.org"
@@ -77,7 +77,7 @@ RDEPEND+="
 		>=media-libs/draco-1.4.3
 	)
 	embree? (
-		>=media-libs/embree-3.2.2
+		>=media-libs/embree-4.2.0
 	)
 	>=dev-cpp/tbb-2021.9:=
 	hdf5? (
@@ -124,11 +124,11 @@ RDEPEND+="
 			>=dev-libs/boost-1.70.0:=[python,${PYTHON_USEDEP}]
 			usdview? (
 				(
-					>=dev-python/pyside2-2.0.0[${PYTHON_USEDEP},quickcontrols2(+)]
-					dev-qt/qtquickcontrols2:5
+					>=dev-python/pyside6-6.2.0[${PYTHON_USEDEP},quick(+)]
+					dev-qt/qtquickcontrols2:6
 				)
-				dev-python/pyside2-tools[${PYTHON_USEDEP},tools(+)]
-				dev-python/shiboken2[${PYTHON_USEDEP}]
+				dev-python/pyside6-tools[${PYTHON_USEDEP},tools(+)]
+				dev-python/shiboken6[${PYTHON_USEDEP}]
 				opengl? (
 					>=dev-python/pyopengl-3.1.5[${PYTHON_USEDEP}]
 				)
@@ -192,19 +192,16 @@ pkg_setup() {
 	use openvdb && openvdb_pkg_setup
 }
 
-gen_pyside2_uic_file() {
-cat > pyside2-uic <<'EOF'
-#!${EPREFIX}/bin/bash
-uic -g python "$@"
-EOF
+gen_pyside6_uic_file() {
+	echo -e "#!"${EPREFIX}"/bin/bash\n/usr/"$(get_libdir)"/qt6/libexec/uic -g python \$@" > pyside6-uic
 }
 
 src_prepare() {
 	cmake_src_prepare
 
-	eapply "${FILESDIR}/${P}-tbb.patch"
+	#eapply "${FILESDIR}/${PN}-24.05-tbb.patch"
 	#[[ "$(get_libdir)" =~ "lib64" ]] && eapply "${FILESDIR}/${P}-lib64.patch"
-	has_version -b ">=media-libs/embree-4" && eapply "${FILESDIR}/${PN}-23.11-embree-4.patch"
+	#has_version -b ">=media-libs/embree-4" && eapply "${FILESDIR}/${PN}-24.08-embree-4.patch"
 	#has_version -b ">=media-libs/openimageio-2.3" && eapply "${FILESDIR}/${PN}-23.11-openimageio-2.3.patch"
 
 	# Fix for #2351
@@ -231,8 +228,8 @@ src_prepare() {
 
 	# make dummy pyside-uid
 	if use usdview ; then
-		gen_pyside2_uic_file
-		chmod +x pyside2-uic
+		gen_pyside6_uic_file
+		chmod +x pyside6-uic
 	fi
 }
 
@@ -251,7 +248,7 @@ src_configure() {
     # See https://github.com/PixarAnimationStudios/USD/blob/v23.05/cmake/defaults/Options.cmake
 	local mycmakeargs+=(
 		$(usex jemalloc "-DPXR_MALLOC_LIBRARY=${ESYSROOT}/usr/$(get_libdir)/${PN}/$(get_libdir)/libjemalloc.so" "")
-		$(usex usdview "-DPYSIDEUICBINARY:PATH=${S}/pyside2-uic" "")
+		$(usex usdview "-DPYSIDEUICBINARY:PATH=${S}/pyside6-uic" "")
 		-DBUILD_SHARED_LIBS=ON
 		-DCMAKE_CXX_STANDARD=17
 		-DPXR_VALIDATE_GENERATED_CODE=OFF
@@ -261,6 +258,7 @@ src_configure() {
 		-DPXR_BUILD_DOCUMENTATION=$(usex doc ON OFF)
 		-DPXR_BUILD_DRACO_PLUGIN=$(usex draco ON OFF)
 		-DPXR_BUILD_EMBREE_PLUGIN=$(usex embree ON OFF)
+		#-DEMBREE_INCLUDE_DIR=/usr/include/embree4
 		-DPXR_BUILD_EXAMPLES=$(usex examples ON OFF)
 		-DPXR_BUILD_IMAGING=$(usex imaging ON OFF)
 		-DPXR_BUILD_MONOLITHIC=$(usex monolithic ON OFF)
@@ -343,10 +341,7 @@ src_install() {
 		for u in ${UTILS_LIST[@]} ; do
 			if [[ -e "${ED}/usr/$(get_libdir)/${PN}/.bin/${u}" ]] ; then
 				einfo "Creating wrapper for ${u}"
-cat << EOF > "${T}/${u}"
-#!${EPREFIX}/bin/bash
-LD_PRELOAD="${EPREFIX}/usr/$(get_libdir)/openusd/$(get_libdir)/libjemalloc.so" "${EPREFIX}/usr/$(get_libdir)/${PN}/.bin/${u}" "\$@"
-EOF
+				echo -e "#!/bin/bash\nLD_PRELOAD=\"${EPREFIX}/usr/$(get_libdir)/openusd/$(get_libdir)/libjemalloc.so\"" "${EPREFIX}/usr/$(get_libdir)/openusd/.bin/${u}" "\$@" > "${T}/${u}"
 				doexe "${T}/${u}"
 			fi
 		done
@@ -358,7 +353,14 @@ EOF
 	fi
 	use doc && einstalldocs
 	use usdview && domenu "${FILESDIR}/org.openusd.usdview.desktop"
-	use usdview && newicon "${FILESDIR}/openusd.svg"
+	use usdview && newicon -s scalable "${FILESDIR}/openusd.svg" "openusd.svg"
 	dodoc LICENSE.txt NOTICE.txt
 }
 
+pkg_postinst() {
+	xdg_icon_cache_update
+}
+
+pkg_postrm() {
+	xdg_icon_cache_update
+}
