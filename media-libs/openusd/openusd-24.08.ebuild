@@ -125,7 +125,6 @@ RDEPEND+="
 			usdview? (
 				(
 					>=dev-python/pyside6-6.2.0[${PYTHON_USEDEP},quick(+)]
-					dev-qt/qtquickcontrols2:6
 				)
 				dev-python/pyside6-tools[${PYTHON_USEDEP},tools(+)]
 				dev-python/shiboken6[${PYTHON_USEDEP}]
