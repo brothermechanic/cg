@@ -1,0 +1,80 @@
+diff -Nur a/tools/maint/create_entry_points.py b/tools/maint/create_entry_points.py
+--- a/tools/maint/create_entry_points.py	2022-12-08 11:15:20.000000000 -0800
++++ b/tools/maint/create_entry_points.py	2022-12-31 22:31:05.299498319 -0800
+@@ -77,18 +77,19 @@ def main():
+       sh_data = sh_file
+       bat_data = bat_file
+       ps1_data = ps1_file
+-      if entry_point in entry_remap:
++      if False and entry_point in entry_remap:
+         sh_data = sh_data.replace('$0', '$(dirname $0)/' + entry_remap[entry_point])
+         bat_data = bat_data.replace('%~n0', entry_remap[entry_point].replace('/', '\\'))
+         ps1_data = ps1_data.replace(r"$MyInvocation.MyCommand.Path -replace '\.ps1$', '.py'", fr'"$PSScriptRoot/{entry_remap[entry_point]}.py"')
+ 
+       out_sh_file = os.path.join(__rootdir__, entry_point)
+       with open(out_sh_file, 'w') as f:
+-        f.write(sh_data)
++        f.write(sh_data.replace('GENTOO_EMSCRIPTEN_SCRIPT', entry_point))
+       os.chmod(out_sh_file, stat.S_IMODE(os.stat(out_sh_file).st_mode) | stat.S_IXUSR)
+ 
+-      with open(os.path.join(__rootdir__, entry_point + '.bat'), 'w') as f:
+-        f.write(bat_data)
++      if not entry_point.startswith('tools') and not entry_point.startswith('test') and not entry_point.startswith('system'):
++        with open(os.path.join(os.environ['ED'], 'usr/bin', entry_point), 'w') as f:
++           f.write(sh_data.replace('GENTOO_EMSCRIPTEN_SCRIPT', entry_point))
+ 
+       with open(os.path.join(__rootdir__, entry_point + '.ps1'), 'w') as f:
+         f.write(ps1_data)
+diff -Nur a/tools/maint/run_python_compiler.sh b/tools/maint/run_python_compiler.sh
+--- a/tools/maint/run_python_compiler.sh	2022-12-08 11:15:20.000000000 -0800
++++ b/tools/maint/run_python_compiler.sh	2022-12-31 22:35:31.259507675 -0800
+@@ -15,23 +15,6 @@
+ # of cpython used in cross compilation via setup.py.
+ unset _PYTHON_SYSCONFIGDATA_NAME
+ 
+-if [ -z "$PYTHON" ]; then
+-  PYTHON=$EMSDK_PYTHON
+-fi
+-
+-if [ -z "$PYTHON" ]; then
+-  PYTHON=$(command -v python3 2> /dev/null)
+-fi
+-
+-if [ -z "$PYTHON" ]; then
+-  PYTHON=$(command -v python 2> /dev/null)
+-fi
+-
+-if [ -z "$PYTHON" ]; then
+-  echo 'unable to find python in $PATH'
+-  exit 1
+-fi
+-
+ if [ -z "$_EMCC_CCACHE" ]; then
+   exec "$PYTHON" -E "$(dirname $(readlink -f $0))/$(basename $0).py" "$@"
+ else
+diff -Nur a/tools/maint/run_python.sh b/tools/maint/run_python.sh
+--- a/tools/maint/run_python.sh	2022-12-08 11:15:20.000000000 -0800
++++ b/tools/maint/run_python.sh	2022-12-31 22:33:00.422835710 -0800
+@@ -15,21 +15,4 @@
+ # of cpython used in cross compilation via setup.py.
+ unset _PYTHON_SYSCONFIGDATA_NAME
+ 
+-if [ -z "$PYTHON" ]; then
+-  PYTHON=$EMSDK_PYTHON
+-fi
+-
+-if [ -z "$PYTHON" ]; then
+-  PYTHON=$(command -v python3 2> /dev/null)
+-fi
+-
+-if [ -z "$PYTHON" ]; then
+-  PYTHON=$(command -v python 2> /dev/null)
+-fi
+-
+-if [ -z "$PYTHON" ]; then
+-  echo 'unable to find python in $PATH'
+-  exit 1
+-fi
+-
+ exec "$PYTHON" -E "$(dirname $(readlink -f $0))/$(basename $0).py" "$@"
+
