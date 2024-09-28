@@ -14,16 +14,16 @@ SRC_URI="https://github.com/emscripten-core/emscripten/archive/${PV}.tar.gz -> $
 LICENSE="MIT"
 SLOT="0"
 KEYWORDS="~amd64"
-IUSE="java nodejs python"
+IUSE="java python llvm_targets_WebAssembly"
 
 REQUIRED_USE="llvm_targets_WebAssembly"
 
 RDEPEND="
 	${PYTHON_DEPS}
 	dev-util/binaryen
-    sys-apps/which
-    python? ( dev-lang/python )
-    nodejs? ( net-libs/nodejs )
+        net-libs/nodejs[npm]
+	sys-apps/which
+	python? ( dev-lang/python )
 	java? ( virtual/jre )
 "
 BDEPEND="
@@ -32,10 +32,10 @@ BDEPEND="
      sys-devel/llvm:${LLVM_SLOT}=
    ')
 	dev-build/cmake
-    dev-libs/libxml2
-    dev-vcs/git
-    dev-build/ninja
-    java? ( virtual/jdk )
+	dev-libs/libxml2
+	dev-vcs/git
+	dev-build/ninja
+	java? ( virtual/jdk )
 "
 
 RESTRICT="mirror"
