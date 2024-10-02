@@ -1,4 +1,4 @@
---- a/cmake/external/onnxruntime_external_deps.cmake~	2023-11-25 16:39:01.000000000 +0000
+--- a/cmake/external/onnxruntime_external_deps.cmake	2023-11-25 16:39:01.000000000 +0000
 +++ b/cmake/external/onnxruntime_external_deps.cmake	2023-11-25 16:46:30.745470900 +0000
 @@ -37,6 +37,9 @@
      )

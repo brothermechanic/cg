@@ -3,9 +3,9 @@
 
 EAPI=8
 
-PYTHON_COMPAT=( python3_{10..13} )
+PYTHON_COMPAT=( python3_{11..13} )
 OPENVDB_COMPAT=( {7..11} )
-LLVM_COMPAT=( 17 18 )
+LLVM_COMPAT=( 17 18 19 )
 LLVM_OPTIONAL=1
 
 inherit check-reqs cmake cuda flag-o-matic llvm-r1  git-r3 pax-utils python-single-r1 toolchain-funcs xdg-utils openvdb cg-blender-scripts-dir
@@ -14,11 +14,13 @@ DESCRIPTION="Blender is a free and open-source 3D creation suite."
 HOMEPAGE="https://www.blender.org"
 
 EGIT_REPO_URI="https://projects.blender.org/blender/blender.git"
-EGIT_SUBMODULES=( blender-assets )
-EGIT_REPO_URI_LIST=""
+EGIT_SUBMODULES=( '*' '-lib/*' '-tools/*' )
+EGIT_REPO_URI_LIST="https://projects.blender.org/blender/blender-addons.git https://projects.blender.org/blender/blender-addons-contrib.git"
+EGIT_LFS="yes"
+
 if [[ ${PV} == 9999 ]]; then
 	EGIT_BRANCH="main"
-	EGIT_COMMIT="f0ec207e9c7de5762ff23ea1a6897f90829fb478"
+	EGIT_COMMIT="0f3fdd25bcabac1d68d02fb246d961ea56fe49a1"
 	#EGIT_CLONE_TYPE="shallow"
 	MY_PV="4.3"
 	KEYWORDS=""
@@ -27,7 +29,7 @@ else
 	EGIT_BRANCH="blender-v${MY_PV}-release"
 	#EGIT_COMMIT="v${PV}"
 	KEYWORDS="~amd64 ~arm ~arm64"
-	[[ "4.1 4.0 3.6" =~ "${MY_PV}"  ]] && EGIT_REPO_URI_LIST="https://projects.blender.org/blender/blender-addons.git https://projects.blender.org/blender/blender-addons-contrib.git"
+	#[[ "4.1 4.0 3.6" =~ "${MY_PV}"  ]] && EGIT_REPO_URI_LIST="https://projects.blender.org/blender/blender-addons.git https://projects.blender.org/blender/blender-addons-contrib.git"
 fi
 
 [[ "4.0 3.6" =~ "${MY_PV}"  ]] && OSL_PV="12" || OSL_PV="13"
@@ -73,9 +75,9 @@ AMDGPU_TARGETS_COMPAT=(
 )
 
 IUSE_CPU="+openmp +simd +tbb -lld -gold +mold -cpu_flags_arm_neon llvm -valgrind +jemalloc"
-IUSE_GPU="cuda optix hip oneapi -cycles-bin-kernels ${CUDA_TARGETS_COMPAT[@]/#/cuda_targets_} ${AMDGPU_TARGETS_COMPAT[@]/#/amdgpu_targets_}"
-IUSE_DESKTOP="+cg -portable +X headless +nls icu -ndof wayland vulkan"
-IUSE_LIBS="+bullet +boost +draco +materialx +color-management +oidn +opensubdiv +openvdb nanovdb openxr +libmv lzma lzo osl +fftw +potrace +pugixml"
+IUSE_GPU="cuda optix hip oneapi -cycles-bin-kernels ${CUDA_TARGETS_COMPAT[@]/#/cuda_targets_} ${AMDGPU_TARGETS_COMPAT[@]/#/amdgpu_targets_} vulkan"
+IUSE_DESKTOP="+cg -portable +X headless +nls icu -ndof wayland gnome"
+IUSE_LIBS="+bullet +boost +draco +materialx +color-management +oidn +opensubdiv +openvdb nanovdb openxr +libmv lzma lzo osl +fftw +potrace +pugixml +otf"
 IUSE_MOD="+fluid +smoke +oceansim +remesh +gmp +quadriflow"
 IUSE_RENDER="+cycles +openpgl +embree +freestyle"
 IUSE_3DFILES="-alembic usd +collada +obj +ply +stl"
@@ -111,7 +113,7 @@ REQUIRED_USE="${PYTHON_REQUIRED_USE}
 	usd? ( tbb )
 "
 
-LANGS="en ab ar be bg ca cs da de el eo es es_ES eu fa fi fr ha he hi hr hu id it ja ka km ko ky ne nl pl pt_BR pt ru sl sk sr@latin sr sv sw ta th tr zh_TW uk vi zh_CN zh_HANS zh_HANT"
+LANGS="en ab ar be bg ca cs da de el eo es es_ES eu fa fi fr ha he hi hr hu id it ja ka km ko ky ne nl pl pt_BR pt ru sl sk sr@latin sr sv sw ta th tr zh_TW uk ur vi zh_CN zh_HANS zh_HANT"
 
 for X in ${LANGS} ; do
 	IUSE+=" l10n_${X}"
@@ -165,7 +167,7 @@ RDEPEND="
 		>=dev-python/urllib3-1.26.7[${PYTHON_USEDEP}]
 	')
 	>=dev-cpp/nlohmann_json-3.10.0:=
-	media-libs/freetype:=[brotli,bzip2,harfbuzz,png]
+	media-libs/freetype:=[brotli,bzip2,png]
 	media-libs/libepoxy:=
 	>=dev-cpp/pystring-1.1.3
 	>=dev-libs/fribidi-1.0.12
@@ -254,6 +256,7 @@ RDEPEND="
 	osl? (
 		>=media-libs/osl-1.${OSL_PV}:=[optix?]
 		<media-libs/osl-1.$((${OSL_PV}+1)):=[optix?]
+		media-libs/mesa[${LLVM_USEDEP}]
 	)
 	pdf? ( >=media-libs/libharu-2.3.0 )
 	potrace? ( >=media-gfx/potrace-1.16 )
@@ -274,7 +277,16 @@ RDEPEND="
 		>=dev-libs/wayland-protocols-1.36
 		>=x11-libs/libxkbcommon-0.2.0
 		dev-util/wayland-scanner
-		>=gui-libs/libdecor-0.2.2
+		gnome? ( gui-libs/libdecor[gtk,dbus] )
+	)
+	vulkan? (
+		media-libs/shaderc
+		dev-util/spirv-tools
+		dev-util/glslang
+		media-libs/vulkan-loader
+	)
+	otf? (
+		media-libs/harfbuzz
 	)
 	renderdoc? (
 		media-gfx/renderdoc
@@ -327,9 +339,9 @@ BDEPEND="
 		)
 	')
 	doc? (
+		app-text/doxygen[dot]
 		>=dev-python/sphinx-3.3.1[latex]
 		>=dev-python/sphinx_rtd_theme-0.5.0
-		app-doc/doxygen[dot]
 		dev-texlive/texlive-bibtexextra
 		dev-texlive/texlive-fontsextra
 		dev-texlive/texlive-fontutils
@@ -399,13 +411,13 @@ pkg_setup() {
 }
 
 src_unpack() {
-	if use test; then
-		EGIT_SUBMODULES+=( 'tests' )
+	if ! use test; then
+		EGIT_SUBMODULES+=( '-tests/*' )
 	fi
 	git-r3_src_unpack
 
 	for repo in $(echo ${EGIT_REPO_URI_LIST}); do
-		if [[ "${PV}" == "9999" ]]; then
+		if [[ "4.2 4.3" =~ "${MY_PV}" ]]; then
 			EGIT_BRANCH="main";
 			EGIT_COMMIT=""
 		else
@@ -509,6 +521,10 @@ src_configure() {
 	# FIX: forcing '-funsigned-char' fixes an anti-aliasing issue with menu
 	# shadows, see bug #276338 for reference
 	append-cppflags -funsigned-char -fno-strict-aliasing
+
+	# Workaround for bug #922600
+	append-ldflags $(test-flags-CCLD -Wl,--undefined-version)
+
 	append-lfs-flags
 
 	local mycmakeargs=()
@@ -540,13 +556,15 @@ src_configure() {
 		-DWITH_CYCLES_DEVICE_CUDA=$(usex cuda)
 		-DWITH_CYCLES_DEVICE_OPTIX=$(usex optix)
 		-DWITH_CYCLES_DEVICE_HIP=$(usex hip)
-		-DWITH_CYCLES_HIP_BINARIES=$(usex cycles-bin-kernels $(usex hip) no)
+		-DWITH_CYCLES_HIP_BINARIES=$(usex hip $(usex cycles-bin-kernels) no)
 		-DWITH_HIP_DYNLOAD=$(usex hip $(usex cycles-bin-kernels no yes) no)
-		-DWITH_CYCLES_CUDA_BINARIES=$(usex cycles-bin-kernels $(usex cuda) no)	# build cuda kernels now, not in runtime
+		-DWITH_CYCLES_CUDA_BINARIES=$(usex cuda $(usex cycles-bin-kernels) no)	# build cuda kernels now, not in runtime
 		-DWITH_CYCLES_CUDA_BUILD_SERIAL=$(usex cuda)			# Build cuda kernels in serial mode (if parallel build takes too much RAM or crash)
 		-DWITH_CUDA_DYNLOAD=$(usex cuda $(usex cycles-bin-kernels no yes) no)
 		-DWITH_CYCLES_DEVICE_ONEAPI=$(usex oneapi)
-		-DWITH_CYCLES_ONEAPI_BINARIES=$(usex cycles-bin-kernels $(usex oneapi) no)
+		-DWITH_CYCLES_ONEAPI_BINARIES=$(usex oneapi $(usex cycles-bin-kernels) no)
+
+		-DWITH_CYCLES_HYDRA_RENDER_DELEGATE="no" # TODO: package Hydra
 		-DWITH_CYCLES_EMBREE=$(usex embree)						# Speedup library for Cycles
 		-DWITH_CYCLES_NATIVE_ONLY=$(usex cycles)				# for native kernel only
 		-DWITH_CYCLES_OSL=$(usex osl)
@@ -561,16 +579,17 @@ src_configure() {
 		-DWITH_EXPERIMENTAL_FEATURES="$(usex experimental)"
 		-DWITH_FFTW3=$(usex fftw)
 		-DWITH_FREESTYLE=$(usex freestyle)						# advanced edges rendering
+		-DWITH_HARFBUZZ="$(usex otf)"
 		-DWITH_SYSTEM_FREETYPE=$(usex !portable)
 		-DWITH_GHOST_X11=$(usex X)								# Enable building against X11
 		-DWITH_GHOST_XDND=$(usex X)								# drag-n-drop support on X11
 		-DWITH_GHOST_WAYLAND=$(usex wayland)					# Enable building against wayland
-		-DWITH_GHOST_WAYLAND_APP_ID=blender-${BV}
 		-DWITH_GHOST_WAYLAND_DYNLOAD=$(usex wayland)
-		-DWITH_GHOST_WAYLAND_LIBDECOR=$(usex wayland)
+		-DWITH_GHOST_WAYLAND_APP_ID=blender-${BV}
+		-DWITH_GHOST_WAYLAND_LIBDECOR=$(usex gnome)
 		-DWITH_GMP=$(usex gmp)									# boolean engine
 		-DWITH_HARU=$(usex pdf)									# export format support
-		-DWITH_IO_GPENCIL=$(usex pdf)							# export format support
+		-DWITH_IO_GREASE_PENCIL=$(usex pdf) 				    # export format support
 		-DWITH_INSTALL_PORTABLE=$(usex portable)
 		-DWITH_CPU_CHECK=$(usex portable)
 		-DWITH_IMAGE_CINEON=$(usex dpx)
@@ -686,6 +705,13 @@ src_configure() {
 		)
 	fi
 
+	if use wayland; then
+		mycmakeargs+=(
+			-DWITH_GHOST_WAYLAND_APP_ID="blender-${BV}"
+			-DWITH_GHOST_WAYLAND_LIBDECOR="$(usex gnome)"
+		)
+	fi
+
 	# This is currently needed on arm64 to get the NEON SIMD wrapper to compile the code successfully
 	use arm64 && append-flags -flax-vector-conversions
 
@@ -741,6 +767,8 @@ src_test() {
 	if use X; then
 		xdg_environment_reset
 	fi
+
+	addwrite /dev/dri
 
 	cmake_src_test
 
