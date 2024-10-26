@@ -327,6 +327,8 @@ BDEPEND="
 	>=dev-build/cmake-3.10
 	>=dev-build/meson-0.63.0
 	>=dev-util/vulkan-headers-1.3.268
+	dev-vcs/git-lfs
+	dev-vcs/git
 	dev-util/patchelf
 	virtual/pkgconfig
 	mold? ( sys-devel/mold:= )

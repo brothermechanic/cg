@@ -3,7 +3,7 @@
 
 EAPI=8
 
-PYTHON_COMPAT=( python3_{10..12} )
+PYTHON_COMPAT=( python3_{11..13} )
 
 inherit cmake python-single-r1
 
@@ -19,7 +19,7 @@ REQUIRED_USE="
 	${PYTHON_REQUIRED_USE}
 	examples? ( python )
 "
-RESTRICT="!test? ( test )"
+RESTRICT="!test? ( test ) mirror"
 
 RDEPEND="
 	${PYTHON_DEPS}
@@ -35,8 +35,6 @@ DEPEND="${RDEPEND}"
 
 PATCHES=(
 	"${FILESDIR}/${PN}-1.8.3-0001-find-py-ilmbase-in-config-mode.patch"
-	"${FILESDIR}/${PN}-1.8.5-0001-fix-cmake.patch"
-	"${FILESDIR}/${PN}-1.8.5-set-correct-libdir.patch"
 	"${FILESDIR}/${PN}-1.8.6-py312.patch"
 )
 

@@ -14,7 +14,7 @@ inherit distutils-r1 blender-addon
 DESCRIPTION="Blender addon. Camera Calibration using Perspective Views of Rectangles"
 HOMEPAGE="https://blenderartists.org/forum/showthread.php?414359-Add-on-Camera-Calibration-using-Perspective-Views-of-Rectangles"
 EGIT_REPO_URI="https://github.com/mrossini-ethz/camera-calibration-pvr"
-EGIT_BRANCH="blender-2-80"
+EGIT_BRANCH="master"
 LICENSE="GPL-2"
 
 RDEPEND="$(python_gen_cond_dep '
