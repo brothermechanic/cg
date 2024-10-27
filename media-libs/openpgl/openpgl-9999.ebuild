@@ -3,7 +3,7 @@
 
 EAPI=8
 
-PYTHON_COMPAT=( python3_{10..12} )
+PYTHON_COMPAT=( python3_{11..13} )
 inherit cmake flag-o-matic python-any-r1 toolchain-funcs
 
 DESCRIPTION="Intel Open Path Guiding Library. Algorithms for more efficient ray tracing renderings."
@@ -20,34 +20,24 @@ else
 fi
 
 SLOT="0/$(ver_cut 1-2 ${PV})"
-X86_CPU_FLAGS=(
-	sse4_1:sse4_1
-	sse4_2:sse4_2
-	avx2:avx2
-	avx512f:avx512f
-	avx512dq:avx512dq
-	avx512pf:avx512pf
-	avx512vl:avx512vl
-)
-ARM_CPU_FLAGS=(
-	neon:neon
-	neon2x:neon2x
+CPU_FLAGS_X86=(
+	sse4_1
+	sse4_2
+	avx2
+	avx512f
+	avx512dq
+	avx512pf
+	avx512vl
 )
 CPU_FLAGS=(
-	${X86_CPU_FLAGS[@]/#/+cpu_flags_x86_}
-	${ARM_CPU_FLAGS[@]/#/+cpu_flags_arm_}
+	"${CPU_FLAGS_X86[@]/#/+cpu_flags_x86_}"
+	"cpu_flags_arm_neon cpu_flags_arm64_neon2x"
 )
 
 IUSE="debug doc static-libs tbb test tools ${CPU_FLAGS[@]%:*}"
 REQUIRED_USE+="
-	|| (
-		cpu_flags_arm_neon
-		cpu_flags_arm_neon2x
-		cpu_flags_x86_sse4_1
-		cpu_flags_x86_avx2
-		cpu_flags_x86_avx512f
-	)
-	tbb
+	amd64? ( || ( ${CPU_FLAGS_X86[*]/#/cpu_flags_x86_} ) )
+	arm64? ( || ( cpu_flags_arm_neon cpu_flags_arm64_neon2x ) )
 	cpu_flags_x86_avx2? (
 		cpu_flags_x86_sse4_1
 	)
@@ -68,7 +58,7 @@ REQUIRED_USE+="
 	)
 "
 RDEPEND="
-	media-libs/embree
+	media-libs/embree:=
 	!tbb? (
 		|| (
 			sys-devel/gcc[openmp]
@@ -76,7 +66,7 @@ RDEPEND="
 		)
 	)
 	tbb? (
-		>=dev-cpp/tbb-2017
+		>=dev-cpp/tbb-2021
 	)
 "
 DEPEND+="
@@ -90,31 +80,24 @@ S="${WORKDIR}/${PN}-${PV/_/-}"
 DOCS=( CHANGELOG.md README.md )
 
 src_configure() {
-	CMAKE_BUILD_TYPE=(usex debug "Debug" "Release")
-	# Disable asserts
-	append-cppflags $(usex debug '' '-DNDEBUG')
-	# This is currently needed on arm64 to get the NEON SIMD wrapper to compile the code successfully
-	use cpu_flags_arm_neon && append-flags -flax-vector-conversions
+	CMAKE_BUILD_TYPE=(usex debug "RelWithDebInfo" "Release")
 
 	local mycmakeargs=(
 		-DOPENPGL_BUILD_STATIC=$(usex static-libs)
 		-DOPENPGL_ISA_NEON=$(usex cpu_flags_arm_neon)
-		-DOPENPGL_ISA_NEON2X=$(usex cpu_flags_arm_neon2x)
+		-DOPENPGL_ISA_NEON2X=$(usex cpu_flags_arm64_neon2x)
 		-DOPENPGL_ISA_SSE4=$(usex cpu_flags_x86_sse4_2 "ON" $(usex cpu_flags_x86_sse4_1))
 		-DOPENPGL_ISA_AVX2=$(usex cpu_flags_x86_avx2)
 		-DOPENPGL_ISA_AVX512=$(usex cpu_flags_x86_avx512f)
 		-DOPENPGL_USE_OMP_THREADING=$(usex tbb "OFF" "ON")
 		-DOPENPGL_BUILD_TOOLS=$(usex tools)
 	)
+
+	# This is currently needed on arm64 to get the NEON SIMD wrapper to compile the code successfully
+	use arm64 && append-flags -flax-vector-conversions
+
+	# Disable asserts
+	append-cppflags "$(usex debug '' '-DNDEBUG')"
+
 	cmake_src_configure
 }
-
-src_install() {
-	cmake_src_install
-	dodoc \
-		third-party-programs.txt \
-		third-party-programs-Embree.txt \
-		third-party-programs-TBB.txt
-	einstalldocs
-}
-

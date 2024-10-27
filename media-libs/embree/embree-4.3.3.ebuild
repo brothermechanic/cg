@@ -3,7 +3,9 @@
 
 EAPI=8
 
-inherit cmake flag-o-matic linux-info toolchain-funcs
+PYTHON_COMPAT=( "python3_"{11..13} )
+
+inherit cmake flag-o-matic linux-info python-r1 toolchain-funcs
 
 DESCRIPTION="Collection of high-performance ray tracing kernels"
 HOMEPAGE="https://www.embree.org"
@@ -25,31 +27,28 @@ LICENSE="
 SLOT="$(ver_cut 1)"
 KEYWORDS="~amd64 ~arm64"
 X86_CPU_FLAGS=(
-	avx:avx
-	avx2:avx2
-	avx512f:avx512f
-	avx512vl:avx512vl
-	avx512bw:avx512bw
-	avx512dq:avx512dq
-	avx512cd:avx512cd
-	sse2:sse2
-	sse4_2:sse4_2
-)
-ARM_CPU_FLAGS=(
-	neon:neon
-	neon2x:neon2x
+	avx
+	avx2
+	avx512f
+	avx512vl
+	avx512bw
+	avx512dq
+	avx512cd
+	sse2
+	sse4_2
 )
 CPU_FLAGS=(
-	${ARM_CPU_FLAGS[@]/#/cpu_flags_arm_}
+	cpu_flags_arm_neon cpu_flags_arm64_neon2x
 	${X86_CPU_FLAGS[@]/#/cpu_flags_x86_}
 )
 
 IUSE+="
 ${CPU_FLAGS[@]%:*}
 backface-culling -compact-polys -custom-cflags custom-optimization debug doc doc-docfiles
-doc-html doc-images man +hardened +filter-function ispc raymask -ssp static-libs sycl +tbb test tutorials
+doc-html doc-images man +filter-function ispc raymask -ssp static-libs sycl +tbb test tutorials
 "
 REQUIRED_USE+="
+	${PYTHON_REQUIRED_USE}
 	cpu_flags_x86_avx? (
 		cpu_flags_x86_sse4_2
 	)
@@ -97,13 +96,13 @@ REQUIRED_USE+="
 	|| (
 		${CPU_FLAGS[@]%:*}
 	)
-	test? (
-		tutorials
-	)
 "
 
 BDEPEND="
-	>=dev-build/cmake-3.2.0
+	${PYTHON_DEPS}
+	>=dev-build/cmake-3.19.0
+	>=dev-python/sympy-1.9[${PYTHON_USEDEP}]
+	dev-python/numpy[${PYTHON_USEDEP}]
 	virtual/pkgconfig
 	doc? (
 		app-text/pandoc
@@ -120,25 +119,36 @@ BDEPEND="
 	ispc? (
 		>=dev-lang/ispc-1.17.0
 	)
+	test? (
+		>=dev-cpp/benchmark-1.6.1
+	)
 "
 RDEPEND="
 	>=media-libs/glfw-3.2.1
 	media-libs/libglvnd
 	tbb? ( >=dev-cpp/tbb-2021.9:= )
 	sycl? ( dev-libs/intel-compute-runtime[l0] )
+	ispc? (
+		>=dev-lang/ispc-1.17.0
+	)
 	tutorials? (
-		<media-libs/openimageio-2.3.5.0[-cxx17(-),-abi8-compat,-abi9-compat]
+		media-libs/openimageio[-cxx17(-)]
 		media-libs/libpng:0=
 		virtual/jpeg:0
 	)
 "
-RDEPEND+="${DEPEND}"
+DEPEND="${RDEPEND}"
 
 DOCS=( CHANGELOG.md README.md readme.pdf )
+
+PATCHES=(
+	"${FILESDIR}/${PN}-4.3.2-findtbb-alt-lib-path.patch"
+)
 
 RESTRICT="mirror"
 
 pkg_setup() {
+	export CMAKE_BUILD_TYPE=$(usex debug "RelWithDebInfo" "Release")
 	if use kernel_linux ; then
 		CONFIG_CHECK="~TRANSPARENT_HUGEPAGE"
 		WARNING_TRANSPARENT_HUGEPAGE="Not enabling Transparent Hugepages (CONFIG_TRANSPARENT_HUGEPAGE) will impact rendering performance."
@@ -170,6 +180,11 @@ src_prepare() {
 	sed -e 's|CPACK_RPM_PACKAGE_RELEASE 1|CPACK_RPM_PACKAGE_RELEASE 0|' \
 		-i CMakeLists.txt || die
 
+	# don't redefine _FORTIFY_SOURCE https://bugs.gentoo.org/895016
+	sed -e '/-D_FORTIFY_SOURCE=2/d' \
+		-i common/cmake/*.cmake \
+		|| die
+
 	# raise cmake minimum version to silence warning
 	sed -e 's#CMAKE_MINIMUM_REQUIRED(VERSION 3.[0-9].0)#CMAKE_MINIMUM_REQUIRED(VERSION 3.5)#I' \
 	    -i \
@@ -194,37 +209,51 @@ src_configure() {
 	# and it fails to link properly.
 	# https://github.com/embree/embree/issues/115
 
-	filter-flags -m*
-    CMAKE_BUILD_TYPE=Release
+	filter-flags -march=*
 	local mycmakeargs=(
 		-DBUILD_DOC=$(usex doc)
 		-DCMAKE_SKIP_INSTALL_RPATH:BOOL=ON
 		# default
+
 		-DEMBREE_BACKFACE_CULLING=$(usex backface-culling)
 		-DEMBREE_BACKFACE_CULLING_CURVES=$(usex backface-culling)
 		-DEMBREE_BACKFACE_CULLING_SPHERES=$(usex backface-culling)
 
 		-DEMBREE_COMPACT_POLYS=$(usex compact-polys)
 		-DEMBREE_FILTER_FUNCTION=$(usex filter-function)
-		-DEMBREE_GEOMETRY_CURVE=ON 			# default
-		-DEMBREE_GEOMETRY_GRID=ON 			# default
-		-DEMBREE_GEOMETRY_INSTANCE=ON 		# default
-		-DEMBREE_GEOMETRY_POINT=ON 			# default
-		-DEMBREE_GEOMETRY_QUAD=ON 			# default
+		-DEMBREE_GEOMETRY_CURVE=ON			# default
+		-DEMBREE_GEOMETRY_GRID=ON			# default
+		-DEMBREE_GEOMETRY_INSTANCE=ON		# default
+		-DEMBREE_GEOMETRY_POINT=ON			# default
+		-DEMBREE_GEOMETRY_QUAD=ON			# default
 		-DEMBREE_GEOMETRY_SUBDIVISION=ON	# default
 		-DEMBREE_GEOMETRY_TRIANGLE=ON		# default
 		-DEMBREE_GEOMETRY_USER=ON			# default
 		-DEMBREE_IGNORE_CMAKE_CXX_FLAGS=OFF
-		-DEMBREE_IGNORE_INVALID_RAYS=ON
+		-DEMBREE_IGNORE_INVALID_RAYS=OFF	# default
 
 		# Set to NONE so we can manually switch on ISAs below
 		-DEMBREE_MAX_ISA:STRING="NONE"
 		-DEMBREE_ISA_AVX=$(usex cpu_flags_x86_avx)
 		-DEMBREE_ISA_AVX2=$(usex cpu_flags_x86_avx2)
-		-DEMBREE_ISA_AVX512=$(usex cpu_flags_x86_avx512dq)
-		# TODO look into neon 2x support
+		-DEMBREE_ISA_AVX512=$(usex cpu_flags_x86_avx512f \
+			$(usex cpu_flags_x86_avx512cd \
+				$(usex cpu_flags_x86_avx512dq \
+					$(usex cpu_flags_x86_avx512bw \
+						$(usex cpu_flags_x86_avx512vl \
+							ON \
+							OFF \
+						) \
+						OFF \
+					) \
+					OFF \
+				) \
+				OFF \
+			) \
+			OFF \
+				     )
 		-DEMBREE_ISA_NEON=$(usex cpu_flags_arm_neon)
-		-DEMBREE_ISA_NEON2X=$(usex cpu_flags_arm_neon2x)
+		-DEMBREE_ISA_NEON2X=$(usex cpu_flags_arm64_neon2x)
 		-DEMBREE_ISA_SSE2=$(usex cpu_flags_x86_sse2)
 		-DEMBREE_ISA_SSE42=$(usex cpu_flags_x86_sse4_2)
 		-DEMBREE_ISPC_SUPPORT=$(usex ispc)
@@ -236,7 +265,6 @@ src_configure() {
 		-DEMBREE_STATIC_LIB=$(usex static-libs)
 		-DEMBREE_STAT_COUNTERS=OFF
 		-DEMBREE_TASKING_SYSTEM:STRING=$(usex tbb "TBB" "INTERNAL")
-		-DHARDENED=$(usex hardened)
 		-DEMBREE_TUTORIALS=$(usex tutorials)
 		-DEMBREE_ZIP_MODE=OFF
 	)
@@ -259,7 +287,7 @@ src_configure() {
 		)
 	fi
 
-	if use cpu_flags_arm_neon2x ; then
+	if use cpu_flags_arm64_neon2x ; then
 		mycmakeargs+=( -DEMBREE_MAX_ISA:STRING="NEON2X" )
 	elif use cpu_flags_arm_neon ; then
 		mycmakeargs+=( -DEMBREE_MAX_ISA:STRING="NEON" )
@@ -313,25 +341,34 @@ src_test() {
 	local CMAKE_SKIP_TESTS=(
 		'^embree_verify$'
 		'^embree_verify_i2$'
-		'^viewer_models_curves_round_line_segments_3.ecs$'
-		'^viewer_models_curves_round_line_segments_7.ecs$'
-		'^viewer_models_curves_round_line_segments_8.ecs$'
-		'^viewer_models_curves_round_line_segments_9.ecs$'
-		'^viewer_coherent_models_curves_round_line_segments_3.ecs$'
-		'^viewer_coherent_models_curves_round_line_segments_7.ecs$'
-		'^viewer_coherent_models_curves_round_line_segments_8.ecs$'
-		'^viewer_coherent_models_curves_round_line_segments_9.ecs$'
-		'^viewer_quad_coherent_models_curves_round_line_segments_3.ecs$'
-		'^viewer_quad_coherent_models_curves_round_line_segments_7.ecs$'
-		'^viewer_quad_coherent_models_curves_round_line_segments_8.ecs$'
-		'^viewer_quad_coherent_models_curves_round_line_segments_9.ecs$'
-		'^viewer_grid_coherent_models_curves_round_line_segments_3.ecs$'
-		'^viewer_grid_coherent_models_curves_round_line_segments_7.ecs$'
-		'^viewer_grid_coherent_models_curves_round_line_segments_8.ecs$'
-		'^viewer_grid_coherent_models_curves_round_line_segments_9.ecs$'
-		'^hair_geometry$'
+		'^viewer_models_curves_round_line_segments_3.ecs(|_ispc)$'
+		'^viewer_models_curves_round_line_segments_7.ecs(|_ispc)$'
+		'^viewer_models_curves_round_line_segments_8.ecs(|_ispc)$'
+		'^viewer_models_curves_round_line_segments_9.ecs(|_ispc)$'
+		'^viewer_coherent_models_curves_round_line_segments_3.ecs(|_ispc)$'
+		'^viewer_coherent_models_curves_round_line_segments_7.ecs(|_ispc)$'
+		'^viewer_coherent_models_curves_round_line_segments_8.ecs(|_ispc)$'
+		'^viewer_coherent_models_curves_round_line_segments_9.ecs(|_ispc)$'
+		'^viewer_quad_coherent_models_curves_round_line_segments_3.ecs(|_ispc)$'
+		'^viewer_quad_coherent_models_curves_round_line_segments_7.ecs(|_ispc)$'
+		'^viewer_quad_coherent_models_curves_round_line_segments_8.ecs(|_ispc)$'
+		'^viewer_quad_coherent_models_curves_round_line_segments_9.ecs(|_ispc)$'
+		'^viewer_grid_coherent_models_curves_round_line_segments_3.ecs(|_ispc)$'
+		'^viewer_grid_coherent_models_curves_round_line_segments_7.ecs(|_ispc)$'
+		'^viewer_grid_coherent_models_curves_round_line_segments_8.ecs(|_ispc)$'
+		'^viewer_grid_coherent_models_curves_round_line_segments_9.ecs(|_ispc)$'
+		'^hair_geometry(|_ispc)$'
 		'^embree_tests$'
 	)
 
 	cmake_src_test
 }
+
+pkg_postinst() {
+	if use tutorials ; then
+		einfo
+		einfo "The tutorial sources have been installed at /usr/share/${PN}/tutorials"
+		einfo
+	fi
+}
+

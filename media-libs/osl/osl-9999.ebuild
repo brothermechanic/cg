@@ -3,8 +3,9 @@
 
 EAPI=8
 
-# Check this on updates
 PYTHON_COMPAT=( python3_{10..12} )
+
+# Check this on updates
 OPENVDB_COMPAT=( {7..11} )
 
 inherit cmake cuda flag-o-matic multilib-minimal python-single-r1 toolchain-funcs openvdb
@@ -38,7 +39,7 @@ else
 		"${FILESDIR}/osl-1.13.6.0-lld-fix-linking.patch"
 	)
 	# Check this on updates
-	LLVM_COMPAT=( 16 17 18 )
+	LLVM_COMPAT=( {17..19} )
 	inherit llvm-r1
 fi
 
@@ -51,7 +52,7 @@ X86_CPU_FEATURES=(
 CPU_FEATURES=( ${X86_CPU_FEATURES[@]/#/cpu_flags_x86_} )
 CUDA_TARGETS_COMPAT=( sm_30 sm_35 sm_50 sm_52 sm_61 sm_70 sm_75 sm_86 )
 
-IUSE="doc debug cuda gui partio python plugins openvdb optix qt5 qt6 static-libs test wayland X ${CPU_FEATURES[@]%:*} ${CUDA_TARGETS_COMPAT[@]/#/cuda_targets_}"
+IUSE="doc debug cuda gui partio python plugins openvdb optix qt6 static-libs test wayland X ${CPU_FEATURES[@]%:*} ${CUDA_TARGETS_COMPAT[@]/#/cuda_targets_}"
 RESTRICT="
 	!test (test)
 	mirror
@@ -64,7 +65,6 @@ REQUIRED_USE="
 	)
 	gui? (
 		|| ( wayland X )
-		?? ( qt5 qt6 )
 	)
 	optix? ( cuda )
 "
@@ -112,6 +112,7 @@ RDEPEND="
 			dev-qt/qtcore:5
 			dev-qt/qtgui:5[wayland?,X?]
 			dev-qt/qtwidgets:5[X?]
+			dev-qt/qtopengl:5
 		)
 		qt6? (
 			dev-qt/qtbase:6[gui,wayland?,widgets,X?]
@@ -152,10 +153,13 @@ src_prepare() {
 	if use optix && has_version ">=dev-libs/optix-7.4"; then
 		sed -i -e 's/OPTIX_COMPILE_DEBUG_LEVEL_LINEINFO/OPTIX_COMPILE_DEBUG_LEVEL_MINIMAL/g' src/testshade/optixgridrender.cpp src/testrender/optixraytracer.cpp || die
 		cuda_src_prepare
+		cuda_add_sandbox -w
 	fi
 	sed -e 's/DESTINATION cmake/DESTINATION "${OSL_CONFIG_INSTALL_DIR}"/g' \
 		-re '/install \(FILES src\/build-scripts\/serialize-bc\.py/{:a;N;/PERMISSIONS \$\{PERMISSION_FLAGS\}\)/!ba};/DESTINATION build-scripts/d' \
 		-i CMakeLists.txt || die "Sed failed."
+	sed -e "/^install.*llvm_macros.cmake.*cmake/d" -i CMakeLists.txt || die
+
 	cmake_src_prepare
 }
 
@@ -187,6 +191,7 @@ src_configure() {
 			local gcc="$(tc-getCC)"
 			local mycmakeargs=(
 				-DCMAKE_CXX_STANDARD=17
+				-DCMAKE_POLICY_DEFAULT_CMP0146="OLD" # BUG FindCUDA
 				#-DLLVM_ROOT="${EPREFIX}/usr/lib/llvm/${LLVM_SLOT}"
 				-DCMAKE_INSTALL_BINDIR="${EPREFIX}/usr/$(get_libdir)/osl/bin"
 				-DCMAKE_INSTALL_DOCDIR="share/doc/${PF}"
@@ -203,7 +208,7 @@ src_configure() {
 				-DUSE_OPTIX=$(usex optix) # for v1.12
 				-DOSL_USE_OPTIX=$(usex optix) # for v1.13
 				-DUSE_PARTIO=$(usex partio)
-				-DUSE_QT=$(usex qt6 ON $(usex qt5 ON OFF))
+				-DUSE_QT=$(usex gui)
 				-DUSE_PYTHON=$(usex python)
 				-DPYTHON_VERSION="${EPYTHON/python}"
 				-DPYTHON_SITE_DIR="$(python_get_sitedir)"
@@ -240,10 +245,88 @@ src_compile() {
 }
 
 src_test() {
-	# TODO: investigate failures
-	local myctestargs=(
-		-E "(osl-imageio|osl-imageio.opt|render-background|render-bumptest|render-mx-furnace-burley-diffuse|render-mx-furnace-sheen|render-mx-burley-diffuse|render-mx-conductor|render-mx-generalized-schlick|render-mx-generalized-schlick-glass|render-microfacet|render-oren-nayar|render-uv|render-veachmis|render-ward|render-raytypes.opt|color|color.opt|example-deformer)"
+	# A bunch of tests only work when installed.
+	# So install them into the temp directory now.
+	DESTDIR="${T}" cmake_build install
+
+	ln -s "${CMAKE_USE_DIR}/src/cmake/" "${BUILD_DIR}/src/cmake" || die
+
+	if use optix; then
+		cp \
+			"${BUILD_DIR}/src/liboslexec/shadeops_cuda.ptx" \
+			"${BUILD_DIR}/src/testrender/"{optix_raytracer,quad,rend_lib_testrender,sphere,wrapper}".ptx" \
+			"${BUILD_DIR}/src/testshade/"{optix_grid_renderer,rend_lib_testshade}".ptx" \
+			"${BUILD_DIR}/bin/" || die
+
+		# NOTE this should go to cuda eclass
+		addwrite /dev/nvidiactl
+		addwrite /dev/nvidia0
+		addwrite /dev/nvidia-uvm
+		addwrite /dev/nvidia-caps
+		addwrite "/dev/char/"
+	fi
+
+	CMAKE_SKIP_TESTS=(
+		"-broken$"
+		"^render"
+
+		# broken with in-tree <=dev-libs/optix-7.5.0 and out of date
+		"^example-cuda$"
+
+		# outright fail
+		"^testoptix.optix.opt$"
+		"^testoptix-noise.optix.opt$"
+		"^testoptix-reparam.optix.opt$"
+		"^transform-reg.regress.batched.opt$"
+		"^spline-reg.regress.batched.opt$"
+
+		# doesn't handle parameters
+		"^osl-imageio$"
+		"^osl-imageio.opt$"
+		"^osl-imageio.opt.rs_bitcode$"
 	)
+
+	myctestargs=(
+		# src/build-scripts/ci-test.bash
+		'--force-new-ctest-process'
+	)
+
+	local -x DEBUG CXXFLAGS LD_LIBRARY_PATH DIR OSL_DIR OSL_SOURCE_DIR PYTHONPATH
+	DEBUG=1 # doubles the floating point tolerance so we avoid FMA related issues
+	CXXFLAGS="-I${T}/usr/include"
+	LD_LIBRARY_PATH="${T}/usr/$(get_libdir)"
+	OSL_DIR="${T}/usr/$(get_libdir)/cmake/OSL"
+	OSL_SOURCE_DIR="${S}"
+
+	if use python; then
+		PYTHONPATH="${BUILD_DIR}/lib/python/site-packages"
+	fi
+
+	cmake_src_test
+
+	einfo ""
+	einfo "testing render tests in isolation"
+	einfo ""
+
+	CMAKE_SKIP_TESTS=(
+		"^render-background$"
+		"^render-mx-furnace-sheen$"
+		"^render-mx-burley-diffuse$"
+		"^render-mx-conductor$"
+		"^render-microfacet$"
+		"^render-veachmis$"
+		"^render-ward$"
+		"^render-raytypes.opt$"
+		"^render-raytypes.opt.rs_bitcode$"
+	)
+
+	myctestargs=(
+		# src/build-scripts/ci-test.bash
+		'--force-new-ctest-process'
+		--repeat until-pass:10
+		-R "^render"
+	)
+
 	cmake_src_test
 }
 

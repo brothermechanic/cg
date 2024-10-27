@@ -234,7 +234,7 @@ RDEPEND="
 	color-management? ( >=media-libs/opencolorio-2.3.0:= )
 	openexr? ( >=media-libs/openexr-3.2.1:= )
 	openpgl? (
-		<media-libs/openpgl-0.7[tbb?]
+		<media-libs/openpgl-0.8[tbb?]
 		>=media-libs/openpgl-0.5[tbb?]
 	)
 	opensubdiv? ( >=media-libs/opensubdiv-3.6.0[cuda?,openmp?,tbb?,opengl] )

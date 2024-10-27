@@ -6,7 +6,7 @@ EAPI=8
 MY_PN="MaterialX"
 MY_P="${MY_PN}-${PV}"
 
-PYTHON_COMPAT=( python3_{11..12} ) # CI does not list 3.10 for this package.
+PYTHON_COMPAT=( python3_{11..13} ) # CI does not list 3.10 for this package.
 inherit cmake python-single-r1 desktop
 if [[ ${PV} =~ 9999 ]] ; then
 	inherit git-r3
@@ -83,28 +83,19 @@ RDEPEND="
 		')
 	)
 "
-#	X? (
-#		x11-libs/libX11
-#	)
-#	wayland? (
-#		dev-libs/wayland
-#		dev-libs/wayland-protocols
-#		dev-util/wayland-scanner
-#		x11-libs/libxkbcommon
-#	)
 
 DEPEND="
 	${RDEPEND}
 "
 BDEPEND="
 	>=dev-build/cmake-3.1
-	|| (
-		>=sys-devel/gcc-6
-		>=sys-devel/clang-6
-	)
 "
 RESTRICT="mirror"
-DOCS=( CHANGELOG.md LICENSE README.md THIRD-PARTY.md )
+
+PATCHES=(
+	"${FILESDIR}/materialx-1.38.9-setup.py-fix-sandbox-violation.patch"
+)
+DOCS=( )
 
 pkg_setup() {
 	use python && python_setup
@@ -119,10 +110,10 @@ src_unpack() {
 		rm -r ${S}/source/PyMaterialX/External/PyBind11 || die
 		pushd "nanogui-${EGIT_NANOGUI_COMMIT}" || die
 			rm -rf \
-				source/MaterialXView/NanoGUI/ext/nanovg \
-				source/MaterialXView/NanoGUI/ext/nanovg_metal \
-				source/MaterialXView/NanoGUI/ext/glfw \
-				source/MaterialXView/NanoGUI/ext/nanobind \
+				"source/MaterialXView/NanoGUI/ext/nanovg" \
+				"source/MaterialXView/NanoGUI/ext/nanovg_metal" \
+				"source/MaterialXView/NanoGUI/ext/glfw" \
+				"source/MaterialXView/NanoGUI/ext/nanobind" \
 				|| die
 			mv -T \
 				"${WORKDIR}/nanovg-${EGIT_NANOVG_COMMIT}" \
@@ -152,21 +143,21 @@ src_unpack() {
 
 		pushd "${MY_P}" || die
 			rm -rf \
-				source/MaterialXView/NanoGUI \
-				source/MaterialXGraphEditor/External/ImGui \
-				source/MaterialXGraphEditor/External/ImGuiNodeEditor \
+				"source/MaterialXView/NanoGUI" \
+				"source/MaterialXGraphEditor/External/ImGui" \
+				"source/MaterialXGraphEditor/External/ImGuiNodeEditor" \
 				|| die
 			mv \
 				"${WORKDIR}/nanogui-${EGIT_NANOGUI_COMMIT}" \
-				source/MaterialXView/NanoGUI \
+				"source/MaterialXView/NanoGUI" \
 				|| die
 			mv \
 				"${WORKDIR}/imgui-${EGIT_IMGUI_COMMIT}" \
-				source/MaterialXGraphEditor/External/ImGui \
+				"source/MaterialXGraphEditor/External/ImGui" \
 				|| die
 			mv \
 				"${WORKDIR}/imgui-node-editor-${EGIT_IMGUI_NODE_EDITOR_COMMIT}" \
-				source/MaterialXGraphEditor/External/ImGuiNodeEditor \
+				"source/MaterialXGraphEditor/External/ImGuiNodeEditor" \
 				|| die
 		popd || die
 	fi
@@ -201,11 +192,11 @@ src_configure() {
 		#-DGLFW_USE_OSMESA=OFF
 		#-DGLFW_USE_WAYLAND=$(usex wayland ON OFF)
 		#-DMATERIALX_BUILD_JS=$(usex javascript ON OFF)
-		-DMATERIALX_BUILD_OIIO=$(usex openimageio ON OFF)
-		-DMATERIALX_BUILD_PYTHON=$(usex python ON OFF)
-		-DMATERIALX_BUILD_RENDER=$(usex renderer ON OFF)
+		-DMATERIALX_BUILD_OIIO=$(usex openimageio "ON" "OFF")
+		-DMATERIALX_BUILD_PYTHON=$(usex python "ON" "OFF")
+		-DMATERIALX_BUILD_RENDER=$(usex renderer "ON" "OFF")
 		-DMATERIALX_BUILD_SHARED_LIBS=ON
-		-DMATERIALX_BUILD_TESTS=$(usex test ON OFF)
+		-DMATERIALX_BUILD_TESTS=$(usex test "ON" "OFF")
 		-DMATERIALX_INSTALL_PYTHON=OFF
 		-DMATERIALX_INSTALL_RESOURCES=$(usex resources ON OFF)
 		-DMATERIALX_BUILD_GRAPH_EDITOR=$(usex graph-editor)
@@ -213,10 +204,11 @@ src_configure() {
 	)
 	if use python ; then
 		mycmakeargs+=(
-			-DMATERIALX_PYTHON_EXECUTABLE=${PYTHON}
-			-DMATERIALX_PYTHON_VERSION=${EPYTHON/python/}
-			-DPYTHON_EXECUTABLE=${PYTHON}
-			-DMATERIALX_PYTHON_LTO=$(usex lto)
+			-Dpybind11_ROOT="$(python_get_sitedir)/pybind11"
+			-DMATERIALX_PYTHON_EXECUTABLE="${PYTHON}"
+			-DMATERIALX_PYTHON_VERSION="${EPYTHON/python/}"
+			-DPYTHON_EXECUTABLE="${PYTHON}"
+			-DMATERIALX_PYTHON_LTO="$(usex lto)"
 		)
 	fi
 	cmake_src_configure
