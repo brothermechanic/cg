@@ -20,9 +20,9 @@ EGIT_LFS="yes"
 
 if [[ ${PV} == 9999 ]]; then
 	EGIT_BRANCH="main"
-	EGIT_COMMIT="0f3fdd25bcabac1d68d02fb246d961ea56fe49a1"
+	#EGIT_COMMIT="0f3fdd25bcabac1d68d02fb246d961ea56fe49a1"
 	#EGIT_CLONE_TYPE="shallow"
-	MY_PV="4.3"
+	MY_PV="4.4"
 	KEYWORDS=""
 else
 	MY_PV="$(ver_cut 1-2)"
@@ -113,7 +113,7 @@ REQUIRED_USE="${PYTHON_REQUIRED_USE}
 	usd? ( tbb )
 "
 
-LANGS="en ab ar be bg ca cs da de el eo es es_ES eu fa fi fr ha he hi hr hu id it ja ka km ko ky ne nl pl pt_BR pt ru sl sk sr@latin sr sv sw ta th tr zh_TW uk ur vi zh_CN zh_HANS zh_HANT"
+LANGS="en ab ar be bg ca cs da de el eo es es_ES eu fa fi fr ha he hi hr hu id it ja ka km ko ky lt ne nl pl pt_BR pt ro ru sl sk sr@latin sr sv sw ta th tr zh_TW uk ur vi zh_CN zh_HANS zh_HANT"
 
 for X in ${LANGS} ; do
 	IUSE+=" l10n_${X}"
@@ -419,9 +419,10 @@ src_unpack() {
 	git-r3_src_unpack
 
 	for repo in $(echo ${EGIT_REPO_URI_LIST}); do
-		if [[ "4.2 4.3" =~ "${MY_PV}" ]]; then
-			EGIT_BRANCH="main";
+		if [[ "4.2 4.3 4.4" =~ "${MY_PV}" ]]; then
+			EGIT_BRANCH="main"
 			EGIT_COMMIT=""
+			EGIT_CLONE_TYPE="shallow"
 		else
 			EGIT_BRANCH="blender-v${MY_PV}-release"
 			#EGIT_COMMIT="v${PV}"

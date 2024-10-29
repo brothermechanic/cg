@@ -216,9 +216,9 @@ src_configure() {
 
 src_install() {
 	cmake_src_install
-	rm -rf "${ED}/var/tmp" || die
-	echo "LDPATH=${EPREFIX}/usr/$(get_libdir)/${PN}/libraries" > 99-${PN} || die
-	doenvd 99-${PN}
+	rm -rf "${ED}/var/tmp"
+	#echo "LDPATH=${EPREFIX}/usr/$(get_libdir)/${PN}/libraries" > 99-${PN} || die
+	#doenvd 99-${PN}
 	use resources && mv ${D}/usr/resources/ {D}/usr/share/${PN}
 	use viewer && domenu "${FILESDIR}/materialx-view.desktop"
 	use graph-editor && domenu "${FILESDIR}/materialx-grapheditor.desktop"
