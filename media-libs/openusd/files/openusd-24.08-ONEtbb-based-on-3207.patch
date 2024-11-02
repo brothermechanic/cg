@@ -1,0 +1,1218 @@
+From 9e865d183444acdeb700dccc7612df314ba3b4ee Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Andr=C3=A9a=20MACHIZAUD?= <machizau@adobe.com>
+Date: Mon, 5 Aug 2024 08:50:46 +0200
+Subject: [PATCH 1/6] Modernize TBB CMake setup by exclusively relying on CMake
+ namespace targets
+
+Using CMake namespace target is the modern approach, it forward definitions, include directories and link libraries transitively to consumers.
+And one is already setup by the `FindTBB.cmake` module.
+As the main CMakeLists.txt already requires CMake 3.14 this should already be available to all CMake clients.
+
+Additionally try to resolve TBB Config package before trying the module one.
+---
+ cmake/defaults/Packages.cmake                 | 6 ++++--
+ pxr/base/plug/CMakeLists.txt                  | 3 +--
+ pxr/base/tf/CMakeLists.txt                    | 3 +--
+ pxr/base/trace/CMakeLists.txt                 | 3 +--
+ pxr/base/vt/CMakeLists.txt                    | 3 +--
+ pxr/base/work/CMakeLists.txt                  | 5 +----
+ pxr/imaging/hd/CMakeLists.txt                 | 5 +----
+ pxr/imaging/hdGp/CMakeLists.txt               | 5 +----
+ pxr/imaging/hdSt/CMakeLists.txt               | 3 +--
+ pxr/imaging/plugin/hdEmbree/CMakeLists.txt    | 3 +--
+ pxr/imaging/plugin/hdStorm/CMakeLists.txt     | 3 +--
+ pxr/usd/ar/CMakeLists.txt                     | 3 +--
+ pxr/usd/pcp/CMakeLists.txt                    | 3 +--
+ pxr/usd/sdf/CMakeLists.txt                    | 3 +--
+ pxr/usd/usd/CMakeLists.txt                    | 3 +--
+ pxr/usd/usdGeom/CMakeLists.txt                | 3 +--
+ pxr/usd/usdPhysics/CMakeLists.txt             | 3 +--
+ pxr/usd/usdShade/CMakeLists.txt               | 5 +----
+ pxr/usd/usdSkel/CMakeLists.txt                | 3 +--
+ pxr/usd/usdUtils/CMakeLists.txt               | 4 +---
+ pxr/usdImaging/usdImaging/CMakeLists.txt      | 5 +----
+ pxr/usdImaging/usdImagingGL/CMakeLists.txt    | 3 +--
+ pxr/usdImaging/usdRiPxrImaging/CMakeLists.txt | 5 +----
+ 23 files changed, 26 insertions(+), 59 deletions(-)
+
+diff --git a/cmake/defaults/Packages.cmake b/cmake/defaults/Packages.cmake
+index fe60570b34..d3255db92e 100644
+--- a/cmake/defaults/Packages.cmake
++++ b/cmake/defaults/Packages.cmake
+@@ -137,8 +137,10 @@ endif()
+ 
+ 
+ # --TBB
+-find_package(TBB REQUIRED COMPONENTS tbb)
+-add_definitions(${TBB_DEFINITIONS})
++find_package(TBB CONFIG COMPONENTS tbb)
++if(NOT TBB_FOUND)
++    find_package(TBB REQUIRED COMPONENTS tbb)
++endif()
+ 
+ # --math
+ if(WIN32)
+diff --git a/pxr/base/plug/CMakeLists.txt b/pxr/base/plug/CMakeLists.txt
+index ac6942516c..e104572a7c 100644
+--- a/pxr/base/plug/CMakeLists.txt
++++ b/pxr/base/plug/CMakeLists.txt
+@@ -9,11 +9,10 @@ pxr_library(plug
+         trace
+         work
+         ${Boost_PYTHON_LIBRARY}
+-        ${TBB_tbb_LIBRARY}
++        TBB::tbb
+ 
+     INCLUDE_DIRS
+         ${Boost_INCLUDE_DIRS}
+-        ${TBB_INCLUDE_DIRS}
+ 
+     PUBLIC_CLASSES
+         interfaceFactory
+diff --git a/pxr/base/tf/CMakeLists.txt b/pxr/base/tf/CMakeLists.txt
+index b236184c47..3422965120 100644
+--- a/pxr/base/tf/CMakeLists.txt
++++ b/pxr/base/tf/CMakeLists.txt
+@@ -116,12 +116,11 @@ pxr_library(tf
+         ${WINLIBS}
+         ${PYTHON_LIBRARIES}
+         ${Boost_PYTHON_LIBRARY}
+-        ${TBB_tbb_LIBRARY}
++        TBB::tbb
+ 
+     INCLUDE_DIRS
+         ${PYTHON_INCLUDE_DIRS}
+         ${Boost_INCLUDE_DIRS}
+-        ${TBB_INCLUDE_DIRS}
+ 
+     PUBLIC_CLASSES
+         anyUniquePtr
+diff --git a/pxr/base/trace/CMakeLists.txt b/pxr/base/trace/CMakeLists.txt
+index db302e077a..b1c5c76001 100644
+--- a/pxr/base/trace/CMakeLists.txt
++++ b/pxr/base/trace/CMakeLists.txt
+@@ -7,11 +7,10 @@ pxr_library(trace
+         js
+         tf
+         ${Boost_PYTHON_LIBRARY}
+-        ${TBB_tbb_LIBRARY}
++        TBB::tbb
+ 
+     INCLUDE_DIRS
+         ${Boost_INCLUDE_DIRS}
+-        ${TBB_INCLUDE_DIRS}
+ 
+     PUBLIC_CLASSES
+         aggregateTree
+diff --git a/pxr/base/vt/CMakeLists.txt b/pxr/base/vt/CMakeLists.txt
+index 87fb59a762..ffca019c58 100644
+--- a/pxr/base/vt/CMakeLists.txt
++++ b/pxr/base/vt/CMakeLists.txt
+@@ -8,11 +8,10 @@ pxr_library(vt
+         gf
+         trace
+         ${Boost_PYTHON_LIBRARY}
+-        ${TBB_tbb_LIBRARY}
++        TBB::tbb
+ 
+     INCLUDE_DIRS
+         ${Boost_INCLUDE_DIRS}
+-        ${TBB_INCLUDE_DIRS}
+ 
+     PUBLIC_CLASSES
+         array
+diff --git a/pxr/base/work/CMakeLists.txt b/pxr/base/work/CMakeLists.txt
+index f15ad1542f..6bc112519c 100644
+--- a/pxr/base/work/CMakeLists.txt
++++ b/pxr/base/work/CMakeLists.txt
+@@ -5,10 +5,7 @@ pxr_library(work
+     LIBRARIES
+         tf
+         trace
+-        ${TBB_tbb_LIBRARY}
+-
+-    INCLUDE_DIRS
+-        ${TBB_INCLUDE_DIRS}
++        TBB::tbb
+ 
+     PUBLIC_CLASSES
+         detachedTask
+diff --git a/pxr/imaging/hd/CMakeLists.txt b/pxr/imaging/hd/CMakeLists.txt
+index 99017ff85b..7c7f8a292b 100644
+--- a/pxr/imaging/hd/CMakeLists.txt
++++ b/pxr/imaging/hd/CMakeLists.txt
+@@ -15,10 +15,7 @@ pxr_library(hd
+         hf
+         pxOsd
+         sdr
+-        ${TBB_tbb_LIBRARY}
+-
+-    INCLUDE_DIRS
+-        ${TBB_INCLUDE_DIRS}
++        TBB::tbb
+ 
+     PUBLIC_CLASSES
+         aov
+diff --git a/pxr/imaging/hdGp/CMakeLists.txt b/pxr/imaging/hdGp/CMakeLists.txt
+index 779a38bb42..87d91496f3 100644
+--- a/pxr/imaging/hdGp/CMakeLists.txt
++++ b/pxr/imaging/hdGp/CMakeLists.txt
+@@ -7,10 +7,7 @@ pxr_library(hdGp
+     LIBRARIES
+         hd
+         hf
+-        ${TBB_tbb_LIBRARY}
+-
+-    INCLUDE_DIRS
+-        ${TBB_INCLUDE_DIRS}
++        TBB::tbb
+ 
+     PUBLIC_CLASSES
+         generativeProcedural
+diff --git a/pxr/imaging/hdSt/CMakeLists.txt b/pxr/imaging/hdSt/CMakeLists.txt
+index 5f3e459c30..c86b2b4203 100644
+--- a/pxr/imaging/hdSt/CMakeLists.txt
++++ b/pxr/imaging/hdSt/CMakeLists.txt
+@@ -46,12 +46,11 @@ pxr_library(hdSt
+         sdr
+         tf
+         trace
+-        ${TBB_tbb_LIBRARY}
++        TBB::tbb
+         ${OPENSUBDIV_LIBRARIES}
+         ${optionalLibs}
+ 
+     INCLUDE_DIRS
+-        ${TBB_INCLUDE_DIRS}
+         ${OPENSUBDIV_INCLUDE_DIR}
+         ${optionalIncludeDirs}
+ 
+diff --git a/pxr/imaging/plugin/hdEmbree/CMakeLists.txt b/pxr/imaging/plugin/hdEmbree/CMakeLists.txt
+index 43aa0826e5..a1f443b9cd 100644
+--- a/pxr/imaging/plugin/hdEmbree/CMakeLists.txt
++++ b/pxr/imaging/plugin/hdEmbree/CMakeLists.txt
+@@ -21,11 +21,10 @@ pxr_plugin(hdEmbree
+         hf
+         hd
+         hdx
+-        ${TBB_tbb_LIBRARY}
++        TBB::tbb
+         ${EMBREE_LIBRARY}
+ 
+     INCLUDE_DIRS
+-        ${TBB_INCLUDE_DIRS}
+         ${EMBREE_INCLUDE_DIR}
+ 
+     PUBLIC_CLASSES
+diff --git a/pxr/imaging/plugin/hdStorm/CMakeLists.txt b/pxr/imaging/plugin/hdStorm/CMakeLists.txt
+index 043f2d363b..b8b49203d8 100644
+--- a/pxr/imaging/plugin/hdStorm/CMakeLists.txt
++++ b/pxr/imaging/plugin/hdStorm/CMakeLists.txt
+@@ -26,10 +26,9 @@ pxr_plugin(hdStorm
+         hd
+         hdSt
+         ${OPENSUBDIV_LIBRARIES}
+-        ${TBB_tbb_LIBRARY}
++        TBB::tbb
+ 
+     INCLUDE_DIRS
+-        ${TBB_INCLUDE_DIRS}
+         ${OPENSUBDIV_INCLUDE_DIR}
+ 
+     PUBLIC_CLASSES
+diff --git a/pxr/usd/ar/CMakeLists.txt b/pxr/usd/ar/CMakeLists.txt
+index fcf1aa4489..7dd8ef683f 100644
+--- a/pxr/usd/ar/CMakeLists.txt
++++ b/pxr/usd/ar/CMakeLists.txt
+@@ -9,11 +9,10 @@ pxr_library(ar
+         plug
+         vt
+         ${Boost_PYTHON_LIBRARY}
+-        ${TBB_tbb_LIBRARY}
++        TBB::tbb
+ 
+     INCLUDE_DIRS
+         ${Boost_INCLUDE_DIRS}
+-        ${TBB_INCLUDE_DIRS}
+ 
+     PUBLIC_CLASSES
+         asset
+diff --git a/pxr/usd/pcp/CMakeLists.txt b/pxr/usd/pcp/CMakeLists.txt
+index 2626e6022c..3dc6a25b5d 100644
+--- a/pxr/usd/pcp/CMakeLists.txt
++++ b/pxr/usd/pcp/CMakeLists.txt
+@@ -10,11 +10,10 @@ pxr_library(pcp
+         work
+         ar
+         ${Boost_PYTHON_LIBRARY}
+-        ${TBB_tbb_LIBRARY}
++        TBB::tbb
+ 
+     INCLUDE_DIRS
+         ${Boost_INCLUDE_DIRS}
+-        ${TBB_INCLUDE_DIRS}
+         
+     PUBLIC_HEADERS
+         api.h
+diff --git a/pxr/usd/sdf/CMakeLists.txt b/pxr/usd/sdf/CMakeLists.txt
+index 8f09038ddb..080a02f87e 100644
+--- a/pxr/usd/sdf/CMakeLists.txt
++++ b/pxr/usd/sdf/CMakeLists.txt
+@@ -13,11 +13,10 @@ pxr_library(sdf
+         work
+         ar
+         ${Boost_PYTHON_LIBRARY}
+-        ${TBB_tbb_LIBRARY}
++        TBB::tbb
+ 
+     INCLUDE_DIRS
+         ${Boost_INCLUDE_DIRS}
+-        ${TBB_INCLUDE_DIRS}
+ 
+     PUBLIC_CLASSES
+         abstractData
+diff --git a/pxr/usd/usd/CMakeLists.txt b/pxr/usd/usd/CMakeLists.txt
+index 055c0f31fb..4720eaa5b8 100644
+--- a/pxr/usd/usd/CMakeLists.txt
++++ b/pxr/usd/usd/CMakeLists.txt
+@@ -15,11 +15,10 @@ pxr_library(usd
+         vt
+         work
+         ${Boost_PYTHON_LIBRARY}
+-        ${TBB_tbb_LIBRARY}
++        TBB::tbb
+ 
+     INCLUDE_DIRS
+         ${Boost_INCLUDE_DIRS}
+-        ${TBB_INCLUDE_DIRS}
+ 
+     PUBLIC_CLASSES
+         apiSchemaBase
+diff --git a/pxr/usd/usdGeom/CMakeLists.txt b/pxr/usd/usdGeom/CMakeLists.txt
+index 5edbc3335a..237251a348 100644
+--- a/pxr/usd/usdGeom/CMakeLists.txt
++++ b/pxr/usd/usdGeom/CMakeLists.txt
+@@ -12,11 +12,10 @@ pxr_library(usdGeom
+         usd
+         work
+         ${Boost_PYTHON_LIBRARY}
+-        ${TBB_tbb_LIBRARY}
++        TBB::tbb
+ 
+     INCLUDE_DIRS
+         ${Boost_INCLUDE_DIRS}
+-        ${TBB_INCLUDE_DIRS}
+ 
+     PUBLIC_CLASSES
+         debugCodes
+diff --git a/pxr/usd/usdPhysics/CMakeLists.txt b/pxr/usd/usdPhysics/CMakeLists.txt
+index 403a3dfe2d..a201b88ec5 100644
+--- a/pxr/usd/usdPhysics/CMakeLists.txt
++++ b/pxr/usd/usdPhysics/CMakeLists.txt
+@@ -13,11 +13,10 @@ pxr_library(usdPhysics
+         usdShade
+         work
+         ${Boost_PYTHON_LIBRARY}
+-        ${TBB_tbb_LIBRARY}
++        TBB::tbb
+ 
+     INCLUDE_DIRS
+         ${Boost_INCLUDE_DIRS}
+-        ${TBB_INCLUDE_DIRS}
+ 
+     PUBLIC_CLASSES
+         articulationRootAPI
+diff --git a/pxr/usd/usdShade/CMakeLists.txt b/pxr/usd/usdShade/CMakeLists.txt
+index e389098ac2..d2a1e94abc 100644
+--- a/pxr/usd/usdShade/CMakeLists.txt
++++ b/pxr/usd/usdShade/CMakeLists.txt
+@@ -11,11 +11,8 @@ pxr_library(usdShade
+         sdr
+         usd
+         usdGeom
+-        ${TBB_tbb_LIBRARY}
++        TBB::tbb
+     
+-    INCLUDE_DIRS
+-        ${TBB_INCLUDE_DIRS}
+-
+     PUBLIC_CLASSES
+         connectableAPI
+         connectableAPIBehavior
+diff --git a/pxr/usd/usdSkel/CMakeLists.txt b/pxr/usd/usdSkel/CMakeLists.txt
+index e9b56aaac4..0ea1329774 100644
+--- a/pxr/usd/usdSkel/CMakeLists.txt
++++ b/pxr/usd/usdSkel/CMakeLists.txt
+@@ -13,11 +13,10 @@ pxr_library(usdSkel
+         usd
+         usdGeom
+         ${Boost_PYTHON_LIBRARY}
+-        ${TBB_tbb_LIBRARY}
++        TBB::tbb
+ 
+     INCLUDE_DIRS
+         ${Boost_INCLUDE_DIRS}
+-        ${TBB_INCLUDE_DIRS}
+ 
+     PUBLIC_CLASSES
+         animation
+diff --git a/pxr/usd/usdUtils/CMakeLists.txt b/pxr/usd/usdUtils/CMakeLists.txt
+index 65c96bd366..d6605e227a 100644
+--- a/pxr/usd/usdUtils/CMakeLists.txt
++++ b/pxr/usd/usdUtils/CMakeLists.txt
+@@ -11,12 +11,10 @@ pxr_library(usdUtils
+         usdGeom
+         usdShade
+         ${Boost_PYTHON_LIBRARY}
+-        ${TBB_tbb_LIBRARY}
++        TBB::tbb
+ 
+     INCLUDE_DIRS
+         ${Boost_INCLUDE_DIRS}
+-        ${TBB_INCLUDE_DIRS}
+-
+ 
+     PUBLIC_CLASSES
+         authoring
+diff --git a/pxr/usdImaging/usdImaging/CMakeLists.txt b/pxr/usdImaging/usdImaging/CMakeLists.txt
+index e26a07a6e5..8f102d741e 100644
+--- a/pxr/usdImaging/usdImaging/CMakeLists.txt
++++ b/pxr/usdImaging/usdImaging/CMakeLists.txt
+@@ -22,10 +22,7 @@ pxr_library(usdImaging
+         usdShade
+         usdVol
+         ar
+-        ${TBB_tbb_LIBRARY}
+-
+-    INCLUDE_DIRS
+-        ${TBB_INCLUDE_DIRS}
++        TBB::tbb
+ 
+     PUBLIC_CLASSES
+         adapterRegistry
+diff --git a/pxr/usdImaging/usdImagingGL/CMakeLists.txt b/pxr/usdImaging/usdImagingGL/CMakeLists.txt
+index f710b3e157..62a93412bf 100644
+--- a/pxr/usdImaging/usdImagingGL/CMakeLists.txt
++++ b/pxr/usdImaging/usdImagingGL/CMakeLists.txt
+@@ -33,12 +33,11 @@ pxr_library(usdImagingGL
+         ar
+         ${Boost_PYTHON_LIBRARY}
+         ${PYTHON_LIBRARIES}
+-        ${TBB_tbb_LIBRARY}
++        TBB::tbb
+ 
+     INCLUDE_DIRS
+         ${PYTHON_INCLUDE_PATH}
+         ${PYTHON_INCLUDE_DIRS}
+-        ${TBB_INCLUDE_DIRS}
+ 
+     PUBLIC_CLASSES
+         engine
+diff --git a/pxr/usdImaging/usdRiPxrImaging/CMakeLists.txt b/pxr/usdImaging/usdRiPxrImaging/CMakeLists.txt
+index 16478b37aa..8aaff5ff32 100644
+--- a/pxr/usdImaging/usdRiPxrImaging/CMakeLists.txt
++++ b/pxr/usdImaging/usdRiPxrImaging/CMakeLists.txt
+@@ -19,10 +19,7 @@ pxr_library(usdRiPxrImaging
+         usdImaging
+         usdVol
+         ar
+-        ${TBB_tbb_LIBRARY}
+-
+-    INCLUDE_DIRS
+-        ${TBB_INCLUDE_DIRS}
++        TBB::tbb
+ 
+     PUBLIC_CLASSES
+         pxrCameraAPIAdapter
+
+From bb936873bb07950106e1fbb8378451695bd0e14c Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Andr=C3=A9a=20MACHIZAUD?= <machizau@adobe.com>
+Date: Mon, 5 Aug 2024 09:03:07 +0200
+Subject: [PATCH 2/6] Add missing linkage to TBB to targets which use it
+ directly
+
+---
+ pxr/imaging/hdsi/CMakeLists.txt                        | 1 +
+ pxr/usd/usd/CMakeLists.txt                             | 1 +
+ third_party/renderman-26/plugin/hdPrman/CMakeLists.txt | 1 +
+ 3 files changed, 3 insertions(+)
+
+diff --git a/pxr/imaging/hdsi/CMakeLists.txt b/pxr/imaging/hdsi/CMakeLists.txt
+index 08144a2be0..91aaafa032 100644
+--- a/pxr/imaging/hdsi/CMakeLists.txt
++++ b/pxr/imaging/hdsi/CMakeLists.txt
+@@ -14,6 +14,7 @@ pxr_library(hdsi
+         hf
+         hd
+         pxOsd
++        TBB::tbb
+ 
+     PUBLIC_CLASSES
+         computeSceneIndexDiff
+diff --git a/pxr/usd/usd/CMakeLists.txt b/pxr/usd/usd/CMakeLists.txt
+index 4720eaa5b8..7d546c2356 100644
+--- a/pxr/usd/usd/CMakeLists.txt
++++ b/pxr/usd/usd/CMakeLists.txt
+@@ -410,6 +410,7 @@ pxr_build_test(testUsdThreadedAuthoring
+         work
+         sdf
+         usd
++        TBB::tbb
+     CPPFILES
+         testenv/testUsdThreadedAuthoring.cpp
+ )
+diff --git a/third_party/renderman-26/plugin/hdPrman/CMakeLists.txt b/third_party/renderman-26/plugin/hdPrman/CMakeLists.txt
+index 6d7b18b1ab..f5c95a0271 100644
+--- a/third_party/renderman-26/plugin/hdPrman/CMakeLists.txt
++++ b/third_party/renderman-26/plugin/hdPrman/CMakeLists.txt
+@@ -75,6 +75,7 @@ pxr_plugin(${PXR_PACKAGE}
+         usdRi
+         usdVol
+         usdVolImaging
++        TBB::tbb
+         ${optionalLibs}
+ 
+     INCLUDE_DIRS
+
+From 5b1865c34b74b73c789f3f777e94b37eb1e0e7e5 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Andr=C3=A9a=20MACHIZAUD?= <machizau@adobe.com>
+Date: Mon, 5 Aug 2024 09:04:58 +0200
+Subject: [PATCH 3/6] Remove extra linkage to TBB to targets which dot not use
+ it directly
+
+---
+ pxr/imaging/plugin/hdEmbree/CMakeLists.txt    |  1 -
+ pxr/imaging/plugin/hdEmbree/pch.h             |  9 ---------
+ pxr/imaging/plugin/hdStorm/CMakeLists.txt     |  1 -
+ pxr/imaging/plugin/hdStorm/pch.h              |  4 ----
+ pxr/usd/ar/resolver.cpp                       |  1 +
+ pxr/usd/usdHydra/pch.h                        | 11 -----------
+ pxr/usd/usdLux/pch.h                          | 11 -----------
+ pxr/usd/usdMedia/pch.h                        | 11 -----------
+ pxr/usd/usdMtlx/pch.h                         | 12 ------------
+ pxr/usd/usdPhysics/CMakeLists.txt             |  1 -
+ pxr/usd/usdPhysics/pch.h                      | 12 ------------
+ pxr/usd/usdProc/pch.h                         | 11 -----------
+ pxr/usd/usdRender/pch.h                       | 11 -----------
+ pxr/usd/usdRi/pch.h                           | 11 -----------
+ pxr/usd/usdUI/pch.h                           | 11 -----------
+ pxr/usdImaging/usdAppUtils/pch.h              | 11 -----------
+ pxr/usdImaging/usdImagingGL/CMakeLists.txt    |  1 -
+ pxr/usdImaging/usdImagingGL/pch.h             | 12 ------------
+ pxr/usdImaging/usdProcImaging/pch.h           | 12 ------------
+ pxr/usdImaging/usdRiPxrImaging/CMakeLists.txt |  1 -
+ pxr/usdImaging/usdRiPxrImaging/pch.h          | 12 ------------
+ pxr/usdImaging/usdSkelImaging/pch.h           | 14 --------------
+ pxr/usdImaging/usdVolImaging/pch.h            | 12 ------------
+ pxr/usdImaging/usdviewq/pch.h                 | 11 -----------
+ 24 files changed, 1 insertion(+), 203 deletions(-)
+
+diff --git a/pxr/imaging/plugin/hdEmbree/CMakeLists.txt b/pxr/imaging/plugin/hdEmbree/CMakeLists.txt
+index a1f443b9cd..96ac989d6c 100644
+--- a/pxr/imaging/plugin/hdEmbree/CMakeLists.txt
++++ b/pxr/imaging/plugin/hdEmbree/CMakeLists.txt
+@@ -21,7 +21,6 @@ pxr_plugin(hdEmbree
+         hf
+         hd
+         hdx
+-        TBB::tbb
+         ${EMBREE_LIBRARY}
+ 
+     INCLUDE_DIRS
+diff --git a/pxr/imaging/plugin/hdEmbree/pch.h b/pxr/imaging/plugin/hdEmbree/pch.h
+index 200633939c..fcc231c65b 100644
+--- a/pxr/imaging/plugin/hdEmbree/pch.h
++++ b/pxr/imaging/plugin/hdEmbree/pch.h
+@@ -86,15 +86,6 @@
+ #include <embree3/rtcore.h>
+ #include <embree3/rtcore_geometry.h>
+ #include <embree3/rtcore_ray.h>
+-#include <tbb/blocked_range.h>
+-#include <tbb/cache_aligned_allocator.h>
+-#include <tbb/concurrent_hash_map.h>
+-#include <tbb/concurrent_queue.h>
+-#include <tbb/enumerable_thread_specific.h>
+-#include <tbb/parallel_for.h>
+-#include <tbb/parallel_for_each.h>
+-#include <tbb/spin_mutex.h>
+-#include <tbb/task_group.h>
+ #ifdef PXR_PYTHON_SUPPORT_ENABLED
+ #include "pxr/base/tf/pySafePython.h"
+ #endif // PXR_PYTHON_SUPPORT_ENABLED
+diff --git a/pxr/imaging/plugin/hdStorm/CMakeLists.txt b/pxr/imaging/plugin/hdStorm/CMakeLists.txt
+index b8b49203d8..c1805b6014 100644
+--- a/pxr/imaging/plugin/hdStorm/CMakeLists.txt
++++ b/pxr/imaging/plugin/hdStorm/CMakeLists.txt
+@@ -26,7 +26,6 @@ pxr_plugin(hdStorm
+         hd
+         hdSt
+         ${OPENSUBDIV_LIBRARIES}
+-        TBB::tbb
+ 
+     INCLUDE_DIRS
+         ${OPENSUBDIV_INCLUDE_DIR}
+diff --git a/pxr/imaging/plugin/hdStorm/pch.h b/pxr/imaging/plugin/hdStorm/pch.h
+index cca539da80..8775e2fd4d 100644
+--- a/pxr/imaging/plugin/hdStorm/pch.h
++++ b/pxr/imaging/plugin/hdStorm/pch.h
+@@ -75,10 +75,6 @@
+ #undef toupper
+ #endif
+ #endif // PXR_PYTHON_SUPPORT_ENABLED
+-#include <tbb/cache_aligned_allocator.h>
+-#include <tbb/concurrent_hash_map.h>
+-#include <tbb/concurrent_queue.h>
+-#include <tbb/spin_mutex.h>
+ #ifdef PXR_PYTHON_SUPPORT_ENABLED
+ #include "pxr/base/tf/pySafePython.h"
+ #endif // PXR_PYTHON_SUPPORT_ENABLED
+diff --git a/pxr/usd/ar/resolver.cpp b/pxr/usd/ar/resolver.cpp
+index a902291098..19acab4591 100644
+--- a/pxr/usd/ar/resolver.cpp
++++ b/pxr/usd/ar/resolver.cpp
+@@ -35,6 +35,7 @@
+ #include "pxr/base/tf/unicodeUtils.h"
+ 
+ #include <tbb/concurrent_hash_map.h>
++#include <tbb/enumerable_thread_specific.h>
+ 
+ #include <memory>
+ #include <mutex>
+diff --git a/pxr/usd/usdHydra/pch.h b/pxr/usd/usdHydra/pch.h
+index e62a1c609e..d4645f13f9 100644
+--- a/pxr/usd/usdHydra/pch.h
++++ b/pxr/usd/usdHydra/pch.h
+@@ -91,17 +91,6 @@
+ #undef toupper
+ #endif
+ #endif // PXR_PYTHON_SUPPORT_ENABLED
+-#include <tbb/blocked_range.h>
+-#include <tbb/cache_aligned_allocator.h>
+-#include <tbb/concurrent_hash_map.h>
+-#include <tbb/concurrent_queue.h>
+-#include <tbb/concurrent_unordered_set.h>
+-#include <tbb/concurrent_vector.h>
+-#include <tbb/enumerable_thread_specific.h>
+-#include <tbb/spin_mutex.h>
+-#include <tbb/spin_rw_mutex.h>
+-#include <tbb/task.h>
+-#include <tbb/task_group.h>
+ #ifdef PXR_PYTHON_SUPPORT_ENABLED
+ #include "pxr/base/tf/pySafePython.h"
+ #endif // PXR_PYTHON_SUPPORT_ENABLED
+diff --git a/pxr/usd/usdLux/pch.h b/pxr/usd/usdLux/pch.h
+index 4b1e8f8001..cef4a29a6e 100644
+--- a/pxr/usd/usdLux/pch.h
++++ b/pxr/usd/usdLux/pch.h
+@@ -99,17 +99,6 @@
+ #undef toupper
+ #endif
+ #endif // PXR_PYTHON_SUPPORT_ENABLED
+-#include <tbb/blocked_range.h>
+-#include <tbb/cache_aligned_allocator.h>
+-#include <tbb/concurrent_hash_map.h>
+-#include <tbb/concurrent_queue.h>
+-#include <tbb/concurrent_unordered_set.h>
+-#include <tbb/concurrent_vector.h>
+-#include <tbb/enumerable_thread_specific.h>
+-#include <tbb/spin_mutex.h>
+-#include <tbb/spin_rw_mutex.h>
+-#include <tbb/task.h>
+-#include <tbb/task_group.h>
+ #ifdef PXR_PYTHON_SUPPORT_ENABLED
+ #include "pxr/base/tf/pySafePython.h"
+ #endif // PXR_PYTHON_SUPPORT_ENABLED
+diff --git a/pxr/usd/usdMedia/pch.h b/pxr/usd/usdMedia/pch.h
+index cd2273423e..7766c13c91 100644
+--- a/pxr/usd/usdMedia/pch.h
++++ b/pxr/usd/usdMedia/pch.h
+@@ -92,17 +92,6 @@
+ #undef toupper
+ #endif
+ #endif // PXR_PYTHON_SUPPORT_ENABLED
+-#include <tbb/blocked_range.h>
+-#include <tbb/cache_aligned_allocator.h>
+-#include <tbb/concurrent_hash_map.h>
+-#include <tbb/concurrent_queue.h>
+-#include <tbb/concurrent_unordered_set.h>
+-#include <tbb/concurrent_vector.h>
+-#include <tbb/enumerable_thread_specific.h>
+-#include <tbb/spin_mutex.h>
+-#include <tbb/spin_rw_mutex.h>
+-#include <tbb/task.h>
+-#include <tbb/task_group.h>
+ #ifdef PXR_PYTHON_SUPPORT_ENABLED
+ #include "pxr/base/tf/pySafePython.h"
+ #endif // PXR_PYTHON_SUPPORT_ENABLED
+diff --git a/pxr/usd/usdMtlx/pch.h b/pxr/usd/usdMtlx/pch.h
+index ee438b747c..5663769d7f 100644
+--- a/pxr/usd/usdMtlx/pch.h
++++ b/pxr/usd/usdMtlx/pch.h
+@@ -114,18 +114,6 @@
+ #undef toupper
+ #endif
+ #endif // PXR_PYTHON_SUPPORT_ENABLED
+-#include <tbb/blocked_range.h>
+-#include <tbb/cache_aligned_allocator.h>
+-#include <tbb/concurrent_hash_map.h>
+-#include <tbb/concurrent_queue.h>
+-#include <tbb/concurrent_unordered_map.h>
+-#include <tbb/concurrent_unordered_set.h>
+-#include <tbb/concurrent_vector.h>
+-#include <tbb/enumerable_thread_specific.h>
+-#include <tbb/spin_mutex.h>
+-#include <tbb/spin_rw_mutex.h>
+-#include <tbb/task.h>
+-#include <tbb/task_group.h>
+ #ifdef PXR_PYTHON_SUPPORT_ENABLED
+ #include "pxr/base/tf/pySafePython.h"
+ #endif // PXR_PYTHON_SUPPORT_ENABLED
+diff --git a/pxr/usd/usdPhysics/CMakeLists.txt b/pxr/usd/usdPhysics/CMakeLists.txt
+index a201b88ec5..4199cc9b99 100644
+--- a/pxr/usd/usdPhysics/CMakeLists.txt
++++ b/pxr/usd/usdPhysics/CMakeLists.txt
+@@ -13,7 +13,6 @@ pxr_library(usdPhysics
+         usdShade
+         work
+         ${Boost_PYTHON_LIBRARY}
+-        TBB::tbb
+ 
+     INCLUDE_DIRS
+         ${Boost_INCLUDE_DIRS}
+diff --git a/pxr/usd/usdPhysics/pch.h b/pxr/usd/usdPhysics/pch.h
+index eefb76388e..47de0b6c60 100644
+--- a/pxr/usd/usdPhysics/pch.h
++++ b/pxr/usd/usdPhysics/pch.h
+@@ -100,18 +100,6 @@
+ #undef toupper
+ #endif
+ #endif // PXR_PYTHON_SUPPORT_ENABLED
+-#include <tbb/blocked_range.h>
+-#include <tbb/cache_aligned_allocator.h>
+-#include <tbb/concurrent_hash_map.h>
+-#include <tbb/concurrent_queue.h>
+-#include <tbb/concurrent_unordered_map.h>
+-#include <tbb/concurrent_unordered_set.h>
+-#include <tbb/concurrent_vector.h>
+-#include <tbb/enumerable_thread_specific.h>
+-#include <tbb/spin_mutex.h>
+-#include <tbb/spin_rw_mutex.h>
+-#include <tbb/task.h>
+-#include <tbb/task_group.h>
+ #ifdef PXR_PYTHON_SUPPORT_ENABLED
+ #include "pxr/base/tf/pySafePython.h"
+ #endif // PXR_PYTHON_SUPPORT_ENABLED
+diff --git a/pxr/usd/usdProc/pch.h b/pxr/usd/usdProc/pch.h
+index f8e8af37dd..8a432692ca 100644
+--- a/pxr/usd/usdProc/pch.h
++++ b/pxr/usd/usdProc/pch.h
+@@ -90,17 +90,6 @@
+ #undef toupper
+ #endif
+ #endif // PXR_PYTHON_SUPPORT_ENABLED
+-#include <tbb/blocked_range.h>
+-#include <tbb/cache_aligned_allocator.h>
+-#include <tbb/concurrent_hash_map.h>
+-#include <tbb/concurrent_queue.h>
+-#include <tbb/concurrent_unordered_set.h>
+-#include <tbb/concurrent_vector.h>
+-#include <tbb/enumerable_thread_specific.h>
+-#include <tbb/spin_mutex.h>
+-#include <tbb/spin_rw_mutex.h>
+-#include <tbb/task.h>
+-#include <tbb/task_group.h>
+ #ifdef PXR_PYTHON_SUPPORT_ENABLED
+ #include "pxr/base/tf/pySafePython.h"
+ #endif // PXR_PYTHON_SUPPORT_ENABLED
+diff --git a/pxr/usd/usdRender/pch.h b/pxr/usd/usdRender/pch.h
+index af51fc4fd6..b8fb62f01c 100644
+--- a/pxr/usd/usdRender/pch.h
++++ b/pxr/usd/usdRender/pch.h
+@@ -91,17 +91,6 @@
+ #undef toupper
+ #endif
+ #endif // PXR_PYTHON_SUPPORT_ENABLED
+-#include <tbb/blocked_range.h>
+-#include <tbb/cache_aligned_allocator.h>
+-#include <tbb/concurrent_hash_map.h>
+-#include <tbb/concurrent_queue.h>
+-#include <tbb/concurrent_unordered_set.h>
+-#include <tbb/concurrent_vector.h>
+-#include <tbb/enumerable_thread_specific.h>
+-#include <tbb/spin_mutex.h>
+-#include <tbb/spin_rw_mutex.h>
+-#include <tbb/task.h>
+-#include <tbb/task_group.h>
+ #ifdef PXR_PYTHON_SUPPORT_ENABLED
+ #include "pxr/base/tf/pySafePython.h"
+ #endif // PXR_PYTHON_SUPPORT_ENABLED
+diff --git a/pxr/usd/usdRi/pch.h b/pxr/usd/usdRi/pch.h
+index 2c939b9801..8b39d1bb13 100644
+--- a/pxr/usd/usdRi/pch.h
++++ b/pxr/usd/usdRi/pch.h
+@@ -94,17 +94,6 @@
+ #undef toupper
+ #endif
+ #endif // PXR_PYTHON_SUPPORT_ENABLED
+-#include <tbb/blocked_range.h>
+-#include <tbb/cache_aligned_allocator.h>
+-#include <tbb/concurrent_hash_map.h>
+-#include <tbb/concurrent_queue.h>
+-#include <tbb/concurrent_unordered_set.h>
+-#include <tbb/concurrent_vector.h>
+-#include <tbb/enumerable_thread_specific.h>
+-#include <tbb/spin_mutex.h>
+-#include <tbb/spin_rw_mutex.h>
+-#include <tbb/task.h>
+-#include <tbb/task_group.h>
+ #ifdef PXR_PYTHON_SUPPORT_ENABLED
+ #include "pxr/base/tf/pySafePython.h"
+ #endif // PXR_PYTHON_SUPPORT_ENABLED
+diff --git a/pxr/usd/usdUI/pch.h b/pxr/usd/usdUI/pch.h
+index 3b58a92a35..b77916122b 100644
+--- a/pxr/usd/usdUI/pch.h
++++ b/pxr/usd/usdUI/pch.h
+@@ -90,17 +90,6 @@
+ #undef toupper
+ #endif
+ #endif // PXR_PYTHON_SUPPORT_ENABLED
+-#include <tbb/blocked_range.h>
+-#include <tbb/cache_aligned_allocator.h>
+-#include <tbb/concurrent_hash_map.h>
+-#include <tbb/concurrent_queue.h>
+-#include <tbb/concurrent_unordered_set.h>
+-#include <tbb/concurrent_vector.h>
+-#include <tbb/enumerable_thread_specific.h>
+-#include <tbb/spin_mutex.h>
+-#include <tbb/spin_rw_mutex.h>
+-#include <tbb/task.h>
+-#include <tbb/task_group.h>
+ #ifdef PXR_PYTHON_SUPPORT_ENABLED
+ #include "pxr/base/tf/pySafePython.h"
+ #endif // PXR_PYTHON_SUPPORT_ENABLED
+diff --git a/pxr/usdImaging/usdAppUtils/pch.h b/pxr/usdImaging/usdAppUtils/pch.h
+index f33d34d8b0..ec499a247a 100644
+--- a/pxr/usdImaging/usdAppUtils/pch.h
++++ b/pxr/usdImaging/usdAppUtils/pch.h
+@@ -105,17 +105,6 @@
+ #undef toupper
+ #endif
+ #endif // PXR_PYTHON_SUPPORT_ENABLED
+-#include <tbb/blocked_range.h>
+-#include <tbb/cache_aligned_allocator.h>
+-#include <tbb/concurrent_hash_map.h>
+-#include <tbb/concurrent_queue.h>
+-#include <tbb/concurrent_unordered_set.h>
+-#include <tbb/concurrent_vector.h>
+-#include <tbb/enumerable_thread_specific.h>
+-#include <tbb/spin_mutex.h>
+-#include <tbb/spin_rw_mutex.h>
+-#include <tbb/task.h>
+-#include <tbb/task_group.h>
+ #ifdef PXR_PYTHON_SUPPORT_ENABLED
+ #include "pxr/base/tf/pySafePython.h"
+ #endif // PXR_PYTHON_SUPPORT_ENABLED
+diff --git a/pxr/usdImaging/usdImagingGL/CMakeLists.txt b/pxr/usdImaging/usdImagingGL/CMakeLists.txt
+index 62a93412bf..dcd6896f6a 100644
+--- a/pxr/usdImaging/usdImagingGL/CMakeLists.txt
++++ b/pxr/usdImaging/usdImagingGL/CMakeLists.txt
+@@ -33,7 +33,6 @@ pxr_library(usdImagingGL
+         ar
+         ${Boost_PYTHON_LIBRARY}
+         ${PYTHON_LIBRARIES}
+-        TBB::tbb
+ 
+     INCLUDE_DIRS
+         ${PYTHON_INCLUDE_PATH}
+diff --git a/pxr/usdImaging/usdImagingGL/pch.h b/pxr/usdImaging/usdImagingGL/pch.h
+index c3eb9e0ade..93a5a2dd06 100644
+--- a/pxr/usdImaging/usdImagingGL/pch.h
++++ b/pxr/usdImaging/usdImagingGL/pch.h
+@@ -103,18 +103,6 @@
+ #undef toupper
+ #endif
+ #endif // PXR_PYTHON_SUPPORT_ENABLED
+-#include <tbb/blocked_range.h>
+-#include <tbb/cache_aligned_allocator.h>
+-#include <tbb/concurrent_hash_map.h>
+-#include <tbb/concurrent_queue.h>
+-#include <tbb/concurrent_unordered_map.h>
+-#include <tbb/concurrent_unordered_set.h>
+-#include <tbb/concurrent_vector.h>
+-#include <tbb/enumerable_thread_specific.h>
+-#include <tbb/spin_mutex.h>
+-#include <tbb/spin_rw_mutex.h>
+-#include <tbb/task.h>
+-#include <tbb/task_group.h>
+ #ifdef PXR_PYTHON_SUPPORT_ENABLED
+ #include "pxr/base/tf/pySafePython.h"
+ #endif // PXR_PYTHON_SUPPORT_ENABLED
+diff --git a/pxr/usdImaging/usdProcImaging/pch.h b/pxr/usdImaging/usdProcImaging/pch.h
+index ae10fe25a5..830a6abf10 100644
+--- a/pxr/usdImaging/usdProcImaging/pch.h
++++ b/pxr/usdImaging/usdProcImaging/pch.h
+@@ -86,18 +86,6 @@
+ #undef toupper
+ #endif
+ #endif // PXR_PYTHON_SUPPORT_ENABLED
+-#include <tbb/blocked_range.h>
+-#include <tbb/cache_aligned_allocator.h>
+-#include <tbb/concurrent_hash_map.h>
+-#include <tbb/concurrent_queue.h>
+-#include <tbb/concurrent_unordered_map.h>
+-#include <tbb/concurrent_unordered_set.h>
+-#include <tbb/concurrent_vector.h>
+-#include <tbb/enumerable_thread_specific.h>
+-#include <tbb/spin_mutex.h>
+-#include <tbb/spin_rw_mutex.h>
+-#include <tbb/task.h>
+-#include <tbb/task_group.h>
+ #ifdef PXR_PYTHON_SUPPORT_ENABLED
+ #include "pxr/base/tf/pySafePython.h"
+ #endif // PXR_PYTHON_SUPPORT_ENABLED
+diff --git a/pxr/usdImaging/usdRiPxrImaging/CMakeLists.txt b/pxr/usdImaging/usdRiPxrImaging/CMakeLists.txt
+index 8aaff5ff32..1313339fa5 100644
+--- a/pxr/usdImaging/usdRiPxrImaging/CMakeLists.txt
++++ b/pxr/usdImaging/usdRiPxrImaging/CMakeLists.txt
+@@ -19,7 +19,6 @@ pxr_library(usdRiPxrImaging
+         usdImaging
+         usdVol
+         ar
+-        TBB::tbb
+ 
+     PUBLIC_CLASSES
+         pxrCameraAPIAdapter
+diff --git a/pxr/usdImaging/usdRiPxrImaging/pch.h b/pxr/usdImaging/usdRiPxrImaging/pch.h
+index ae10fe25a5..830a6abf10 100644
+--- a/pxr/usdImaging/usdRiPxrImaging/pch.h
++++ b/pxr/usdImaging/usdRiPxrImaging/pch.h
+@@ -86,18 +86,6 @@
+ #undef toupper
+ #endif
+ #endif // PXR_PYTHON_SUPPORT_ENABLED
+-#include <tbb/blocked_range.h>
+-#include <tbb/cache_aligned_allocator.h>
+-#include <tbb/concurrent_hash_map.h>
+-#include <tbb/concurrent_queue.h>
+-#include <tbb/concurrent_unordered_map.h>
+-#include <tbb/concurrent_unordered_set.h>
+-#include <tbb/concurrent_vector.h>
+-#include <tbb/enumerable_thread_specific.h>
+-#include <tbb/spin_mutex.h>
+-#include <tbb/spin_rw_mutex.h>
+-#include <tbb/task.h>
+-#include <tbb/task_group.h>
+ #ifdef PXR_PYTHON_SUPPORT_ENABLED
+ #include "pxr/base/tf/pySafePython.h"
+ #endif // PXR_PYTHON_SUPPORT_ENABLED
+diff --git a/pxr/usdImaging/usdSkelImaging/pch.h b/pxr/usdImaging/usdSkelImaging/pch.h
+index beb4e316bb..830a6abf10 100644
+--- a/pxr/usdImaging/usdSkelImaging/pch.h
++++ b/pxr/usdImaging/usdSkelImaging/pch.h
+@@ -86,20 +86,6 @@
+ #undef toupper
+ #endif
+ #endif // PXR_PYTHON_SUPPORT_ENABLED
+-#include <tbb/blocked_range.h>
+-#include <tbb/cache_aligned_allocator.h>
+-#include <tbb/concurrent_hash_map.h>
+-#include <tbb/concurrent_queue.h>
+-#include <tbb/concurrent_unordered_map.h>
+-#include <tbb/concurrent_unordered_set.h>
+-#include <tbb/concurrent_vector.h>
+-#include <tbb/enumerable_thread_specific.h>
+-#include <tbb/parallel_for.h>
+-#include <tbb/parallel_for_each.h>
+-#include <tbb/spin_mutex.h>
+-#include <tbb/spin_rw_mutex.h>
+-#include <tbb/task.h>
+-#include <tbb/task_group.h>
+ #ifdef PXR_PYTHON_SUPPORT_ENABLED
+ #include "pxr/base/tf/pySafePython.h"
+ #endif // PXR_PYTHON_SUPPORT_ENABLED
+diff --git a/pxr/usdImaging/usdVolImaging/pch.h b/pxr/usdImaging/usdVolImaging/pch.h
+index ae10fe25a5..830a6abf10 100644
+--- a/pxr/usdImaging/usdVolImaging/pch.h
++++ b/pxr/usdImaging/usdVolImaging/pch.h
+@@ -86,18 +86,6 @@
+ #undef toupper
+ #endif
+ #endif // PXR_PYTHON_SUPPORT_ENABLED
+-#include <tbb/blocked_range.h>
+-#include <tbb/cache_aligned_allocator.h>
+-#include <tbb/concurrent_hash_map.h>
+-#include <tbb/concurrent_queue.h>
+-#include <tbb/concurrent_unordered_map.h>
+-#include <tbb/concurrent_unordered_set.h>
+-#include <tbb/concurrent_vector.h>
+-#include <tbb/enumerable_thread_specific.h>
+-#include <tbb/spin_mutex.h>
+-#include <tbb/spin_rw_mutex.h>
+-#include <tbb/task.h>
+-#include <tbb/task_group.h>
+ #ifdef PXR_PYTHON_SUPPORT_ENABLED
+ #include "pxr/base/tf/pySafePython.h"
+ #endif // PXR_PYTHON_SUPPORT_ENABLED
+diff --git a/pxr/usdImaging/usdviewq/pch.h b/pxr/usdImaging/usdviewq/pch.h
+index 37157ec09f..b84f9540e2 100644
+--- a/pxr/usdImaging/usdviewq/pch.h
++++ b/pxr/usdImaging/usdviewq/pch.h
+@@ -92,17 +92,6 @@
+ #undef toupper
+ #endif
+ #endif // PXR_PYTHON_SUPPORT_ENABLED
+-#include <tbb/blocked_range.h>
+-#include <tbb/cache_aligned_allocator.h>
+-#include <tbb/concurrent_hash_map.h>
+-#include <tbb/concurrent_queue.h>
+-#include <tbb/concurrent_unordered_set.h>
+-#include <tbb/concurrent_vector.h>
+-#include <tbb/enumerable_thread_specific.h>
+-#include <tbb/spin_mutex.h>
+-#include <tbb/spin_rw_mutex.h>
+-#include <tbb/task.h>
+-#include <tbb/task_group.h>
+ #ifdef PXR_PYTHON_SUPPORT_ENABLED
+ #include "pxr/base/tf/pySafePython.h"
+ #endif // PXR_PYTHON_SUPPORT_ENABLED
+
+From 9fbff9e0cc7c02b261af42d3f837727939c0ce0e Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Andr=C3=A9a=20MACHIZAUD?= <machizau@adobe.com>
+Date: Mon, 5 Aug 2024 10:20:18 +0200
+Subject: [PATCH 4/6] Add missing call to `find_dependency(TBB ..)` to resolve
+ indirect dependencies
+
+---
+ pxr/pxrConfig.cmake.in | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/pxr/pxrConfig.cmake.in b/pxr/pxrConfig.cmake.in
+index b26f1ea31b..74b3c936f2 100644
+--- a/pxr/pxrConfig.cmake.in
++++ b/pxr/pxrConfig.cmake.in
+@@ -16,6 +16,10 @@ set(PXR_MINOR_VERSION "@PXR_MINOR_VERSION@")
+ set(PXR_PATCH_VERSION "@PXR_PATCH_VERSION@")
+ set(PXR_VERSION "@PXR_VERSION@")
+ 
++include(CMakeFindDependencyMacro)
++
++find_dependency(TBB)
++
+ # If Python support was enabled for this USD build, find the import
+ # targets by invoking the appropriate FindPython module. Use the same
+ # LIBRARY and INCLUDE_DIR settings from the original build if they
+
+From 8575711ecf14e439c77d6c0333478392da7ec26e Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Andr=C3=A9a=20MACHIZAUD?= <machizau@adobe.com>
+Date: Tue, 6 Aug 2024 15:09:03 +0200
+Subject: [PATCH 5/6] Fix typo in FindTBB
+
+---
+ cmake/modules/FindTBB.cmake | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/cmake/modules/FindTBB.cmake b/cmake/modules/FindTBB.cmake
+index 1da6fe695a..e26be28b94 100644
+--- a/cmake/modules/FindTBB.cmake
++++ b/cmake/modules/FindTBB.cmake
+@@ -224,13 +224,13 @@ if(NOT TBB_FOUND)
+   endif()
+ 
+   if(TBB_VERSION VERSION_LESS 4.3)
+-    set(TBB_SEARCH_COMPOMPONENTS tbb_preview tbbmalloc tbb)
++    set(TBB_SEARCH_COMPONENTS tbb_preview tbbmalloc tbb)
+   else()
+-    set(TBB_SEARCH_COMPOMPONENTS tbb_preview tbbmalloc_proxy tbbmalloc tbb)
++    set(TBB_SEARCH_COMPONENTS tbb_preview tbbmalloc_proxy tbbmalloc tbb)
+   endif()
+ 
+   # Find each component
+-  foreach(_comp ${TBB_SEARCH_COMPOMPONENTS})
++  foreach(_comp ${TBB_SEARCH_COMPONENTS})
+     if(";${TBB_FIND_COMPONENTS};tbb" MATCHES ";${_comp};")
+ 
+       if(${_comp} STREQUAL tbb)
+
+From a1075a60918cce9554cc9307c96a3e150dd0463f Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Andr=C3=A9a=20MACHIZAUD?= <machizau@adobe.com>
+Date: Tue, 6 Aug 2024 15:41:54 +0200
+Subject: [PATCH 6/6] Implement heuristic to resolve import/shared libraries on
+ Windows
+
+---
+ cmake/modules/FindTBB.cmake | 117 ++++++++++++++++++++++++++++--------
+ 1 file changed, 93 insertions(+), 24 deletions(-)
+
+diff --git a/cmake/modules/FindTBB.cmake b/cmake/modules/FindTBB.cmake
+index e26be28b94..8e1494feca 100644
+--- a/cmake/modules/FindTBB.cmake
++++ b/cmake/modules/FindTBB.cmake
+@@ -137,21 +137,27 @@ if(NOT TBB_FOUND)
+       set(TBB_ARCHITECTURE "ia32")
+     endif()
+ 
+-    # Set the TBB search library path search suffix based on the version of VC
++    # Set the TBB search library/runtime path search suffix based on the version of VC
+     if(WINDOWS_STORE)
+       set(TBB_LIB_PATH_SUFFIX "lib/${TBB_ARCHITECTURE}/vc11_ui")
++      set(TBB_RUNTIME_PATH_SUFFIX "bin/${TBB_ARCHITECTURE}/vc11_ui")
+     elseif(MSVC14)
+       set(TBB_LIB_PATH_SUFFIX "lib/${TBB_ARCHITECTURE}/vc14")
++      set(TBB_RUNTIME_PATH_SUFFIX "bin/${TBB_ARCHITECTURE}/vc14")
+     elseif(MSVC12)
+       set(TBB_LIB_PATH_SUFFIX "lib/${TBB_ARCHITECTURE}/vc12")
++      set(TBB_RUNTIME_PATH_SUFFIX "bin/${TBB_ARCHITECTURE}/vc12")
+     elseif(MSVC11)
+       set(TBB_LIB_PATH_SUFFIX "lib/${TBB_ARCHITECTURE}/vc11")
++      set(TBB_RUNTIME_PATH_SUFFIX "bin/${TBB_ARCHITECTURE}/vc11")
+     elseif(MSVC10)
+       set(TBB_LIB_PATH_SUFFIX "lib/${TBB_ARCHITECTURE}/vc10")
++      set(TBB_RUNTIME_PATH_SUFFIX "bin/${TBB_ARCHITECTURE}/vc10")
+     endif()
+ 
+-    # Add the library path search suffix for the VC independent version of TBB
++    # Add the library/runtime path search suffix for the VC independent version of TBB
+     list(APPEND TBB_LIB_PATH_SUFFIX "lib/${TBB_ARCHITECTURE}/vc_mt")
++    list(APPEND TBB_RUNTIME_PATH_SUFFIX "bin/${TBB_ARCHITECTURE}/vc_mt")
+ 
+   elseif(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+     # OS X
+@@ -176,12 +182,13 @@ if(NOT TBB_FOUND)
+     endif()
+   endif()
+   
+-  # The above TBB_LIB_PATH_SUFFIX is based on where Intel puts the libraries
++  # The above TBB_LIB_PATH_SUFFIX/TBB_RUNTIME_PATH_SUFFIX is based on where Intel puts the libraries
+   # in the package of prebuilt libraries it distributes. However, users may
+-  # install these shared libraries into the more conventional "lib" directory
++  # install these shared libraries into the more conventional "lib"/"bin" directory
+   # (especially when building from source), so we add that as an additional
+   # location to search.
+   list(APPEND TBB_LIB_PATH_SUFFIX "lib")
++  list(APPEND TBB_RUNTIME_PATH_SUFFIX "bin")
+ 
+   ##################################
+   # Find the TBB include dir
+@@ -250,6 +257,32 @@ if(NOT TBB_FOUND)
+           PATHS ${TBB_DEFAULT_SEARCH_DIR} ENV LIBRARY_PATH
+           PATH_SUFFIXES ${TBB_LIB_PATH_SUFFIX})
+ 
++      # On Windows platforms also looks for .dll binaries.
++      # If we find some, assume TBB is built as a shared library with the .lib/.dll pair,
++      # otherwise assume it is built as a static library
++      set(TBB_${_comp}_TARGET_TYPE SHARED)
++      if(WIN32)
++        find_file(TBB_${_comp}_SHARED_LIBRARY_RELEASE
++            NAMES ${CMAKE_SHARED_LIBRARY_PREFIX}${_lib_name}${CMAKE_SHARED_LIBRARY_SUFFIX}
++            HINTS ${TBB_LIBRARY} ${TBB_SEARCH_DIR}
++            PATHS ${TBB_DEFAULT_SEARCH_DIR} ENV LIBRARY_PATH
++            PATH_SUFFIXES ${TBB_RUNTIME_PATH_SUFFIX})
++        
++        find_file(TBB_${_comp}_SHARED_LIBRARY_DEBUG
++            NAMES ${CMAKE_SHARED_LIBRARY_PREFIX}${_lib_name}_debug${CMAKE_SHARED_LIBRARY_SUFFIX}
++            HINTS ${TBB_LIBRARY} ${TBB_SEARCH_DIR}
++            PATHS ${TBB_DEFAULT_SEARCH_DIR} ENV LIBRARY_PATH
++            PATH_SUFFIXES ${TBB_RUNTIME_PATH_SUFFIX})
++      
++        if(TBB_${_comp}_LIBRARY_RELEASE AND TBB_${_comp}_SHARED_LIBRARY_RELEASE)
++          set(TBB_${_comp}_TARGET_TYPE SHARED)
++        elseif(TBB_${_comp}_LIBRARY_DEBUG AND TBB_${_comp}_SHARED_LIBRARY_DEBUG)
++          set(TBB_${_comp}_TARGET_TYPE SHARED)
++        else()
++          set(TBB_${_comp}_TARGET_TYPE STATIC)
++        endif()
++      endif()
++
+       if(TBB_${_comp}_LIBRARY_DEBUG)
+         list(APPEND TBB_LIBRARIES_DEBUG "${TBB_${_comp}_LIBRARY_DEBUG}")
+       endif()
+@@ -270,6 +303,7 @@ if(NOT TBB_FOUND)
+       mark_as_advanced(TBB_${_comp}_LIBRARY_RELEASE)
+       mark_as_advanced(TBB_${_comp}_LIBRARY_DEBUG)
+       mark_as_advanced(TBB_${_comp}_LIBRARY)
++      mark_as_advanced(TBB_${_comp}_TARGET_TYPE)
+ 
+     endif()
+   endforeach()
+@@ -302,26 +336,61 @@ if(NOT TBB_FOUND)
+   ##################################
+ 
+   if(NOT CMAKE_VERSION VERSION_LESS 3.0 AND TBB_FOUND)
+-    add_library(TBB::tbb SHARED IMPORTED)
+-    set_target_properties(TBB::tbb PROPERTIES
+-          INTERFACE_INCLUDE_DIRECTORIES  ${TBB_INCLUDE_DIRS}
+-          IMPORTED_LOCATION              ${TBB_LIBRARIES})
+-    if(TBB_LIBRARIES_RELEASE AND TBB_LIBRARIES_DEBUG)
+-      set_target_properties(TBB::tbb PROPERTIES
+-          INTERFACE_COMPILE_DEFINITIONS "$<$<OR:$<CONFIG:Debug>,$<CONFIG:RelWithDebInfo>>:TBB_USE_DEBUG=1>"
+-          IMPORTED_LOCATION_DEBUG          ${TBB_LIBRARIES_DEBUG}
+-          IMPORTED_LOCATION_RELWITHDEBINFO ${TBB_LIBRARIES_DEBUG}
+-          IMPORTED_LOCATION_RELEASE        ${TBB_LIBRARIES_RELEASE}
+-          IMPORTED_LOCATION_MINSIZEREL     ${TBB_LIBRARIES_RELEASE}
+-          )
+-    elseif(TBB_LIBRARIES_RELEASE)
+-      set_target_properties(TBB::tbb PROPERTIES IMPORTED_LOCATION ${TBB_LIBRARIES_RELEASE})
+-    else()
+-      set_target_properties(TBB::tbb PROPERTIES
+-          INTERFACE_COMPILE_DEFINITIONS "${TBB_DEFINITIONS_DEBUG}"
+-          IMPORTED_LOCATION              ${TBB_LIBRARIES_DEBUG}
+-          )
+-    endif()
++
++    foreach(_comp ${TBB_SEARCH_COMPONENTS})
++      if(";${TBB_FIND_COMPONENTS};tbb" MATCHES ";${_comp};")
++
++        add_library(TBB::${_comp} ${TBB_${_comp}_TARGET_TYPE} IMPORTED)
++        set_property(TARGET TBB::${_comp} APPEND PROPERTY
++            INTERFACE_INCLUDE_DIRECTORIES ${TBB_INCLUDE_DIRS}
++        )
++
++        if(WIN32 AND TBB_${_comp}_SHARED_LIBRARY_${TBB_BUILD_TYPE})
++          set_target_properties(TBB::${_comp} PROPERTIES
++              IMPORTED_IMPLIB            ${TBB_${_comp}_LIBRARY_${TBB_BUILD_TYPE}}
++              IMPORTED_LOCATION          ${TBB_${_comp}_SHARED_LIBRARY_${TBB_BUILD_TYPE}})
++        else()
++          set_target_properties(TBB::${_comp} PROPERTIES
++              IMPORTED_LOCATION          ${TBB_${_comp}_LIBRARY_${TBB_BUILD_TYPE}})
++        endif()
++
++        if(TBB_${_comp}_LIBRARY_DEBUG)
++          set_property(TARGET TBB::${_comp} APPEND PROPERTY IMPORTED_CONFIGURATIONS DEBUG)
++          set_property(TARGET TBB::${_comp} APPEND PROPERTY INTERFACE_COMPILE_DEFINITIONS "$<$<OR:$<CONFIG:Debug>,$<CONFIG:RelWithDebInfo>>:TBB_USE_DEBUG=1>")
++
++          if(WIN32 AND TBB_${_comp}_SHARED_LIBRARY_DEBUG)
++            set_target_properties(TBB::${_comp} PROPERTIES
++                IMPORTED_IMPLIB_DEBUG            ${TBB_${_comp}_LIBRARY_DEBUG}
++                IMPORTED_IMPLIB_RELWITHDEBINFO   ${TBB_${_comp}_LIBRARY_DEBUG}
++
++                IMPORTED_LOCATION_DEBUG          ${TBB_${_comp}_SHARED_LIBRARY_DEBUG}
++                IMPORTED_LOCATION_RELWITHDEBINFO ${TBB_${_comp}_SHARED_LIBRARY_DEBUG})
++          else()
++            set_target_properties(TBB::${_comp} PROPERTIES
++                IMPORTED_LOCATION_DEBUG          ${TBB_${_comp}_LIBRARY_DEBUG}
++                IMPORTED_LOCATION_RELWITHDEBINFO ${TBB_${_comp}_LIBRARY_DEBUG})
++          endif()
++        endif()
++
++        if(TBB_${_comp}_LIBRARY_RELEASE)
++          set_property(TARGET TBB::${_comp} APPEND PROPERTY IMPORTED_CONFIGURATIONS RELEASE)
++
++          if(WIN32 AND TBB_${_comp}_SHARED_LIBRARY_RELEASE)
++            set_target_properties(TBB::${_comp} PROPERTIES
++                IMPORTED_IMPLIB_RELEASE      ${TBB_${_comp}_LIBRARY_RELEASE}
++                IMPORTED_IMPLIB_MINSIZEREL   ${TBB_${_comp}_LIBRARY_RELEASE}
++
++                IMPORTED_LOCATION_RELEASE    ${TBB_${_comp}_SHARED_LIBRARY_RELEASE}
++                IMPORTED_LOCATION_MINSIZEREL ${TBB_${_comp}_SHARED_LIBRARY_RELEASE})
++          else()
++            set_target_properties(TBB::${_comp} PROPERTIES
++                IMPORTED_LOCATION_RELEASE    ${TBB_${_comp}_LIBRARY_RELEASE}
++                IMPORTED_LOCATION_MINSIZEREL ${TBB_${_comp}_LIBRARY_RELEASE})
++          endif()
++        endif()
++
++      endif()
++    endforeach()
+   endif()
+ 
+   mark_as_advanced(TBB_INCLUDE_DIRS TBB_LIBRARIES)

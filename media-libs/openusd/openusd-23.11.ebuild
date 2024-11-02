@@ -124,11 +124,10 @@ RDEPEND+="
 			>=dev-libs/boost-1.70.0:=[python,${PYTHON_USEDEP}]
 			usdview? (
 				(
-					>=dev-python/pyside2-2.0.0[${PYTHON_USEDEP},quickcontrols2(+)]
-					dev-qt/qtquickcontrols2:5
+					>=dev-python/pyside6-2.0.0[${PYTHON_USEDEP},quick(+)]
 				)
-				dev-python/pyside2-tools[${PYTHON_USEDEP},tools(+)]
-				dev-python/shiboken2[${PYTHON_USEDEP}]
+				dev-python/pyside6-tools[${PYTHON_USEDEP},tools(+)]
+				dev-python/shiboken6[${PYTHON_USEDEP}]
 				opengl? (
 					>=dev-python/pyopengl-3.1.5[${PYTHON_USEDEP}]
 				)
@@ -154,13 +153,6 @@ BDEPEND="
 	virtual/pkgconfig
 	doc? (
 		>=app-doc/doxygen-1.8.14[dot]
-	)
-	|| (
-		(
-			<sys-devel/gcc-14
-			>=sys-devel/gcc-6.3.1
-		)
-		<sys-devel/clang-19
 	)
 "
 SRC_URI="
@@ -203,7 +195,6 @@ src_prepare() {
 	cmake_src_prepare
 
 	eapply "${FILESDIR}/${P}-tbb.patch"
-	#[[ "$(get_libdir)" =~ "lib64" ]] && eapply "${FILESDIR}/${P}-lib64.patch"
 	has_version -b ">=media-libs/embree-4" && eapply "${FILESDIR}/${P}-embree-4.patch"
 	has_version -b ">=media-libs/openimageio-2.3" && eapply "${FILESDIR}/${P}-openimageio-2.3.patch"
 

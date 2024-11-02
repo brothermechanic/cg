@@ -3,7 +3,7 @@
 
 EAPI=8
 
-PYTHON_COMPAT=( python3_{10..12} )
+PYTHON_COMPAT=( python3_{11..13} )
 OPENVDB_COMPAT=( {7..11} )
 inherit cmake desktop python-single-r1 flag-o-matic openvdb xdg-utils
 
@@ -159,7 +159,7 @@ BDEPEND="
 			<sys-devel/gcc-14
 			>=sys-devel/gcc-6.3.1
 		)
-		<sys-devel/clang-19
+		<sys-devel/clang-20
 	)
 "
 SRC_URI="
@@ -174,6 +174,7 @@ PATCHES=(
 	"${FILESDIR}/openusd-23.11-defaultfonts.patch"
 	"${FILESDIR}/openusd-21.11-gcc-11-numeric_limits.patch"
 	"${FILESDIR}/openusd-21.11-use-whole-archive-for-lld.patch"
+	"${FILESDIR}/openusd-24.08-ONEtbb-based-on-3207.patch"
 )
 S="${WORKDIR}/OpenUSD-${PV}"
 DOCS=( CHANGELOG.md README.md )
@@ -198,22 +199,9 @@ gen_pyside6_uic_file() {
 src_prepare() {
 	cmake_src_prepare
 
-	#eapply "${FILESDIR}/${PN}-24.05-tbb.patch"
-	#[[ "$(get_libdir)" =~ "lib64" ]] && eapply "${FILESDIR}/${P}-lib64.patch"
-	#has_version -b ">=media-libs/embree-4" && eapply "${FILESDIR}/${PN}-24.08-embree-4.patch"
-	#has_version -b ">=media-libs/openimageio-2.3" && eapply "${FILESDIR}/${PN}-23.11-openimageio-2.3.patch"
-
 	# Fix for #2351
 	sed -i 's|CMAKE_CXX_STANDARD 14|CMAKE_CXX_STANDARD 17|g' \
 		cmake/defaults/CXXDefaults.cmake || die
-
-  	# Change directories to standard
-  	#sed -i 's|plugin/usd|'$(get_libdir)'/usd/plugin|g' cmake/macros/{Private,Public}.cmake
- 	#sed -i 's|/pxrConfig.cmake|'$(get_libdir)'/cmake/pxr/pxrConfig.cmake|g' pxr/CMakeLists.txt
-  	#sed -i 's|${CMAKE_INSTALL_PREFIX}|${CMAKE_INSTALL_PREFIX}/lib/cmake/pxr|g' pxr/CMakeLists.txt
-  	#sed -i 's|"cmake"|"'$(get_libdir)'/cmake/pxr"|g' pxr/CMakeLists.txt
-  	#sed -i 's|${PXR_CMAKE_DIR}/cmake|${PXR_CMAKE_DIR}|g' pxr/pxrConfig.cmake.in
-  	#sed -i 's|${PXR_CMAKE_DIR}/include|/usr/include|g' pxr/pxrConfig.cmake.in
 
 	# Fix python dirs
 	if use python ; then
