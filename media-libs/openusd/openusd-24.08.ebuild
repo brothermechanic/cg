@@ -19,7 +19,7 @@ LICENSE="
 # custom - https://github.com/PixarAnimationStudios/OpenUSD/blob/v23.05/pxr/usdImaging/usdImaging/drawModeStandin.cpp#L9
 # custom - search "In consideration of your agreement"
 SLOT="0"
-KEYWORDS=""
+KEYWORDS="~amd64"
 # test USE flag is enabled upstream
 IUSE="alembic debug -doc draco embree examples hdf5 +imaging +jemalloc
 materialx -monolithic color-management opengl openimageio openvdb openexr osl
