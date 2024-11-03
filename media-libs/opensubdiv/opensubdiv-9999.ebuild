@@ -3,9 +3,7 @@
 
 EAPI=8
 
-PYTHON_COMPAT=( python3_{10..12} )
-
-CUDA_TARGETS_COMPAT=( sm_30 sm_35 sm_50 sm_52 sm_61 sm_70 sm_75 sm_86 )
+PYTHON_COMPAT=( python3_{11..13} )
 
 inherit cmake cuda flag-o-matic python-any-r1 toolchain-funcs virtualx
 
@@ -21,9 +19,9 @@ if [[ ${PV} = *9999 ]]; then
 else
 	SRC_URI="https://github.com/PixarAnimationStudios/OpenSubdiv/archive/v${MY_PV}.tar.gz -> ${P}.tar.gz"
 	KEYWORDS="~amd64 ~arm ~arm64 ~x86"
+	S="${WORKDIR}/OpenSubdiv-${MY_PV}"
 fi
 
-S="${WORKDIR}/OpenSubdiv-${MY_PV}"
 
 # Modfied Apache-2.0 license, where section 6 has been replaced.
 # See for example CMakeLists.txt for details.
@@ -36,6 +34,7 @@ RESTRICT="
 "
 REQUIRED_USE="
 	|| ( opencl opengl )
+	opengl? ( X )
 "
 
 BDEPEND="
@@ -49,9 +48,6 @@ BDEPEND="
 RDEPEND="
 	opengl? (
 		media-libs/libglvnd[X?]
-		glew? (
-			media-libs/glew:=
-		)
 		glfw? (
 			media-libs/glfw:=
 			X? (
@@ -90,6 +86,31 @@ pkg_pretend() {
 
 pkg_setup() {
 	[[ ${MERGE_TYPE} != binary ]] && use openmp && tc-check-openmp
+
+	if use cuda; then
+		# When building binary packages we build all major targets unless specified otherwise
+		if [[ -z "${CUDAARCHS+x}" ]]; then
+			case ${MERGE_TYPE} in
+				source)    CUDAARCHS="native" ;;
+				# buildonly) CUDAARCHS="all" ;;
+				buildonly) CUDAARCHS="all-major" ;;
+			esac
+		fi
+
+		# check if user provided --gpu-architecture/-arch flag instead of CUDAARCHS
+		for f in ${NVCCFLAGS}; do
+			if [[ ${f} == -arch* || ${f} == --gpu-architecture* ]]; then
+				CUDAARCHS="NVCC"
+				break
+			fi
+		done
+
+		if [[ "${CUDAARCHS}" == "NVCC" ]]; then
+			unset  CUDAARCHS
+		else
+			export CUDAARCHS
+		fi
+	fi
 }
 
 src_prepare() {
@@ -129,6 +150,8 @@ src_configure() {
 
 		# GUI
 		-DNO_OPENGL="$(usex !opengl)"
+
+		# Backends
 		-DNO_CUDA="$(usex !cuda)"
 		-DNO_OMP="$(usex !openmp)"
 		-DNO_TBB="$(usex !tbb)"
@@ -139,16 +162,9 @@ src_configure() {
 	)
 
 	if use cuda; then
-		for CT in ${CUDA_TARGETS_COMPAT[@]}; do
-			use ${CT/#/cuda_targets_} && CUDA_TARGETS+="--gpu-architecture compute_${CT#sm_*} "
-		done
-		( use cuda_targets_sm_30 || use cuda_targets_sm_35 ) && mycmakeargs+=(
-			-DCUDA_ENABLE_DEPRECATED=1
-		)
+		# The old cmake CUDA module doesn't use environment variable to initialize flags
 		mycmakeargs+=(
-			-DOSD_CUDA_NVCC_FLAGS=""
-			-DCUDA_TOOLKIT_ROOT_DIR="/opt/cuda"
-			-DCUDA_NVCC_FLAGS="-forward-unknown-opts ${NVCCFLAGS} ${CUDA_TARGETS%% }"
+			-DCUDA_NVCC_FLAGS="-forward-unknown-opts ${NVCCFLAGS}"
 		)
 	fi
 
@@ -162,14 +178,16 @@ src_configure() {
 	if use opengl; then
 		mycmakeargs+=(
 			-DNO_GLTESTS="$(usex !test)"
-			-DNO_GLEW="$(usex !glew)"
+			 # GLEW support is unmaintained infavor of their own GL handler code.
+			 # Turning this on will lead to crashes when using their GPU backend.
+			-DNO_GLEW="yes"
 			-DNO_GLFW="$(usex !glfw)"
 		)
-		if use glew; then
-			mycmakeargs+=(
-				-DGLEW_LOCATION="${ESYSROOT}/usr/$(get_libdir)"
-			)
-		fi
+#		 use glew; then
+#			mycmakeargs+=(
+#				-DGLEW_LOCATION="${ESYSROOT}/usr/$(get_libdir)"
+#			)
+#		fi
 		if use glfw; then
 			mycmakeargs+=(
 				-DGLFW_LOCATION="${ESYSROOT}/usr/$(get_libdir)"
@@ -216,5 +234,5 @@ src_test() {
 	use opengl && use X && KERNELS+=( XFB )
 	use opengl && KERNELS+=( GLSL )
 
-	virtx "${BUILD_DIR}/bin/glImaging" -w test -l 3 -s 256 256 -a -k "$(IFS=","; echo "${KERNELS[*]}")"
+	use X && virtx "${BUILD_DIR}/bin/glImaging" -w test -l 3 -s 256 256 -a -k "$(IFS=","; echo "${KERNELS[*]}")"
 }
