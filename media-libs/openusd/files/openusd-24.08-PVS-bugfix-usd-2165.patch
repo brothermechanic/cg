@@ -1,0 +1,114 @@
+From 5a4902115807fbaa9cf11338f4ea31146c6d6762 Mon Sep 17 00:00:00 2001
+From: Dmitry Tsarevich <dimhotepus@gmail.com>
+Date: Sat, 14 Jan 2023 22:19:01 +0400
+Subject: [PATCH 1/5] [usd] Reduce amount of dereferences for crate file
+
+Optimize at least debug builds.
+Improve code clarity.
+---
+ pxr/usd/usd/crateInfo.cpp | 13 +++++++------
+ 1 file changed, 7 insertions(+), 6 deletions(-)
+
+diff --git a/pxr/usd/usd/crateInfo.cpp b/pxr/usd/usd/crateInfo.cpp
+index e5cfee75a2..b85cdab132 100644
+--- a/pxr/usd/usd/crateInfo.cpp
++++ b/pxr/usd/usd/crateInfo.cpp
+@@ -56,12 +56,13 @@ UsdCrateInfo::GetSummaryStats() const
+         TF_CODING_ERROR("Invalid UsdCrateInfo object");
+     }
+     else {
+-        stats.numSpecs = _impl->crateFile->GetSpecs().size();
+-        stats.numUniquePaths = _impl->crateFile->GetPaths().size();
+-        stats.numUniqueTokens = _impl->crateFile->GetTokens().size();
+-        stats.numUniqueStrings = _impl->crateFile->GetStrings().size();
+-        stats.numUniqueFields = _impl->crateFile->GetFields().size();
+-        stats.numUniqueFieldSets = _impl->crateFile->GetNumUniqueFieldSets();
++        const std::unique_ptr<CrateFile> &crateFile = _impl->crateFile;
++        stats.numSpecs = crateFile->GetSpecs().size();
++        stats.numUniquePaths = crateFile->GetPaths().size();
++        stats.numUniqueTokens = crateFile->GetTokens().size();
++        stats.numUniqueStrings = crateFile->GetStrings().size();
++        stats.numUniqueFields = crateFile->GetFields().size();
++        stats.numUniqueFieldSets = crateFile->GetNumUniqueFieldSets();
+     }
+     return stats;
+ }
+
+From 960ddeac139b8645b5fca0d284784f84da7224b7 Mon Sep 17 00:00:00 2001
+From: Dmitry Tsarevich <dimhotepus@gmail.com>
+Date: Sat, 14 Jan 2023 03:22:59 +0400
+Subject: [PATCH 3/5] [usd] Initialize authoredStartTime to ensure no UB on
+ access to it
+
+---
+ pxr/usd/usd/clip.cpp | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/pxr/usd/usd/clip.cpp b/pxr/usd/usd/clip.cpp
+index f248d5df51..2f68f9171a 100644
+--- a/pxr/usd/usd/clip.cpp
++++ b/pxr/usd/usd/clip.cpp
+@@ -86,7 +86,8 @@ operator<<(std::ostream& out, const Usd_ClipRefPtr& clip)
+ // ------------------------------------------------------------
+ 
+ Usd_Clip::Usd_Clip()
+-    : startTime(0)
++    : authoredStartTime(0)
++    , startTime(0)
+     , endTime(0)
+     , _hasLayer(false)
+ { 
+
+From 915ea9f52a7140cb1b9da6c74c6b4a890a386b38 Mon Sep 17 00:00:00 2001
+From: Dmitry Tsarevich <dimhotepus@gmail.com>
+Date: Sat, 14 Jan 2023 03:21:24 +0400
+Subject: [PATCH 4/5] [usd] Initialize specType to ensure no UB on access to it
+
+---
+ pxr/usd/usd/crateData.cpp | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/pxr/usd/usd/crateData.cpp b/pxr/usd/usd/crateData.cpp
+index e457ebfa65..924c53c2a8 100644
+--- a/pxr/usd/usd/crateData.cpp
++++ b/pxr/usd/usd/crateData.cpp
+@@ -1031,7 +1031,7 @@ class Usd_CrateDataImpl
+     struct _SpecData {
+         _SpecData() = default;
+         explicit _SpecData(Usd_EmptySharedTagType) noexcept
+-            : fields(Usd_EmptySharedTag) {}
++            : fields(Usd_EmptySharedTag), specType(SdfSpecTypeUnknown) {}
+         inline void DetachIfNotUnique() { fields.MakeUnique(); }
+ 
+         friend inline void swap(_SpecData &l, _SpecData &r) {
+
+From ac39f623dcf170b848cc30d4b8070ef7ed10f01d Mon Sep 17 00:00:00 2001
+From: Dmitry Tsarevich <dimhotepus@gmail.com>
+Date: Sat, 14 Jan 2023 03:18:24 +0400
+Subject: [PATCH 5/5] [usd] Prevent out of bounds in _FindVersionDelimiter
+
+When _FindVersionDelimiter called with all digits string,
+it will access argument via out of bounds index (size_t max).
+
+Prevent such access by stopping when delim reaches 0.
+---
+ pxr/usd/usd/schemaRegistry.cpp | 6 +++++-
+ 1 file changed, 5 insertions(+), 1 deletion(-)
+
+diff --git a/pxr/usd/usd/schemaRegistry.cpp b/pxr/usd/usd/schemaRegistry.cpp
+index 8879a5ac43..7b414f9517 100644
+--- a/pxr/usd/usd/schemaRegistry.cpp
++++ b/pxr/usd/usd/schemaRegistry.cpp
+@@ -330,7 +330,11 @@ _FindVersionDelimiter(const std::string &idString)
+     if (!std::isdigit(idString[delim])) {
+         return std::string::npos;
+     }
+-    while (--delim >= 0) {
++
++    constexpr size_t maxDelimiterIndex = std::numeric_limits<size_t>::max();
++
++    // Till reach defined unsigned underflow.
++    while (--delim != maxDelimiterIndex) {
+         if (idString[delim] == versionDelimiter) {
+             return delim;
+         }

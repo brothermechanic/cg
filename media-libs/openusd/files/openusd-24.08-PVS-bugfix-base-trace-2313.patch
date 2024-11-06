@@ -1,0 +1,160 @@
+From 8bd919ef39d6b8fcead46a1a9119f56d2e8da943 Mon Sep 17 00:00:00 2001
+From: Dmitry Tsarevich <dimhotepus@gmail.com>
+Date: Sat, 14 Jan 2023 00:59:06 +0400
+Subject: [PATCH 1/2] [trace] Handle new node allocation failure
+
+---
+ pxr/base/trace/eventContainer.cpp | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/pxr/base/trace/eventContainer.cpp b/pxr/base/trace/eventContainer.cpp
+index 18ce5da92e..88e971f4fa 100644
+--- a/pxr/base/trace/eventContainer.cpp
++++ b/pxr/base/trace/eventContainer.cpp
+@@ -121,6 +121,8 @@ TraceEventContainer::_Node *
+ TraceEventContainer::_Node::New(size_t capacity)
+ {
+     void *p = malloc(sizeof(_Node)+sizeof(TraceEvent)*capacity);
++    if (!p) return nullptr;
++
+     TraceEvent *eventEnd = reinterpret_cast<TraceEvent*>(
+         reinterpret_cast<char *>(p) + sizeof(_Node));
+     return new (p) _Node(eventEnd, capacity);
+
+From f0e2576d57ed7b8aaf16b3610719c7a597718695 Mon Sep 17 00:00:00 2001
+From: Dmitry Tsarevich <dimhotepus@gmail.com>
+Date: Sat, 14 Jan 2023 00:59:44 +0400
+Subject: [PATCH 2/2] [trace] Create objects in place instead of copy / move
+
+---
+ pxr/base/trace/aggregateNode.cpp      |  4 ++--
+ pxr/base/trace/category.cpp           |  2 +-
+ pxr/base/trace/collection.cpp         |  5 ++---
+ pxr/base/trace/counterAccumulator.cpp | 12 ++++++------
+ pxr/base/trace/eventTreeBuilder.cpp   |  2 +-
+ pxr/base/trace/jsonSerialization.cpp  |  7 +++----
+ pxr/base/trace/reporter.cpp           |  2 +-
+ 7 files changed, 16 insertions(+), 18 deletions(-)
+
+diff --git a/pxr/base/trace/aggregateNode.cpp b/pxr/base/trace/aggregateNode.cpp
+index 1a3a274edf..d024cbf526 100644
+--- a/pxr/base/trace/aggregateNode.cpp
++++ b/pxr/base/trace/aggregateNode.cpp
+@@ -222,7 +222,7 @@ TraceAggregateNode::MarkRecursiveChildren()
+     std::vector<_StackNode>  stack;
+ 
+     // Push root node on the stack
+-    stack.push_back(_StackNode(TraceAggregateNodePtr(this), -1));
++    stack.emplace_back(TraceAggregateNodePtr(this), -1);
+ 
+     while (stack.size())
+     {
+@@ -290,7 +290,7 @@ TraceAggregateNode::MarkRecursiveChildren()
+                 // has already been processed, decrement it from our remaining
+                 // children count.
+                 if (!curNode->_children[i]->_isRecursionProcessed)
+-                    stack.push_back(_StackNode(curNode->_children[i], parent));
++                    stack.emplace_back(curNode->_children[i], parent);
+                 else
+                     stack[parent].remainingChildren -= 1;
+             }
+diff --git a/pxr/base/trace/category.cpp b/pxr/base/trace/category.cpp
+index cdb37c7b34..88a3277c1a 100644
+--- a/pxr/base/trace/category.cpp
++++ b/pxr/base/trace/category.cpp
+@@ -44,7 +44,7 @@ TraceCategory::GetInstance() {
+ void 
+ TraceCategory::RegisterCategory(TraceCategoryId id, const std::string& name)
+ {
+-    _idToNames.insert(std::make_pair(id, name));
++    _idToNames.emplace(id, name);
+ }
+ 
+ std::vector<std::string>
+diff --git a/pxr/base/trace/collection.cpp b/pxr/base/trace/collection.cpp
+index b08a398275..d62e9ba9cf 100644
+--- a/pxr/base/trace/collection.cpp
++++ b/pxr/base/trace/collection.cpp
+@@ -53,9 +53,8 @@ void TraceCollection::_IterateEvents(Visitor& visitor,
+             // are likely to be many duplicate keys.
+             KeyTokenCache::const_iterator it = cache.find(e.GetKey());
+             if (it == cache.end()) {
+-                it = cache.insert(
+-                    std::make_pair(e.GetKey(),
+-                        TfToken(e.GetKey()._ptr->GetString()))).first;
++                it = cache.emplace(e.GetKey(),
++                    TfToken(e.GetKey()._ptr->GetString())).first;
+             }
+             visitor.OnEvent(threadIndex, it->second, e);
+         }
+diff --git a/pxr/base/trace/counterAccumulator.cpp b/pxr/base/trace/counterAccumulator.cpp
+index 5672418320..38df3906fc 100644
+--- a/pxr/base/trace/counterAccumulator.cpp
++++ b/pxr/base/trace/counterAccumulator.cpp
+@@ -78,16 +78,16 @@ TraceCounterAccumulator::OnEvent(
+     switch (e.GetType()) {
+         case TraceEvent::EventType::CounterDelta:
+         {
+-            _counterDeltas[key].insert(
+-                std::make_pair(e.GetTimeStamp(),
+-                    _CounterValue{e.GetCounterValue(), true}));
++            _counterDeltas[key].emplace(
++                e.GetTimeStamp(),
++                    _CounterValue{e.GetCounterValue(), true});
+             break;
+         }
+         case TraceEvent::EventType::CounterValue:
+         {
+-            _counterDeltas[key].insert(
+-                std::make_pair(e.GetTimeStamp(),
+-                    _CounterValue{e.GetCounterValue(), false}));
++            _counterDeltas[key].emplace(
++                e.GetTimeStamp(),
++                    _CounterValue{e.GetCounterValue(), false});
+             break;
+         }
+         default:
+diff --git a/pxr/base/trace/eventTreeBuilder.cpp b/pxr/base/trace/eventTreeBuilder.cpp
+index 57c6e6f4ec..1dc9681f92 100644
+--- a/pxr/base/trace/eventTreeBuilder.cpp
++++ b/pxr/base/trace/eventTreeBuilder.cpp
+@@ -230,7 +230,7 @@ void
+ Trace_EventTreeBuilder::_OnMarker(
+     const TraceThreadId& threadId, const TfToken& key, const TraceEvent& e)
+ {
+-    _markersMap[key].push_back(std::make_pair(e.GetTimeStamp(), threadId));
++    _markersMap[key].emplace_back(e.GetTimeStamp(), threadId);
+ }
+ 
+ void
+diff --git a/pxr/base/trace/jsonSerialization.cpp b/pxr/base/trace/jsonSerialization.cpp
+index a91dab7cd2..909501326c 100644
+--- a/pxr/base/trace/jsonSerialization.cpp
++++ b/pxr/base/trace/jsonSerialization.cpp
+@@ -467,10 +467,9 @@ _ImportChromeEvents(
+                 if (utid) {
+                     auto it = tidToNames.find(*utid);
+                     if (it == tidToNames.end()) {
+-                        it = tidToNames.insert(
+-                            std::make_pair(
+-                                *utid,
+-                                TfStringPrintf("%" PRId64, *utid))).first;
++                        it = tidToNames.emplace(
++                            *utid,
++                            TfStringPrintf("%" PRId64, *utid)).first;
+                     }
+                     tid = &it->second;
+                 }
+diff --git a/pxr/base/trace/reporter.cpp b/pxr/base/trace/reporter.cpp
+index 917f94066a..7c19c65ff7 100644
+--- a/pxr/base/trace/reporter.cpp
++++ b/pxr/base/trace/reporter.cpp
+@@ -187,7 +187,7 @@ TraceReporter::_PrintTimes(ostream &s)
+     SortedTimes sortedTimes;
+     for (const TraceAggregateTree::EventTimes::value_type& it
+             : _aggregateTree->GetEventTimes() ) {
+-        sortedTimes.insert(SortedTimes::value_type(it.second, it.first));
++        sortedTimes.emplace(it.second, it.first);
+     }
+     for (const SortedTimes::value_type& it : sortedTimes) {
+         s << TfStringPrintf("%9.3f ms ",

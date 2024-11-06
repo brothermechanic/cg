@@ -1,0 +1,97 @@
+From 5d5bdfef5c6987efc042434089c5f0fdb8046af7 Mon Sep 17 00:00:00 2001
+From: Tom Delame <tdelame@gmail.com>
+Date: Thu, 19 Nov 2020 12:16:00 +0100
+Subject: [PATCH] Fix compilation with clang 10 / libstdc++ on Linux
+
+There were missing headers and namespace.
+---
+ pxr/base/tf/token.cpp                 | 1 +
+ pxr/base/trace/eventTreeBuilder.cpp   | 2 +-
+ pxr/imaging/glf/udimTexture.cpp       | 1 +
+ pxr/imaging/hio/stbImage.cpp          | 3 ++-
+ pxr/usd/sdr/shaderMetadataHelpers.cpp | 1 +
+ pxr/usd/sdr/shaderNode.cpp            | 1 +
+ 6 files changed, 7 insertions(+), 2 deletions(-)
+
+diff --git a/pxr/base/tf/token.cpp b/pxr/base/tf/token.cpp
+index 0120b711f9..9ab82f9128 100644
+--- a/pxr/base/tf/token.cpp
++++ b/pxr/base/tf/token.cpp
+@@ -39,6 +39,7 @@
+ 
+ #include <tbb/spin_mutex.h>
+ 
++#include <algorithm>
+ #include <string>
+ #include <ostream>
+ #include <vector>
+diff --git a/pxr/base/trace/eventTreeBuilder.cpp b/pxr/base/trace/eventTreeBuilder.cpp
+index e80ed19b75..2959407512 100644
+--- a/pxr/base/trace/eventTreeBuilder.cpp
++++ b/pxr/base/trace/eventTreeBuilder.cpp
+@@ -27,7 +27,7 @@
+ #include "pxr/pxr.h"
+ 
+ #include "pxr/base/trace/trace.h"
+-
++#include <algorithm>
+ PXR_NAMESPACE_OPEN_SCOPE
+ 
+ Trace_EventTreeBuilder::Trace_EventTreeBuilder() 
+diff --git a/pxr/imaging/glf/udimTexture.cpp b/pxr/imaging/glf/udimTexture.cpp
+index 216f8f9d7a..19c9d23540 100644
+--- a/pxr/imaging/glf/udimTexture.cpp
++++ b/pxr/imaging/glf/udimTexture.cpp
+@@ -42,6 +42,7 @@
+ #include "pxr/base/trace/trace.h"
+ #include "pxr/base/work/loops.h"
+ 
++#include <algorithm>
+ PXR_NAMESPACE_OPEN_SCOPE
+ 
+ namespace {
+diff --git a/pxr/imaging/hio/stbImage.cpp b/pxr/imaging/hio/stbImage.cpp
+index 733eda70f7..b4bfd192be 100644
+--- a/pxr/imaging/hio/stbImage.cpp
++++ b/pxr/imaging/hio/stbImage.cpp
+@@ -48,6 +48,7 @@
+ #define STB_IMAGE_WRITE_IMPLEMENTATION
+ #include "pxr/imaging/hio/stb/stb_image_write.h"
+ 
++#include <algorithm>
+ PXR_NAMESPACE_OPEN_SCOPE
+ 
+ class Hio_StbImage final : public HioImage
+@@ -137,7 +138,7 @@ Hio_StbImage::_GetFilenameExtension()
+ {
+     std::string fileExtension = ArGetResolver().GetExtension(_filename);
+     //convert to lowercase
+-    transform(fileExtension.begin(), 
++    std::transform(fileExtension.begin(), 
+               fileExtension.end(), 
+               fileExtension.begin(), ::tolower);
+     return fileExtension;
+diff --git a/pxr/usd/sdr/shaderMetadataHelpers.cpp b/pxr/usd/sdr/shaderMetadataHelpers.cpp
+index f65ec54255..1d96bd2660 100644
+--- a/pxr/usd/sdr/shaderMetadataHelpers.cpp
++++ b/pxr/usd/sdr/shaderMetadataHelpers.cpp
+@@ -28,6 +28,7 @@
+ #include "pxr/usd/sdr/shaderProperty.h"
+ 
+ #include <iostream>
++#include <algorithm>
+ 
+ PXR_NAMESPACE_OPEN_SCOPE
+ 
+diff --git a/pxr/usd/sdr/shaderNode.cpp b/pxr/usd/sdr/shaderNode.cpp
+index 36e8bbbd5a..89cab4d189 100644
+--- a/pxr/usd/sdr/shaderNode.cpp
++++ b/pxr/usd/sdr/shaderNode.cpp
+@@ -29,6 +29,7 @@
+ #include "pxr/usd/sdr/shaderProperty.h"
+ 
+ #include <unordered_set>
++#include <algorithm>
+ 
+ PXR_NAMESPACE_OPEN_SCOPE
+ 

@@ -1,0 +1,47 @@
+From e1920e3121494936c3608e23dc289c2364426c9c Mon Sep 17 00:00:00 2001
+From: Jesse Yurkovich <jesse.y@gmail.com>
+Date: Wed, 16 Oct 2024 13:18:43 -0700
+Subject: [PATCH] Support OpenImageIO 3.x inside the hioOiio plugin
+
+Signed-off-by: Jesse Yurkovich <jesse.y@gmail.com>
+---
+ pxr/imaging/plugin/hioOiio/oiioImage.cpp | 14 +++++++++++---
+ 1 file changed, 11 insertions(+), 3 deletions(-)
+
+diff --git a/pxr/imaging/plugin/hioOiio/oiioImage.cpp b/pxr/imaging/plugin/hioOiio/oiioImage.cpp
+index c3dffcce77..5ebe286326 100644
+--- a/pxr/imaging/plugin/hioOiio/oiioImage.cpp
++++ b/pxr/imaging/plugin/hioOiio/oiioImage.cpp
+@@ -289,7 +289,7 @@ _FindAttribute(ImageSpec const & spec, std::string const & metadataKey)
+     bool convertMatrixTypes = false;
+     std::string key = _TranslateMetadataKey(metadataKey, &convertMatrixTypes);
+ 
+-    ImageIOParameter const * param = spec.find_attribute(key);
++    ParamValue const * param = spec.find_attribute(key);
+     if (!param) {
+         return VtValue();
+     }
+@@ -713,13 +713,21 @@ HioOIIO_Image::ReadCropped(int const cropTop,
+     // If needed, convert double precision images to float
+     bool res = false;
+     if (imageInput->spec().format == TypeDesc::DOUBLE) {
+-        res = imageInput->read_image(TypeDesc::FLOAT,
++        res = imageInput->read_image(_subimage,
++            _miplevel,
++            0,
++            -1,
++            TypeDesc::FLOAT,
+             start,
+             AutoStride,
+             readStride,
+             AutoStride);
+     } else{
+-        res = imageInput->read_image(imageInput->spec().format,
++        res = imageInput->read_image(_subimage,
++            _miplevel,
++            0,
++            -1,
++            imageInput->spec().format,
+             start,
+             AutoStride,
+             readStride,

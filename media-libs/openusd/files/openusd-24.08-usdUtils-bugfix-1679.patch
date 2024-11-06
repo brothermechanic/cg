@@ -1,0 +1,22 @@
+From 9418dbe9de58936a2714fa56aa58b426b1b6c41a Mon Sep 17 00:00:00 2001
+From: superfunc <superfunc@users.noreply.github.com>
+Date: Tue, 9 Nov 2021 11:27:52 -0800
+Subject: [PATCH] UsdUtils: Small literal comparison fix
+
+---
+ pxr/usd/usdUtils/updateSchemaWithSdrNode.py | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/pxr/usd/usdUtils/updateSchemaWithSdrNode.py b/pxr/usd/usdUtils/updateSchemaWithSdrNode.py
+index 474f07d173..1d22906047 100644
+--- a/pxr/usd/usdUtils/updateSchemaWithSdrNode.py
++++ b/pxr/usd/usdUtils/updateSchemaWithSdrNode.py
+@@ -369,7 +369,7 @@ def UpdateSchemaWithSdrNode(schemaLayer, sdrNode, renderContext="",
+                         sdrNode.GetContext(), PropertyDefiningKeys.SHADER_ID)
+                 sdrIdentifier = primDef.GetAttributeFallbackValue(
+                         shaderIdAttrName)
+-                if sdrIdentifier is not "":
++                if sdrIdentifier != "":
+                     usdSchemaNode = reg.GetNodeByIdentifierAndType(
+                             sdrIdentifier,
+                             SchemaDefiningMiscConstants.USD_SOURCE_TYPE)

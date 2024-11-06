@@ -1,0 +1,361 @@
+From 2e0c0688966dd959561affa16db49bf65fe63f27 Mon Sep 17 00:00:00 2001
+From: Dmitry Tsarevich <dimhotepus@gmail.com>
+Date: Fri, 13 Jan 2023 14:43:27 +0400
+Subject: [PATCH 01/10] [arch] Fix error in GetEnvironmentVariable result
+ handling
+
+GetEnvironmentVariable returns result > 0 on success and 0 on error.
+If result is 0 we should check GetLastError for actual error code.
+In case error code is ERROR_ENVVAR_NOT_FOUND variable is missed.
+
+So if existing env variable should not be overwritten we check
+either it present or error occured (but not variable missed error).
+---
+ pxr/base/arch/env.cpp | 7 +++++--
+ 1 file changed, 5 insertions(+), 2 deletions(-)
+
+diff --git a/pxr/base/arch/env.cpp b/pxr/base/arch/env.cpp
+index a0f5ae757c..6c592685d9 100644
+--- a/pxr/base/arch/env.cpp
++++ b/pxr/base/arch/env.cpp
+@@ -82,8 +82,11 @@ ArchSetEnv(const std::string &name, const std::string &value, bool overwrite)
+ #if defined(ARCH_OS_WINDOWS)
+     if (!overwrite) {
+         const DWORD size = GetEnvironmentVariable(name.c_str(), nullptr, 0);
+-        if (size == 0 || size != ERROR_ENVVAR_NOT_FOUND) {
+-            // Already exists or error.
++        // If the function fails, the return value is zero. If the specified
++        // environment variable was not found in the environment block,
++        // GetLastError returns ERROR_ENVVAR_NOT_FOUND.
++        if (size != 0 || GetLastError() != ERROR_ENVVAR_NOT_FOUND) {
++            // Already has variable or error is not "variable not found".
+             return true;
+         }
+     }
+
+From c74e6291a968edfc68dd14a406741dd197e4ac65 Mon Sep 17 00:00:00 2001
+From: Dmitry Tsarevich <dimhotepus@gmail.com>
+Date: Fri, 13 Jan 2023 15:06:21 +0400
+Subject: [PATCH 02/10] [arch] Drop loop without side effects
+
+We break loop above:
+
+if (limitTimer.GetElapsedTicks() >= maxTicks) {
+    // Time's up!
+    break;
+}
+
+So
+
+while (limitTimer.GetElapsedTicks() < maxTicks);
+
+condition will be already false.
+---
+ pxr/base/arch/timing.cpp | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/pxr/base/arch/timing.cpp b/pxr/base/arch/timing.cpp
+index 4acaa4b2c2..4f9a121afb 100644
+--- a/pxr/base/arch/timing.cpp
++++ b/pxr/base/arch/timing.cpp
+@@ -344,7 +344,7 @@ Arch_MeasureExecutionTime(uint64_t maxMicroseconds, bool *reachedConsensus,
+         for (int i = 0; i != NumSamples/10; ++i) {
+             sampleTimes[i] = measureSample();
+         }
+-    } while (limitTimer.GetElapsedTicks() < maxTicks);
++    }
+ 
+     // Unable to obtain consensus.  Take best median we saw.
+     if (reachedConsensus) {
+
+From c8a3bac56517eb400b8e25e64cf767eaf722d801 Mon Sep 17 00:00:00 2001
+From: Dmitry Tsarevich <dimhotepus@gmail.com>
+Date: Fri, 13 Jan 2023 15:09:19 +0400
+Subject: [PATCH 03/10] [arch] Handle allocation failure
+
+---
+ pxr/base/arch/fileSystem.cpp | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/pxr/base/arch/fileSystem.cpp b/pxr/base/arch/fileSystem.cpp
+index e2d5db4447..c06c026dbd 100644
+--- a/pxr/base/arch/fileSystem.cpp
++++ b/pxr/base/arch/fileSystem.cpp
+@@ -557,8 +557,9 @@ ArchGetFileName(FILE *file)
+     static constexpr DWORD bufSize =
+         sizeof(FILE_NAME_INFO) + sizeof(WCHAR) * 4096;
+     HANDLE hfile = _FileToWinHANDLE(file);
+-    auto fileNameInfo = reinterpret_cast<PFILE_NAME_INFO>(malloc(bufSize));
+     string result;
++    auto fileNameInfo = reinterpret_cast<PFILE_NAME_INFO>(malloc(bufSize));
++    if (!fileNameInfo) return result;
+     if (GetFileInformationByHandleEx(
+             hfile, FileNameInfo, static_cast<void *>(fileNameInfo), bufSize)) {
+         size_t outSize = WideCharToMultiByte(
+
+From be7e552a64a7dbc1a3f7709cfdf94ac60e66776a Mon Sep 17 00:00:00 2001
+From: Dmitry Tsarevich <dimhotepus@gmail.com>
+Date: Fri, 13 Jan 2023 15:12:24 +0400
+Subject: [PATCH 04/10] [arch] Move unreachable statement above exit point
+
+ARCH_ERROR cause program abort / exit. Move assignment
+above exit point
+---
+ pxr/base/arch/fileSystem.cpp | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/pxr/base/arch/fileSystem.cpp b/pxr/base/arch/fileSystem.cpp
+index c06c026dbd..cada0e7edc 100644
+--- a/pxr/base/arch/fileSystem.cpp
++++ b/pxr/base/arch/fileSystem.cpp
+@@ -738,8 +738,8 @@ Arch_InitTmpDir()
+     // On Windows, let GetTempPath use the standard env vars, not our own.
+     int sizeOfPath = GetTempPathW(MAX_PATH - 1, tmpPath);
+     if (sizeOfPath > MAX_PATH || sizeOfPath == 0) {
+-        ARCH_ERROR("Call to GetTempPath failed.");
+         _TmpDir = ".";
++        ARCH_ERROR("Call to GetTempPath failed.");
+         return;
+     }
+ 
+
+From b3583d80bd58ca8e9ea90e1926b671a1c1e1c48b Mon Sep 17 00:00:00 2001
+From: Dmitry Tsarevich <dimhotepus@gmail.com>
+Date: Fri, 13 Jan 2023 15:17:01 +0400
+Subject: [PATCH 05/10] [arch] Always initialize _startTicks variable
+
+---
+ pxr/base/arch/timing.h | 5 +----
+ 1 file changed, 1 insertion(+), 4 deletions(-)
+
+diff --git a/pxr/base/arch/timing.h b/pxr/base/arch/timing.h
+index d78598a840..70867db684 100644
+--- a/pxr/base/arch/timing.h
++++ b/pxr/base/arch/timing.h
+@@ -226,10 +226,7 @@ struct ArchIntervalTimer
+ struct ArchIntervalTimer
+ {
+     explicit ArchIntervalTimer(bool start=true)
+-        : _started(start) {
+-        if (_started) {
+-            _startTicks = ArchGetStartTickTime();
+-        }
++        : _started(start), _startTicks(start ? ArchGetStartTickTime() : 0) {
+     }
+ 
+     void Start() {
+
+From 9d5949a87cd71f17e057f181d96d86ef0b1737b0 Mon Sep 17 00:00:00 2001
+From: Dmitry Tsarevich <dimhotepus@gmail.com>
+Date: Fri, 13 Jan 2023 15:20:58 +0400
+Subject: [PATCH 06/10] [arch] Correctly check debugger is present
+
+If the current process is running in the context of a debugger, the return value is nonzero. Nonzero is not necessarily TRUE.
+
+See https://learn.microsoft.com/en-us/windows/win32/api/debugapi/nf-debugapi-isdebuggerpresent
+---
+ pxr/base/arch/debugger.cpp | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/pxr/base/arch/debugger.cpp b/pxr/base/arch/debugger.cpp
+index fd093f09e9..6205bb38fa 100644
+--- a/pxr/base/arch/debugger.cpp
++++ b/pxr/base/arch/debugger.cpp
+@@ -624,7 +624,7 @@ ArchDebuggerIsAttached()
+ {
+     Arch_DebuggerInit();
+ #if defined(ARCH_OS_WINDOWS)
+-    return IsDebuggerPresent() == TRUE;
++    return IsDebuggerPresent() != FALSE;
+ #elif defined(ARCH_OS_DARWIN)
+     return AmIBeingDebugged();
+ #elif defined(ARCH_OS_LINUX)
+
+From e5306e9bc3ecb51063a3f9ea035bb0bf30e35f60 Mon Sep 17 00:00:00 2001
+From: Dmitry Tsarevich <dimhotepus@gmail.com>
+Date: Fri, 13 Jan 2023 15:22:38 +0400
+Subject: [PATCH 07/10] [arch] Speed up search for '<'
+
+It is faster to search for '<' instead of "<".
+---
+ pxr/base/arch/function.cpp | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/pxr/base/arch/function.cpp b/pxr/base/arch/function.cpp
+index 08fbb92c16..b913f3153d 100644
+--- a/pxr/base/arch/function.cpp
++++ b/pxr/base/arch/function.cpp
+@@ -221,7 +221,7 @@ _FilterTemplateList(const string& prettyFunction,
+ {
+     std::map<string, string> result;
+ 
+-    string::size_type pos = prettyFunction.find("<");
++    string::size_type pos = prettyFunction.find('<');
+     while (pos != string::npos) {
+         const auto identifier = _GetNextIdentifier(prettyFunction, pos);
+         if (!identifier.empty()) {
+
+From 2acd4359db743173cf7afb9b5ac2bbe7c7756f97 Mon Sep 17 00:00:00 2001
+From: Dmitry Tsarevich <dimhotepus@gmail.com>
+Date: Fri, 13 Jan 2023 15:30:55 +0400
+Subject: [PATCH 08/10] [arch] Use std::make_unique for clarity and exception
+ safety
+
+The code is made clearer by removing explicit calls of the 'new' operator for dynamic allocations (smart pointers in themselves remove explicit calls of the 'delete' operator).
+
+Better security in case of exception.
+---
+ pxr/base/arch/assumptions.cpp |  2 +-
+ pxr/base/arch/env.cpp         |  2 +-
+ pxr/base/arch/fileSystem.cpp  | 11 ++++++-----
+ 3 files changed, 8 insertions(+), 7 deletions(-)
+
+diff --git a/pxr/base/arch/assumptions.cpp b/pxr/base/arch/assumptions.cpp
+index 3952f136ca..6f47d9da67 100644
+--- a/pxr/base/arch/assumptions.cpp
++++ b/pxr/base/arch/assumptions.cpp
+@@ -68,7 +68,7 @@ Arch_ObtainCacheLineSize()
+     size_t total = bufferSize / sizeof(INFO);
+ 
+     // Allocate the array of processor INFOs.
+-    std::unique_ptr<INFO[]> buffer(new INFO[total]);
++    std::unique_ptr<INFO[]> buffer = std::make_unique<INFO[]>(total);
+ 
+     size_t lineSize = 0;
+     if (::GetLogicalProcessorInformation(&buffer[0], &bufferSize))
+diff --git a/pxr/base/arch/env.cpp b/pxr/base/arch/env.cpp
+index 6c592685d9..ee7c1e3486 100644
+--- a/pxr/base/arch/env.cpp
++++ b/pxr/base/arch/env.cpp
+@@ -59,7 +59,7 @@ ArchGetEnv(const std::string &name)
+ #if defined(ARCH_OS_WINDOWS)
+     const DWORD size = GetEnvironmentVariable(name.c_str(), nullptr, 0);
+     if (size != 0) {
+-        std::unique_ptr<char[]> buffer(new char[size]);
++        std::unique_ptr<char[]> buffer = std::make_unique<char[]>(size);
+         GetEnvironmentVariable(name.c_str(), buffer.get(), size);
+         return std::string(buffer.get());
+     }
+diff --git a/pxr/base/arch/fileSystem.cpp b/pxr/base/arch/fileSystem.cpp
+index cada0e7edc..4cad22a32a 100644
+--- a/pxr/base/arch/fileSystem.cpp
++++ b/pxr/base/arch/fileSystem.cpp
+@@ -1127,7 +1127,7 @@ int ArchFileAccess(const char* path, int mode)
+     }
+ 
+     // Get the SECURITY_DESCRIPTOR.
+-    std::unique_ptr<unsigned char[]> buffer(new unsigned char[length]);
++    std::unique_ptr<unsigned char[]> buffer = std::make_unique<unsigned char[]>(length);
+     PSECURITY_DESCRIPTOR security = (PSECURITY_DESCRIPTOR)buffer.get();
+     if (!GetFileSecurityW(
+             wpath.c_str(), securityInfo, security, length, &length)) {
+@@ -1231,8 +1231,8 @@ std::string ArchReadLink(const char* path)
+     if (handle == INVALID_HANDLE_VALUE)
+         return std::string();
+ 
+-    std::unique_ptr<unsigned char[]> buffer(new
+-                               unsigned char[MAX_REPARSE_DATA_SIZE]);
++    std::unique_ptr<unsigned char[]> buffer =
++        std::make_unique<unsigned char[]>(MAX_REPARSE_DATA_SIZE);
+     REPARSE_DATA_BUFFER* reparse = (REPARSE_DATA_BUFFER*)buffer.get();
+ 
+     if (!DeviceIoControl(handle, FSCTL_GET_REPARSE_POINT, NULL, 0, reparse,
+@@ -1247,7 +1247,8 @@ std::string ArchReadLink(const char* path)
+             const size_t length =
+                 reparse->SymbolicLinkReparseBuffer.PrintNameLength /
+                                                                 sizeof(WCHAR);
+-            std::unique_ptr<WCHAR[]> reparsePath(new WCHAR[length + 1]);
++            std::unique_ptr<WCHAR[]> reparsePath =
++                std::make_unique<WCHAR[]>(length + 1);
+             wcsncpy(reparsePath.get(),
+               &reparse->SymbolicLinkReparseBuffer.PathBuffer[
+               reparse->SymbolicLinkReparseBuffer.PrintNameOffset / sizeof(WCHAR)
+@@ -1281,7 +1282,7 @@ std::string ArchReadLink(const char* path)
+             const size_t length =
+                 reparse->MountPointReparseBuffer.PrintNameLength /
+                                                                 sizeof(WCHAR);
+-            std::unique_ptr<WCHAR[]> reparsePath(new WCHAR[length + 1]);
++            std::unique_ptr<WCHAR[]> reparsePath = std::make_unique<WCHAR[]>(length + 1);
+             wcsncpy(reparsePath.get(),
+               &reparse->MountPointReparseBuffer.PathBuffer[
+               reparse->MountPointReparseBuffer.PrintNameOffset / sizeof(WCHAR)
+
+From a89e4148339d705b28f43fdf7e4f4c5742a5b4a4 Mon Sep 17 00:00:00 2001
+From: Dmitry Tsarevich <dimhotepus@gmail.com>
+Date: Fri, 13 Jan 2023 15:39:44 +0400
+Subject: [PATCH 09/10] [arch] No need to check for null ptr in free
+
+Free already checks for nullptr, so check is redudant.
+---
+ pxr/base/arch/stackTrace.cpp | 14 +++++---------
+ 1 file changed, 5 insertions(+), 9 deletions(-)
+
+diff --git a/pxr/base/arch/stackTrace.cpp b/pxr/base/arch/stackTrace.cpp
+index 9c5f4534ad..75a176d878 100644
+--- a/pxr/base/arch/stackTrace.cpp
++++ b/pxr/base/arch/stackTrace.cpp
+@@ -176,8 +176,7 @@ class Arch_ProgInfo
+ 
+ Arch_ProgInfo::~Arch_ProgInfo() 
+ {
+-    if (_progInfoForErrors)
+-        free(_progInfoForErrors);
++    free(_progInfoForErrors);
+ }
+ 
+ void
+@@ -201,8 +200,7 @@ Arch_ProgInfo::SetProgramInfoForErrors(
+         ss << iter->first << ": " << iter->second << '\n';
+     }
+ 
+-    if (_progInfoForErrors)
+-        free(_progInfoForErrors);
++    free(_progInfoForErrors);
+ 
+     _progInfoForErrors = strdup(ss.str().c_str());
+ }
+@@ -844,10 +842,8 @@ ArchSetExtraLogInfoForErrors(const std::string &key,
+ void
+ ArchSetProgramNameForErrors( const char *progName )
+ {
+-     
+-    if (_progNameForErrors)
+-        free(_progNameForErrors);
+-    
++    free(_progNameForErrors);
++
+     if (progName)
+         _progNameForErrors = strdup(getBase(progName).c_str());
+     else
+@@ -1532,7 +1528,7 @@ Arch_GetStackTrace(const vector<uintptr_t> &frames,
+             continue;
+         }
+         rv.push_back(ArchStringPrintf(" #%-3i 0x%016lx in %s",
+-                                      n++, frames[i], symbolic.c_str()));
++                                         n++, frames[i], symbolic.c_str()));
+     }
+ 
+     return rv;
+
+From 683092dc8cb55ed278f94dd79b736da6c5e2b31c Mon Sep 17 00:00:00 2001
+From: Dmitry Tsarevich <dimhotepus@gmail.com>
+Date: Fri, 13 Jan 2023 15:40:36 +0400
+Subject: [PATCH 10/10] [arch] Move temp string instead of copying
+
+---
+ pxr/base/arch/stackTrace.cpp | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/pxr/base/arch/stackTrace.cpp b/pxr/base/arch/stackTrace.cpp
+index 75a176d878..3a4ab1dec5 100644
+--- a/pxr/base/arch/stackTrace.cpp
++++ b/pxr/base/arch/stackTrace.cpp
+@@ -1527,7 +1527,7 @@ Arch_GetStackTrace(const vector<uintptr_t> &frames,
+         if (skipUnknownFrames && symbolic == "<unknown>") {
+             continue;
+         }
+-        rv.push_back(ArchStringPrintf(" #%-3i 0x%016lx in %s",
++        rv.emplace_back(ArchStringPrintf(" #%-3i 0x%016lx in %s",
+                                          n++, frames[i], symbolic.c_str()));
+     }
+ 

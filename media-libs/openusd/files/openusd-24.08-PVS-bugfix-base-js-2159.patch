@@ -1,0 +1,76 @@
+From ec4e9bb42c69378e5211940340af414277ad484f Mon Sep 17 00:00:00 2001
+From: Dmitry Tsarevich <dimhotepus@gmail.com>
+Date: Fri, 13 Jan 2023 19:07:09 +0400
+Subject: [PATCH 1/3] [js] Non-void functions should return results
+
+---
+ pxr/base/js/rapidjson/document.h | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/pxr/base/js/rapidjson/document.h b/pxr/base/js/rapidjson/document.h
+index 855543effe..e1b1fbcb21 100644
+--- a/pxr/base/js/rapidjson/document.h
++++ b/pxr/base/js/rapidjson/document.h
+@@ -2509,8 +2509,8 @@ class GenericObject {
+     bool HasMember(const std::basic_string<Ch>& name) const { return value_.HasMember(name); }
+ #endif
+     template <typename SourceAllocator> bool HasMember(const GenericValue<EncodingType, SourceAllocator>& name) const { return value_.HasMember(name); }
+-    MemberIterator FindMember(const Ch* name) const { value_.FindMember(name); }
+-    template <typename SourceAllocator> MemberIterator FindMember(const GenericValue<EncodingType, SourceAllocator>& name) const { value_.FindMember(name); }
++    MemberIterator FindMember(const Ch* name) const { return value_.FindMember(name); }
++    template <typename SourceAllocator> MemberIterator FindMember(const GenericValue<EncodingType, SourceAllocator>& name) const { return value_.FindMember(name); }
+ #if RAPIDJSON_HAS_STDSTRING
+     MemberIterator FindMember(const std::basic_string<Ch>& name) const { return value_.FindMember(name); }
+ #endif
+
+From c65bbfc738762e90f0686db5bd267fdc470697bb Mon Sep 17 00:00:00 2001
+From: Dmitry Tsarevich <dimhotepus@gmail.com>
+Date: Fri, 13 Jan 2023 19:09:39 +0400
+Subject: [PATCH 2/3] [js] Add missed format options ctor initializer
+
+Access to uninitialized var is UB.
+---
+ pxr/base/js/rapidjson/prettywriter.h | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/pxr/base/js/rapidjson/prettywriter.h b/pxr/base/js/rapidjson/prettywriter.h
+index 75dc474f4c..6da6f36202 100644
+--- a/pxr/base/js/rapidjson/prettywriter.h
++++ b/pxr/base/js/rapidjson/prettywriter.h
+@@ -55,7 +55,7 @@ class PrettyWriter : public Writer<OutputStream, SourceEncoding, TargetEncoding,
+ 
+ 
+     explicit PrettyWriter(StackAllocator* allocator = 0, size_t levelDepth = Base::kDefaultLevelDepth) : 
+-        Base(allocator, levelDepth), indentChar_(' '), indentCharCount_(4) {}
++        Base(allocator, levelDepth), indentChar_(' '), indentCharCount_(4), formatOptions_(kFormatDefault) {}
+ 
+     //! Set custom indentation.
+     /*! \param indentChar       Character for indentation. Must be whitespace character (' ', '\\t', '\\n', '\\r').
+
+From 234c8c76fe874a812805a54c4bea68fd126c1d49 Mon Sep 17 00:00:00 2001
+From: Dmitry Tsarevich <dimhotepus@gmail.com>
+Date: Fri, 13 Jan 2023 19:38:20 +0400
+Subject: [PATCH 3/3] [js] Use cheap in-place insertion
+
+---
+ pxr/base/js/json.cpp | 7 +++----
+ 1 file changed, 3 insertions(+), 4 deletions(-)
+
+diff --git a/pxr/base/js/json.cpp b/pxr/base/js/json.cpp
+index 4d447ba8b1..bdddac146f 100644
+--- a/pxr/base/js/json.cpp
++++ b/pxr/base/js/json.cpp
+@@ -104,10 +104,9 @@ struct _InputHandler : public rj::BaseReaderHandler<rj::UTF8<>, _InputHandler>
+ 
+         JsObject object;
+         for (size_t i = 0; i < memberCount; ++i) {
+-            object.insert(
+-                std::make_pair(
+-                    std::move(keys[kstart + i]),
+-                    std::move(values[vstart + i])));
++            object.emplace(
++                std::move(keys[kstart + i]),
++                std::move(values[vstart + i]));
+         }
+ 
+         keys.resize(kstart);

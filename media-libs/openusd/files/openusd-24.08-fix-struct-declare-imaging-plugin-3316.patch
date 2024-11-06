@@ -1,0 +1,39 @@
+From 4b7f2e35a73216a0012a3b3eb46501ccbfbf969d Mon Sep 17 00:00:00 2001
+From: Dhruv Govil <dgovil2@apple.com>
+Date: Tue, 24 Sep 2024 14:25:26 -0700
+Subject: [PATCH] Correct re-declaration of structs as classes
+
+---
+ pxr/imaging/hd/sortedIds.h | 2 +-
+ pxr/usd/usd/prim.h         | 2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/pxr/imaging/hd/sortedIds.h b/pxr/imaging/hd/sortedIds.h
+index 4a41e3161f..de4c23a29f 100644
+--- a/pxr/imaging/hd/sortedIds.h
++++ b/pxr/imaging/hd/sortedIds.h
+@@ -72,7 +72,7 @@ class Hd_SortedIds {
+     void Clear();
+ 
+ private:
+-    class _UpdateImpl;
++    struct _UpdateImpl;
+ 
+     enum _EditMode { _NoMode, _InsertMode, _RemoveMode, _UpdateMode };
+     
+diff --git a/pxr/usd/usd/prim.h b/pxr/usd/usd/prim.h
+index 4b32a46381..67ff74ca99 100644
+--- a/pxr/usd/usd/prim.h
++++ b/pxr/usd/usd/prim.h
+@@ -2196,10 +2196,10 @@ class UsdPrim : public UsdObject
+     friend class UsdSchemaBase;
+     friend class UsdAPISchemaBase;
+     friend class UsdStage;
+-    friend class Usd_StageImplAccess;
+     friend class UsdPrimRange;
+     friend class Usd_PrimData;
+     friend class Usd_PrimFlagsPredicate;
++    friend struct Usd_StageImplAccess;
+     friend struct UsdPrim_RelTargetFinder;
+     friend struct UsdPrim_AttrConnectionFinder;
+ 
