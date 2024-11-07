@@ -19,10 +19,10 @@ LICENSE="
 # custom - https://github.com/PixarAnimationStudios/OpenUSD/blob/v23.05/pxr/usdImaging/usdImaging/drawModeStandin.cpp#L9
 # custom - search "In consideration of your agreement"
 SLOT="0"
-KEYWORDS="~amd64"
+KEYWORDS="" # No keword until successful build & test
 # test USE flag is enabled upstream
 IUSE="alembic debug -doc draco embree examples hdf5 +imaging +jemalloc
-materialx -monolithic color-management opengl openimageio openvdb openexr osl
+materialx monolithic color-management opengl openimageio openvdb openexr osl
 ptex +python safety-over-speed -static-libs tutorials -test tools usdview vulkan"
 
 REQUIRED_USE+="
@@ -135,11 +135,7 @@ RDEPEND+="
 		')
 	)
     vulkan? (
-		>=dev-util/vulkan-headers-1.3.296.0
-		>=dev-libs/vulkan-memory-allocator-3.0.0
-		>=dev-libs/spirv-reflect-1.3.296.0
-		>=dev-util/spirv-headers-1.3.296.0
-		>=dev-util/glslang-1.3.296.0
+		>=dev-util/vulkan-headers-1.2.135.0
 	)
 "
 DEPEND="
@@ -177,11 +173,10 @@ PATCHES=(
 	"${FILESDIR}/packageUtils.cpp.patch"
 	"${FILESDIR}/openusd-23.11-defaultfonts.patch"
 	"${FILESDIR}/openusd-21.11-gcc-11-numeric_limits.patch"
-	"${FILESDIR}/openusd-23.11-fix-vulkan-blit-3382.patch"
 	"${FILESDIR}/openusd-21.11-use-whole-archive-for-lld.patch"
-	"${FILESDIR}/openusd-24.08-ONEtbb-based-on-3207.patch"
+	#"${FILESDIR}/openusd-24.08-ONEtbb-based-on-3207.patch"
 	"${FILESDIR}/openusd-24.08-fix-monolithic-build-2400.patch"
-	"${FILESDIR}/openusd-24.08-fix-materialx-build-3159.patch"
+	#"${FILESDIR}/openusd-24.08-fix-materialx-build-3159.patch"
 	"${FILESDIR}/openusd-24.08-fix-materialx-plugin-resources-2904.patch"
 	"${FILESDIR}/openusd-24.08-fix-onetbb-2022-interface-3392.patch"
 	"${FILESDIR}/openusd-24.08-fix-openimageio3-plugin-3365.patch"
@@ -286,7 +281,7 @@ src_configure() {
 		-DPXR_PREFER_SAFETY_OVER_SPEED=$(usex safety-over-speed ON OFF)
 		-DPXR_PYTHON_SHEBANG="${PYTHON}"
 		-DPXR_SET_INTERNAL_NAMESPACE="usdBlender"
-		#-DSPIRV_REFLECT_USE_SYSTEM_SPIRV_H=$(usex vulkan ON OFF)
+		-DPXR_USE_INTERNAL_BOOST_PYTHON=OFF
 		#-DCMAKE_FIND_DEBUG_MODE=yes
 	)
 	cmake_src_configure

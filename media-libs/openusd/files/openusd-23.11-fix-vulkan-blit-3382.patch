@@ -1,0 +1,54 @@
+From 3fd3147af4d42cfe6e26106cb4cb549909739632 Mon Sep 17 00:00:00 2001
+From: Andy Shiue <andy.shiue@autodesk.com>
+Date: Sun, 27 Oct 2024 17:33:53 -0400
+Subject: [PATCH] The staged copy of HgiVulkanBlitCmds has incorrect source and
+ destination offset
+
+Source offset of a cpu-to-gpu-copy defines the offset of the source cpu memory,
+and the destination offset of a cpu-to-gpu-copy defines the offset of the
+destination gpu buffer.
+
+The `memcpy`` from the cpu memory to the staging buffer should use the source offset
+and the destination offset respectively. But the copy from the staging buffer
+to the gpu buffer should use the destination offset to define `VkBufferCopy.srcOffset`.
+---
+ pxr/imaging/hgiVulkan/blitCmds.cpp | 16 +++++++++-------
+ 1 file changed, 9 insertions(+), 7 deletions(-)
+
+diff --git a/pxr/imaging/hgiVulkan/blitCmds.cpp b/pxr/imaging/hgiVulkan/blitCmds.cpp
+index 583d80249a..9ef164094a 100644
+--- a/pxr/imaging/hgiVulkan/blitCmds.cpp
++++ b/pxr/imaging/hgiVulkan/blitCmds.cpp
+@@ -283,15 +283,15 @@ void HgiVulkanBlitCmds::CopyBufferCpuToGpu(
+     if (!buffer->IsCPUStagingAddress(copyOp.cpuSourceBuffer) ||
+         copyOp.sourceByteOffset != copyOp.destinationByteOffset) {
+ 
+-        uint8_t* dst = static_cast<uint8_t*>(buffer->GetCPUStagingAddress());
+-        size_t dstOffset = copyOp.destinationByteOffset;
+-
+         // Offset into the src buffer
+-        uint8_t* src = ((uint8_t*) copyOp.cpuSourceBuffer) +
++        const uint8_t* src = static_cast<const uint8_t*>(copyOp.cpuSourceBuffer) +
+             copyOp.sourceByteOffset;
+ 
+-        // Offset into the dst buffer
+-        memcpy(dst + dstOffset, src, copyOp.byteSize);
++        // Offset into the dst buffer.
++        uint8_t* dst = static_cast<uint8_t*>(buffer->GetCPUStagingAddress()) +
++            copyOp.destinationByteOffset;
++
++        memcpy(dst, src, copyOp.byteSize);
+     }
+ 
+     // Schedule copy data from staging buffer to device-local buffer.
+@@ -299,7 +299,9 @@ void HgiVulkanBlitCmds::CopyBufferCpuToGpu(
+ 
+     if (TF_VERIFY(stagingBuffer)) {
+         VkBufferCopy copyRegion = {};
+-        copyRegion.srcOffset = copyOp.sourceByteOffset;
++        // Note we use the destinationByteOffset as the srcOffset here. The staging buffer
++        // should be prepared with the same data layout of the destination buffer.
++        copyRegion.srcOffset = copyOp.destinationByteOffset;
+         copyRegion.dstOffset = copyOp.destinationByteOffset;
+         copyRegion.size = copyOp.byteSize;
+ 
