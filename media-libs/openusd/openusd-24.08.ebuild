@@ -147,7 +147,7 @@ DEPEND="
 "
 BDEPEND="
 	$(python_gen_cond_dep '
-		>=dev-python/jinja-2[${PYTHON_USEDEP}]
+		>=dev-python/jinja2-2[${PYTHON_USEDEP}]
 	')
 	>=dev-build/cmake-3.14.6
 	>=sys-devel/bison-2.4.1
@@ -160,8 +160,8 @@ BDEPEND="
 	)
 	|| (
 		(
-			<sys-devel/gcc-14
-			>=sys-devel/gcc-6.3.1
+			<sys-devel/gcc-15
+			>=sys-devel/gcc-9.0.1
 		)
 		<sys-devel/clang-20
 	)

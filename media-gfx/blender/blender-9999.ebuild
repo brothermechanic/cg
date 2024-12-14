@@ -333,11 +333,11 @@ BDEPEND="
 	virtual/pkgconfig
 	mold? ( sys-devel/mold:= )
 	$(llvm_gen_dep '
-		lld? ( sys-devel/lld:${LLVM_SLOT}= )
-		gold? ( sys-devel/llvm:${LLVM_SLOT}=[binutils-plugin] )
+		lld? ( llvm-core/lld:${LLVM_SLOT}= )
+		gold? ( llvm-core/llvm:${LLVM_SLOT}=[binutils-plugin] )
 		llvm? (
-			sys-devel/clang:${LLVM_SLOT}=
-			sys-devel/llvm:${LLVM_SLOT}=
+			llvm-core/clang:${LLVM_SLOT}=
+			llvm-core/llvm:${LLVM_SLOT}=
 		)
 	')
 	doc? (

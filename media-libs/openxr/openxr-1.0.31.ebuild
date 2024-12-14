@@ -81,7 +81,7 @@ BDEPEND="
 	>=dev-build/cmake-3.0
 	virtual/pkgconfig
 	|| (
-		sys-devel/clang
+		llvm-core/clang
 		sys-devel/gcc
 	)
 "

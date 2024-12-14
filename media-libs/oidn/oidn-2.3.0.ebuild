@@ -140,8 +140,8 @@ DEPEND+="
 BDEPEND+="
 	${PYTHON_DEPS}
     $(llvm_gen_dep '
-      sys-devel/clang:${LLVM_SLOT}=
-      sys-devel/llvm:${LLVM_SLOT}=
+      llvm-core/clang:${LLVM_SLOT}=
+      llvm-core/llvm:${LLVM_SLOT}=
     ')
 	>=dev-lang/ispc-1.17.0
 	>=dev-build/cmake-3.15

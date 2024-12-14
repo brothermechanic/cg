@@ -71,8 +71,8 @@ REQUIRED_USE="
 
 RDEPEND="
     $(llvm_gen_dep '
-      sys-devel/clang:${LLVM_SLOT}=
-      sys-devel/llvm:${LLVM_SLOT}=
+      llvm-core/clang:${LLVM_SLOT}=
+      llvm-core/llvm:${LLVM_SLOT}=
     ')
 	>=dev-libs/boost-1.55:=[${MULTILIB_USEDEP}]
 	>=dev-libs/pugixml-1.8[${MULTILIB_USEDEP}]

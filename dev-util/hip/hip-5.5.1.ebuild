@@ -25,15 +25,15 @@ IUSE="debug"
 DEPEND="
 	>=dev-util/rocminfo-5
 	$(llvm_gen_dep '
-	    sys-devel/clang:${LLVM_SLOT}=
-	    sys-devel/llvm:${LLVM_SLOT}=
+	    llvm-core/clang:${LLVM_SLOT}=
+	    llvm-core/llvm:${LLVM_SLOT}=
 	')
 	dev-libs/rocm-comgr:${SLOT}
 	virtual/opengl
 "
 RDEPEND="${DEPEND}
 	dev-perl/URI-Encode
-	sys-devel/clang-runtime:=
+	llvm-core/clang-runtime:=
 	>=dev-libs/roct-thunk-interface-5
 "
 

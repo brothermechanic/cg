@@ -21,15 +21,15 @@ REQUIRED_USE="llvm_targets_WebAssembly"
 RDEPEND="
 	${PYTHON_DEPS}
 	dev-util/binaryen
-        net-libs/nodejs[npm]
+    net-libs/nodejs[npm]
 	sys-apps/which
 	python? ( dev-lang/python )
 	java? ( virtual/jre )
 "
 BDEPEND="
    $(llvm_gen_dep '
-     sys-devel/clang:${LLVM_SLOT}=
-     sys-devel/llvm:${LLVM_SLOT}=
+     llvm-core/clang:${LLVM_SLOT}=
+     llvm-core/llvm:${LLVM_SLOT}=
    ')
 	dev-build/cmake
 	dev-libs/libxml2

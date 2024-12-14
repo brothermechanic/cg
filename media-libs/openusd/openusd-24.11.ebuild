@@ -156,10 +156,10 @@ BDEPEND="
 	)
 	|| (
 		(
-			<sys-devel/gcc-14
-			>=sys-devel/gcc-6.3.1
+			<sys-devel/gcc-15
+			>=sys-devel/gcc-9.0.1
 		)
-		<sys-devel/clang-20
+		<llvm-core/clang-20
 	)
 "
 SRC_URI="
