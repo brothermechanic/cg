@@ -5,10 +5,10 @@ EAPI=8
 
 PYTHON_COMPAT=( python3_{11..13} )
 OPENVDB_COMPAT=( {7..11} )
-LLVM_COMPAT=( 17 18 19 )
+LLVM_COMPAT=( {17..19} )
 LLVM_OPTIONAL=1
 
-inherit check-reqs cmake cuda flag-o-matic llvm-r1  git-r3 pax-utils python-single-r1 toolchain-funcs xdg-utils openvdb cg-blender-scripts-dir
+inherit check-reqs cmake cuda flag-o-matic llvm-r1 git-r3 pax-utils python-single-r1 toolchain-funcs xdg-utils openvdb cg-blender-scripts-dir
 
 DESCRIPTION="Blender is a free and open-source 3D creation suite."
 HOMEPAGE="https://www.blender.org"
@@ -156,7 +156,7 @@ RDEPEND="
 	${CODECS}
 	${PYTHON_DEPS}
 	$(python_gen_cond_dep '
-		dev-libs/boost[nls?,icu?,threads(+),python,${PYTHON_USEDEP}]
+		dev-libs/boost[nls?,icu?,threads(+),python,numpy,${PYTHON_USEDEP}]
 		>=dev-python/certifi-2021.10.8[${PYTHON_USEDEP}]
 		>=dev-python/charset-normalizer-2.0.6[${PYTHON_USEDEP}]
 		>=dev-python/idna-3.2[${PYTHON_USEDEP}]
@@ -375,6 +375,9 @@ PATCHES=(
 	"${FILESDIR}/x112.patch"
 	"${FILESDIR}/${PN}-fix-desktop.patch"
 	"${FILESDIR}/${PN}-fix-boost-1.81-iostream.patch"
+	"${FILESDIR}/${PN}-4.0.2-FindClang.patch"
+	"${FILESDIR}/${PN}-4.1.1-FindLLVM.patch"
+	"${FILESDIR}/${PN}-4.1.1-numpy.patch"
 )
 
 blender_check_requirements() {
@@ -539,6 +542,7 @@ src_configure() {
 		-DPYTHON_VERSION="${EPYTHON/python/}"
 		-DPYTHON_INCLUDE_DIR="$(python_get_includedir)"
 		-DPYTHON_LIBRARY="$(python_get_library_path)"
+		-DWITH_PYTHON_NUMPY=yes
 		-DWITH_CPU_SIMD=$(usex simd)
 		-DWITH_PYTHON_INSTALL=$(usex portable)					# Copy system python
 		-DWITH_PYTHON_INSTALL_NUMPY=$(usex portable)
@@ -566,7 +570,6 @@ src_configure() {
 		-DWITH_CUDA_DYNLOAD=$(usex cuda $(usex cycles-bin-kernels no yes) no)
 		-DWITH_CYCLES_DEVICE_ONEAPI=$(usex oneapi)
 		-DWITH_CYCLES_ONEAPI_BINARIES=$(usex oneapi $(usex cycles-bin-kernels) no)
-
 		-DWITH_CYCLES_HYDRA_RENDER_DELEGATE="no" # TODO: package Hydra
 		-DWITH_CYCLES_EMBREE=$(usex embree)						# Speedup library for Cycles
 		-DWITH_CYCLES_NATIVE_ONLY=$(usex cycles)				# for native kernel only
@@ -646,11 +649,11 @@ src_configure() {
 		-DWITH_GTESTS=$(usex gtests)
 		-DWITH_SYSTEM_GTESTS=$(usex !portable)
 		-DWITH_GHOST_DEBUG=$(usex debug)
-		-DWITH_CXX_GUARDEDALLOC=$(usex debug)
+		#-DWITH_CXX_GUARDEDALLOC=$(usex debug)
 		-DWITH_TBB=$(usex tbb)
 		-DWITH_USD=$(usex usd)									# export format support
 		-DWITH_VULKAN_BACKEND=$(usex vulkan)
-		-DWITH_VULKAN_GUARDEDALLOC=$(usex vulkan)
+		#-DWITH_VULKAN_GUARDEDALLOC=$(usex vulkan)
 		-DWITH_XR_OPENXR=$(usex openxr)							# VR interface
 		#-DSYCL_LIBRARY="/usr/lib/llvm/intel"
 		#-DSYCL_INCLUDE_DIR="/usr/lib/llvm/intel/include"

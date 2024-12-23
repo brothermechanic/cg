@@ -26,22 +26,13 @@
  option(WITH_LIBMV "Enable Libmv structure from motion library" ON)
 --- a/source/creator/CMakeLists.txt
 +++ b/source/creator/CMakeLists.txt
-@@ -873,7 +873,7 @@ if(UNIX AND NOT APPLE)
-     endif()
+@@ -481,7 +481,7 @@ if(WITH_PYTHON)
    endif()
- 
+   unset(FREESTYLE_EXCLUDE_CONDITIONAL)
+
 -  if(WITH_DRACO)
 +  if(WITH_DRACO AND NOT WITH_SYSTEM_DRACO)
-     if(WITH_PYTHON_MODULE)
-       install(
-         PROGRAMS $<TARGET_FILE:extern_draco>
-@@ -1361,7 +1361,7 @@ elseif(WIN32)
-     )
-   endif()
- 
--  if(WITH_DRACO)
-+  if(WITH_DRACO AND NOT WITH_SYSTEM_DRACO)
-     if(WITH_PYTHON_MODULE)
-       install(
-         PROGRAMS $<TARGET_FILE:extern_draco>
+     install(
+       PROGRAMS $<TARGET_FILE:extern_draco>
+       DESTINATION ${TARGETDIR_VER}/scripts/addons_core/io_scene_gltf2
 
