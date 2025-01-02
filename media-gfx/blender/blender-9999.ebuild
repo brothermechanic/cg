@@ -169,8 +169,8 @@ RDEPEND="
 	>=dev-cpp/nlohmann_json-3.10.0:=
 	media-libs/freetype:=[brotli,bzip2,png]
 	media-libs/libepoxy:=
-	>=dev-cpp/pystring-1.1.3
-	>=dev-libs/fribidi-1.0.12
+	>=dev-cpp/pystring-1.1.3:=
+	>=dev-libs/fribidi-1.0.12:=
 	>=media-libs/libpng-1.6.37:0=
 	>=sys-libs/minizip-ng-3.0.7
 	>=media-libs/tiff-4.6.0
