@@ -1,0 +1,72 @@
+From 2f74961e02e033a51b949a839e750e2f76e99b15 Mon Sep 17 00:00:00 2001
+From: Nicolas Popravka <nicolas.popravka@soulmachines.com>
+Date: Fri, 21 Apr 2023 11:05:55 -1000
+Subject: [PATCH] Fix export of USD as a monolithic shared library.
+
+Outside projects could not easily be built against USD as a monolithic
+shared library because of some usage requirements not set on the
+exported usd_ms target. For example, the INTERFACE_INCLUDE_DIRECTORIES
+target property was missing.
+
+This is fixed by reverting the use of the $<BUILD_INTERFACE:...> export
+generator expression.
+
+However, outside builds would still fail because the usd_m and other
+internal-to-monolithic targets were not exported. This is fixed too.
+---
+ cmake/macros/Private.cmake |  5 ++++-
+ cmake/macros/Public.cmake  | 11 ++++++++---
+ 2 files changed, 12 insertions(+), 4 deletions(-)
+
+diff --git a/cmake/macros/Private.cmake b/cmake/macros/Private.cmake
+index 23172745e7..c44b3f7762 100644
+--- a/cmake/macros/Private.cmake
++++ b/cmake/macros/Private.cmake
+@@ -1424,7 +1424,10 @@ function(_pxr_library NAME)
+     endif()
+ 
+     if(isObject)
+-        # Nothing
++        install(
++            TARGETS ${NAME}
++            EXPORT pxrTargets
++        )
+     else()
+         # Do not include plugins libs in externally linkable targets
+         if(isPlugin)
+diff --git a/cmake/macros/Public.cmake b/cmake/macros/Public.cmake
+index a1734b6a2a..c1f447a450 100644
+--- a/cmake/macros/Public.cmake
++++ b/cmake/macros/Public.cmake
+@@ -1070,16 +1070,16 @@ function(pxr_toplevel_epilogue)
+         # usd_m target.
+         target_compile_definitions(usd_ms
+             PUBLIC
+-                $<BUILD_INTERFACE:$<TARGET_PROPERTY:usd_m,INTERFACE_COMPILE_DEFINITIONS>>
++                $<TARGET_PROPERTY:usd_m,INTERFACE_COMPILE_DEFINITIONS>
+         )
+         target_include_directories(usd_ms
+             PUBLIC
+-                $<BUILD_INTERFACE:$<TARGET_PROPERTY:usd_m,INTERFACE_INCLUDE_DIRECTORIES>>
++                $<TARGET_PROPERTY:usd_m,INTERFACE_INCLUDE_DIRECTORIES>
+         )
+         target_include_directories(usd_ms
+             SYSTEM
+             PUBLIC
+-                $<BUILD_INTERFACE:$<TARGET_PROPERTY:usd_m,INTERFACE_SYSTEM_INCLUDE_DIRECTORIES>>
++                $<TARGET_PROPERTY:usd_m,INTERFACE_SYSTEM_INCLUDE_DIRECTORIES>
+         )
+         foreach(lib ${PXR_OBJECT_LIBS})
+             get_property(libs TARGET ${lib} PROPERTY INTERFACE_LINK_LIBRARIES)
+@@ -1148,6 +1148,11 @@ function(pxr_monolithic_epilogue)
+             IMPORT_PREFIX "${libPrefix}"
+     )
+ 
++    install(
++        TARGETS usd_m
++        EXPORT pxrTargets
++    )
++
+     # Adding $<TARGET_OBJECTS:foo> will not bring along compile
+     # definitions, include directories, etc.  Since we'll want those
+     # attached to usd_m we explicitly add them.

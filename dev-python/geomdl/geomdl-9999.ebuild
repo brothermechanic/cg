@@ -1,6 +1,6 @@
 EAPI=8
 
-PYTHON_COMPAT=( python3_{9..11} )
+PYTHON_COMPAT=( python3_{9..13} )
 inherit git-r3 distutils-r1
 
 DESCRIPTION="Object-oriented NURBS library in Python"

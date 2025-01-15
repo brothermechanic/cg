@@ -47,7 +47,7 @@ _GENTOO_BLENDER_ADDONS_HOME=()
 # @INTERNAL
 # @DESCRIPTION:
 # All possible implementations of blender
-_BLENDER_ALL_IMPLS=( 2_93 3_{0..6} 4_{0..2} )
+_BLENDER_ALL_IMPLS=( 2_93 3_{0..6} 4_{0..4} )
 readonly _BLENDER_ALL_IMPLS
 
 # @ECLASS_VARIABLE: _BLENDER_ALL_IMPLS
