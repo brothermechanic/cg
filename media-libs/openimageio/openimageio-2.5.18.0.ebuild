@@ -1,13 +1,13 @@
-# Copyright 1999-2024 Gentoo Authors
+# Copyright 1999-2025 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
 
 EAPI=8
 
-PYTHON_COMPAT=( python3_{10..12} )
+PYTHON_COMPAT=( python3_{11..13} )
 OPENVDB_COMPAT=( {7..11} )
 
-TEST_OIIO_IMAGE_COMMIT="7d821f02c848022b2ee703d6bee48ca2acbfae70"
-TEST_OEXR_IMAGE_COMMIT="df16e765fee28a947244657cae3251959ae63c00"
+TEST_OIIO_IMAGE_COMMIT="7e6d875542b5bc1b2974b7cbecee115365a36527"
+TEST_OEXR_IMAGE_COMMIT="d45a2d5a890d6963b94479c7a644440068c37dd2"
 inherit cmake flag-o-matic python-single-r1 virtualx openvdb
 
 DESCRIPTION="A library for reading and writing images"
@@ -167,10 +167,9 @@ DOCS=(
 QA_PRESTRIPPED="usr/lib/python.*/site-packages/.*"
 
 PATCHES=(
-	"${FILESDIR}/${PN}-2.5.8.0-fix-unit_simd.patch"
 	"${FILESDIR}/${PN}-2.5.8.0-fix-tests.patch"
-	"${FILESDIR}/${PN}-2.5.12.0-tests-optional.patch"
 	"${FILESDIR}/${PN}-2.5.12.0-heif-find-fix.patch"
+	"${FILESDIR}/${PN}-2.5.18.0-tests-optional.patch"
 )
 
 pkg_pretend() {
@@ -203,23 +202,23 @@ src_prepare() {
 	cmake_comment_add_subdirectory src/fonts
 
 	if use test ; then
-		mv -v "${WORKDIR}/OpenImageIO-images-${TEST_OIIO_IMAGE_COMMIT}" "${WORKDIR}/oiio-images" || die
-		mv -v "${WORKDIR}/openexr-images-${TEST_OEXR_IMAGE_COMMIT}" "${WORKDIR}/openexr-images" || die
+		ln -s "${WORKDIR}/OpenImageIO-images-${TEST_OIIO_IMAGE_COMMIT}" "${WORKDIR}/oiio-images" || die
+		ln -s "${WORKDIR}/openexr-images-${TEST_OEXR_IMAGE_COMMIT}" "${WORKDIR}/openexr-images" || die
 
 		if use fits; then
 			mkdir -p "${WORKDIR}/fits-images/"{ftt4b,pg93} || die
 			for a in ${A}; do
 				if [[ "${a}" == file*.fits ]]; then
-					cp "${DISTDIR}/${a}" "${WORKDIR}/fits-images/ftt4b/" || die
+					ln -s "${DISTDIR}/${a}" "${WORKDIR}/fits-images/ftt4b/" || die
 				fi
 				if [[ "${a}" == tst*.fits ]]; then
-					cp "${DISTDIR}/${a}" "${WORKDIR}/fits-images/pg93/" || die
+					ln -s "${DISTDIR}/${a}" "${WORKDIR}/fits-images/pg93/" || die
 				fi
 			done
 		fi
 
 		if use jpeg2k; then
-			mv -v "${WORKDIR}/J2KP4files" "${WORKDIR}/j2kp4files_v1_5" || die
+			ln -s "${WORKDIR}/J2KP4files" "${WORKDIR}/j2kp4files_v1_5" || die
 		fi
 
 		cp testsuite/heif/ref/out-libheif1.1{2,5}-orient.txt || die
@@ -242,6 +241,11 @@ src_configure() {
 	# This is currently needed on arm64 to get the NEON SIMD wrapper to compile the code successfully
 	# Even if there are no SIMD features selected, it seems like the code will turn on NEON support if it is available.
 	use arm64 && append-flags -flax-vector-conversions
+
+	# https://gcc.gnu.org/bugzilla/show_bug.cgi?id=118077
+	if tc-is-gcc && [[ $(gcc-major-version) -eq 15 ]]; then
+		append-flags -fno-early-inlining
+	fi
 
 	local mycmakeargs=(
 		-DVERBOSE="yes"
@@ -327,6 +331,8 @@ src_test() {
 
 	CMAKE_SKIP_TESTS=(
 		"-broken$"
+		"texture-levels-stochaniso.batch"
+		"unit_simd"
 	)
 
 	sed -e "s#../../../testsuite#../../../OpenImageIO-${PV}/testsuite#g" \

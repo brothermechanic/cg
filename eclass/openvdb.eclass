@@ -1,4 +1,4 @@
-# Copyright 1999-2023 Gentoo Authors
+# Copyright 1999-2025 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
 # @ECLASS: openvdb.eclass
 # @MAINTAINER:
@@ -93,7 +93,7 @@ _OPENVDB_ECLASS=1
 #
 # Example use:
 # @CODE
-# OPENVDB_COMPAT=( 4 5 6 7 )
+# OPENVDB_COMPAT=( {9..12} )
 # @CODE
 #
 # @ECLASS-VARIABLE: OPENVDB_SINGLE_USEDEP
@@ -123,14 +123,14 @@ _OPENVDB_ECLASS=1
 #
 # Example value:
 # @CODE
-# ^^ ( openvdb_abi6 openvdb_abi_7 openvdb_abi_8 openvdb_abi_9 openvdb_abi_10 openvdb_abi_11 )
+# ^^ ( openvdb_abi_9 openvdb_abi_10 openvdb_abi_11 openvdb_abi_12 )
 # @CODE
 # @ECLASS-VARIABLE: _OPENVDB_ALL_ABI
 # @INTERNAL
 # @DESCRIPTION:
 # All supported OpenVDB ABI
 # Update this with each new major version release of OpenVDB
-_OPENVDB_ALL_ABI=( {6..11} )
+_OPENVDB_ALL_ABI=( {9..12} )
 readonly _OPENVDB_ALL_ABI
 
 # @ECLASS_VARIABLE: OPENVDB_ABI
@@ -141,7 +141,7 @@ readonly _OPENVDB_ALL_ABI
 #
 # Example use:
 # @CODE
-# OPENVDB_ABI=11
+# OPENVDB_ABI=12
 # @CODE
 : "${OPENVDB_ABI:=}"
 

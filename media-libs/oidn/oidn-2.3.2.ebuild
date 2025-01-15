@@ -1,4 +1,4 @@
-# Copyright 1999-2024 Gentoo Authors
+# Copyright 1999-2025 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
 
 EAPI=8
@@ -35,7 +35,7 @@ CUDA_TARGETS_COMPAT=(
 
 ROCM_VERSION="5.7.1"
 PYTHON_COMPAT=( python3_{10..13} )
-LLVM_COMPAT=( 17 18 )
+LLVM_COMPAT=( {17..19} )
 
 inherit cmake cuda flag-o-matic llvm-r1 python-single-r1 rocm toolchain-funcs
 
@@ -52,7 +52,7 @@ SLOT="0/$(ver_cut 1-2)"
 IUSE="
 -${CUDA_TARGETS_COMPAT[@]/#/cuda_targets_}
 -${AMDGPU_TARGETS_COMPAT[@]/#/amdgpu_targets_}
-examples +built-in-weights +cpu -cuda doc -hip static-libs sycl openimageio
+examples +built-in-weights -cuda doc -hip static-libs sycl openimageio test
 "
 
 gen_required_use_cuda_targets() {
@@ -119,6 +119,7 @@ gen_hip_depends() {
 RDEPEND+="
 	${PYTHON_DEPS}
 	virtual/libc
+	dev-lang/ispc
 	cuda? (
 		>=dev-util/nvidia-cuda-toolkit-11.8:=
 	)
@@ -134,9 +135,7 @@ RDEPEND+="
 	>=dev-cpp/tbb-2021.5:0=
 	openimageio? ( media-libs/openimageio:= )
 "
-DEPEND+="
-	${RDEPEND}
-"
+DEPEND="${RDEPEND}"
 BDEPEND+="
 	${PYTHON_DEPS}
     $(llvm_gen_dep '
@@ -179,7 +178,7 @@ https://github.com/NVIDIA/cutlass/archive/${CUTLASS_COMMIT}.tar.gz
 	"
 	KEYWORDS="~amd64 ~x86"
 fi
-RESTRICT="mirror"
+RESTRICT="mirror !test? ( test )"
 DOCS=( CHANGELOG.md README.md readme.pdf )
 PATCHES=(
 	"${FILESDIR}/${PN}-2.2.2-amdgpu-targets.patch"
@@ -202,7 +201,7 @@ check_cpu() {
 
 pkg_setup() {
 	if ! tc-is-cross-compiler && use kernel_linux ; then
-		use cpu && check_cpu
+		check_cpu
 	fi
 
 	python-single-r1_pkg_setup
@@ -282,11 +281,12 @@ src_configure() {
 	einfo
 
 	mycmakeargs+=(
+		-DCMAKE_CXX_STANDARD=17
 		-DOIDN_APPS="$(usex examples)"
 		-DOIDN_INSTALL_DEPENDENCIES="OFF"
 		-DOIDN_FILTER_RT="$(usex built-in-weights)"
 		-DOIDN_FILTER_RTLIGHTMAP="$(usex built-in-weights)"
-		-DOIDN_DEVICE_CPU="$(usex cpu)"
+		-DOIDN_DEVICE_CPU="ON"
 		-DOIDN_DEVICE_CUDA="$(usex cuda)"
 		-DOIDN_DEVICE_HIP="$(usex hip)"
 		-DOIDN_DEVICE_SYCL="$(usex sycl)"
@@ -339,6 +339,10 @@ src_configure() {
 	cmake_src_configure
 }
 
+src_test() {
+	"${BUILD_DIR}"/oidnTest || die "There were test faliures!"
+}
+
 src_install() {
 	cmake_src_install
 	if ! use doc ; then
@@ -350,10 +354,6 @@ src_install() {
 
 	# remove garbage in /var/tmp left by subprojects
 	rm -rf "${ED}/var"
-}
-
-src_test() {
-	"${BUILD_DIR}/oidnTest" || die "There were test faliures!"
 }
 
 pkg_postinst() {

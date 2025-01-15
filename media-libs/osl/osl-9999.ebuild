@@ -1,9 +1,9 @@
-# Copyright 1999-2024 Gentoo Authors
+# Copyright 1999-2025 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
 
 EAPI=8
 
-PYTHON_COMPAT=( python3_{10..12} )
+PYTHON_COMPAT=( python3_{10..13} )
 
 # Check this on updates
 OPENVDB_COMPAT=( {7..11} )
@@ -11,17 +11,18 @@ OPENVDB_COMPAT=( {7..11} )
 inherit cmake cuda flag-o-matic multilib-minimal python-single-r1 toolchain-funcs openvdb
 
 DESCRIPTION="Advanced shading language for production GI renderers"
-HOMEPAGE="http://opensource.imageworks.com/?p=osl"
-if [[ ${PV} = *9999 ]]; then
+HOMEPAGE="http://opensource.imageworks.com/?p=osl https://www.imageworks.com/technology/opensource https://github.com/AcademySoftwareFoundation/OpenShadingLanguage"
+
+if [[ ${PV} = *9999* ]]; then
 	inherit git-r3
-	EGIT_REPO_URI="https://github.com/AcademySoftwareFoundation/OpenShadingLanguage"
+	EGIT_REPO_URI="https://github.com/AcademySoftwareFoundation/OpenShadingLanguage.git"
 	EGIT_BRANCH="main"
 	KEYWORDS=""
-	SLOT="0/1.13"
+	SLOT="0/1.14"
 else
 	MY_PV=${PV//_/-}
 	SRC_URI="https://github.com/AcademySoftwareFoundation/OpenShadingLanguage/archive/v${MY_PV}.tar.gz -> ${P}.tar.gz"
-	KEYWORDS="~amd64 ~x86 ~arm ~arm64"
+	KEYWORDS="~amd64 ~arm ~arm64 ~ppc64"
 	S="${WORKDIR}/OpenShadingLanguage-${MY_PV}"
 	SLOT="0/$(ver_cut 1-2 ${PV})"
 fi
@@ -33,15 +34,14 @@ if [[ "${PV}" =~ "1.12" ]]; then
 	)
 	# Check this on updates
 	LLVM_COMPAT=( 16 17 )
-	inherit llvm-r1
 else
 	PATCHES+=(
 		"${FILESDIR}/osl-1.13.6.0-lld-fix-linking.patch"
 	)
 	# Check this on updates
 	LLVM_COMPAT=( {17..19} )
-	inherit llvm-r1
 fi
+inherit llvm-r1
 
 LICENSE="BSD"
 
@@ -52,7 +52,7 @@ X86_CPU_FEATURES=(
 CPU_FEATURES=( ${X86_CPU_FEATURES[@]/#/cpu_flags_x86_} )
 CUDA_TARGETS_COMPAT=( sm_30 sm_35 sm_50 sm_52 sm_61 sm_70 sm_75 sm_86 )
 
-IUSE="doc debug cuda gui partio python plugins openvdb optix qt6 static-libs test wayland X ${CPU_FEATURES[@]%:*} ${CUDA_TARGETS_COMPAT[@]/#/cuda_targets_}"
+IUSE="doc debug cuda gui nofma partio python plugins openvdb optix qt6 static-libs test wayland X ${CPU_FEATURES[@]%:*} ${CUDA_TARGETS_COMPAT[@]/#/cuda_targets_}"
 RESTRICT="
 	!test (test)
 	mirror
@@ -121,10 +121,17 @@ RDEPEND="
 	virtual/libc
 "
 
-DEPEND="${RDEPEND}"
+DEPEND="${RDEPEND}
+	dev-util/patchelf
+	>=media-libs/openexr-3
+	sys-libs/zlib
+	test? (
+		media-fonts/droid
+	)
+"
 BDEPEND="
 	>=dev-build/cmake-3.12
-	>=dev-util/pkgconf-1.3.7[${MULTILIB_USEDEP},pkg-config(+)]
+	virtual/pkgconfig
 	app-alternatives/yacc
 	app-alternatives/lex
 "
@@ -140,6 +147,7 @@ get_lib_type() {
 
 pkg_setup() {
 	llvm-r1_pkg_setup
+
 	use python && python-single-r1_pkg_setup
 }
 
@@ -173,14 +181,63 @@ src_configure() {
 
 			local cpufeature
 			local mysimd=()
-			for cpufeature in "${CPU_FEATURES[@]}"; do
-				use "${cpufeature%:*}" && mysimd+=("${cpufeature#*:}")
-			done
+			if use cpu_flags_x86_avx512f; then
+				mysimd+=( avx512f )
+			elif use cpu_flags_x86_avx2 ; then
+				mysimd+=( avx2 )
+				if use cpu_flags_x86_f16c ; then
+					mysimd+=( f16c )
+				fi
+			elif use cpu_flags_x86_avx ; then
+				mysimd+=( avx )
+			elif use cpu_flags_x86_sse4_2 ; then
+				mysimd+=( sse4.2 )
+			elif use cpu_flags_x86_sse4_1 ; then
+				mysimd+=( sse4.1 )
+			elif use cpu_flags_x86_ssse3 ; then
+				mysimd+=( ssse3 )
+			elif use cpu_flags_x86_sse3 ; then
+				mysimd+=( sse3 )
+			elif use cpu_flags_x86_sse2 ; then
+				mysimd+=( sse2 )
+			fi
 
-			use debug && CMAKE_BUILD_TYPE=Debug || CMAKE_BUILD_TYPE=Release
+			local mybatched=()
+			if use cpu_flags_x86_avx512f || use cpu_flags_x86_avx2 ; then
+				if use cpu_flags_x86_avx512f ; then
+					if use nofma; then
+						mybatched+=(
+							"b8_AVX512_noFMA"
+							"b16_AVX512_noFMA"
+						)
+					fi
+					mybatched+=(
+						"b8_AVX512"
+						"b16_AVX512"
+					)
+				fi
+				if use cpu_flags_x86_avx2 ; then
+					if use nofma; then
+						mybatched+=(
+							"b8_AVX2_noFMA"
+						)
+					fi
+					mybatched+=(
+						"b8_AVX2"
+					)
+				fi
+			fi
+			if use cpu_flags_x86_avx ; then
+				mybatched+=(
+					"b8_AVX"
+				)
+			fi
 
 			# If no CPU SIMDs were used, completely disable them
-			[[ -z ${mysimd} ]] && mysimd=("0")
+			[[ -z "${mysimd[*]}" ]] && mysimd=("0")
+			[[ -z "${mybatched[*]}" ]] && mybatched=("0")
+
+			use debug && CMAKE_BUILD_TYPE=Debug || CMAKE_BUILD_TYPE=Release
 
 			# This is currently needed on arm64 to get the NEON SIMD wrapper to compile the code successfully
 			# Even if there are no SIMD features selected, it seems like the code will turn on NEON support if it is available.
@@ -190,8 +247,8 @@ src_configure() {
 
 			local gcc="$(tc-getCC)"
 			local mycmakeargs=(
-				-DCMAKE_CXX_STANDARD=17
 				-DCMAKE_POLICY_DEFAULT_CMP0146="OLD" # BUG FindCUDA
+				-DCMAKE_CXX_STANDARD=17
 				#-DLLVM_ROOT="${EPREFIX}/usr/lib/llvm/${LLVM_SLOT}"
 				-DCMAKE_INSTALL_BINDIR="${EPREFIX}/usr/$(get_libdir)/osl/bin"
 				-DCMAKE_INSTALL_DOCDIR="share/doc/${PF}"
@@ -258,11 +315,7 @@ src_test() {
 			"${BUILD_DIR}/src/testshade/"{optix_grid_renderer,rend_lib_testshade}".ptx" \
 			"${BUILD_DIR}/bin/" || die
 
-		# NOTE this should go to cuda eclass
-		addwrite /dev/nvidiactl
-		addwrite /dev/nvidia0
-		addwrite /dev/nvidia-uvm
-		addwrite /dev/nvidia-caps
+		cuda_add_sandbox -w
 		addwrite "/dev/char/"
 	fi
 
@@ -285,6 +338,15 @@ src_test() {
 		"^osl-imageio.opt$"
 		"^osl-imageio.opt.rs_bitcode$"
 	)
+
+	if use optix; then
+		CMAKE_SKIP_TESTS+=(
+			"^color2.optix$"
+			"^color4.optix(|.opt|.fused)$"
+			"^vector2.optix$"
+			"^vector4.optix$"
+		)
+	fi
 
 	myctestargs=(
 		# src/build-scripts/ci-test.bash
@@ -346,5 +408,21 @@ src_install() {
 		multilib_check_headers
 	}
 	multilib_foreach_abi install_abi
-}
+	if [[ -d "${ED}/usr/build-scripts" ]]; then
+		rm -vr "${ED}/usr/build-scripts" || die
+	fi
 
+	if use test; then
+		rm \
+			"${ED}/usr/bin/test"{render,shade{,_dso}} \
+			"${ED}/usr/$(get_libdir)/libtestshade.so"* \
+			|| die
+	fi
+
+	if use amd64; then
+		find "${ED}/usr/$(get_libdir)" -type f  -name 'lib_*_oslexec.so' -print0 \
+			| while IFS= read -r -d $'\0' batched_lib; do
+			patchelf --set-soname "$(basename "${batched_lib}")" "${batched_lib}" || die
+		done
+	fi
+}
