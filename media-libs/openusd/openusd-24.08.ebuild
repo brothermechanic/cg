@@ -1,4 +1,4 @@
-# Copyright 1999-2024 Gentoo Authors
+# Copyright 1999-2025 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
 
 EAPI=8
@@ -16,13 +16,13 @@ LICENSE="
 	JSON
 	MIT
 "
-# custom - https://github.com/PixarAnimationStudios/OpenUSD/blob/v23.05/pxr/usdImaging/usdImaging/drawModeStandin.cpp#L9
+# custom - https://github.com/PixarAnimationStudios/OpenUSD/blob/v24.05/pxr/usdImaging/usdImaging/drawModeStandin.cpp#L9
 # custom - search "In consideration of your agreement"
 SLOT="0"
 KEYWORDS="~amd64"
 # test USE flag is enabled upstream
 IUSE="alembic debug -doc draco embree examples hdf5 +imaging +jemalloc
-materialx -monolithic color-management opengl openimageio openvdb openexr osl
+materialx monolithic color-management opengl openimageio openvdb openexr osl
 ptex +python safety-over-speed -static-libs tutorials -test tools usdview vulkan"
 
 REQUIRED_USE+="
@@ -67,7 +67,7 @@ REQUIRED_USE+="
 
 RDEPEND+="
 	!python? (
-		>=dev-libs/boost-1.70.0
+		>=dev-libs/boost-1.76.0
 	)
 	>=sys-libs/zlib-1.2.11
 	alembic? (
@@ -84,7 +84,7 @@ RDEPEND+="
 		>=sci-libs/hdf5-1.10[cxx,hl]
 	)
 	imaging? (
-		>=media-libs/opensubdiv-3.5.1
+		>=media-libs/opensubdiv-3.6.0
 		x11-libs/libX11
 	)
 	jemalloc? (
@@ -121,7 +121,7 @@ RDEPEND+="
 	python? (
 		${PYTHON_DEPS}
 		$(python_gen_cond_dep '
-			>=dev-libs/boost-1.70.0:=[python,${PYTHON_USEDEP}]
+			>=dev-libs/boost-1.76.0:=[python,${PYTHON_USEDEP}]
 			usdview? (
 				(
 					>=dev-python/pyside6-6.2.0[${PYTHON_USEDEP},quick(+)]
@@ -135,7 +135,7 @@ RDEPEND+="
 		')
 	)
     vulkan? (
-		>=dev-util/vulkan-headers-1.3.296.0
+		>=dev-util/vulkan-headers-1.3.243.0
 		>=dev-libs/vulkan-memory-allocator-3.0.0
 		>=dev-libs/spirv-reflect-1.3.296.0
 		>=dev-util/spirv-headers-1.3.296.0
@@ -149,21 +149,21 @@ BDEPEND="
 	$(python_gen_cond_dep '
 		>=dev-python/jinja2-2[${PYTHON_USEDEP}]
 	')
-	>=dev-build/cmake-3.14.6
-	>=sys-devel/bison-2.4.1
-	>=sys-devel/flex-2.5.39
+	>=dev-build/cmake-3.17.5
+	app-alternatives/yacc
+	app-alternatives/lex
 	dev-cpp/argparse
 	dev-util/patchelf
 	virtual/pkgconfig
 	doc? (
-		>=app-doc/doxygen-1.8.14[dot]
+		>=app-text/doxygen-1.9.6[dot]
 	)
 	|| (
 		(
 			<sys-devel/gcc-15
 			>=sys-devel/gcc-9.0.1
 		)
-		<sys-devel/clang-20
+		<llvm-core/clang-20
 	)
 "
 SRC_URI="
@@ -249,7 +249,7 @@ src_configure() {
 			-DDRACO_ATTRIBUTE_VALUES_DEDUPLICATION_SUPPORTED=ON \
 			-DTBB_SUPPRESS_DEPRECATED_MESSAGES=1
 	fi
-    # See https://github.com/PixarAnimationStudios/USD/blob/v23.05/cmake/defaults/Options.cmake
+    # See https://github.com/PixarAnimationStudios/USD/blob/v24.05/cmake/defaults/Options.cmake
 	local mycmakeargs+=(
 		$(usex jemalloc "-DPXR_MALLOC_LIBRARY=${ESYSROOT}/usr/$(get_libdir)/${PN}/$(get_libdir)/libjemalloc.so" "")
 		$(usex usdview "-DPYSIDEUICBINARY:PATH=${S}/pyside6-uic" "")

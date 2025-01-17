@@ -84,7 +84,7 @@ RDEPEND+="
 	python? (
 		${PYTHON_DEPS}
 		$(python_gen_cond_dep '
-			>=dev-libs/boost-1.68:=[numpy?,python?,${PYTHON_USEDEP}]
+			>=dev-python/nanobind-2.0.0:=
 			numpy? (
 				>=dev-python/numpy-1.14[${PYTHON_USEDEP}]
 			)
@@ -188,6 +188,7 @@ src_configure() {
 	CMAKE_BUILD_TYPE=$(usex debug 'Debug' 'Release')
 
 	local mycmakeargs=(
+		-Dnanobind_DIR="$(python_get_sitedir)/nanobind/cmake"
 		-DCMAKE_CXX_STANDARD=17
 		-DCMAKE_INSTALL_DOCDIR="share/doc/${PF}/"
 		-DCONCURRENT_MALLOC=$(usex jemalloc "Jemalloc" \
@@ -199,24 +200,24 @@ src_configure() {
 					$(usex vdb_view ON OFF))\
 			)\
 		)
-		-DOPENVDB_BUILD_DOCS=$(usex doc)
-		-DOPENVDB_BUILD_PYTHON_MODULE=$(usex python)
-		-DOPENVDB_BUILD_UNITTESTS=$(usex test)
-		-DOPENVDB_BUILD_VDB_LOD=$(usex vdb_lod)
-		-DOPENVDB_BUILD_VDB_PRINT=$(usex vdb_print)
-		-DOPENVDB_BUILD_VDB_RENDER=$(usex vdb_render)
-		-DOPENVDB_BUILD_VDB_VIEW=$(usex vdb_view)
-		-DOPENVDB_CORE_SHARED=ON
-		-DOPENVDB_CORE_STATIC=$(usex static-libs)
-		-DOPENVDB_ENABLE_RPATH=OFF
-		-DUSE_BLOSC=$(usex blosc)
-		-DUSE_CCACHE=OFF
-		-DUSE_COLORED_OUTPUT=ON
-		-DUSE_EXR=$(usex openexr)
-		-DUSE_PNG=$(usex png)
-		-DUSE_IMATH_HALF=$(usex imath-half)
-		-DUSE_LOG4CPLUS=$(usex log4cplus)
-		-DUSE_ZLIB=$(usex zlib)
+		-DOPENVDB_BUILD_DOCS="$(usex doc)"
+		-DOPENVDB_BUILD_PYTHON_MODULE="$(usex python)"
+		-DOPENVDB_BUILD_UNITTESTS="$(usex test)"
+		-DOPENVDB_BUILD_VDB_LOD="$(usex vdb_lod)"
+		-DOPENVDB_BUILD_VDB_PRINT="$(usex vdb_print)"
+		-DOPENVDB_BUILD_VDB_RENDER="$(usex vdb_render)"
+		-DOPENVDB_BUILD_VDB_VIEW="$(usex vdb_view)"
+		-DOPENVDB_CORE_SHARED="ON"
+		-DOPENVDB_CORE_STATIC="$(usex static-libs)"
+		-DOPENVDB_ENABLE_RPATH="OFF"
+		-DUSE_BLOSC="$(usex blosc)"
+		-DUSE_CCACHE="OFF"
+		-DUSE_COLORED_OUTPUT="ON"
+		-DUSE_EXR="$(usex openexr)"
+		-DUSE_PNG="$(usex png)"
+		-DUSE_IMATH_HALF="$(usex imath-half)"
+		-DUSE_LOG4CPLUS="$(usex log4cplus)"
+		-DUSE_ZLIB="$(usex zlib)"
 		-DUSE_PKGCONFIG=ON
 	)
 
@@ -241,7 +242,7 @@ src_configure() {
 
 	if use python; then
 		mycmakeargs+=(
-			-DPYOPENVDB_INSTALL_DIRECTORY="$(python_get_sitedir)"
+			-DVDB_PYTHON_INSTALL_DIRECTORY="$(python_get_sitedir)"
 			-DPython_EXECUTABLE="${PYTHON}"
 			-DPython_INCLUDE_DIR="$(python_get_includedir)"
 			-DUSE_NUMPY=$(usex numpy)
