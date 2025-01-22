@@ -4,7 +4,7 @@
 EAPI=8
 
 PYTHON_COMPAT=( python3_{11..13} )
-OPENVDB_COMPAT=( {7..11} )
+OPENVDB_COMPAT=( {7..12} )
 LLVM_COMPAT=( {17..19} )
 LLVM_OPTIONAL=1
 
@@ -682,7 +682,7 @@ src_configure() {
 		#If a kernel isn't selected then all of them are built by default
 		if [ -n "${CUDA_TARGETS}" ] ; then
 			mycmakeargs+=(
-				-DCYCLES_CUDA_BINARIES_ARCH=${CUDA_TARGETS%%*;}
+				-DCYCLES_CUDA_BINARIES_ARCH=${CUDA_TARGETS%%;}
 
 			)
 		fi

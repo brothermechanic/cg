@@ -4,7 +4,7 @@
 EAPI=8
 
 PYTHON_COMPAT=( python3_{11..13} )
-OPENVDB_COMPAT=( {7..11} )
+OPENVDB_COMPAT=( {7..12} )
 inherit cmake desktop python-single-r1 flag-o-matic openvdb xdg-utils
 
 DESCRIPTION="Universal Scene Description"

@@ -3,7 +3,7 @@
 
 EAPI=8
 
-OPENVDB_COMPAT=( {7..11} )
+OPENVDB_COMPAT=( {7..12} )
 PYTHON_COMPAT=( python3_{10..13} )
 LLVM_COMPAT=( {17..19} )
 

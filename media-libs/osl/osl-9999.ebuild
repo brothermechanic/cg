@@ -6,7 +6,7 @@ EAPI=8
 PYTHON_COMPAT=( python3_{10..13} )
 
 # Check this on updates
-OPENVDB_COMPAT=( {7..11} )
+OPENVDB_COMPAT=( {7..12} )
 
 inherit cmake cuda flag-o-matic multilib-minimal python-single-r1 toolchain-funcs openvdb
 

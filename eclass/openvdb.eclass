@@ -130,7 +130,7 @@ _OPENVDB_ECLASS=1
 # @DESCRIPTION:
 # All supported OpenVDB ABI
 # Update this with each new major version release of OpenVDB
-_OPENVDB_ALL_ABI=( {9..12} )
+_OPENVDB_ALL_ABI=( {3..12} )
 readonly _OPENVDB_ALL_ABI
 
 # @ECLASS_VARIABLE: OPENVDB_ABI
@@ -152,7 +152,6 @@ readonly _OPENVDB_ALL_ABI
 # OPENVDB_REQUIRED_USE and OPENVDB_SINGLE_USEDEP global variables for
 # use by the inheriting ebuild
 _openvdb_set_globals() {
-    local i
     if ! declare -p OPENVDB_COMPAT &>/dev/null; then
         die 'OPENVDB_COMPAT not declared.'
     fi
@@ -160,23 +159,24 @@ _openvdb_set_globals() {
         die 'OPENVDB_COMPAT must be an array.'
     fi
     local flags=()
-    for i in "${_OPENVDB_ALL_ABI[@]}"; do
-        if has "${i}" "${OPENVDB_COMPAT[@]}"; then
-            flags+=( "openvdb_abi_${i}" )
+    local abi
+    for abi in "${_OPENVDB_ALL_ABI[@]}"; do
+        if has "${abi}" "${OPENVDB_COMPAT[@]}"; then
+            # use IUSE defaults to avoid requesting the user to enable it
+            flags+=( "openvdb_abi_${abi}" )
+            if [[ "${abi}" == "${OPENVDB_ABI}" ]]; then
+                IUSE+="+openvdb_abi_${abi} "
+            else
+                IUSE+="-openvdb_abi_${abi} "
+            fi
         fi
     done
-    if [[ ${#supp[@]} -eq 1 ]]; then
-        IUSE="+${flags[0]}"
-    else
-        IUSE="${flags[*]}"
-    fi
     if [[ ! ${#flags[@]} ]]; then
         die "No supported OpenVDB ABI in OPENVDB_COMPAT."
     fi
-    local single_flags="${flags[@]/%/(-)?}"
-    local single_usedep=${single_flags// /,}
+    local usedeps=${flags[*]/%/(-)?}
     OPENVDB_REQUIRED_USE="^^ ( ${flags[*]} )"
-    OPENVDB_SINGLE_USEDEP="${single_usedep}"
+    OPENVDB_SINGLE_USEDEP="${usedeps// /,}"
     readonly OPENVDB_REQUIRED_USE OPENVDB_SINGLE_USEDEP
 }
 _openvdb_set_globals
@@ -215,9 +215,11 @@ openvdb_setup() {
 # Set cppflags to match selected OpenVDB ABI version
 openvdb_configure() {
     debug-print-function ${FUNCNAME} "${@}"
-    has_version -b =media-gfx/openvdb-${OPENVDB_ABI}* && \
-        append-cppflags -DOPENVDB_ABI_VERSION_NUMBER="${OPENVDB_ABI}" || \
+    if has_version -b =media-gfx/openvdb-${OPENVDB_ABI}*; then
+        append-cppflags -DOPENVDB_ABI_VERSION_NUMBER="${OPENVDB_ABI}"
+    else
         append-cppflags -DOPENVDB_USE_DEPRECATED_ABI_${OPENVDB_ABI}=ON
+    fi
 }
 
 # @FUNCTION: openvdb_pkg_setup
