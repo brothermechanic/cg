@@ -153,6 +153,7 @@ PATCHES=(
 #	"${FILESDIR}/${PN}-10.0.1-fix-linking-of-vdb_tool-with-OpenEXR.patch"
 	"${FILESDIR}/${PN}-10.0.1-drop-failing-tests.patch"
 	"${FILESDIR}/${PN}-10.0.1-log4cplus-version.patch"
+	"${FILESDIR}/${PN}-12.0.0-fix-typos-1995.patch"
 )
 RESTRICT="
 	mirror
@@ -219,6 +220,7 @@ src_configure() {
 		-DUSE_LOG4CPLUS="$(usex log4cplus)"
 		-DUSE_ZLIB="$(usex zlib)"
 		-DUSE_PKGCONFIG=ON
+		#-DUSE_VCL="$(usex vcl)"
 	)
 
 	if use ax; then
