@@ -21,7 +21,7 @@ REQUIRED_USE="${PYTHON_REQUIRED_USE}"
 RDEPEND="${PYTHON_DEPS}
 	dev-python/numpy
 	dev-python/pyopengl
-	dev-python/PyQt5
+	dev-python/pyqt5
 	dev-qt/qtsvg"
 
 DEPEND="${RDEPEND}"
