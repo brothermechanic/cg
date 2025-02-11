@@ -33,7 +33,7 @@ else
 fi
 
 [[ "4.0 3.6" =~ "${MY_PV}"  ]] && OSL_PV="12" || OSL_PV="13"
-[[ "4.2 4.3" =~ "${MY_PV}" ]] && AUD_PV="1.5.1" || AUD_PV="1.4.1"
+[[ "4.2 4.3 4.4" =~ "${MY_PV}" ]] && AUD_PV="1.5.1" || AUD_PV="1.4.1"
 
 SLOT="$MY_PV"
 LICENSE="|| ( GPL-3 BL )"
