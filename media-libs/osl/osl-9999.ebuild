@@ -267,10 +267,15 @@ src_configure() {
 				-DUSE_PARTIO=$(usex partio)
 				-DUSE_QT=$(usex gui)
 				-DUSE_PYTHON=$(usex python)
-				-DPYTHON_VERSION="${EPYTHON/python}"
-				-DPYTHON_SITE_DIR="$(python_get_sitedir)"
 				-DUSE_SIMD="$(IFS=","; echo "${mysimd[*]}")"
 			)
+
+			if use python; then
+				mycmakeargs+=(
+				  -DPYTHON_VERSION="${EPYTHON/python}"
+				  -DPYTHON_SITE_DIR="$(python_get_sitedir)"
+				)
+			fi
 
 			if use cuda; then
 				for CT in ${CUDA_TARGETS_COMPAT[@]}; do
