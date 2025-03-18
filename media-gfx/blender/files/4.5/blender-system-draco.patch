@@ -24,36 +24,15 @@
  
  # Camera/motion tracking
  option(WITH_LIBMV "Enable Libmv structure from motion library" ON)
-@@ -1087,11 +1087,6 @@ set_and_warn_dependency(WITH_PYTHON WITH
- set_and_warn_dependency(WITH_PYTHON WITH_DRACO         OFF)
- set_and_warn_dependency(WITH_PYTHON WITH_MOD_FLUID     OFF)
- 
--if(WITH_DRACO AND NOT WITH_PYTHON_INSTALL)
--  message(STATUS "WITH_DRACO requires WITH_PYTHON_INSTALL to be ON, disabling WITH_DRACO for now")
--  set(WITH_DRACO OFF)
--endif()
--
- # enable boost for cycles, audaspace or i18n
- # otherwise if the user disabled
- 
 --- a/source/creator/CMakeLists.txt
 +++ b/source/creator/CMakeLists.txt
-@@ -873,7 +873,7 @@ if(UNIX AND NOT APPLE)
-     endif()
+@@ -481,7 +481,7 @@ if(WITH_PYTHON)
    endif()
- 
+   unset(FREESTYLE_EXCLUDE_CONDITIONAL)
+
 -  if(WITH_DRACO)
 +  if(WITH_DRACO AND NOT WITH_SYSTEM_DRACO)
      install(
        PROGRAMS $<TARGET_FILE:extern_draco>
-       DESTINATION ${TARGETDIR_VER}/python/lib/python${PYTHON_VERSION}/site-packages
-@@ -1361,7 +1361,7 @@ elseif(WIN32)
-     )
-   endif()
- 
--  if(WITH_DRACO)
-+  if(WITH_DRACO AND NOT WITH_SYSTEM_DRACO)
-     install(
-       PROGRAMS $<TARGET_FILE:extern_draco>
-       DESTINATION ${TARGETDIR_VER}/python/lib/site-packages
+       DESTINATION ${TARGETDIR_VER}/scripts/addons_core/io_scene_gltf2
 

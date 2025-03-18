@@ -1,11 +1,11 @@
-# Copyright 1999-2024 Gentoo Authors
+# Copyright 1999-2025 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
 
 EAPI=8
 
 PYTHON_COMPAT=( python3_{11..13} )
 OPENVDB_COMPAT=( {7..12} )
-LLVM_COMPAT=( {17..19} )
+LLVM_COMPAT=( {17..20} )
 LLVM_OPTIONAL=1
 
 inherit check-reqs cmake cuda flag-o-matic llvm-r1 git-r3 pax-utils python-single-r1 toolchain-funcs xdg-utils openvdb cg-blender-scripts-dir
@@ -22,7 +22,7 @@ if [[ ${PV} == 9999 ]]; then
 	EGIT_BRANCH="main"
 	#EGIT_COMMIT="0f3fdd25bcabac1d68d02fb246d961ea56fe49a1"
 	#EGIT_CLONE_TYPE="shallow"
-	MY_PV="4.4"
+	MY_PV="4.5"
 	KEYWORDS=""
 else
 	MY_PV="$(ver_cut 1-2)"
@@ -375,7 +375,6 @@ PATCHES=(
 	"${FILESDIR}/x112.patch"
 	#"${FILESDIR}/${PN}-fix-desktop.patch"
 	#"${FILESDIR}/${PN}-fix-boost-1.81-iostream.patch"
-	"${FILESDIR}/${PN}-4.0.2-FindClang.patch"
 	"${FILESDIR}/${PN}-4.1.1-FindLLVM.patch"
 	"${FILESDIR}/${PN}-4.1.1-numpy.patch"
 )
@@ -570,7 +569,7 @@ src_configure() {
 		-DWITH_CUDA_DYNLOAD=$(usex cuda $(usex cycles-bin-kernels no yes) no)
 		-DWITH_CYCLES_DEVICE_ONEAPI=$(usex oneapi)
 		-DWITH_CYCLES_ONEAPI_BINARIES=$(usex oneapi $(usex cycles-bin-kernels) no)
-		-DWITH_CYCLES_HYDRA_RENDER_DELEGATE="no" # TODO: package Hydra
+		-DWITH_CYCLES_HYDRA_RENDER_DELEGATE="no"                # TODO: package Hydra
 		-DWITH_CYCLES_EMBREE=$(usex embree)						# Speedup library for Cycles
 		-DWITH_CYCLES_NATIVE_ONLY=$(usex cycles)				# for native kernel only
 		-DWITH_CYCLES_OSL=$(usex osl)
@@ -723,6 +722,8 @@ src_configure() {
 
 	append-cflags "$(usex debug '-DDEBUG' '-DNDEBUG')"
 	append-cppflags "$(usex debug '-DDEBUG' '-DNDEBUG')"
+
+	CMAKE_BUILD_TYPE=$(usex debug RelWithDebInfo Release)
 
 	mycmakeargs+=(
 		-DWITH_LINKER_LLD=$(usex lld)
