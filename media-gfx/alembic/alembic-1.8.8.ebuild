@@ -1,4 +1,4 @@
-# Copyright 1999-2024 Gentoo Authors
+# Copyright 1999-2025 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
 
 EAPI=8
@@ -52,7 +52,6 @@ src_configure() {
 	CMAKE_BUILD_TYPE=Release
 	CMAKE_CXX_STANDARD=17
 	local mycmakeargs=(
-		-DALEMBIC_USING_IMATH_3=ON
 		-DALEMBIC_BUILD_LIBS=ON
 		-DALEMBIC_DEBUG_WARNINGS_AS_ERRORS=OFF
 		-DALEMBIC_SHARED_LIBS=ON
