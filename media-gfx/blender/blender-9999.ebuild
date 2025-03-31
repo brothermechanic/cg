@@ -13,15 +13,13 @@ inherit check-reqs cmake cuda flag-o-matic llvm-r1 git-r3 pax-utils python-singl
 DESCRIPTION="Blender is a free and open-source 3D creation suite."
 HOMEPAGE="https://www.blender.org"
 
-EGIT_REPO_URI="https://projects.blender.org/blender/blender.git"
-EGIT_SUBMODULES=( '*' '-lib/*' '-tools/*' )
-EGIT_REPO_URI_LIST="https://projects.blender.org/blender/blender-addons.git https://projects.blender.org/blender/blender-addons-contrib.git"
-EGIT_LFS="yes"
+EGIT_REPO_URI="https://github.com/blender/blender https://projects.blender.org/blender/blender.git"
+EGIT_SUBMODULES=( '*' '-lib/*' '-tools/*' '-release/datafiles/assets' )
 
 if [[ ${PV} == 9999 ]]; then
 	EGIT_BRANCH="main"
 	#EGIT_COMMIT="0f3fdd25bcabac1d68d02fb246d961ea56fe49a1"
-	#EGIT_CLONE_TYPE="shallow"
+	EGIT_CLONE_TYPE="shallow"
 	MY_PV="4.5"
 	KEYWORDS=""
 else
@@ -78,7 +76,7 @@ IUSE_CPU="+openmp +simd +tbb -lld -gold +mold -cpu_flags_arm_neon llvm -valgrind
 IUSE_GPU="cuda optix hip oneapi -cycles-bin-kernels ${CUDA_TARGETS_COMPAT[@]/#/cuda_targets_} ${AMDGPU_TARGETS_COMPAT[@]/#/amdgpu_targets_} vulkan"
 IUSE_DESKTOP="+cg -portable +X headless +nls icu -ndof wayland gnome"
 IUSE_LIBS="+bullet +boost +draco +materialx +color-management +oidn +opensubdiv +openvdb nanovdb openxr +libmv lzma lzo osl +fftw +potrace +pugixml +otf"
-IUSE_MOD="+fluid +smoke +oceansim +remesh +gmp +quadriflow"
+IUSE_MOD="+fluid +smoke +oceansim +remesh +gmp +quadriflow +addons +addons-contrib +assets"
 IUSE_RENDER="+cycles +openpgl +embree +freestyle"
 IUSE_3DFILES="-alembic usd +collada +obj +ply +stl"
 IUSE_IMAGE="-dpx +openexr jpeg2k webp +pdf"
@@ -327,10 +325,10 @@ BDEPEND="
 	>=dev-build/cmake-3.10
 	>=dev-build/meson-0.63.0
 	>=dev-util/vulkan-headers-1.3.268
-	dev-vcs/git-lfs
 	dev-vcs/git
 	dev-util/patchelf
 	virtual/pkgconfig
+	assets? ( dev-vcs/git-lfs )
 	mold? ( sys-devel/mold:= )
 	$(llvm_gen_dep '
 		lld? ( llvm-core/lld:${LLVM_SLOT}= )
@@ -420,7 +418,7 @@ src_unpack() {
 	fi
 	git-r3_src_unpack
 
-	for repo in $(echo ${EGIT_REPO_URI_LIST}); do
+	if use addons; then
 		if [[ "4.2 4.3 4.4" =~ "${MY_PV}" ]]; then
 			EGIT_BRANCH="main"
 			EGIT_COMMIT=""
@@ -429,10 +427,40 @@ src_unpack() {
 			EGIT_BRANCH="blender-v${MY_PV}-release"
 			#EGIT_COMMIT="v${PV}"
 		fi
-		EGIT_REPO_URI="${repo}"
-		EGIT_CHECKOUT_DIR=${WORKDIR}/${P}/scripts/$(echo -n "${repo}" | sed -rne 's/^http.*\/blender-([a-z-]*).*/\1/p')
+		EGIT_REPO_URI="https://github.com/blender/blender-addons https://projects.blender.org/blender/blender-addons.git"
+		EGIT_CHECKOUT_DIR=${WORKDIR}/${P}/scripts/blender-addons
 		git-r3_src_unpack
-	done
+	fi
+
+	if use addons-contrib; then
+		if [[ "4.2 4.3 4.4" =~ "${MY_PV}" ]]; then
+			EGIT_BRANCH="main"
+			EGIT_COMMIT=""
+			EGIT_CLONE_TYPE="shallow"
+		else
+			EGIT_BRANCH="blender-v${MY_PV}-release"
+			#EGIT_COMMIT="v${PV}"
+		fi
+		EGIT_REPO_URI="https://github.com/blender/blender-addons-contrib https://projects.blender.org/blender/blender-addons-contrib.git"
+		EGIT_CHECKOUT_DIR=${WORKDIR}/${P}/scripts/blender-addons-contrib
+		git-r3_src_unpack
+	fi
+
+	if use assets; then
+		if [[ "4.2 4.3 4.4" =~ "${MY_PV}" ]]; then
+			EGIT_BRANCH="main"
+			EGIT_COMMIT=""
+			EGIT_CLONE_TYPE="shallow"
+		else
+			EGIT_BRANCH="blender-v${MY_PV}-release"
+			#EGIT_COMMIT="v${PV}"
+		fi
+		EGIT_LFS="yes"
+		EGIT_REPO_URI="https://projects.blender.org/blender/blender-assets.git"
+		EGIT_CHECKOUT_DIR=${WORKDIR}/${P}/release/datafiles/assets
+		git-r3_src_unpack
+	fi
+
 	if use cg; then
 		unset EGIT_BRANCH EGIT_COMMIT
 		EGIT_CHECKOUT_DIR="${WORKDIR}"/cg_preferences/ \
