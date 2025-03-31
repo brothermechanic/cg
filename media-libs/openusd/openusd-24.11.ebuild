@@ -124,12 +124,7 @@ RDEPEND+="
 			>=dev-libs/boost-1.76.0:=[python,${PYTHON_USEDEP}]
 			usdview? (
 				(
-					>=dev-python/pyside6-6.2.0[${PYTHON_USEDEP},quick(+)]
-				)
-				dev-python/pyside6-tools[${PYTHON_USEDEP},tools(+)]
-				dev-python/shiboken6[${PYTHON_USEDEP}]
-				opengl? (
-					>=dev-python/pyopengl-3.1.5[${PYTHON_USEDEP}]
+					>=dev-python/pyside6-6.2.0[${PYTHON_USEDEP},quick(+),tools(+),opengl?]
 				)
 			)
 		')

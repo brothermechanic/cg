@@ -82,7 +82,7 @@ IUSE_MOD="+fluid +smoke +oceansim +remesh +gmp +quadriflow"
 IUSE_RENDER="+cycles +openpgl +embree +freestyle"
 IUSE_3DFILES="-alembic usd +collada +obj +ply +stl"
 IUSE_IMAGE="-dpx +openexr jpeg2k webp +pdf"
-IUSE_CODEC="avi +ffmpeg flac -sndfile +quicktime aom mp3 opus theora vorbis vpx x264 xvid"
+IUSE_CODEC="avi +ffmpeg flac -sndfile +quicktime aom lame opus theora vorbis vpx x264 xvid"
 IUSE_SOUND="jack openal -pulseaudio sdl"
 IUSE_TEST="-debug -doc -man -gtests renderdoc -test -experimental"
 
@@ -124,7 +124,7 @@ CODECS="
 	aom? (
 		>=media-libs/libaom-3.3.0
 	)
-	mp3? (
+	lame? (
 		>=media-sound/lame-3.100[sndfile]
 	)
 	opus? (
@@ -196,8 +196,8 @@ RDEPEND="
 		)
 	)
 	ffmpeg? (
-		<media-video/ffmpeg-8:=[encode,jpeg2k?,mp3?,opus?,sdl,theora?,vorbis?,vpx?,x264?,xvid?,zlib]
-		>media-video/ffmpeg-5:=[encode,jpeg2k?,mp3?,opus?,sdl,theora?,vorbis?,vpx?,x264?,xvid?,zlib]
+		<media-video/ffmpeg-8:=[jpeg2k?,opus?,lame?,sdl,theora?,vorbis?,vpx?,x264?,xvid?,zlib]
+		>media-video/ffmpeg-5:=[jpeg2k?,opus?,lame?,sdl,theora?,vorbis?,vpx?,x264?,xvid?,zlib]
 	)
 	fftw? ( sci-libs/fftw:3.0=[openmp?] )
 	flac? (	>=media-libs/flac-1.4.2	)
