@@ -1,0 +1,11 @@
+--- a/source/blender/compositor/operations/COM_ViewerOperation.cc
++++ b/source/blender/compositor/operations/COM_ViewerOperation.cc
+@@ -9,7 +9,8 @@
+ 
+ #include "IMB_imbuf.hh"
+ #include "IMB_imbuf_types.hh"
++#include "IMB_colormanagement.hh"
+ 
+ namespace blender::compositor {
+ 
+

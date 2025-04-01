@@ -1,0 +1,14 @@
+--- a/intern/cycles/kernel/CMakeLists.txt
++++ b/intern/cycles/kernel/CMakeLists.txt
+@@ -762,6 +762,11 @@ if(WITH_CYCLES_DEVICE_OPTIX AND WITH_CYC
+       -Wno-deprecated-gpu-targets
+       -o ${output})
+ 
++    if(CUDA_HOST_COMPILER)
++      set(cuda_flags ${cuda_flags}
++        -ccbin="${CUDA_HOST_COMPILER}")
++    endif()
++
+     if(WITH_NANOVDB)
+       set(cuda_flags ${cuda_flags}
+         -D WITH_NANOVDB

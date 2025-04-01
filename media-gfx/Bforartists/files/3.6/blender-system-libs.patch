@@ -1,0 +1,127 @@
+--- a/extern/CMakeLists.txt
++++ b/extern/CMakeLists.txt
+@@ -61,7 +61,7 @@ if(WITH_GHOST_X11 AND WITH_GHOST_XDND)
+   add_subdirectory(xdnd)
+ endif()
+ 
+-if(WITH_LIBMV)
++if(WITH_LIBMV AND NOT WITH_SYSTEM_CERES)
+   add_subdirectory(ceres)
+ endif()
+ 
+@@ -69,10 +69,12 @@ if(WITH_LIBMV OR WITH_GTESTS OR (WITH_CY
+   if(NOT WITH_SYSTEM_GFLAGS)
+     add_subdirectory(gflags)
+   endif()
+-  add_subdirectory(glog)
++  if(NOT WITH_SYSTEM_GLOG)
++    add_subdirectory(glog)
++  endif()
+ endif()
+ 
+-if(WITH_GTESTS)
++if(WITH_GTESTS AND NOT WITH_SYSTEM_GTESTS)
+   add_subdirectory(gtest)
+   add_subdirectory(gmock)
+ endif()
+@@ -99,6 +101,6 @@ if(WITH_COMPOSITOR_CPU)
+   add_subdirectory(smaa_areatex)
+ endif()
+ 
+-if(WITH_VULKAN_BACKEND)
++if(WITH_VULKAN_BACKEND)
+   add_subdirectory(vulkan_memory_allocator)
+ endif()
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -421,12 +421,16 @@ option(WITH_DRACO         "Enable Draco
+ option(WITH_LIBMV         "Enable Libmv structure from motion library" ON)
+ option(WITH_LIBMV_SCHUR_SPECIALIZATIONS "Enable fixed-size schur specializations." ON)
+ mark_as_advanced(WITH_LIBMV_SCHUR_SPECIALIZATIONS)
++option(WITH_SYSTEM_CERES  "Use system-wide ceres-solver instead of a bundled one" OFF)
++mark_as_advanced(WITH_SYSTEM_CERES)
+ 
+ # Logging/unbit test libraries.
+ option(WITH_SYSTEM_GFLAGS   "Use system-wide Gflags instead of a bundled one" OFF)
+ option(WITH_SYSTEM_GLOG     "Use system-wide Glog instead of a bundled one" OFF)
++option(WITH_SYSTEM_TESTS    "Use system-wide Glog instead of a bundled one" OFF)
+ mark_as_advanced(WITH_SYSTEM_GFLAGS)
+ mark_as_advanced(WITH_SYSTEM_GLOG)
++mark_as_advanced(WITH_SYSTEM_GTESTS)
+ 
+ # Freestyle
+ option(WITH_FREESTYLE     "Enable Freestyle (advanced edges rendering)" ON)
++#------------------------------------------------------------------------------
++# Configure libmv
++if(WITH_LIBMV)
++  if(WITH_SYSTEM_CERES)
++    find_package(Ceres)
++    if(NOT CERES_FOUND)
++        message(FATAL_ERROR "System wide Ceres is requested but was not found")
++    endif()  
++  endif()
++endif()
+ # -----------------------------------------------------------------------------
+ # Configure `GLog/GFlags`
+ 
+--- a/intern/libmv/CMakeLists.txt
++++ b/intern/libmv/CMakeLists.txt
+@@ -29,9 +29,19 @@ if(WITH_LIBMV)
+   add_definitions(${GLOG_DEFINES})
+   add_definitions(-DLIBMV_GFLAGS_NAMESPACE=${GFLAGS_NAMESPACE})
+ 
++  if(${WITH_SYSTEM_GFLAGS})
++    list(APPEND INC_SYS ${GFLAGS_INCLUDE_DIRS})
++  else()
++    list(APPEND INC ${GFLAGS_INCLUDE_DIRS}) 
++  endif()
++
++  if(${WITH_SYSTEM_GLOG})
++      list(APPEND INC_SYS ${GLOG_INCLUDE_DIRS})
++  else()
++      list(APPEND INC ${GLOG_INCLUDE_DIRS}) 
++  endif() 
++
+   list(APPEND INC
+-    ${GFLAGS_INCLUDE_DIRS}
+-    ${GLOG_INCLUDE_DIRS}
+     ../guardedalloc
+   )
+ 
+@@ -39,18 +49,31 @@ if(WITH_LIBMV)
+     ${EIGEN3_INCLUDE_DIRS}
+     ${PNG_INCLUDE_DIRS}
+     ${ZLIB_INCLUDE_DIRS}
+-    ../../extern/ceres/include
+-    ../../extern/ceres/config
+   )
+ 
+   list(APPEND LIB
+-    extern_ceres
+-
+     ${GLOG_LIBRARIES}
+     ${GFLAGS_LIBRARIES}
+     ${PNG_LIBRARIES}
+   )
+ 
++  if(NOT ${WITH_SYSTEM_CERES})
++    list(APPEND INC_SYS 
++      ../../extern/ceres/include
++      ../../extern/ceres/config
++    )
++    list(APPEND LIB
++      extern_ceres
++    )
++  else()
++    list(APPEND INC_SYS
++      ${CERES_INCLUDE_DIRS}
++    )
++    list(APPEND LIB
++      ceres
++    )
++  endif()
++
+   add_definitions(
+     -DWITH_LIBMV_GUARDED_ALLOC
+     -DLIBMV_NO_FAST_DETECTOR=
+

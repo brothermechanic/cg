@@ -1,0 +1,29 @@
+From 16225e750bcbafecc5520db93b76a10e4bfc7b30 Mon Sep 17 00:00:00 2001
+From: Campbell Barton <campbell@blender.org>
+Date: Tue, 18 Mar 2025 14:56:25 +1100
+Subject: [PATCH] Fix crash starting with only the Vulkan backend enabled
+
+When built with only the Vulkan back-end this wasn't being checked for
+causing Blender to start with no GPU backend which crashed.
+---
+ source/blender/gpu/intern/gpu_context.cc | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/source/blender/gpu/intern/gpu_context.cc b/source/blender/gpu/intern/gpu_context.cc
+index 25ec8848fbc..ae045f9abf0 100644
+--- a/source/blender/gpu/intern/gpu_context.cc
++++ b/source/blender/gpu/intern/gpu_context.cc
+@@ -367,6 +367,10 @@ bool GPU_backend_type_selection_detect()
+   backends_to_check.add(GPU_BACKEND_METAL);
+ #endif
+ 
++#if defined(WITH_VULKAN_BACKEND)
++  backends_to_check.add(GPU_BACKEND_VULKAN);
++#endif
++
+   for (const eGPUBackendType backend_type : backends_to_check) {
+     GPU_backend_type_selection_set(backend_type);
+     if (GPU_backend_supported()) {
+-- 
+2.47.2
+
