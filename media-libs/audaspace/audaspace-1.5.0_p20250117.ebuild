@@ -38,8 +38,8 @@ BDEPEND="
 	sdl? ( media-libs/libsdl2[sound] )
 	sndfile? ( media-libs/libsndfile )
 	ffmpeg? (
-		<media-video/ffmpeg-8:=[mp3,encode,theora,vorbis,opus]
-		>media-video/ffmpeg-5:=[mp3,encode,theora,vorbis,opus]
+		<media-video/ffmpeg-8:=[lame,theora,vorbis,opus]
+		>media-video/ffmpeg-5:=[lame,theora,vorbis,opus]
 	)
 	fftw? ( sci-libs/fftw:3.0= )
 	jack? ( virtual/jack )
