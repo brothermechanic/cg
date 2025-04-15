@@ -191,6 +191,7 @@ src_configure() {
 	local mycmakeargs=(
 		-Dnanobind_DIR="$(python_get_sitedir)/nanobind/cmake"
 		-DCMAKE_CXX_STANDARD=17
+		-DCMAKE_POLICY_DEFAULT_CMP0167="OLD"
 		-DCMAKE_INSTALL_DOCDIR="share/doc/${PF}/"
 		-DCONCURRENT_MALLOC=$(usex jemalloc "Jemalloc" \
 					$(usex tbbmalloc "Tbbmalloc" "None")\

@@ -894,20 +894,32 @@ diff --git a/nanovdb/nanovdb/cuda/DeviceBuffer.h b/nanovdb/nanovdb/cuda/DeviceBu
 index 465bd9dc6b..1eb07310bc 100644
 --- a/nanovdb/nanovdb/cuda/DeviceBuffer.h
 +++ b/nanovdb/nanovdb/cuda/DeviceBuffer.h
-@@ -118,11 +118,11 @@ class DeviceBuffer
-     /// @warning size is expected to be non-zero. Use clear() clear buffer!
-     void init(uint64_t size, bool host = true, void* stream = nullptr);
- 
--    /// @brief Retuns a raw pointer to the host/CPU buffer managed by this allocator.
-+    /// @brief Returns a raw pointer to the host/CPU buffer managed by this allocator.
+@@ -183,7 +183,7 @@ public:
+
+     ///////////////////////////////////////////////////////////////////////
+
+-    /// @brief Retuns a raw void pointer to the host/CPU buffer managed by this allocator.
++    /// @brief Returns a raw void pointer to the host/CPU buffer managed by this allocator.
      /// @warning Note that the pointer can be NULL!
      void* data() const { return mCpuData; }
- 
--    /// @brief Retuns a raw pointer to the device/GPU buffer managed by this allocator.
-+    /// @brief Returns a raw pointer to the device/GPU buffer managed by this allocator.
+
+@@ -211,14 +211,14 @@ public:
+
+     ///////////////////////////////////////////////////////////////////////
+
+-    /// @brief Retuns a raw pointer to the specified device/GPU buffer managed by this allocator.
++    /// @brief Returns a raw pointer to the specified device/GPU buffer managed by this allocator.
      /// @warning Note that the pointer can be NULL!
-     void* deviceData() const { return mGpuData; }
- 
+     void* deviceData(int device) const {
+         NANOVDB_ASSERT(device >= 0 && device < mDeviceCount);
+         return mGpuData[device];
+     }
+
+-    /// @brief Retuns a raw pointer to the current device/GPU buffer managed by this allocator.
++    /// @brief Returns a raw pointer to the current device/GPU buffer managed by this allocator.
+     /// @warning Note that the pointer can be NULL!
+     void* deviceData() const {
+         int device = cudaCpuDeviceId;
 diff --git a/nanovdb/nanovdb/docs/doxygen-config b/nanovdb/nanovdb/docs/doxygen-config
 index 42ba331a75..03825bc9b1 100644
 --- a/nanovdb/nanovdb/docs/doxygen-config
@@ -1421,12 +1433,12 @@ diff --git a/nanovdb/nanovdb/util/Timer.h b/nanovdb/nanovdb/util/Timer.h
 index b2d8dc9e9c..e2d0dc89ec 100644
 --- a/nanovdb/nanovdb/util/Timer.h
 +++ b/nanovdb/nanovdb/util/Timer.h
-@@ -38,7 +38,7 @@ class Timer
-         mStart = std::chrono::high_resolution_clock::now();
+@@ -50,7 +50,7 @@ public:
+         return std::chrono::duration_cast<std::chrono::milliseconds>(mStop - mStart).count();
      }
- 
--    /// @brief elapsed time (since start) in miliseconds
-+    /// @brief elapsed time (since start) in milliseconds
+
+-    /// @brief call record and return the elapsed time (since start) in miliseconds
++    /// @brief call record and return the elapsed time (since start) in milliseconds
      template <typename AccuracyT = std::chrono::milliseconds>
      auto elapsed()
      {
@@ -1447,17 +1459,17 @@ diff --git a/nanovdb/nanovdb/util/cuda/Timer.h b/nanovdb/nanovdb/util/cuda/Timer
 index 07c9366a0d..07ed1b9d1b 100644
 --- a/nanovdb/nanovdb/util/cuda/Timer.h
 +++ b/nanovdb/nanovdb/util/cuda/Timer.h
-@@ -78,8 +78,8 @@ class Timer
-         this->start();
+@@ -110,8 +110,8 @@ public:
+         return msec;
      }
- 
+
 -    /// @brief elapsed time (since start) in miliseconds
 -    /// @return elapsed time (since start) in miliseconds
 +    /// @brief elapsed time (since start) in milliseconds
 +    /// @return elapsed time (since start) in milliseconds
-     float elapsed()
+     inline float elapsed()
      {
-         cudaEventRecord(mStop, mStream);
+         this->record();
 diff --git a/openvdb/openvdb/CMakeLists.txt b/openvdb/openvdb/CMakeLists.txt
 index 3db0e4e144..d5a8ef4bfa 100644
 --- a/openvdb/openvdb/CMakeLists.txt

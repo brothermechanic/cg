@@ -238,7 +238,7 @@ RDEPEND="
 	opensubdiv? ( >=media-libs/opensubdiv-3.6.0[cuda?,openmp?,tbb?,opengl] )
 	openvdb? (
 		>=media-gfx/openvdb-9.0.0:=[${OPENVDB_SINGLE_USEDEP},cuda?,nanovdb?]
-		<=media-gfx/openvdb-12.0.0:=[${OPENVDB_SINGLE_USEDEP},cuda?,nanovdb?]
+		<media-gfx/openvdb-13.0.0:=[${OPENVDB_SINGLE_USEDEP},cuda?,nanovdb?]
 		>=dev-libs/c-blosc-1.21.1[zlib]
 		nanovdb? (
 			>=media-gfx/nanovdb-32:0=
