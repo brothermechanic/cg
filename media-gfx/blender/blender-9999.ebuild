@@ -240,10 +240,6 @@ RDEPEND="
 		>=media-gfx/openvdb-9.0.0:=[${OPENVDB_SINGLE_USEDEP},cuda?,nanovdb?]
 		<media-gfx/openvdb-13.0.0:=[${OPENVDB_SINGLE_USEDEP},cuda?,nanovdb?]
 		>=dev-libs/c-blosc-1.21.1[zlib]
-		nanovdb? (
-			>=media-gfx/nanovdb-32:0=
-			<media-gfx/nanovdb-32.6.0:0=
-		)
 	)
 	openxr? (
 		>=media-libs/openxr-1.0.17
@@ -478,7 +474,7 @@ src_prepare() {
 
 	use portable || eapply "${FILESDIR}/${SLOT}"
 	use optix && eapply "${FILESDIR}/blender-fix-optix-build.patch"
-	use elibc_musl && eapply "${FILESDIR}/blender-4.0.0-support-building-with-musl-libc.patch"
+	#use elibc_musl && append-cflags "-D_GNU_SOURCE"
 	eapply "${FILESDIR}/blender-fix-lld-17-linking.patch"
 
 	#no need `if use cg && [ -d ${CG_BLENDER_SCRIPTS_DIR} ]; then`
