@@ -46,7 +46,7 @@ BDEPEND="
 	openal? ( media-libs/openal )
 	pulseaudio? ( media-libs/libpulse )
 	doc? (
-		app-doc/doxygen[-nodot(-),dot(+)]
+		app-text/doxygen[-nodot(-),dot(+)]
 		dev-python/sphinx[latex]
 	)
 	python? (

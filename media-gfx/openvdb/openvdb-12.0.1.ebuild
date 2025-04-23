@@ -59,7 +59,6 @@ REQUIRED_USE="
 "
 
 RDEPEND="
-	>=dev-cpp/tbb-2021.9:=
 	dev-libs/boost:=
 	zlib? ( >=sys-libs/zlib-1.2.7:= )
 	dev-libs/imath:=
@@ -71,6 +70,9 @@ RDEPEND="
 	)
 	jemalloc? (
 		dev-libs/jemalloc:=
+	)
+	tbbmalloc? (
+		>=dev-cpp/tbb-2021.9:=
 	)
 	log4cplus? (
 		>=dev-libs/log4cplus-1.1.2:=
@@ -277,7 +279,7 @@ my_src_configure() {
 			-DNANOVDB_USE_BLOSC="$(usex blosc)"
 			-DNANOVDB_USE_CUDA="$(usex cuda)"
 			-DNANOVDB_USE_ZLIB="$(usex zlib)"
-			-DNANOVDB_USE_TBB="$(usex tbb)"
+			-DNANOVDB_USE_TBB="$(usex tbbmalloc)"
 			-DNANOVDB_USE_MAGICAVOXEL=$(usex magicavoxel)
 			-DNANOVDB_USE_OPENVDB="ON"
 		)

@@ -17,7 +17,7 @@ IUSE="doc static-libs"
 
 RDEPEND="sys-libs/zlib"
 DEPEND="${RDEPEND}"
-BDEPEND="doc? ( app-doc/doxygen )"
+BDEPEND="doc? ( app-text/doxygen )"
 
 RESTRICT="test mirror"
 

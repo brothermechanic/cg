@@ -152,7 +152,7 @@ BDEPEND="
 	dev-util/patchelf
 	virtual/pkgconfig
 	doc? (
-		>=app-doc/doxygen-1.8.14[dot]
+		>=app-text/doxygen-1.8.14[dot]
 	)
 "
 SRC_URI="
