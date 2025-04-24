@@ -157,10 +157,10 @@ BDEPEND+="
 	)
 "
 if [[ ${PV} = *9999 ]]; then
+	inherit git-r3
 	EGIT_REPO_URI="${ORG_GH}/oidn.git"
 	EGIT_BRANCH="master"
 	KEYWORDS=""
-	inherit git-r3
 else
 	SRC_URI="
 ${ORG_GH}/${PN}/releases/download/v${PV}/${P}.src.tar.gz
@@ -283,6 +283,7 @@ src_configure() {
 	mycmakeargs+=(
 		-DCMAKE_CXX_STANDARD=17
 		-DOIDN_APPS="$(usex examples)"
+		-DOIDN_APPS_OPENIMAGEIO=$(usex examples)
 		-DOIDN_INSTALL_DEPENDENCIES="OFF"
 		-DOIDN_FILTER_RT="$(usex built-in-weights)"
 		-DOIDN_FILTER_RTLIGHTMAP="$(usex built-in-weights)"
@@ -320,6 +321,17 @@ src_configure() {
 		for CT in ${CUDA_TARGETS_COMPAT[@]}; do
 			use ${CT/#/cuda_targets_} && CUDA_TARGETS+="${CT#sm_*} "
 		done
+		if use cuda_targets_sm_80 || use cuda_targets_sm_90 ; then
+			:;
+		else
+			sed -i -e "/cutlass_conv_sm80.cu/d" devices/cuda/CMakeLists.txt || die
+		fi
+		if use cuda_targets_sm_70 ; then
+			sed -i -e "/cutlass_conv_sm70.cu/d" devices/cuda/CMakeLists.txt || die
+		fi
+		if use cuda_targets_sm_75 ; then
+			sed -i -e "/cutlass_conv_sm75.cu/d" devices/cuda/CMakeLists.txt || die
+		fi
 
 		sed -e "s/oidn_set_cuda_sm_flags(OIDN_CUDA_SM_FLAGS 70 75 80 90 100 120)/oidn_set_cuda_sm_flags(OIDN_CUDA_SM_FLAGS ${CUDA_TARGETS})/g" -i devices/cuda/CMakeLists.txt || die "Sed failed"
 		mycmakeargs+=(

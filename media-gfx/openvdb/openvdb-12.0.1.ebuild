@@ -26,7 +26,7 @@ X86_CPU_FLAGS=( avx sse4_2 )
 IUSE="
 ${X86_CPU_FLAGS[@]/#/cpu_flags_x86_} ${CUDA_TARGETS_COMPAT[@]/#/cuda_targets_}
 alembic ax +blosc benchmark cuda debug doc -imath-half examples jemalloc jpeg -log4cplus
-magicavoxel nanovdb numpy python +static-libs tbbmalloc openexr -png test -utils zlib
+magicavoxel nanovdb numpy python +static-libs tbbmalloc openexr png test utils zlib
 "
 RESTRICT="
 	mirror
@@ -35,7 +35,7 @@ RESTRICT="
 
 REQUIRED_USE="
 	${OPENVDB_REQUIRED_USE}
-	?? (
+	|| (
 		jemalloc
 		tbbmalloc
 	)
@@ -227,8 +227,10 @@ my_src_configure() {
 					$(usex tbbmalloc "Tbbmalloc" "None")\
 		)
 		-DOPENVDB_BUILD_DOCS="$(usex doc)"
+		-DOPENVDB_ENABLE_ASSERTS="$(usex debug)"
 		-DOPENVDB_BUILD_PYTHON_MODULE="$(usex python)"
 		-DOPENVDB_BUILD_UNITTESTS="$(usex test)"
+		-DOPENVDB_BUILD_BINARIES="$(usex utils)"
 		-DOPENVDB_BUILD_VDB_LOD="$(usex utils)"
 		-DOPENVDB_BUILD_VDB_PRINT="$(usex utils)"
 		-DOPENVDB_BUILD_VDB_RENDER="$(usex utils)"
@@ -297,9 +299,9 @@ my_src_configure() {
 			mycmakeargs+=(
 				-DCMAKE_CUDA_ARCHITECTURES="${CUDA_TARGETS%%;}"
 				-DCMAKE_CUDA_FLAGS="$(cuda_gccdir -f | tr -d \")"
+				# NOTE tbb includes immintrin.h, which breaks nvcc so we pretend they are already included
+				-DCMAKE_CUDA_FLAGS+=" -D_AVX512BF16VLINTRIN_H_INCLUDED -D_AVX512BF16INTRIN_H_INCLUDED"
 			)
-			# NOTE tbb includes immintrin.h, which breaks nvcc so we pretend they are already included
-			export CUDAFLAGS="-D_AVX512BF16VLINTRIN_H_INCLUDED -D_AVX512BF16INTRIN_H_INCLUDED"
 		fi
 
 		if use utils; then

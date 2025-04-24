@@ -48,7 +48,7 @@
      ../guardedalloc
    )
  
-@@ -39,18 +49,31 @@ if(WITH_LIBMV)
+@@ -39,21 +49,35 @@ if(WITH_LIBMV)
      ${EIGEN3_INCLUDE_DIRS}
      ${PNG_INCLUDE_DIRS}
      ${ZLIB_INCLUDE_DIRS}
@@ -58,10 +58,13 @@
  
    list(APPEND LIB
 -    extern_ceres
--
+     PUBLIC bf::dependencies::optional::tbb
+ 
      ${GLOG_LIBRARIES}
      ${GFLAGS_LIBRARIES}
      ${PNG_LIBRARIES}
+ 
+     PRIVATE bf::dependencies::eigen
    )
  
 +  if(NOT ${WITH_SYSTEM_CERES})
@@ -84,7 +87,6 @@
    add_definitions(
      -DWITH_LIBMV_GUARDED_ALLOC
      -DLIBMV_NO_FAST_DETECTOR=
-
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
 @@ -481,11 +481,16 @@ option(WITH_LIBMV "Enable Libmv structur

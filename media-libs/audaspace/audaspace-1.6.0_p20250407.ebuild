@@ -21,9 +21,9 @@ if [[ ${PV} == 9999 ]]; then
 	EGIT_SUBMODULES=()
 	KEYWORDS=""
 else
-	#COMMIT="04eeb56b359a5099fb9d5c132988d8422629bdfc"
-	SRC_URI="https://github.com/neXyon/audaspace/archive/v${PV}.tar.gz -> ${P}.tar.gz"
-	#S=${WORKDIR}/${PN}-${COMMIT}
+	COMMIT="bdd4ba5e074444062fbac353945dd2f96e00d2ee"
+	SRC_URI="https://github.com/neXyon/audaspace/archive/${COMMIT}.tar.gz -> ${P}.tar.gz"
+	S=${WORKDIR}/${PN}-${COMMIT}
 	KEYWORDS="~amd64 ~x86 ~arm64 ~arm"
 fi
 
@@ -115,7 +115,7 @@ src_configure() {
 	wrap_python ${FUNCNAME}
 }
 
-src_install() {
+src_install(){
 	cmake_src_install
 	if use python; then
 		rm -rf "${D}/$(python_get_sitedir)"/*.egg-info || die

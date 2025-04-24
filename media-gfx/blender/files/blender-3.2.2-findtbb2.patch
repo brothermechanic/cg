@@ -1,6 +1,6 @@
-diff -urpN blender-3.2.2.orig/build_files/cmake/Modules/FindTBB.cmake blender-3.2.2/build_files/cmake/Modules/FindTBB.cmake
---- blender-3.2.2.orig/build_files/cmake/Modules/FindTBB.cmake	2022-05-02 06:58:45.000000000 -0700
-+++ blender-3.2.2/build_files/cmake/Modules/FindTBB.cmake	2022-09-30 22:04:24.046239153 -0700
+diff -urpN a/build_files/cmake/Modules/FindTBB.cmake b/build_files/cmake/Modules/FindTBB.cmake
+--- a/build_files/cmake/Modules/FindTBB.cmake	2022-05-02 06:58:45.000000000 -0700
++++ b/build_files/cmake/Modules/FindTBB.cmake	2022-09-30 22:04:24.046239153 -0700
 @@ -1,7 +1,7 @@
  # SPDX-License-Identifier: BSD-3-Clause
  # Copyright 2016 Blender Foundation.
@@ -10,9 +10,9 @@ diff -urpN blender-3.2.2.orig/build_files/cmake/Modules/FindTBB.cmake blender-3.
  # Find the native TBB includes and library
  # This module defines
  #  TBB_INCLUDE_DIRS, where to find tbb.h, Set when
-diff -urpN blender-3.2.2.orig/build_files/cmake/Modules/FindTBB.cmake.orig blender-3.2.2/build_files/cmake/Modules/FindTBB.cmake.orig
---- blender-3.2.2.orig/build_files/cmake/Modules/FindTBB.cmake.orig	1969-12-31 16:00:00.000000000 -0800
-+++ blender-3.2.2/build_files/cmake/Modules/FindTBB.cmake.orig	2022-09-30 22:04:00.629509509 -0700
+diff -urpN a/build_files/cmake/Modules/FindTBB.cmake b/build_files/cmake/Modules/FindTBB.cmake
+--- a/build_files/cmake/Modules/FindTBB.cmake	1969-12-31 16:00:00.000000000 -0800
++++ b/build_files/cmake/Modules/FindTBB.cmake	2022-09-30 22:04:00.629509509 -0700
 @@ -0,0 +1,61 @@
 +# SPDX-License-Identifier: BSD-3-Clause
 +# Copyright 2016 Blender Foundation.
@@ -75,9 +75,9 @@ diff -urpN blender-3.2.2.orig/build_files/cmake/Modules/FindTBB.cmake.orig blend
 +  TBB_INCLUDE_DIR
 +  TBB_LIBRARY
 +)
-diff -urpN blender-3.2.2.orig/build_files/cmake/Modules/FindTBB.cmake.rej blender-3.2.2/build_files/cmake/Modules/FindTBB.cmake.rej
---- blender-3.2.2.orig/build_files/cmake/Modules/FindTBB.cmake.rej	1969-12-31 16:00:00.000000000 -0800
-+++ blender-3.2.2/build_files/cmake/Modules/FindTBB.cmake.rej	2022-09-30 22:04:00.629509509 -0700
+diff -urpN a/build_files/cmake/Modules/FindTBB.cmake b/build_files/cmake/Modules/FindTBB.cmake
+--- a/build_files/cmake/Modules/FindTBB.cmake	1969-12-31 16:00:00.000000000 -0800
++++ b/build_files/cmake/Modules/FindTBB.cmake	2022-09-30 22:04:00.629509509 -0700
 @@ -0,0 +1,8 @@
 +--- build_files/cmake/Modules/FindTBB.cmake	2021-10-27 11:46:25.000000000 -0700
 ++++ build_files/cmake/Modules/FindTBB.cmake	2022-02-01 10:53:10.053010733 -0800
@@ -87,9 +87,9 @@ diff -urpN blender-3.2.2.orig/build_files/cmake/Modules/FindTBB.cmake.rej blende
 + # Find the native TBB includes and library
 + # This module defines
 + #  TBB_INCLUDE_DIRS, where to find tbb.h, Set when
-diff -urpN blender-3.2.2.orig/build_files/cmake/Modules/FindTBB2.cmake blender-3.2.2/build_files/cmake/Modules/FindTBB2.cmake
---- blender-3.2.2.orig/build_files/cmake/Modules/FindTBB2.cmake	1969-12-31 16:00:00.000000000 -0800
-+++ blender-3.2.2/build_files/cmake/Modules/FindTBB2.cmake	2022-09-30 22:04:00.625509384 -0700
+diff -urpN a/build_files/cmake/Modules/FindTBB2.cmake b/build_files/cmake/Modules/FindTBB2.cmake
+--- a/build_files/cmake/Modules/FindTBB2.cmake	1969-12-31 16:00:00.000000000 -0800
++++ b/build_files/cmake/Modules/FindTBB2.cmake	2022-09-30 22:04:00.625509384 -0700
 @@ -0,0 +1,55 @@
 +# - Find TBB library < 2021 (.so.2)
 +# Find the native TBB includes and library
