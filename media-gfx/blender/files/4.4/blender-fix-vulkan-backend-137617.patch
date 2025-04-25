@@ -1,0 +1,514 @@
+From 8997835727384460ebacb76324d0f3090ecbbbf1 Mon Sep 17 00:00:00 2001
+From: Brecht Van Lommel <brecht@blender.org>
+Date: Sun, 13 Apr 2025 23:54:14 +0200
+Subject: [PATCH 1/3] Build: Enable Vulkan in USD, add various Vulkan libraries
+ needed for it
+
+* Vulkan Utility Libraries
+* SPIRV Headers
+* SPIRV Reflect
+* Vulkan Memory Allocator
+
+These are installed to a vulkan_sdk directory that USD is pointed to.
+
+These libraries are also harvested to the precompiled libraries under
+the vulkan/ directory, as they may be useful for Blender too. The Vulkan
+Memory Allocator in particular might replace the one in extern/.
+
+The directory layout for the precompiled libraries remains unchagend
+vulkan and shaderc remain in separate directories. It's only for USD
+that these are merged together in a vulkan_sdk directory.
+---
+ .../build_environment/cmake/download.cmake    |  6 +-
+ .../build_environment/cmake/dpcpp.cmake       |  4 +-
+ .../build_environment/cmake/dpcpp_deps.cmake  |  8 +-
+ build_files/build_environment/cmake/usd.cmake | 37 ++++++--
+ .../build_environment/cmake/versions.cmake    | 60 +++++++++---
+ .../build_environment/cmake/vulkan.cmake      | 94 +++++++++++++++++++
+ 6 files changed, 182 insertions(+), 27 deletions(-)
+
+diff --git a/build_files/build_environment/cmake/download.cmake b/build_files/build_environment/cmake/download.cmake
+index c90243623af..d45b77a2156 100644
+--- a/build_files/build_environment/cmake/download.cmake
++++ b/build_files/build_environment/cmake/download.cmake
+@@ -158,7 +158,7 @@ download_source(VCINTRINSICS)
+ download_source(OPENCLHEADERS)
+ download_source(ICDLOADER)
+ download_source(MP11)
+-download_source(SPIRV_HEADERS)
++download_source(DPCPP_SPIRV_HEADERS)
+ download_source(UNIFIED_RUNTIME)
+ download_source(UNIFIED_MEMORY_FRAMEWORK)
+ download_source(IGC)
+@@ -179,6 +179,10 @@ download_source(SHADERC_SPIRV_HEADERS)
+ download_source(SHADERC_GLSLANG)
+ download_source(VULKAN_HEADERS)
+ download_source(VULKAN_LOADER)
++download_source(VULKAN_UTILITY_LIBRARIES)
++download_source(SPIRV_HEADERS)
++download_source(SPIRV_REFLECT)
++download_source(VULKAN_MEMORY_ALLOCATOR)
+ download_source(PYBIND11)
+ download_source(DEFLATE)
+ download_source(HIPRT)
+diff --git a/build_files/build_environment/cmake/dpcpp.cmake b/build_files/build_environment/cmake/dpcpp.cmake
+index 64b977b34f4..62d240f46c7 100644
+--- a/build_files/build_environment/cmake/dpcpp.cmake
++++ b/build_files/build_environment/cmake/dpcpp.cmake
+@@ -42,7 +42,7 @@ set(DPCPP_EXTRA_ARGS
+   -DBOOST_MP11_SOURCE_DIR=${BUILD_DIR}/mp11/src/external_mp11/
+   -DLEVEL_ZERO_LIBRARY=${LIBDIR}/level-zero/lib/${LIBPREFIX}ze_loader${SHAREDLIBEXT}
+   -DLEVEL_ZERO_INCLUDE_DIR=${LIBDIR}/level-zero/include/level_zero
+-  -DLLVM_EXTERNAL_SPIRV_HEADERS_SOURCE_DIR=${BUILD_DIR}/spirvheaders/src/external_spirvheaders/
++  -DLLVM_EXTERNAL_SPIRV_HEADERS_SOURCE_DIR=${BUILD_DIR}/dpcpp_spirvheaders/src/external_dpcpp_spirvheaders/
+   -DSYCL_PI_UR_USE_FETCH_CONTENT=OFF
+   -DSYCL_PI_UR_SOURCE_DIR=${BUILD_DIR}/unifiedruntime/src/external_unifiedruntime/
+   -DFETCHCONTENT_SOURCE_DIR_UNIFIED-MEMORY-FRAMEWORK=${BUILD_DIR}/unifiedmemoryframework/src/external_unifiedmemoryframework/
+@@ -139,7 +139,7 @@ add_dependencies(
+   external_icdloader
+   external_mp11
+   external_level-zero
+-  external_spirvheaders
++  external_dpcpp_spirvheaders
+   external_unifiedruntime
+   external_unifiedmemoryframework
+   external_zstd
+diff --git a/build_files/build_environment/cmake/dpcpp_deps.cmake b/build_files/build_environment/cmake/dpcpp_deps.cmake
+index b74c205da64..86738edbc5a 100644
+--- a/build_files/build_environment/cmake/dpcpp_deps.cmake
++++ b/build_files/build_environment/cmake/dpcpp_deps.cmake
+@@ -52,11 +52,11 @@ ExternalProject_Add(external_mp11
+   INSTALL_COMMAND echo .
+ )
+ 
+-ExternalProject_Add(external_spirvheaders
+-  URL file://${PACKAGE_DIR}/${SPIRV_HEADERS_FILE}
+-  URL_HASH ${SPIRV_HEADERS_HASH_TYPE}=${SPIRV_HEADERS_HASH}
++ExternalProject_Add(external_dpcpp_spirvheaders
++  URL file://${PACKAGE_DIR}/${DPCPP_SPIRV_HEADERS_FILE}
++  URL_HASH ${DPCPP_SPIRV_HEADERS_HASH_TYPE}=${DPCPP_SPIRV_HEADERS_HASH}
+   DOWNLOAD_DIR ${DOWNLOAD_DIR}
+-  PREFIX ${BUILD_DIR}/spirvheaders
++  PREFIX ${BUILD_DIR}/dpcpp_spirvheaders
+   CONFIGURE_COMMAND echo .
+   BUILD_COMMAND echo .
+   INSTALL_COMMAND echo .
+diff --git a/build_files/build_environment/cmake/usd.cmake b/build_files/build_environment/cmake/usd.cmake
+index 229e00945b6..9a6866c500a 100644
+--- a/build_files/build_environment/cmake/usd.cmake
++++ b/build_files/build_environment/cmake/usd.cmake
+@@ -53,6 +53,10 @@ elseif(UNIX)
+   endif()
+ endif()
+ 
++if(NOT APPLE)
++  list(APPEND USD_PLATFORM_FLAGS -DPXR_ENABLE_VULKAN_SUPPORT=ON)
++endif()
++
+ # Custom namespace to prevent conflicts when importing both bpy module
+ # and usd-core pip packages with the same version but different libs.
+ string(REPLACE "." "_" USD_NAMESPACE "pxrBlender_v${USD_VERSION}")
+@@ -61,7 +65,7 @@ set(USD_EXTRA_ARGS
+   ${USD_PLATFORM_FLAGS}
+   -DOPENSUBDIV_ROOT_DIR=${LIBDIR}/opensubdiv
+   -DOpenImageIO_ROOT=${LIBDIR}/openimageio
+-  -DVulkan_ROOT=${LIBDIR}/vulkan_loader
++  -DVulkan_ROOT=${LIBDIR}/vulkan_sdk
+   -DMaterialX_ROOT=${LIBDIR}/materialx
+   -DOPENEXR_LIBRARIES=${LIBDIR}/imath/lib/${LIBPREFIX}Imath${OPENEXR_VERSION_POSTFIX}${SHAREDLIBEXT}
+   -DOPENEXR_INCLUDE_DIR=${LIBDIR}/imath/include
+@@ -96,9 +100,6 @@ set(USD_EXTRA_ARGS
+   # USD 22.03 does not support OCIO 2.x
+   # Tracking ticket https://github.com/PixarAnimationStudios/USD/issues/1386
+   -DPXR_BUILD_OPENCOLORIO_PLUGIN=OFF
+-  # We'd like Vulkan support on, but it has trouble not finding the SDK since we have
+-  # the invididual components in the deps builder.
+-  -DPXR_ENABLE_VULKAN_SUPPORT=OFF
+   -DPXR_ENABLE_PTEX_SUPPORT=OFF
+   -DPXR_BUILD_USD_TOOLS=OFF
+   -DCMAKE_DEBUG_POSTFIX=_d
+@@ -127,6 +128,27 @@ ExternalProject_Add(external_usd
+   PREFIX ${BUILD_DIR}/usd
+   LIST_SEPARATOR ^^
+ 
++  # USD expects VULKAN_SDK to be an environment variable, and contain both Vulkan
++  # and Shaderc. So create a temporary vulkan_sdk directory with this contents and
++  # override the configure command to point to it.
++  CONFIGURE_COMMAND
++    ${CMAKE_COMMAND} -E copy_directory
++      ${LIBDIR}/vulkan_headers/
++      ${LIBDIR}/vulkan_sdk &&
++    ${CMAKE_COMMAND} -E copy_directory
++      ${LIBDIR}/vulkan_loader/
++      ${LIBDIR}/vulkan_sdk &&
++    ${CMAKE_COMMAND} -E copy_directory
++      ${LIBDIR}/shaderc/
++      ${LIBDIR}/vulkan_sdk &&
++    ${CMAKE_COMMAND}
++      -E env VULKAN_SDK=${LIBDIR}/vulkan_sdk
++      ${CMAKE_COMMAND} ../external_usd
++        -DCMAKE_INSTALL_PREFIX=${LIBDIR}/usd
++        -Wno-dev
++        ${DEFAULT_CMAKE_FLAGS}
++        ${USD_EXTRA_ARGS}
++
+   PATCH_COMMAND
+     ${USD_EXTRA_PATCHES}
+     ${PATCH_CMD} -p 1 -d
+@@ -147,11 +169,6 @@ ExternalProject_Add(external_usd
+     ${PATCH_CMD} -p 1 -d
+       ${BUILD_DIR}/usd/src/external_usd <
+       ${PATCH_DIR}/usd_noboost.diff
+-  CMAKE_ARGS
+-    -DCMAKE_INSTALL_PREFIX=${LIBDIR}/usd
+-    -Wno-dev
+-    ${DEFAULT_CMAKE_FLAGS}
+-    ${USD_EXTRA_ARGS}
+ 
+   INSTALL_DIR ${LIBDIR}/usd
+ )
+@@ -163,6 +180,8 @@ add_dependencies(
+   external_python
+   external_openimageio
+   external_materialx
++  external_vulkan_loader
++  external_shaderc
+   openvdb
+ )
+ 
+diff --git a/build_files/build_environment/cmake/versions.cmake b/build_files/build_environment/cmake/versions.cmake
+index c1f0fe72a9b..3c424b076e4 100644
+--- a/build_files/build_environment/cmake/versions.cmake
++++ b/build_files/build_environment/cmake/versions.cmake
+@@ -1106,14 +1106,14 @@ set(MP11_LICENSE SPDX:BSL-1.0)
+ 
+ # Source llvm-spirv/CMakeLists.txt (repo)
+ # Source llvm-spirv/spirv-headers-tag.conf (hash)
+-set(SPIRV_HEADERS_VERSION b73e168ca5e123dcf3dea8a34b19a5130f421ae1)
+-set(SPIRV_HEADERS_URI https://github.com/KhronosGroup/SPIRV-Headers/archive/${SPIRV_HEADERS_VERSION}.tar.gz)
+-set(SPIRV_HEADERS_HASH 11d835c60297b26532c05c3f3b581ba7a2787b5ae7399e94f72c392169216f11)
+-set(SPIRV_HEADERS_HASH_TYPE SHA256)
+-set(SPIRV_HEADERS_FILE SPIR-V-Headers-${SPIRV_HEADERS_VERSION}.tar.gz)
+-set(SPIRV_HEADERS_HOMEPAGE https://github.com/KhronosGroup/SPIRV-Headers)
+-set(SPIRV_HEADERS_LICENSE SPDX:MIT-Khronos-old)
+-set(SPIRV_HEADERS_COPYRIGHT "Copyright (c) 2015-2024 The Khronos Group Inc.")
++set(DPCPP_SPIRV_HEADERS_VERSION b73e168ca5e123dcf3dea8a34b19a5130f421ae1)
++set(DPCPP_SPIRV_HEADERS_URI https://github.com/KhronosGroup/SPIRV-Headers/archive/${DPCPP_SPIRV_HEADERS_VERSION}.tar.gz)
++set(DPCPP_SPIRV_HEADERS_HASH 11d835c60297b26532c05c3f3b581ba7a2787b5ae7399e94f72c392169216f11)
++set(DPCPP_SPIRV_HEADERS_HASH_TYPE SHA256)
++set(DPCPP_SPIRV_HEADERS_FILE DPCPP-SPIR-V-Headers-${DPCPP-SPIRV_HEADERS_VERSION}.tar.gz)
++set(DPCPP_SPIRV_HEADERS_HOMEPAGE https://github.com/KhronosGroup/SPIRV-Headers)
++set(DPCPP_SPIRV_HEADERS_LICENSE SPDX:MIT-Khronos-old)
++set(DPCPP_SPIRV_HEADERS_COPYRIGHT "Copyright (c) 2015-2024 The Khronos Group Inc.")
+ 
+ # Source sycl/cmake/modules/FetchUnifiedRuntime.cmake
+ set(UNIFIED_RUNTIME_VERSION 04db12683146673af9a09e923c19cf9a4ee96982)
+@@ -1335,11 +1335,11 @@ Copyright 2020 The Khronos Group Inc.
+ Copyright (C) 2015-2018 Google, Inc.
+ ]=])
+ 
+-set(VULKAN_VERSION v1.3.296)
++set(VULKAN_VERSION 1.3.296)
+ 
+ set(VULKAN_HEADERS_VERSION ${VULKAN_VERSION})
+ set(VULKAN_HEADERS_NAME Vulkan-Headers)
+-set(VULKAN_HEADERS_URI https://github.com/KhronosGroup/Vulkan-Headers/archive/refs/tags/${VULKAN_HEADERS_VERSION}.tar.gz)
++set(VULKAN_HEADERS_URI https://github.com/KhronosGroup/Vulkan-Headers/archive/refs/tags/v${VULKAN_HEADERS_VERSION}.tar.gz)
+ set(VULKAN_HEADERS_HASH 3f4cd229d8f7c24c9b5a6ead3d674803)
+ set(VULKAN_HEADERS_HASH_TYPE MD5)
+ set(VULKAN_HEADERS_FILE Vulkan-Headers-${VULKAN_HEADERS_VERSION}.tar.gz)
+@@ -1349,7 +1349,7 @@ set(VULKAN_HEADERS_COPYRIGHT "Copyright 2015-2023 The Khronos Group Inc.")
+ 
+ set(VULKAN_LOADER_VERSION ${VULKAN_VERSION})
+ set(VULKAN_LOADER_NAME Vulkan-Loader)
+-set(VULKAN_LOADER_URI https://github.com/KhronosGroup/Vulkan-Loader/archive/refs/tags/${VULKAN_LOADER_VERSION}.tar.gz)
++set(VULKAN_LOADER_URI https://github.com/KhronosGroup/Vulkan-Loader/archive/refs/tags/v${VULKAN_LOADER_VERSION}.tar.gz)
+ set(VULKAN_LOADER_HASH bca05ec4914888990c92fa9c3e2738ff)
+ set(VULKAN_LOADER_HASH_TYPE MD5)
+ set(VULKAN_LOADER_FILE Vulkan-Loader-${VULKAN_LOADER_VERSION}.tar.gz)
+@@ -1362,6 +1362,44 @@ Copyright (c) 2019 LunarG, Inc.
+ Copyright (c) 2019 Google Inc.
+ ]=])
+ 
++set(VULKAN_UTILITY_LIBRARIES_VERSION ${VULKAN_VERSION})
++set(VULKAN_UTILITY_LIBRARIES_URI https://github.com/KhronosGroup/Vulkan-Utility-Libraries/archive/refs/tags/v${VULKAN_UTILITY_LIBRARIES_VERSION}.tar.gz)
++set(VULKAN_UTILITY_LIBRARIES_HASH 02091bdc2b5862685da83b37a6c48821)
++set(VULKAN_UTILITY_LIBRARIES_HASH_TYPE MD5)
++set(VULKAN_UTILITY_LIBRARIES_FILE Vulkan-Utility-Libraries-${VULKAN_UTILITY_LIBRARIES_VERSION}.tar.gz)
++set(VULKAN_UTILITY_LIBRARIES_HOMEPAGE https://github.com/KhronosGroup/Vulkan-Utility-Libraries)
++set(VULKAN_UTILITY_LIBRARIES_LICENSE SPDX:Apache-2.0)
++set(VULKAN_UTILITY_LIBRARIES_COPYRIGHT "Copyright 2015-2025 The Khronos Group Inc.")
++
++set(SPIRV_HEADERS_VERSION ${VULKAN_VERSION})
++set(SPIRV_HEADERS_URI https://github.com/KhronosGroup/SPIRV-Headers/archive/refs/tags/vulkan-sdk-${SPIRV_HEADERS_VERSION}.0.tar.gz)
++set(SPIRV_HEADERS_HASH adee3d432b63f345c8ee6d625d0c8e6c)
++set(SPIRV_HEADERS_HASH_TYPE MD5)
++set(SPIRV_HEADERS_FILE SPIRV-Headers-${SPIRV_HEADERS_VERSION}.tar.gz)
++set(SPIRV_HEADERS_NAME SPIR-V Headers)
++set(SPIRV_HEADERS_HOMEPAGE https://github.com/KhronosGroup/SPIRV-Headers/)
++set(SPIRV_HEADERS_LICENSE SPDX:Apache-2.0)
++set(SPIRV_HEADERS_COPYRIGHT "Copyright (c) 2015-2014 The Khronos Group Inc.")
++
++set(SPIRV_REFLECT_VERSION ${VULKAN_VERSION})
++set(SPIRV_REFLECT_URI https://github.com/KhronosGroup/SPIRV-Reflect/archive/refs/tags/vulkan-sdk-${SPIRV_REFLECT_VERSION}.0.tar.gz)
++set(SPIRV_REFLECT_HASH 3e461b0bb4598208106ea167a6d1c853)
++set(SPIRV_REFLECT_HASH_TYPE MD5)
++set(SPIRV_REFLECT_FILE SPIRV-Reflect-${SPIRV_REFLECT_VERSION}.tar.gz)
++set(SPIRV_REFLECT_NAME SPIR-V Reflect)
++set(SPIRV_REFLECT_HOMEPAGE https://github.com/KhronosGroup/SPIRV-Reflect/)
++set(SPIRV_REFLECT_LICENSE SPDX:Apache-2.0)
++set(SPIRV_REFLECT_COPYRIGHT "Copyright (c) 2015-2014 The Khronos Group Inc.")
++
++set(VULKAN_MEMORY_ALLOCATOR_VERSION 3.2.1)
++set(VULKAN_MEMORY_ALLOCATOR_URI https://github.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator/archive/refs/tags/v${VULKAN_MEMORY_ALLOCATOR_VERSION}.tar.gz)
++set(VULKAN_MEMORY_ALLOCATOR_HASH f32b8374858566854e5f77564ea2e16d)
++set(VULKAN_MEMORY_ALLOCATOR_HASH_TYPE MD5)
++set(VULKAN_MEMORY_ALLOCATOR_FILE VulkanMemoryAllocator-${VULKAN_MEMORY_ALLOCATOR_VERSION}.tar.gz)
++set(VULKAN_MEMORY_ALLOCATOR_HOMEPAGE https://github.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator/)
++set(VULKAN_MEMORY_ALLOCATOR_LICENSE SPDX:MIT)
++set(VULKAN_MEMORY_ALLOCATOR_COPYRIGHT "Copyright (c) 2017-2025 Advanced Micro Devices, Inc. All rights reserved.")
++
+ set(PYBIND11_VERSION 2.10.1)
+ set(PYBIND11_URI https://github.com/pybind/pybind11/archive/refs/tags/v${PYBIND11_VERSION}.tar.gz)
+ set(PYBIND11_HASH ce07bfd5089245da7807b3faf6cbc878)
+diff --git a/build_files/build_environment/cmake/vulkan.cmake b/build_files/build_environment/cmake/vulkan.cmake
+index 595164dddd7..031585516bb 100644
+--- a/build_files/build_environment/cmake/vulkan.cmake
++++ b/build_files/build_environment/cmake/vulkan.cmake
+@@ -17,6 +17,96 @@ ExternalProject_Add(external_vulkan_headers
+   INSTALL_DIR ${LIBDIR}/vulkan_headers
+ )
+ 
++set(VULKAN_UTILITY_LIBRARIES_EXTRA_ARGS
++  -DVulkanHeaders_DIR=${LIBDIR}/vulkan_headers/share/cmake/VulkanHeaders)
++
++ExternalProject_Add(external_vulkan_utility_libraries
++  URL file://${PACKAGE_DIR}/${VULKAN_UTILITY_LIBRARIES_FILE}
++  URL_HASH ${VULKAN_UTILITY_LIBRARIES_HASH_TYPE}=${VULKAN_UTILITY_LIBRARIES_HASH}
++  PREFIX ${BUILD_DIR}/vulkan_utility_libraries
++
++  CMAKE_ARGS
++    -DCMAKE_INSTALL_PREFIX=${LIBDIR}/vulkan_headers
++    -Wno-dev ${DEFAULT_CMAKE_FLAGS}
++    ${VULKAN_UTILITY_LIBRARIES_EXTRA_ARGS}
++
++  INSTALL_DIR ${LIBDIR}/vulkan_headers
++)
++
++add_dependencies(
++  external_vulkan_utility_libraries
++  external_vulkan_headers)
++
++set(SPIRV_HEADERS_EXTRA_ARGS)
++
++ExternalProject_Add(external_spirv_headers
++  URL file://${PACKAGE_DIR}/${SPIRV_HEADERS_FILE}
++  URL_HASH ${SPIRV_HEADERS_HASH_TYPE}=${SPIRV_HEADERS_HASH}
++  PREFIX ${BUILD_DIR}/spirv_headers
++
++  CMAKE_ARGS
++    -DCMAKE_INSTALL_PREFIX=${LIBDIR}/vulkan_headers
++    -Wno-dev ${DEFAULT_CMAKE_FLAGS}
++    ${SPIRV_HEADERS_EXTRA_ARGS}
++
++  INSTALL_DIR ${LIBDIR}/vulkan_headers
++)
++
++set(SPIRV_REFLECT_EXTRA_ARGS
++  -DSPIRV_REFLECT_STATIC_LIB=ON
++)
++
++ExternalProject_Add(external_spirv_reflect
++  URL file://${PACKAGE_DIR}/${SPIRV_REFLECT_FILE}
++  URL_HASH ${SPIRV_REFLECT_HASH_TYPE}=${SPIRV_REFLECT_HASH}
++  PREFIX ${BUILD_DIR}/spirv_reflect
++
++  CMAKE_ARGS
++    -DCMAKE_INSTALL_PREFIX=${LIBDIR}/vulkan_headers
++    -Wno-dev ${DEFAULT_CMAKE_FLAGS}
++    ${SPIRV_REFLECT_EXTRA_ARGS}
++
++  INSTALL_DIR ${LIBDIR}/vulkan_headers
++)
++
++ExternalProject_Add_Step(external_spirv_reflect after_install
++      COMMAND ${CMAKE_COMMAND} -E make_directory
++        ${LIBDIR}/vulkan_headers/include/SPIRV-Reflect
++      COMMAND ${CMAKE_COMMAND} -E copy
++        ${BUILD_DIR}/spirv_reflect/src/external_spirv_reflect/spirv_reflect.h
++        ${BUILD_DIR}/spirv_reflect/src/external_spirv_reflect/spirv_reflect.c
++        ${LIBDIR}/vulkan_headers/include/SPIRV-Reflect
++      DEPENDEES install
++    )
++
++set(VULKAN_MEMORY_ALLOCATOR_EXTRA_ARGS)
++
++ExternalProject_Add(external_vulkan_memory_allocator
++  URL file://${PACKAGE_DIR}/${VULKAN_MEMORY_ALLOCATOR_FILE}
++  URL_HASH ${VULKAN_MEMORY_ALLOCATOR_HASH_TYPE}=${VULKAN_MEMORY_ALLOCATOR_HASH}
++  PREFIX ${BUILD_DIR}/vulkan_memory_allocator
++
++  CMAKE_ARGS
++    -DCMAKE_INSTALL_PREFIX=${LIBDIR}/vulkan_headers
++    -Wno-dev ${DEFAULT_CMAKE_FLAGS}
++    ${VULKAN_MEMORY_ALLOCATOR_EXTRA_ARGS}
++
++  INSTALL_DIR ${LIBDIR}/vulkan_headers
++)
++
++ExternalProject_Add_Step(external_vulkan_memory_allocator after_install
++      COMMAND ${CMAKE_COMMAND} -E make_directory
++        ${LIBDIR}/vulkan_headers/include/vma
++      COMMAND ${CMAKE_COMMAND} -E rename
++        ${LIBDIR}/vulkan_headers/include/vk_mem_alloc.h
++        ${LIBDIR}/vulkan_headers/include/vma/vk_mem_alloc.h
++      DEPENDEES install
++    )
++
++add_dependencies(
++  external_vulkan_memory_allocator
++  external_vulkan_headers)
++
+ set(VULKAN_LOADER_EXTRA_ARGS
+   -DVULKAN_HEADERS_INSTALL_DIR=${LIBDIR}/vulkan_headers
+ )
+@@ -54,6 +144,10 @@ ExternalProject_Add(external_vulkan_loader
+ add_dependencies(
+   external_vulkan_loader
+   external_vulkan_headers
++  external_vulkan_utility_libraries
++  external_spirv_reflect
++  external_spirv_headers
++  external_vulkan_memory_allocator
+ )
+ 
+ if(UNIX AND NOT APPLE)
+-- 
+2.47.2
+
+
+From d97c1afa3373f42d36d9f634e31ee309349b149b Mon Sep 17 00:00:00 2001
+From: Brecht Van Lommel <brecht@blender.org>
+Date: Tue, 15 Apr 2025 19:33:26 +0200
+Subject: [PATCH 2/3] Build: Patch USD to make Storm and Vulkan work
+
+The HGI_ENABLE_VULKAN environment variable doesn't work because it may get
+read on program startup depending on the compiler. Instead always mark Storm
+as supported, since we only try to create it when we already have a GPU
+context.
+---
+ build_files/build_environment/cmake/usd.cmake    |  5 ++++-
+ build_files/build_environment/cmake/vulkan.cmake |  2 ++
+ .../patches/usd_storm_vulkan.diff                | 16 ++++++++++++++++
+ 3 files changed, 22 insertions(+), 1 deletion(-)
+ create mode 100644 build_files/build_environment/patches/usd_storm_vulkan.diff
+
+diff --git a/build_files/build_environment/cmake/usd.cmake b/build_files/build_environment/cmake/usd.cmake
+index 9a6866c500a..281211ec675 100644
+--- a/build_files/build_environment/cmake/usd.cmake
++++ b/build_files/build_environment/cmake/usd.cmake
+@@ -168,7 +168,10 @@ ExternalProject_Add(external_usd
+       ${PATCH_DIR}/usd_forward_compat.diff &&
+     ${PATCH_CMD} -p 1 -d
+       ${BUILD_DIR}/usd/src/external_usd <
+-      ${PATCH_DIR}/usd_noboost.diff
++      ${PATCH_DIR}/usd_noboost.diff &&
++    ${PATCH_CMD} -p 1 -d
++      ${BUILD_DIR}/usd/src/external_usd <
++      ${PATCH_DIR}/usd_storm_vulkan.diff
+ 
+   INSTALL_DIR ${LIBDIR}/usd
+ )
+diff --git a/build_files/build_environment/cmake/vulkan.cmake b/build_files/build_environment/cmake/vulkan.cmake
+index 031585516bb..6635614b786 100644
+--- a/build_files/build_environment/cmake/vulkan.cmake
++++ b/build_files/build_environment/cmake/vulkan.cmake
+@@ -69,6 +69,7 @@ ExternalProject_Add(external_spirv_reflect
+   INSTALL_DIR ${LIBDIR}/vulkan_headers
+ )
+ 
++# Install header and source file to match Vulkan SDK.
+ ExternalProject_Add_Step(external_spirv_reflect after_install
+       COMMAND ${CMAKE_COMMAND} -E make_directory
+         ${LIBDIR}/vulkan_headers/include/SPIRV-Reflect
+@@ -94,6 +95,7 @@ ExternalProject_Add(external_vulkan_memory_allocator
+   INSTALL_DIR ${LIBDIR}/vulkan_headers
+ )
+ 
++# Change installation location to match Vulkan SDK.
+ ExternalProject_Add_Step(external_vulkan_memory_allocator after_install
+       COMMAND ${CMAKE_COMMAND} -E make_directory
+         ${LIBDIR}/vulkan_headers/include/vma
+diff --git a/build_files/build_environment/patches/usd_storm_vulkan.diff b/build_files/build_environment/patches/usd_storm_vulkan.diff
+new file mode 100644
+index 00000000000..37dd548a66d
+--- /dev/null
++++ b/build_files/build_environment/patches/usd_storm_vulkan.diff
+@@ -0,0 +1,16 @@
++diff --git a/pxr/imaging/hdSt/renderDelegate.cpp b/pxr/imaging/hdSt/renderDelegate.cpp
++index 2e34715d2..329933383 100644
++--- a/pxr/imaging/hdSt/renderDelegate.cpp
+++++ b/pxr/imaging/hdSt/renderDelegate.cpp
++@@ -541,7 +541,10 @@ HdStRenderDelegate::CommitResources(HdChangeTracker *tracker)
++ bool
++ HdStRenderDelegate::IsSupported()
++ {
++-    return Hgi::IsSupported();
+++    // BLENDER: This doesn't take into account the backend, and fails for Vulkan
+++    // because it defaults to OpenGL. Instead assume Blender already succeeded
+++    // creating a relevant GPU device before using Storm.
+++    return true;
++ }
++ 
++ TfTokenVector
+-- 
+2.47.2
+
+
+From 32be3f34fce975c03ac2ee7ac1b51a71aefafc80 Mon Sep 17 00:00:00 2001
+From: Ray Molenkamp <github@lazydodo.com>
+Date: Fri, 18 Apr 2025 15:50:26 +0200
+Subject: [PATCH 3/3] Fixes for Windows
+
+---
+ build_files/build_environment/cmake/shaderc.cmake | 4 ++++
+ build_files/build_environment/cmake/usd.cmake     | 4 +++-
+ 2 files changed, 7 insertions(+), 1 deletion(-)
+
+diff --git a/build_files/build_environment/cmake/shaderc.cmake b/build_files/build_environment/cmake/shaderc.cmake
+index e0aed269884..762d8d4cff4 100644
+--- a/build_files/build_environment/cmake/shaderc.cmake
++++ b/build_files/build_environment/cmake/shaderc.cmake
+@@ -61,6 +61,10 @@ if(WIN32)
+       COMMAND ${CMAKE_COMMAND} -E copy
+         ${LIBDIR}/shaderc/lib/shaderc_shared_d.lib
+         ${HARVEST_TARGET}/shaderc/lib/shaderc_shared_d.lib
++      # USD expect this to have this specific name
++      COMMAND ${CMAKE_COMMAND} -E copy
++        ${LIBDIR}/shaderc/lib/shaderc_combined_d.lib
++        ${LIBDIR}/shaderc/lib/shaderc_combinedd.lib
+ 
+       DEPENDEES install
+     )
+diff --git a/build_files/build_environment/cmake/usd.cmake b/build_files/build_environment/cmake/usd.cmake
+index 281211ec675..3b0cb8d6c82 100644
+--- a/build_files/build_environment/cmake/usd.cmake
++++ b/build_files/build_environment/cmake/usd.cmake
+@@ -144,11 +144,13 @@ ExternalProject_Add(external_usd
+     ${CMAKE_COMMAND}
+       -E env VULKAN_SDK=${LIBDIR}/vulkan_sdk
+       ${CMAKE_COMMAND} ../external_usd
++        -G ${PLATFORM_ALT_GENERATOR}
+         -DCMAKE_INSTALL_PREFIX=${LIBDIR}/usd
+         -Wno-dev
+         ${DEFAULT_CMAKE_FLAGS}
+         ${USD_EXTRA_ARGS}
+-
++  BUILD_COMMAND ${CMAKE_COMMAND} --build .
++  INSTALL_COMMAND ${CMAKE_COMMAND} --build . --target install
+   PATCH_COMMAND
+     ${USD_EXTRA_PATCHES}
+     ${PATCH_CMD} -p 1 -d
+-- 
+2.47.2
+
