@@ -5,10 +5,21 @@ EAPI=8
 
 PYTHON_COMPAT=( python3_{11..13} )
 OPENVDB_COMPAT=( {7..12} )
+CUDA_TARGETS_COMPAT=(
+	sm_30
+	sm_50
+	sm_60
+	sm_61
+	sm_70
+	sm_75
+	sm_80
+	sm_86
+	sm_90
+)
 
 TEST_OIIO_IMAGE_COMMIT="7e6d875542b5bc1b2974b7cbecee115365a36527"
 TEST_OEXR_IMAGE_COMMIT="d45a2d5a890d6963b94479c7a644440068c37dd2"
-inherit cmake flag-o-matic python-single-r1 virtualx openvdb
+inherit cmake cuda flag-o-matic python-single-r1 virtualx openvdb
 
 DESCRIPTION="A library for reading and writing images"
 HOMEPAGE="https://sites.google.com/site/openimageio/ https://github.com/OpenImageIO"
@@ -50,9 +61,9 @@ X86_CPU_FEATURES=(
 CPU_FEATURES=( "${X86_CPU_FEATURES[@]/#/cpu_flags_x86_}" )
 # font install is enabled upstream
 # building test enabled upstream
-IUSE="aom avif color-management dicom doc ffmpeg fits gif gui heif jpeg2k jpegxl
+IUSE="aom avif color-management cuda dicom doc ffmpeg fits +gif gui heif jpeg2k jpegxl
 opencv tools openvdb +png ptex +python qt5 qt6 +raw rav1e tbb test +truetype wayland +webp X
-${CPU_FEATURES[@]%:*}"
+${CPU_FEATURES[@]%:*} ${CUDA_TARGETS_COMPAT[@]/#/cuda_targets_}"
 
 REQUIRED_USE="
 	aom? (
@@ -62,6 +73,11 @@ REQUIRED_USE="
 		|| (
 			aom
 			rav1e
+		)
+	)
+	cuda? (
+		|| (
+			${CUDA_TARGETS_COMPAT[@]/#/cuda_targets_}
 		)
 	)
 	gui? (
@@ -91,10 +107,12 @@ REQUIRED_USE="
 
 
 RESTRICT="
-	!test? ( test ) test
+	mirror
+	!test? ( test )
 "
 
 BDEPEND="
+	cuda? ( >=dev-util/nvidia-cuda-toolkit-12.8:= )
 	jpeg2k? ( app-arch/unzip )
 	doc? (
 		app-text/doxygen
@@ -111,8 +129,9 @@ RDEPEND="
 	dev-libs/libfmt:=
 	dev-libs/pugixml:=
 	>=media-libs/libheif-1.13.0:=
+	cuda? ( >=dev-util/nvidia-cuda-toolkit-12.8:= )
 	png? ( media-libs/libpng:0= )
-	webp? ( >=media-libs/libwebp-1.4.0:= )
+	webp? ( >=media-libs/libwebp-1.5.0:= )
 	>=dev-libs/imath-3.1.2-r4:=
 	color-management? ( >=media-libs/opencolorio-2.1.1-r4:= )
 	>=media-libs/openexr-3:0=
@@ -220,6 +239,11 @@ src_prepare() {
 		cp testsuite/heif/ref/out-libheif1.1{2,5}-orient.txt || die
 		eapply "${FILESDIR}/${PN}-2.5.12.0_heif_test.patch"
 	fi
+
+	if use cuda; then
+		cuda_src_prepare
+		addpredict "/proc/self/task/"
+	fi
 }
 
 src_configure() {
@@ -245,7 +269,6 @@ src_configure() {
 
 	local mycmakeargs=(
 		-DVERBOSE="yes"
-		-DINTERNALIZE_FMT="no"
 		# -DALWAYS_PREFER_CONFIG="yes"
 		# -DGLIBCXX_USE_CXX11_ABI="yes"
 		# -DTEX_BATCH_SIZE="8" # TODO AVX512 -> 16
@@ -263,27 +286,28 @@ src_configure() {
 		-DINSTALL_FONTS="OFF"
 		-DINSTALL_DOCS="$(usex doc)"
 
-		-DENABLE_DCMTK="$(usex dicom)"
-		-DENABLE_FFmpeg="$(usex ffmpeg)"
-		-DENABLE_FITS="$(usex fits)"
-		-DENABLE_FREETYPE="$(usex truetype)"
-		-DENABLE_GIF="$(usex gif)"
-		-DENABLE_LibRaw="$(usex raw)"
-		-DENABLE_Nuke="no" # not in Gentoo
-		-DENABLE_OpenCV="$(usex opencv)"
-		-DENABLE_OpenJPEG="$(usex jpeg2k)"
-		-DENABLE_JXL="$(usex jpegxl)"
-		-DENABLE_OpenVDB="$(usex openvdb)"
-		-DENABLE_TBB="$(usex tbb)"
-		-DENABLE_Ptex="$(usex ptex)"
-		-DENABLE_PNG="$(usex png)"
-		-DENABLE_WEBP="$(usex webp)"
+		-DUSE_DCMTK="$(usex dicom)"
+		-DUSE_FFmpeg="$(usex ffmpeg)"
+		-DUSE_FITS="$(usex fits)"
+		-DUSE_FREETYPE="$(usex truetype)"
+		-DUSE_GIF="$(usex gif)"
+		-DUSE_LibRaw="$(usex raw)"
+		-DUSE_Nuke="no" # not in Gentoo
+		-DUSE_OpenCV="$(usex opencv)"
+		-DUSE_OpenJPEG="$(usex jpeg2k)"
+		-DUSE_JXL="$(usex jpegxl)"
+		-DUSE_OpenVDB="$(usex openvdb)"
+		-DUSE_TBB="$(usex tbb)"
+		-DUSE_Ptex="$(usex ptex)"
+		-DUSE_PNG="$(usex png)"
+		-DUSE_WEBP="$(usex webp)"
 
-		-DENABLE_GIF="$(usex gif)"
-		-DENABLE_LIBRAW="$(usex raw)"
-		-DENABLE_PTEX="$(usex ptex)"
-		-DENABLE_OPENJPEG="$(usex jpeg2k)"
+		-DUSE_GIF="$(usex gif)"
+		-DUSE_LIBRAW="$(usex raw)"
+		-DUSE_PTEX="$(usex ptex)"
+		-DUSE_OPENJPEG="$(usex jpeg2k)"
 
+		-DOIIO_USE_CUDA="$(usex cuda)"
 		-DOIIO_BUILD_TOOLS="$(usex tools)"
 		-DOIIO_BUILD_TESTS="$(usex test)"
 		-DOIIO_DOWNLOAD_MISSING_TESTDATA="no"
@@ -309,6 +333,17 @@ src_configure() {
 	else
 		mycmakeargs+=(
 			-DUSE_QT="no"
+		)
+	fi
+
+	if use cuda ; then
+		for CT in ${CUDA_TARGETS_COMPAT[@]}; do
+			use ${CT/#/cuda_targets_} && CUDA_TARGETS+="${CT};"
+		done
+
+		mycmakeargs+=(
+			-DCUDA_TARGET_ARCH="${CUDA_TARGETS%%;}"
+			-DCUDA_TOOLKIT_ROOT_DIR="/opt/cuda"
 		)
 	fi
 
