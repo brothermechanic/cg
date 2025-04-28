@@ -129,6 +129,7 @@ RDEPEND="
 	dev-libs/libfmt:=
 	dev-libs/pugixml:=
 	>=media-libs/libheif-1.13.0:=
+	media-libs/libultrahdr:=
 	cuda? ( >=dev-util/nvidia-cuda-toolkit-12.8:= )
 	png? ( media-libs/libpng:0= )
 	webp? ( >=media-libs/libwebp-1.5.0:= )

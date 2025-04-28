@@ -20,15 +20,15 @@ SLOT="0/7" # subslot = libwebp soname version
 if [[ ${PV} != *_rc* ]] ; then
 	KEYWORDS="~alpha amd64 arm arm64 hppa ~loong ~m68k ~mips ppc ppc64 ~riscv ~s390 sparc x86 ~amd64-linux ~x86-linux ~arm64-macos ~ppc-macos ~x64-macos ~x64-solaris"
 fi
-IUSE="cpu_flags_arm_neon cpu_flags_x86_sse2 cpu_flags_x86_sse4_1 gif -javascript +jpeg +lossless +png static-libs swap-16bit-csp tiff utils viewer"
+IUSE="cpu_flags_arm_neon cpu_flags_x86_sse2 cpu_flags_x86_sse4_1 gif +jpeg +lossless +png static-libs swap-16bit-csp tiff utils viewer"
 
-REQUIRED_USE="
-	javascript? ( !utils )
-"
+#REQUIRED_USE="
+#	javascript? ( !utils )
+#"
 
 # TODO: dev-lang/swig bindings in swig/ subdirectory
+#	javascript? ( dev-util/emscripten[llvm_targets_WebAssembly(+)] )
 RDEPEND="
-	javascript? ( dev-util/emscripten[llvm_targets_WebAssembly(+)] )
 	gif? ( media-libs/giflib:= )
 	jpeg? ( media-libs/libjpeg-turbo:= )
 	viewer? (
@@ -51,7 +51,7 @@ multilib_src_configure() {
 		-DCMAKE_CXX_STANDARD=17
 		-DCMAKE_POLICY_DEFAULT_CMP0167="OLD"
 		-DCMAKE_FIND_PACKAGE_PREFER_CONFIG="yes"
-		-DBUILD_SHARED_LIBS=ON
+		-DBUILD_SHARED_LIBS="ON"
 		-DWEBP_LINK_STATIC="$(usex static-libs)"
 		-DWEBP_ENABLE_SIMD="$(usex cpu_flags_x86_sse2)"
 		-DWEBP_BUILD_ANIM_UTILS="$(usex utils)"
@@ -64,9 +64,9 @@ multilib_src_configure() {
 		-DWEBP_BUILD_LIBWEBPMUX="ON"
 		-DWEBP_BUILD_WEBPMUX="$(usex utils)"
 		-DWEBP_BUILD_EXTRAS="$(usex utils)"
-		-DWEBP_BUILD_WEBP_JS="$(usex javascript)"
+		-DWEBP_BUILD_WEBP_JS="OFF" #"$(usex javascript)"
 		-DWEBP_BUILD_FUZZTEST="OFF"
-		-DWEBP_USE_THREAD="$(usex !javascript)"
+		-DWEBP_USE_THREAD="ON" #"$(usex !javascript)"
 		-DWEBP_NEAR_LOSSLESS="$(usex lossless)"
 		-DWEBP_ENABLE_SWAP_16BIT_CSP="$(usex swap-16bit-csp)"
 	)
