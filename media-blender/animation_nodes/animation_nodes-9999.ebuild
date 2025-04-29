@@ -3,7 +3,7 @@
 
 EAPI=8
 
-BLENDER_COMPAT=( 2_93 3_{1..6} 4_{0..4} )
+BLENDER_COMPAT=( 2_93 3_{1..6} 4_{0..5} )
 
 PYTHON_COMPAT=( python3_{11..13} )
 
