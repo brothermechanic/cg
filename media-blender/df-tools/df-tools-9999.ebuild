@@ -13,4 +13,4 @@ EGIT_REPO_URI="https://github.com/mifth/mifthtools"
 #EGIT_BRANCH="blender_28"
 LICENSE="BSD" #BSD-3-Clause
 
-ADDON_SOURCE_SUBDIR="${S}/blender/addons/2.8/mira_tools"
+ADDON_SOURCE_SUBDIR="${S}/blender/addons/2.8/df_tools"

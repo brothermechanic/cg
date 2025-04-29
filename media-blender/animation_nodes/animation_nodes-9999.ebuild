@@ -3,7 +3,7 @@
 
 EAPI=8
 
-BLENDER_COMPAT=( 2_93 3_{1..6} 4_{0..5} )
+BLENDER_COMPAT=( 2_93 3_{0..6} 4_{0..5} )
 
 PYTHON_COMPAT=( python3_{11..13} )
 
@@ -22,8 +22,8 @@ RDEPEND="$(python_gen_cond_dep 'dev-python/numpy[${PYTHON_USEDEP}]')"
 ADDON_SOURCE_SUBDIR=${S}/${PN}
 
 src_install(){
-	echo "{\"Copy Target\" : \"${ED}${CG_BLENDER_SCRIPTS_DIR}/addons/${PN}\"}" > conf.json
-	esetup.py build --copy --noversioncheck
+	echo "{\"Copy Target\" : \"${ED}${CG_BLENDER_SCRIPTS_DIR}/addons/${PN}\"}" > conf.json || die
+	${EPYTHON} esetup.py build --copy --noversioncheck || die
 
 	blender-addon_src_install
 }
