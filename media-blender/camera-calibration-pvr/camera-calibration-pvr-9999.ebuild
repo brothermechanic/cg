@@ -8,6 +8,7 @@ PYTHON_COMPAT=( python3_{11..13} )
 BLENDER_COMPAT=( 2_93 3_{1..6} 4_{0..5} )
 
 DISTUTILS_SINGLE_IMPL=1
+DISTUTILS_USE_PEP517=no
 
 inherit distutils-r1 blender-addon
 
