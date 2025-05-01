@@ -13,4 +13,4 @@ EGIT_REPO_URI="https://github.com/don1138/blender-qle"
 
 LICENSE="GPL-3"
 
-ADDON_SOURCE_SUBDIR=${S}/${PN}
+ADDON_SOURCE_SUBDIR=${S}/quick_lighting_environment/quick_lighting_environment
