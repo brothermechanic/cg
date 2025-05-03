@@ -1,4 +1,4 @@
-# Copyright 1999-2023 Gentoo Authors
+# Copyright 1999-2025 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
 
 EAPI=8
@@ -17,7 +17,7 @@ TRAIN_TEST_DURATION=1800 # 30 min
 inherit autotools multilib-minimal flag-o-matic
 
 MY_PN="jemalloc"
-DESCRIPTION="Jemalloc is a general-purpose scalable concurrent allocator"
+DESCRIPTION="USD support for Jemalloc, a general-purpose scalable concurrent allocator"
 HOMEPAGE="http://jemalloc.net/ https://github.com/jemalloc/jemalloc"
 LICENSE="BSD-2"
 SLOT="0/2"
@@ -27,16 +27,17 @@ TRAINERS=(
 	"stress-test-trainer"
 )
 IUSE+=" ${TRAINERS[@]}"
-IUSE+=" custom-cflags debug lazy-lock pgo prof static-libs stats test xmalloc"
+IUSE+=" custom-cflags debug doc lazy-lock pgo prof static-libs stats test xmalloc"
 REQUIRED_USE+="
 	pgo? ( || ( ${TRAINERS[@]} ) custom-cflags )
 	test-trainer? ( pgo )
 	stress-test-trainer? ( pgo )
 "
-HTML_DOCS=( doc/jemalloc.html )
 SRC_URI="https://github.com/jemalloc/jemalloc/releases/download/${PV}/${MY_PN}-${PV}.tar.bz2"
 PATCHES=(
 	"${FILESDIR}/${MY_PN}-5.2.1-mtls-dialect-gnu2-7036e64.patch"
+	"${FILESDIR}/${MY_PN}-5.3.0-backport-pr-2312.patch"
+	"${FILESDIR}/${MY_PN}-5.3.0-backport-pr-2338.patch"
 )
 S="${WORKDIR}/${MY_PN}-${PV}"
 MULTILIB_WRAPPED_HEADERS=( /usr/include/jemalloc/jemalloc.h )
@@ -174,17 +175,18 @@ multilib_src_test() {
 }
 
 multilib_src_install() {
+	#use doc && HTML_DOCS=( ${BUILD_DIR}/doc/jemalloc.html )
 	# Copy man file which the Makefile looks for
 	cp "${S}/doc/jemalloc.3" "${BUILD_DIR}/doc" || die
 	emake DESTDIR="${D}" install
 }
 
 multilib_src_install_all() {
-	if [[ ${CHOST} == *-darwin* ]] ; then
+	if [[ "${CHOST}" == *"-darwin"* ]] ; then
 		# fixup install_name, #437362
 		install_name_tool \
-			-id "${EPREFIX}"/usr/$(get_libdir)/libjemalloc.2.dylib \
-			"${ED}"/usr/$(get_libdir)/libjemalloc.2.dylib || die
+			-id "${EPREFIX}/usr/$(get_libdir)/libjemalloc.2.dylib" \
+			"${ED}/usr/$(get_libdir)/libjemalloc.2.dylib" || die
 	fi
 	use static-libs || find "${ED}" -name '*.a' -delete
 	rm -rf "${ED}/usr/share/man" || die
