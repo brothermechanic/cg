@@ -23,7 +23,7 @@ ADDON_SOURCE_SUBDIR=${S}/${PN}
 
 src_install(){
 	echo "{\"Copy Target\" : \"${ED}${CG_BLENDER_SCRIPTS_DIR}/addons/${PN}\"}" > conf.json || die
-	${EPYTHON} esetup.py build --copy --noversioncheck || die
+	${EPYTHON} setup.py build --copy --noversioncheck || die
 
 	blender-addon_src_install
 }
