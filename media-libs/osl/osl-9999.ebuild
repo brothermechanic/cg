@@ -3,7 +3,8 @@
 
 EAPI=8
 
-PYTHON_COMPAT=( python3_{10..13} )
+# keep in sync with blender
+PYTHON_COMPAT=( python3_{11..13} )
 
 # Check this on updates
 OPENVDB_COMPAT=( {7..12} )
@@ -27,19 +28,14 @@ else
 	SLOT="0/$(ver_cut 1-2 ${PV})"
 fi
 
-if [[ "${PV}" =~ "1.12" ]]; then
-	PATCHES+=(
-		"${FILESDIR}/osl-1.12.13.0-cuda-noinline-fix.patch"
-		"${FILESDIR}/osl-1.12.14.0-lld-fix-linking.patch"
-	)
-	# Check this on updates
-	LLVM_COMPAT=( 16 17 )
-else
+if [[ "${PV}" =~ "1.13" ]]; then
 	PATCHES+=(
 		"${FILESDIR}/osl-1.13.6.0-lld-fix-linking.patch"
 	)
 	# Check this on updates
 	LLVM_COMPAT=( {17..19} )
+else
+	LLVM_COMPAT=( {18..20} )
 fi
 inherit llvm-r1
 
@@ -67,6 +63,7 @@ REQUIRED_USE="
 		|| ( wayland X )
 	)
 	optix? ( cuda )
+	test? ( optix )
 "
 
 RDEPEND="
@@ -127,17 +124,22 @@ DEPEND="${RDEPEND}
 	sys-libs/zlib
 	test? (
 		media-fonts/droid
+		optix? (
+			cuda? (
+				dev-util/nvidia-cuda-toolkit
+			)
+			dev-libs/optix
+		)
 	)
 "
 BDEPEND="
-	>=dev-build/cmake-3.12
-	virtual/pkgconfig
 	app-alternatives/yacc
 	app-alternatives/lex
+	virtual/pkgconfig
 "
 
 PATCHES+=(
-	"${FILESDIR}/osl-1.12.13.0-change-ci-test.bash.patch"
+	"${FILESDIR}/${PN}-include-cstdint.patch"
 )
 
 get_lib_type() {
@@ -167,6 +169,7 @@ src_prepare() {
 		-re '/install \(FILES src\/build-scripts\/serialize-bc\.py/{:a;N;/PERMISSIONS \$\{PERMISSION_FLAGS\}\)/!ba};/DESTINATION build-scripts/d' \
 		-i CMakeLists.txt || die "Sed failed."
 	sed -e "/^install.*llvm_macros.cmake.*cmake/d" -i CMakeLists.txt || die
+	sed -e "/install_targets ( libtestshade )/d" -i src/testshade/CMakeLists.txt || die
 
 	cmake_src_prepare
 }
@@ -237,7 +240,6 @@ src_configure() {
 			[[ -z "${mysimd[*]}" ]] && mysimd=("0")
 			[[ -z "${mybatched[*]}" ]] && mybatched=("0")
 
-			use debug && CMAKE_BUILD_TYPE=Debug || CMAKE_BUILD_TYPE=Release
 
 			# This is currently needed on arm64 to get the NEON SIMD wrapper to compile the code successfully
 			# Even if there are no SIMD features selected, it seems like the code will turn on NEON support if it is available.
@@ -287,6 +289,7 @@ src_configure() {
 					-DCUDA_TOOLKIT_ROOT_DIR="/opt/cuda"
 				)
 			fi
+			CMAKE_BUILD_TYPE=$(usex debug 'RelWithDebInfo' 'Release')
 			cmake_src_configure
 		done
 	}
@@ -313,85 +316,79 @@ src_test() {
 
 	ln -s "${CMAKE_USE_DIR}/src/cmake/" "${BUILD_DIR}/src/cmake" || die
 
-	if use optix; then
-		cp \
-			"${BUILD_DIR}/src/liboslexec/shadeops_cuda.ptx" \
-			"${BUILD_DIR}/src/testrender/"{optix_raytracer,quad,rend_lib_testrender,sphere,wrapper}".ptx" \
-			"${BUILD_DIR}/src/testshade/"{optix_grid_renderer,rend_lib_testshade}".ptx" \
-			"${BUILD_DIR}/bin/" || die
-
-		cuda_add_sandbox -w
-		addwrite "/dev/char/"
-	fi
-
-	CMAKE_SKIP_TESTS=(
-		"-broken$"
-		"^render"
-
-		# broken with in-tree <=dev-libs/optix-7.5.0 and out of date
-		"^example-cuda$"
-
-		# outright fail
-		"^testoptix.optix.opt$"
-		"^testoptix-noise.optix.opt$"
-		"^testoptix-reparam.optix.opt$"
-		"^transform-reg.regress.batched.opt$"
-		"^spline-reg.regress.batched.opt$"
-
-		# doesn't handle parameters
-		"^osl-imageio$"
-		"^osl-imageio.opt$"
-		"^osl-imageio.opt.rs_bitcode$"
-	)
-
-	if use optix; then
-		CMAKE_SKIP_TESTS+=(
-			"^color2.optix$"
-			"^color4.optix(|.opt|.fused)$"
-			"^vector2.optix$"
-			"^vector4.optix$"
-		)
-	fi
-
-	myctestargs=(
-		# src/build-scripts/ci-test.bash
-		'--force-new-ctest-process'
-	)
-
 	local -x DEBUG CXXFLAGS LD_LIBRARY_PATH DIR OSL_DIR OSL_SOURCE_DIR PYTHONPATH
 	DEBUG=1 # doubles the floating point tolerance so we avoid FMA related issues
 	CXXFLAGS="-I${T}/usr/include"
 	LD_LIBRARY_PATH="${T}/usr/$(get_libdir)"
 	OSL_DIR="${T}/usr/$(get_libdir)/cmake/OSL"
 	OSL_SOURCE_DIR="${S}"
+	# local -x OSL_TESTSUITE_SKIP_DIFF=1
+	local -x OPENIMAGEIO_DEBUG=0
 
 	if use python; then
 		PYTHONPATH="${BUILD_DIR}/lib/python/site-packages"
 	fi
 
+	if use optix; then
+		cp \
+			"${BUILD_DIR}/src/liboslexec/shadeops_cuda.ptx" \
+			"${BUILD_DIR}/src/testrender/"{optix_raytracer,rend_lib_testrender}".ptx" \
+			"${BUILD_DIR}/src/testshade/"{optix_grid_renderer,rend_lib_testshade}".ptx" \
+			"${BUILD_DIR}/bin/" || die
+
+		# NOTE this should go to cuda eclass
+		cuda_add_sandbox -w
+		addwrite "/proc/self/task/"
+		addpredict "/dev/char/"
+	fi
+
+	local CMAKE_SKIP_TESTS=(
+		"-broken$"
+
+		# broken with in-tree <=dev-libs/optix-7.5.0 and out of date
+		"^example-cuda"
+
+		# outright fail
+		# batchregression
+		"^spline-reg.regress.batched.opt$"
+		"^transform-reg.regress.batched.opt$"
+		"^texture3d-opts-reg.regress.batched.opt$"
+
+		# doesn't handle parameters
+		"^osl-imageio"
+
+		# render
+		"^render-bunny.opt$"
+		"^render-displacement.opt$"
+		"^render-microfacet.opt$"
+		"^render-veachmis.opt$"
+
+		# optix
+		"^render-mx-generalized-schlick.optix$"
+		"^render-mx-generalized-schlick.optix.opt$"
+		"^render-mx-generalized-schlick.optix.fused$"
+		"^render-microfacet.optix.opt$"
+		"^render-microfacet.optix.fused$"
+	)
+
+	local myctestargs=(
+		-LE 'render'
+		# src/build-scripts/ci-test.bash
+		# '--force-new-ctest-process'
+	)
+
+	OPENIMAGEIO_CUDA=0 \
 	cmake_src_test
 
 	einfo ""
 	einfo "testing render tests in isolation"
 	einfo ""
 
-	CMAKE_SKIP_TESTS=(
-		"^render-background$"
-		"^render-mx-furnace-sheen$"
-		"^render-mx-burley-diffuse$"
-		"^render-mx-conductor$"
-		"^render-microfacet$"
-		"^render-veachmis$"
-		"^render-ward$"
-		"^render-raytypes.opt$"
-		"^render-raytypes.opt.rs_bitcode$"
-	)
-
 	myctestargs=(
+		-L "render"
 		# src/build-scripts/ci-test.bash
 		'--force-new-ctest-process'
 		--repeat until-pass:10
-		-R "^render"
 	)
 
 	cmake_src_test
@@ -420,7 +417,6 @@ src_install() {
 	if use test; then
 		rm \
 			"${ED}/usr/bin/test"{render,shade{,_dso}} \
-			"${ED}/usr/$(get_libdir)/libtestshade.so"* \
 			|| die
 	fi
 

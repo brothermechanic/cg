@@ -15,7 +15,7 @@ HOMEPAGE="https://www.blender.org"
 
 EGIT_REPO_URI="https://github.com/blender/blender https://projects.blender.org/blender/blender.git"
 EGIT_SUBMODULES=( '*' '-lib/*' '-tools/*' '-release/datafiles/assets' )
-
+#EGIT_LFS="yes"
 if [[ ${PV} == 9999 ]]; then
 	EGIT_BRANCH="main"
 	#EGIT_COMMIT="0f3fdd25bcabac1d68d02fb246d961ea56fe49a1"
@@ -165,28 +165,26 @@ RDEPEND="
 		>=dev-python/urllib3-1.26.7[${PYTHON_USEDEP}]
 	')
 	>=dev-cpp/nlohmann_json-3.10.0:=
+	dev-cpp/gflags:=
 	media-libs/freetype:=[brotli,bzip2,png]
 	media-libs/libepoxy:=
 	>=dev-cpp/pystring-1.1.3:=
 	>=dev-libs/fribidi-1.0.12:=
-	>=media-libs/libpng-1.6.37:0=
 	>=sys-libs/minizip-ng-3.0.7
 	>=media-libs/tiff-4.6.0
 	>=sys-libs/zlib-1.2.13
 	dev-libs/lzo:2
 	media-libs/libglvnd
+	>=media-libs/libpng-1.6.37:0=
 	media-libs/libsamplerate
 	virtual/libintl
-	alembic? ( >=media-gfx/alembic-1.8.3-r2[boost(+),hdf5(+)] )
+	alembic? ( >=media-gfx/alembic-1.8.3-r2[boost(+),hdf(+)] )
 	collada? ( >=media-libs/opencollada-1.6.68 )
 	cuda? ( dev-util/nvidia-cuda-toolkit:= )
 	draco? ( >=media-libs/draco-1.5.2:= )
 	embree? (
 		>=media-libs/embree-4.3.2[raymask,tbb?]
 		<media-libs/embree-5
-	)
-	hip? (
-		>=dev-util/hip-6.1:=
 	)
 	ffmpeg? (
 		<media-video/ffmpeg-8:=[jpeg2k?,opus?,lame?,sdl,theora?,vorbis?,vpx?,x264?,xvid?,zlib]
@@ -195,7 +193,9 @@ RDEPEND="
 	fftw? ( sci-libs/fftw:3.0= )
 	flac? (	>=media-libs/flac-1.4.2	)
 	gmp? ( >=dev-libs/gmp-6.2.1[cxx] )
-	dev-cpp/gflags:=
+	hip? (
+		>=dev-util/hip-6.1:=
+	)
 	gtests? (
 		dev-cpp/glog:=[gflags]
 		dev-cpp/gmock:=
@@ -206,8 +206,8 @@ RDEPEND="
 	libmv? ( sci-libs/ceres-solver:= )
 	lzo? ( dev-libs/lzo:2= )
 	ndof? (
-		>=dev-libs/libspnav-1.1
 		app-misc/spacenavd
+		>=dev-libs/libspnav-1.1
 	)
 	manifold? (
 		>=sci-mathematics/manifold-1.3.1:=
@@ -216,11 +216,9 @@ RDEPEND="
 		>=media-libs/materialx-1.38.8[${PYTHON_SINGLE_USEDEP},python]
 	)
 	nls? ( virtual/libiconv )
+	openal? ( >=media-libs/openal-1.23.1 )
 	<=media-libs/audaspace-${AUD_PV}:=[python,openal?,sdl?,pulseaudio?]
 	oneapi? ( dev-libs/intel-compute-runtime[l0] )
-	openal? (
-		>=media-libs/openal-1.23.1
-	)
 	media-libs/glew:*
 	oidn? ( >=media-libs/oidn-2.1.0[cuda?] )
 	<media-libs/openimageio-2.6[${PYTHON_SINGLE_USEDEP},${OPENVDB_SINGLE_USEDEP},python,color-management?]
@@ -242,9 +240,7 @@ RDEPEND="
 	openxr? (
 		>=media-libs/openxr-1.0.17
 	)
-	optix? (
-		>=dev-libs/optix-7.4.0
-	)
+	optix? ( <dev-libs/optix-9:= )
 	osl? (
 		>=media-libs/osl-1.${OSL_PV}:=[optix?]
 		<media-libs/osl-1.$((${OSL_PV}+1)):=[optix?]
@@ -322,7 +318,7 @@ BDEPEND="
 	dev-vcs/git
 	dev-util/patchelf
 	virtual/pkgconfig
-	assets? ( dev-vcs/git-lfs )
+	dev-vcs/git-lfs
 	mold? ( sys-devel/mold:= )
 	$(llvm_gen_dep '
 		lld? ( llvm-core/lld:${LLVM_SLOT}= )
@@ -422,6 +418,7 @@ src_unpack() {
 			EGIT_COMMIT=""
 			EGIT_CLONE_TYPE="shallow"
 		fi
+		EGIT_LFS="yes"
 		EGIT_REPO_URI="https://github.com/blender/blender-addons https://projects.blender.org/blender/blender-addons.git"
 		EGIT_CHECKOUT_DIR=${WORKDIR}/${P}/scripts/blender-addons
 		git-r3_src_unpack
@@ -436,6 +433,7 @@ src_unpack() {
 			EGIT_COMMIT=""
 			EGIT_CLONE_TYPE="shallow"
 		fi
+		EGIT_LFS="yes"
 		EGIT_REPO_URI="https://github.com/blender/blender-addons-contrib https://projects.blender.org/blender/blender-addons-contrib.git"
 		EGIT_CHECKOUT_DIR=${WORKDIR}/${P}/scripts/blender-addons-contrib
 		git-r3_src_unpack
