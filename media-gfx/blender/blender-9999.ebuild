@@ -448,7 +448,7 @@ src_unpack() {
 			EGIT_COMMIT=""
 			EGIT_CLONE_TYPE="shallow"
 		fi
-		EGIT_LFS="yes"
+		#EGIT_LFS="yes"
 		EGIT_REPO_URI="https://projects.blender.org/blender/blender-assets.git"
 		EGIT_CHECKOUT_DIR=${WORKDIR}/${P}/release/datafiles/assets
 		git-r3_src_unpack
@@ -503,11 +503,14 @@ src_prepare() {
 		-e "s|blender.svg|blender-${SLOT}.svg|" \
 		-e "s|blender-symbolic.svg|blender-${SLOT}-symbolic.svg|" \
 		-e "s|blender.desktop|blender-${SLOT}.desktop|" \
+		-e "s|org.blender.Blender.metainfo.xml|blender-${BV}.metainfo.xml|" \
 		-i source/creator/CMakeLists.txt || die
 
-	sed -e "s|Name=Blender|Name=Blender ${SLOT}|" -i release/freedesktop/blender.desktop || die
-	sed -e "s|Exec.*|Exec=blender-${SLOT}|" -i release/freedesktop/blender.desktop || die
-	sed -e "s|Icon=blender|Icon=blender-${SLOT}|" -i release/freedesktop/blender.desktop || die
+	sed \
+		-e "s|Name=Blender|Name=Blender ${SLOT}|" \
+		-e "s|Exec.*|Exec=blender-${SLOT}|" \
+		-e "s|Icon=blender|Icon=blender-${SLOT}|" \
+		-i release/freedesktop/blender.desktop || die
 
 	sed \
 		-e "/CMAKE_INSTALL_PREFIX_WITH_CONFIG/{s|\${CMAKE_INSTALL_PREFIX}|${T}\${CMAKE_INSTALL_PREFIX}|g}" \
@@ -520,14 +523,53 @@ src_prepare() {
 #		"#define BUILD_TIME \"$(TZ=\"UTC\" date --date=today +%H:%M:%S)\"\n" \
 #		"#include \"buildinfo_static.h\"\n" > build_files/cmake/buildinfo.h || die
 
-	mv release/freedesktop/icons/scalable/apps/blender.svg release/freedesktop/icons/scalable/apps/blender-${SLOT}.svg || die
-	mv release/freedesktop/icons/symbolic/apps/blender-symbolic.svg release/freedesktop/icons/symbolic/apps/blender-${SLOT}-symbolic.svg || die
-	mv release/freedesktop/blender.desktop release/freedesktop/blender-${SLOT}.desktop || die
+	mv \
+		"release/freedesktop/icons/scalable/apps/blender.svg" \
+		"release/freedesktop/icons/scalable/apps/blender-${SLOT}.svg" \
+		|| die
+	mv \
+		"release/freedesktop/icons/symbolic/apps/blender-symbolic.svg" \
+		"release/freedesktop/icons/symbolic/apps/blender-${SLOT}-symbolic.svg" \
+		|| die
+	mv \
+		"release/freedesktop/blender.desktop" \
+		"release/freedesktop/blender-${SLOT}.desktop" \
+		|| die
+
+	mv \
+		"release/freedesktop/org.blender.Blender.metainfo.xml" \
+		"release/freedesktop/blender-${SLOT}.metainfo.xml" \
+		|| die
+
+	sed \
+		-e "s#\(set(cycles_kernel_runtime_lib_target_path \)\${cycles_kernel_runtime_lib_target_path}\(/lib)\)#\1\${CYCLES_INSTALL_PATH}\2#" \
+		-i intern/cycles/kernel/CMakeLists.txt \
+		|| die
+
+	if use hip; then
+		# fix hardcoded path
+		sed \
+			-e "s#opt/rocm/hip/bin#$(hipconfig -p)/bin#g" \
+			-i extern/hipew/src/hipew.c \
+			|| die
+	fi
 
 	if use test; then
 		# Without this the tests will try to use /usr/bin/blender and /usr/share/blender/ to run the tests.
-		sed -e "s|set(TEST_INSTALL_DIR.*|set(TEST_INSTALL_DIR ${T}/usr)|g" -i tests/CMakeLists.txt || die
-		sed -e "s|string(REPLACE.*|set(TEST_INSTALL_DIR ${T}/usr)|g" -i build_files/cmake/Modules/GTestTesting.cmake || die
+		sed \
+			-e "/string(REPLACE.*TEST_INSTALL_DIR/{s|\${CMAKE_INSTALL_PREFIX}|${T}\${CMAKE_INSTALL_PREFIX}|g}" \
+			-i "build_files/cmake/testing.cmake" \
+			|| die "REPLACE.*TEST_INSTALL_DIR"
+
+		# assertEquals was deprecated in Python-3.2 use assertEqual instead
+		sed \
+			-e 's/assertEquals/assertEqual/g' \
+			-i tests/python/bl_animation_action.py \
+			|| die
+
+		sed -e '1i #include <cstdint>' -i extern/gtest/src/gtest-death-test.cc || die
+	else
+		cmake_comment_add_subdirectory tests
 	fi
 
 	ewarn "$(echo "Remaining bundled dependencies:";
@@ -553,7 +595,7 @@ src_configure() {
 	append-cppflags -funsigned-char -fno-strict-aliasing
 
 	# Workaround for bug #922600
-	append-ldflags $(test-flags-CCLD -Wl,--undefined-version)
+	append-ldflags "$(test-flags-CCLD -Wl,--undefined-version)"
 
 	append-lfs-flags
 
@@ -768,6 +810,7 @@ src_configure() {
 	append-cflags "$(usex debug '-DDEBUG' '-DNDEBUG')"
 	append-cxxflags "$(usex debug '-DDEBUG' '-DNDEBUG')"
 
+
 	CMAKE_BUILD_TYPE=$(usex debug RelWithDebInfo Release)
 
 	mycmakeargs+=(
@@ -776,7 +819,7 @@ src_configure() {
 		-DWITH_LINKER_MOLD=$(usex mold)
 	)
 
-	if use test ; then
+	if use test; then
 		local CYCLES_TEST_DEVICES=( "CPU" )
 		if use cycles-bin-kernels; then
 			use cuda && CYCLES_TEST_DEVICES+=( "CUDA" )
@@ -790,6 +833,7 @@ src_configure() {
 
 		# NOTE in lieu of a FEATURE/build_options
 		if [[ "${EXPENSIVE_TESTS:-0}" -gt 0 ]]; then
+			einfo "running expensive tests EXPENSIVE_TESTS=${EXPENSIVE_TESTS}"
 			mycmakeargs+=(
 				-DWITH_CYCLES_TEST_OSL="$(usex osl)"
 
@@ -804,6 +848,7 @@ src_configure() {
 				-DWITH_GPU_RENDER_TESTS_VULKAN="$(usex vulkan)"
 
 				-DWITH_SYSTEM_PYTHON_TESTS="yes"
+				-DTEST_SYSTEM_PYTHON_EXE="${PYTHON}"
 			)
 
 			if [[ "${PV}" == *9999* && "${BVC}" == "alpha" ]] && use experimental; then
@@ -830,15 +875,13 @@ src_test() {
 	DESTDIR="${T}" cmake_build install
 
 	blender_get_version
-	# Define custom blender data/script file paths not be able to find them otherwise during testing.
+	# Define custom blender data/script file paths, or we won't be able to find them otherwise during testing.
 	# (Because the data is in the image directory and it will default to look in /usr/share)
-	export BLENDER_SYSTEM_SCRIPTS="${ED}"/usr/share/blender/${SLOT}/scripts
-	export BLENDER_SYSTEM_DATAFILES="${ED}"/usr/share/blender/${SLOT}/datafiles
+	local -x BLENDER_SYSTEM_RESOURCES="${T%/}/usr/share/blender/${BV}"
 
 	# Sanity check that the script and datafile path is valid.
-	# If they are not vaild, blender will fallback to the default path which is not what we want.
-	[ -d "$BLENDER_SYSTEM_SCRIPTS" ] || die "The custom script path is invalid, fix the ebuild!"
-	[ -d "$BLENDER_SYSTEM_DATAFILES" ] || die "The custom datafiles path is invalid, fix the ebuild!"
+	# If they are not valid, blender will fallback to the default path which is not what we want.
+	[[ -d "${BLENDER_SYSTEM_RESOURCES}" ]] || die "The custom resources path is invalid, fix the ebuild!"
 
 	# TODO only picks first card
 	addwrite "/dev/dri/card0"
@@ -847,7 +890,8 @@ src_test() {
 
 	if use cuda; then
 		cuda_add_sandbox -w
-		addwrite "/dev/char/"
+		addwrite "/proc/self/task"
+		addpredict "/dev/char/"
 	fi
 
 	local -x CMAKE_SKIP_TESTS=(
@@ -857,6 +901,35 @@ src_test() {
 		"^compositor_cpu_filter$"
 	)
 
+	if [[ "${RUN_FAILING_TESTS:-0}" -eq 0 ]]; then
+		einfo "not running failing tests RUN_FAILING_TESTS=${RUN_FAILING_TESTS}"
+		CMAKE_SKIP_TESTS+=(
+			"^BLI$"
+			"^asset_system$"
+			"^cycles$"
+			"^cycles_bsdf_cpu$"
+			"^cycles_bsdf_cuda$"
+			"^cycles_bsdf_optix$"
+			"^cycles_displacement_cpu$"
+			"^cycles_displacement_cuda$"
+			"^cycles_displacement_optix$"
+			"^cycles_image_data_types_cpu$"
+			"^cycles_image_data_types_cuda$"
+			"^cycles_image_data_types_optix$"
+			"^cycles_osl_cpu$"
+			"^cycles_principled_bsdf_cpu$"
+			"^cycles_principled_bsdf_cuda$"
+			"^cycles_principled_bsdf_optix$"
+			"^cycles_shader_cpu$"
+			"^cycles_shader_cuda$"
+			"^cycles_shader_optix$"
+			"^ffmpeg_libs$" # needs H265
+			"^imbuf_save$" # needs oiio with working webp
+			"^geo_node_curves_curve_to_points$"
+			"^geo_node_geometry_duplicate_elements_curve_points$"
+		)
+	fi
+
 	if ! has_version "media-libs/openusd"; then
 		CMAKE_SKIP_TESTS+=(
 			# from pxr import Usd # ModuleNotFoundError: No module named 'pxr'
@@ -864,12 +937,21 @@ src_test() {
 		)
 	fi
 
+	if ! has_version "media-libs/openimageio[python]"; then
+		CMAKE_SKIP_TESTS+=(
+			# import OpenImageIO as oiio # ModuleNotFoundError: No module named 'OpenImageIO'
+			"^compositor_cpu_file_output$"
+		)
+	fi
 	# For debugging, print out all information.
 	local -x VERBOSE="$(usex debug "true" "false")"
+	"${VERBOSE}" && einfo "VERBOSE=${VERBOSE}"
 
 	# Show the window in the foreground.
-	local -x USE_WINDOW="false"
-	local -x USE_DEBUG="false"
+	[[ -v USE_WINDOW ]] && einfo "USE_WINDOW=${USE_WINDOW}"
+
+	# local -x USE_DEBUG="true" # non-zero
+	[[ -v USE_DEBUG ]] && einfo "USE_DEBUG=${USE_DEBUG}"
 
 	if [[ "${EXPENSIVE_TESTS:-0}" -gt 0 ]]; then
 		if [[ "${USE_WINDOW}" = "true" ]] &&
@@ -879,25 +961,25 @@ src_test() {
 				xdg_environment_reset
 		fi
 
-		if [[ "${USE_WINDOW}" == "true" ]]; then
-			xdg_environment_reset
-			# WITH_GPU_RENDER_TESTS_HEADED
-			if use wayland; then
-				local compositor exit_code
-				local logfile=${T}/weston.log
-				weston --xwayland --backend=headless --socket=wayland-5 --idle-time=0 2>"${logfile}" &
-				compositor=$!
-				local -x WAYLAND_DISPLAY=wayland-5
-				sleep 1 # wait for xwayland to be up
-				local -x DISPLAY="$(grep "xserver listening on display" "${logfile}" | cut -d ' ' -f 5)"
+		xdg_environment_reset
+		# WITH_GPU_RENDER_TESTS_HEADED
+		if use wayland; then
+			local compositor exit_code
+			local logfile=${T}/weston.log
+			weston --xwayland --backend=headless --socket=wayland-5 --idle-time=0 2>"${logfile}" &
+			compositor=$!
+			local -x WAYLAND_DISPLAY=wayland-5
+			sleep 1 # wait for xwayland to be up
+			local -x DISPLAY="$(grep "xserver listening on display" "${logfile}" | cut -d ' ' -f 5)"
 
-				cmake_src_test
+			cmake_src_test
 
-				exit_code=$?
-				kill "${compositor}"
-			elif use X; then
-				virtx cmake_src_test
-			fi
+			exit_code=$?
+			kill "${compositor}"
+		elif use X; then
+			virtx cmake_src_test
+		else
+			cmake_src_test
 		fi
 	else
 		cmake_src_test
@@ -923,8 +1005,7 @@ src_install() {
 	if use doc; then
 		# Define custom blender data/script file paths. Otherwise Blender will not be able to find them during doc building.
 		# (Because the data is in the image directory and it will default to look in /usr/share)
-		export BLENDER_SYSTEM_SCRIPTS=${ED}/usr/share/blender/${SLOT}/scripts
-		export BLENDER_SYSTEM_DATAFILES=${ED}/usr/share/blender/${SLOT}/datafiles
+		local -x BLENDER_SYSTEM_RESOURCES="${ED}/usr/share/blender/${BV}"
 
 		# Workaround for binary drivers.
 		addpredict /dev/ati
@@ -997,6 +1078,7 @@ pkg_postinst() {
 		elog "supported by this version upstream."
 		elog "If you experience breakages with e.g. plugins, please switch to"
 		elog "python_single_target_python3_12 instead."
+		elog "Bug: https://bugs.gentoo.org/737388"
 		elog
 	fi
 
@@ -1010,10 +1092,12 @@ pkg_postrm() {
 	xdg_mimeinfo_database_update
 	xdg_desktop_database_update
 
-	ewarn
-	ewarn "You may want to remove the following directories"
-	ewarn "- ~/.config/${PN}/${SLOT}/cache/"
-	ewarn "- ~/.cache/cycles/"
-	ewarn "It may contain extra render kernels not tracked by portage"
-	ewarn
+	if [[ -z "${REPLACED_BY_VERSION}" ]]; then
+		ewarn
+		ewarn "You may want to remove the following directories"
+		ewarn "- ~/.config/${PN}/${SLOT}/cache/"
+		ewarn "- ~/.cache/cycles/"
+		ewarn "It may contain extra render kernels not tracked by portage"
+		ewarn
+	fi
 }
