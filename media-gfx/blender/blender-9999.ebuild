@@ -30,7 +30,7 @@ else
 	#[[ "4.1 4.0 3.6" =~ "${MY_PV}"  ]] && EGIT_REPO_URI_LIST="https://projects.blender.org/blender/blender-addons.git https://projects.blender.org/blender/blender-addons-contrib.git"
 fi
 
-[[ "4.0 3.6" =~ "${MY_PV}"  ]] && OSL_PV="12" || OSL_PV="13"
+[[ "4.0 3.6" =~ "${MY_PV}"  ]] && OSL_PV="13" || OSL_PV="14"
 [[ "4.0 3.6 4.2 4.3 4.4" =~ "${MY_PV}" ]] && AUD_PV="1.5.1" || AUD_PV="1.6.1"
 
 SLOT="$MY_PV"
@@ -221,7 +221,7 @@ RDEPEND="
 	oneapi? ( dev-libs/intel-compute-runtime[l0] )
 	media-libs/glew:*
 	oidn? ( >=media-libs/oidn-2.1.0[cuda?] )
-	<media-libs/openimageio-2.6[${PYTHON_SINGLE_USEDEP},${OPENVDB_SINGLE_USEDEP},python,color-management?]
+	<media-libs/openimageio-3.1[${PYTHON_SINGLE_USEDEP},${OPENVDB_SINGLE_USEDEP},python,color-management?]
 	>=media-libs/openimageio-2.5.11.0[${PYTHON_SINGLE_USEDEP},${OPENVDB_SINGLE_USEDEP},python,color-management?]
 	>=dev-cpp/robin-map-0.6.2
 	>=dev-libs/libfmt-9.1.0
