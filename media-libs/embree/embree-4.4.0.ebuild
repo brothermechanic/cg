@@ -186,19 +186,19 @@ src_prepare() {
 		|| die
 
 	# raise cmake minimum version to silence warning
-	sed -e 's#CMAKE_MINIMUM_REQUIRED(VERSION 3.[0-9].0)#CMAKE_MINIMUM_REQUIRED(VERSION 3.5)#I' \
-	    -i \
-	        CMakeLists.txt \
-	        kernels/rthwif/CMakeLists.txt \
-	        tutorials/embree_info/CMakeLists.txt \
-	        tutorials/minimal/CMakeLists.txt \
-	    || die
+	#sed -e 's#CMAKE_MINIMUM_REQUIRED(VERSION 3.[0-9].0)#CMAKE_MINIMUM_REQUIRED(VERSION 3.5)#I' \
+	#    -i \
+	#        CMakeLists.txt \
+	#        kernels/rthwif/CMakeLists.txt \
+	#        tutorials/embree_info/CMakeLists.txt \
+	#        tutorials/minimal/CMakeLists.txt \
+	#    || die
 }
 
 src_configure() {
 	# -Werror=odr
 	# https://bugs.gentoo.org/859838
-	# https://github.com/embree/embree/issues/481
+	# https://github.com/RenderKit/embree/issues/481
 	filter-lto
 
 	# NOTE: You can make embree accept custom CXXFLAGS by turning off
@@ -207,9 +207,9 @@ src_configure() {
 	# different supported ISAs and picks the correct one at runtime.
 	# "m*" will pull in cpu instructions that shouldn't be in specific modules
 	# and it fails to link properly.
-	# https://github.com/embree/embree/issues/115
+	# https://github.com/RenderKit/embree/issues/115
 
-	filter-flags -march=*
+	filter-flags -m*
 	local mycmakeargs=(
 		-DBUILD_DOC=$(usex doc)
 		-DCMAKE_SKIP_INSTALL_RPATH:BOOL=ON
