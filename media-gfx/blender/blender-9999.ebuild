@@ -8,14 +8,18 @@ OPENVDB_COMPAT=( {7..12} )
 LLVM_COMPAT=( {18..19} )
 LLVM_OPTIONAL=1
 
-inherit check-reqs cmake cuda flag-o-matic llvm-r1 git-r3 pax-utils python-single-r1 toolchain-funcs xdg-utils openvdb cg-blender-scripts-dir
+ROCM_SKIP_GLOBALS=1
+
+inherit cuda rocm llvm-r1
+inherit eapi9-pipestatus check-reqs flag-o-matic pax-utils python-single-r1 toolchain-funcs virtualx openvdb cg-blender-scripts-dir
+inherit cmake xdg-utils git-r3
 
 DESCRIPTION="Blender is a free and open-source 3D creation suite."
 HOMEPAGE="https://www.blender.org"
 
-EGIT_REPO_URI="https://github.com/blender/blender https://projects.blender.org/blender/blender.git"
+EGIT_REPO_URI="https://projects.blender.org/blender/blender.git https://github.com/blender/blender.git"
 EGIT_SUBMODULES=( '*' '-lib/*' '-tools/*' '-release/datafiles/assets' )
-#EGIT_LFS="yes"
+EGIT_LFS="yes"
 if [[ ${PV} == 9999 ]]; then
 	EGIT_BRANCH="main"
 	#EGIT_COMMIT="0f3fdd25bcabac1d68d02fb246d961ea56fe49a1"
@@ -27,7 +31,6 @@ else
 	EGIT_BRANCH="blender-v${MY_PV}-release"
 	#EGIT_COMMIT="v${PV}"
 	KEYWORDS="~amd64 ~arm ~arm64"
-	#[[ "4.1 4.0 3.6" =~ "${MY_PV}"  ]] && EGIT_REPO_URI_LIST="https://projects.blender.org/blender/blender-addons.git https://projects.blender.org/blender/blender-addons-contrib.git"
 fi
 
 [[ "4.0 3.6" =~ "${MY_PV}"  ]] && OSL_PV="13" || OSL_PV="14"
@@ -190,7 +193,7 @@ RDEPEND="
 		<media-video/ffmpeg-8:=[jpeg2k?,opus?,lame?,sdl,theora?,vorbis?,vpx?,x264?,xvid?,zlib]
 		>media-video/ffmpeg-5:=[jpeg2k?,opus?,lame?,sdl,theora?,vorbis?,vpx?,x264?,xvid?,zlib]
 	)
-	fftw? ( sci-libs/fftw:3.0= )
+	fftw? ( sci-libs/fftw:3.0=[threads] )
 	flac? (	>=media-libs/flac-1.4.2	)
 	gmp? ( >=dev-libs/gmp-6.2.1[cxx] )
 	hip? (
@@ -228,7 +231,7 @@ RDEPEND="
 	color-management? ( >=media-libs/opencolorio-2.3.0:= )
 	openexr? ( >=media-libs/openexr-3.2.1:= )
 	openpgl? (
-		<media-libs/openpgl-0.8[tbb?]
+		<media-libs/openpgl-0.9[tbb?]
 		>=media-libs/openpgl-0.5[tbb?]
 	)
 	opensubdiv? ( >=media-libs/opensubdiv-3.6.0[cuda?,tbb?,opengl] )
@@ -240,7 +243,7 @@ RDEPEND="
 	openxr? (
 		>=media-libs/openxr-1.0.17
 	)
-	optix? ( <dev-libs/optix-9:= )
+	optix? ( <dev-libs/optix-10:= )
 	osl? (
 		>=media-libs/osl-1.${OSL_PV}:=[optix?]
 		<media-libs/osl-1.$((${OSL_PV}+1)):=[optix?]
@@ -419,7 +422,7 @@ src_unpack() {
 			EGIT_CLONE_TYPE="shallow"
 		fi
 		EGIT_LFS="yes"
-		EGIT_REPO_URI="https://github.com/blender/blender-addons https://projects.blender.org/blender/blender-addons.git"
+		EGIT_REPO_URI="https://projects.blender.org/blender/blender-addons.git https://github.com/blender/blender-addons"
 		EGIT_CHECKOUT_DIR=${WORKDIR}/${P}/scripts/blender-addons
 		git-r3_src_unpack
 	fi
@@ -434,24 +437,20 @@ src_unpack() {
 			EGIT_CLONE_TYPE="shallow"
 		fi
 		EGIT_LFS="yes"
-		EGIT_REPO_URI="https://github.com/blender/blender-addons-contrib https://projects.blender.org/blender/blender-addons-contrib.git"
+		EGIT_REPO_URI="https://projects.blender.org/blender/blender-addons-contrib.git https://github.com/blender/blender-addons-contrib"
 		EGIT_CHECKOUT_DIR=${WORKDIR}/${P}/scripts/blender-addons-contrib
 		git-r3_src_unpack
 	fi
 
 	if use assets; then
 		if [[ "4.2 4.3 4.4" =~ "${MY_PV}" ]]; then
+			EGIT_LFS="yes"
 			EGIT_BRANCH="blender-v${MY_PV}-release"
+			EGIT_REPO_URI="https://projects.blender.org/blender/blender-assets.git"
 			#EGIT_COMMIT="v${PV}"
-		else
-			EGIT_BRANCH="main"
-			EGIT_COMMIT=""
-			EGIT_CLONE_TYPE="shallow"
+			EGIT_CHECKOUT_DIR=${WORKDIR}/${P}/release/datafiles/assets
+			git-r3_src_unpack
 		fi
-		#EGIT_LFS="yes"
-		EGIT_REPO_URI="https://projects.blender.org/blender/blender-assets.git"
-		EGIT_CHECKOUT_DIR=${WORKDIR}/${P}/release/datafiles/assets
-		git-r3_src_unpack
 	fi
 
 	if use cg; then
@@ -870,7 +869,7 @@ src_configure() {
 }
 
 src_test() {
-	# A lot of tests needs to have access to the installed data files.
+	# A lot of tests need to have access to the installed data files.
 	# So install them into the image directory now.
 	DESTDIR="${T}" cmake_build install
 
@@ -895,10 +894,10 @@ src_test() {
 	fi
 
 	local -x CMAKE_SKIP_TESTS=(
-		"^script_pyapi_bpy_driver_secure_eval$"
-		"^cycles_image_colorspace_cpu$"
 		"^compositor_cpu_color$"
 		"^compositor_cpu_filter$"
+		"^cycles_image_colorspace_cpu$"
+		"^script_pyapi_bpy_driver_secure_eval$"
 	)
 
 	if [[ "${RUN_FAILING_TESTS:-0}" -eq 0 ]]; then
@@ -943,6 +942,10 @@ src_test() {
 			"^compositor_cpu_file_output$"
 		)
 	fi
+
+	# oiio can't find webp due to missing cmake files # 937031
+	sed -e "s/ WEBP//g" -i "${BUILD_DIR}/tests/python/CTestTestfile.cmake" || die
+
 	# For debugging, print out all information.
 	local -x VERBOSE="$(usex debug "true" "false")"
 	"${VERBOSE}" && einfo "VERBOSE=${VERBOSE}"
@@ -954,12 +957,7 @@ src_test() {
 	[[ -v USE_DEBUG ]] && einfo "USE_DEBUG=${USE_DEBUG}"
 
 	if [[ "${EXPENSIVE_TESTS:-0}" -gt 0 ]]; then
-		if [[ "${USE_WINDOW}" = "true" ]] &&
-		 [[ "${PV}" == *9999* && "${BVC}" == "alpha" ]] &&
-			use experimental && use wayland; then
-				# This runs weston
-				xdg_environment_reset
-		fi
+		einfo "running expensive tests EXPENSIVE_TESTS=${EXPENSIVE_TESTS}"
 
 		xdg_environment_reset
 		# WITH_GPU_RENDER_TESTS_HEADED

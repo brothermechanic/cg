@@ -479,15 +479,15 @@ diff --git a/build_files/build_environment/cmake/shaderc.cmake b/build_files/bui
 index e0aed269884..762d8d4cff4 100644
 --- a/build_files/build_environment/cmake/shaderc.cmake
 +++ b/build_files/build_environment/cmake/shaderc.cmake
-@@ -61,6 +61,10 @@ if(WIN32)
+@@ -48,6 +48,10 @@ if(WIN32)
        COMMAND ${CMAKE_COMMAND} -E copy
-         ${LIBDIR}/shaderc/lib/shaderc_shared_d.lib
-         ${HARVEST_TARGET}/shaderc/lib/shaderc_shared_d.lib
+         ${LIBDIR}/shaderc/lib/shaderc_shared.lib
+         ${HARVEST_TARGET}/shaderc/lib/shaderc_shared.lib
 +      # USD expect this to have this specific name
 +      COMMAND ${CMAKE_COMMAND} -E copy
 +        ${LIBDIR}/shaderc/lib/shaderc_combined_d.lib
 +        ${LIBDIR}/shaderc/lib/shaderc_combinedd.lib
- 
+
        DEPENDEES install
      )
 diff --git a/build_files/build_environment/cmake/usd.cmake b/build_files/build_environment/cmake/usd.cmake
