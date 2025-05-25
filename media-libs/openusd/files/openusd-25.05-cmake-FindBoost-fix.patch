@@ -1,0 +1,13 @@
+--- a/pxr/external/boost/python/CMakeLists.txt
++++ b/pxr/external/boost/python/CMakeLists.txt
+@@ -16,8 +16,8 @@ endif()
+ 
+ foreach(config RELEASE RELWITHDEBINFO MINSIZEREL)
+     string(REPLACE
+-        ${ndebug_flag} ""
+-        CMAKE_CXX_FLAGS_${config} ${CMAKE_CXX_FLAGS_${config}}
++        "${ndebug_flag}" ""
++        "CMAKE_CXX_FLAGS_${config}" "${CMAKE_CXX_FLAGS_${config}}"
+     )
+ endforeach()
+ 

@@ -1,0 +1,43 @@
+--- a/source/MaterialXGenShader/ShaderNode.h
++++ b/source/MaterialXGenShader/ShaderNode.h
+@@ -8,7 +8,7 @@
+ 
+ /// @file
+ /// Classes for nodes created during shader generation
+-
++#include <cstdint>
+ #include <MaterialXGenShader/Export.h>
+ 
+ #include <MaterialXGenShader/ShaderNodeImpl.h>
+--- a/source/MaterialXGenShader/TypeDesc.h
++++ b/source/MaterialXGenShader/TypeDesc.h
+@@ -8,7 +8,7 @@
+ 
+ /// @file
+ /// Type descriptor for a MaterialX data type.
+-
++#include <cstdint>
+ #include <MaterialXGenShader/Export.h>
+ #include <MaterialXCore/Value.h>
+ #include <MaterialXCore/Document.h>
+--- a/source/MaterialXRender/Mesh.h
++++ b/source/MaterialXRender/Mesh.h
+@@ -8,7 +8,7 @@
+ 
+ /// @file
+ /// Mesh interfaces
+-
++#include <cstdint>
+ #include <MaterialXCore/Types.h>
+ #include <MaterialXRender/Export.h>
+ 
+--- a/source/MaterialXCore/Types.h
++++ b/source/MaterialXCore/Types.h
+@@ -15,6 +15,7 @@
+ 
+ #include <array>
+ #include <cmath>
++#include <cstdint>
+ 
+ MATERIALX_NAMESPACE_BEGIN
+ 

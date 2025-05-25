@@ -258,8 +258,8 @@ RDEPEND="
 	sndfile? ( media-libs/libsndfile )
 	tbb? ( dev-cpp/tbb:= )
 	usd? (
-		<media-libs/openusd-25[${PYTHON_SINGLE_USEDEP},monolithic,imaging,python,alembic?,draco?,embree?,materialx?,color-management?,openexr?,openimageio,openvdb?,osl?]
-		>=media-libs/openusd-23.11[${PYTHON_SINGLE_USEDEP},monolithic,imaging,python,alembic?,draco?,embree?,materialx?,color-management?,openexr?,openimageio,openvdb?,osl?]
+		<media-libs/openusd-26[${PYTHON_SINGLE_USEDEP},monolithic,imaging,python,alembic?,draco?,embree?,materialx?,color-management?,openexr?,openimageio,openvdb?,osl?]
+		>=media-libs/openusd-25[${PYTHON_SINGLE_USEDEP},monolithic,imaging,python,alembic?,draco?,embree?,materialx?,color-management?,openexr?,openimageio,openvdb?,osl?]
 	)
 	valgrind? ( dev-debug/valgrind )
 	webp? ( >=media-libs/libwebp-1.3.2:= )
@@ -1063,7 +1063,7 @@ pkg_postinst() {
 	elog "changing the 'Temporary Files' directory in Blender preferences."
 	elog
 
-	if use osl; then
+	if use osl && ! has_version "media-libs/mesa[${LLVM_USEDEP}]"; then
 		ewarn ""
 		ewarn "OSL is know to cause runtime segfaults if Mesa has been linked to"
 		ewarn "an other LLVM version than what OSL is linked to."

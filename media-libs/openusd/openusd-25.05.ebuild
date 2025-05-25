@@ -4,7 +4,7 @@
 EAPI=8
 
 PYTHON_COMPAT=( python3_{11..13} )
-OPENVDB_COMPAT=( {7..11} )
+OPENVDB_COMPAT=( {10..12} )
 inherit cmake desktop python-single-r1 flag-o-matic openvdb xdg-utils
 
 DESCRIPTION="Universal Scene Description"
@@ -19,11 +19,11 @@ LICENSE="
 # custom - https://github.com/PixarAnimationStudios/OpenUSD/blob/v24.05/pxr/usdImaging/usdImaging/drawModeStandin.cpp#L9
 # custom - search "In consideration of your agreement"
 SLOT="0"
-KEYWORDS="" # No keword until successful build & test
+KEYWORDS="~amd64 ~x86 ~arm ~arm64"
 # test USE flag is enabled upstream
-IUSE="alembic debug -doc draco embree examples hdf5 +imaging +jemalloc
+IUSE="alembic debug draco embree examples hdf5 +imaging +jemalloc man
 materialx monolithic color-management opengl openimageio openvdb openexr osl
-ptex +python safety-over-speed -static-libs tutorials -test tools usdview vulkan"
+ptex +python +safety-over-speed -static-libs tutorials -test tools usdview vulkan"
 
 REQUIRED_USE+="
 	${PYTHON_REQUIRED_USE}
@@ -91,7 +91,7 @@ RDEPEND+="
 		dev-libs/jemalloc-usd
 	)
 	materialx? (
-		>=media-libs/materialx-1.38.7:=[renderer]
+		>=media-libs/materialx-1.38.8:=[renderer]
 	)
 	color-management? (
 		>=media-libs/opencolorio-2.1.3
@@ -150,15 +150,15 @@ BDEPEND="
 	dev-cpp/argparse
 	dev-util/patchelf
 	virtual/pkgconfig
-	doc? (
+	man? (
 		>=app-text/doxygen-1.9.6[dot]
 	)
 	|| (
 		(
-			<sys-devel/gcc-15
+			<sys-devel/gcc-16
 			>=sys-devel/gcc-9.0.1
 		)
-		<llvm-core/clang-20
+		<llvm-core/clang-21
 	)
 "
 SRC_URI="
@@ -176,17 +176,20 @@ PATCHES=(
 	#"${FILESDIR}/openusd-24.08-ONEtbb-based-on-3207.patch"
 	"${FILESDIR}/openusd-24.08-fix-monolithic-build-2400.patch"
 	#"${FILESDIR}/openusd-24.08-fix-materialx-build-3159.patch"
-	"${FILESDIR}/openusd-24.08-fix-materialx-plugin-resources-2904.patch"
-	"${FILESDIR}/openusd-24.08-fix-onetbb-2022-interface-3392.patch"
-	"${FILESDIR}/openusd-24.08-fix-openimageio3-plugin-3365.patch"
+	#"${FILESDIR}/openusd-24.08-fix-materialx-plugin-resources-2904.patch"
+	#"${FILESDIR}/openusd-24.08-fix-onetbb-2022-interface-3392.patch"
+	#"${FILESDIR}/openusd-24.08-fix-openimageio3-plugin-3365.patch"
 	#"${FILESDIR}/openusd-24.08-embree-4-plugin-2313.patch"
 	"${FILESDIR}/openusd-24.08-PVS-bugfix-base-trace-2313.patch"
-	"${FILESDIR}/openusd-24.08-PVS-bugfix-envvar-2157.patch"
+	#"${FILESDIR}/openusd-24.08-PVS-bugfix-envvar-2157.patch"
 	"${FILESDIR}/openusd-24.08-PVS-bugfix-base-tf-2161.patch"
 	"${FILESDIR}/openusd-24.08-PVS-bugfix-usd-2165.patch"
+	"${FILESDIR}/openusd-25.05-cmake-FindBoost-fix.patch"
+	#"${FILESDIR}/openusd-25.05-explicitly-adding-template-keyword.patch"
+	#"${FILESDIR}/openusd-25.05-fix-removes-unused-path.patch"
 )
 S="${WORKDIR}/OpenUSD-${PV}"
-DOCS=( CHANGELOG.md README.md )
+DOCS=( "CHANGELOG.md" "README.md" )
 
 pkg_setup() {
 	if use vulkan ; then
@@ -220,7 +223,7 @@ src_prepare() {
   	fi
 
 	# Support Embree4
-	if use embree && has_version >=media-libs/embree-4.0.0 ; then
+	if use embree && has_version ">=media-libs/embree-4.0.0" ; then
 		find . -type f -exec gawk '/embree3/ { print FILENAME }' '{}' '+' | xargs -r sed -r -i 's/(embree)3/\14/'
 	fi
 
@@ -253,16 +256,20 @@ src_configure() {
 		-DCMAKE_INSTALL_PREFIX="${EPREFIX}${USD_PATH}"
 		-DCMAKE_FIND_PACKAGE_PREFER_CONFIG="yes"
 		-DPXR_BUILD_ALEMBIC_PLUGIN=$(usex alembic ON OFF)
-		-DPXR_BUILD_DOCUMENTATION=$(usex doc ON OFF)
+		-DPXR_BUILD_DOCUMENTATION=$(usex man ON OFF)
+		-DPXR_BUILD_PYTHON_DOCUMENTATION=$(usex man $(usex python ON OFF) OFF)
 		-DPXR_BUILD_DRACO_PLUGIN=$(usex draco ON OFF)
 		-DPXR_BUILD_EMBREE_PLUGIN=$(usex embree ON OFF)
-		#-DEMBREE_INCLUDE_DIR=/usr/include/embree4
+		#-DIMATH_INCLUDE_DIR="/usr/include/Imath"
+		-DALEMBIC_DIR="/usr/$(get_libdir)"
+		-DOPENEXR_LOCATION="/usr/$(get_libdir)"
 		-DPXR_BUILD_EXAMPLES=$(usex examples ON OFF)
 		-DPXR_BUILD_IMAGING=$(usex imaging ON OFF)
 		-DPXR_BUILD_MONOLITHIC=$(usex monolithic ON OFF)
 		-DPXR_BUILD_OPENCOLORIO_PLUGIN=$(usex color-management ON OFF)
 		-DPXR_BUILD_OPENIMAGEIO_PLUGIN=$(usex openimageio ON OFF)
 		-DPXR_BUILD_PRMAN_PLUGIN=OFF
+		-DPXR_BUILD_METAL_PLUGIN=OFF
 		-DPXR_BUILD_TESTS=$(usex test ON OFF)
 		-DPXR_BUILD_TUTORIALS=$(usex tutorials ON OFF)
 		-DPXR_BUILD_USD_IMAGING=$(usex imaging ON OFF)
@@ -271,6 +278,7 @@ src_configure() {
 		-DPXR_ENABLE_GL_SUPPORT=$(usex opengl ON OFF)
 		-DPXR_ENABLE_HDF5_SUPPORT=$(usex hdf5 ON OFF)
 		-DPXR_ENABLE_MATERIALX_SUPPORT=$(usex materialx)
+		-DPXR_ENABLE_METAL_SUPPORT=OFF
 		-DPXR_ENABLE_OPENVDB_SUPPORT=$(usex openvdb ON OFF)
 		-DPXR_ENABLE_OSL_SUPPORT=$(usex osl ON OFF)
 		-DPXR_ENABLE_PTEX_SUPPORT=$(usex ptex ON OFF)
@@ -280,7 +288,6 @@ src_configure() {
 		-DPXR_PREFER_SAFETY_OVER_SPEED=$(usex safety-over-speed ON OFF)
 		-DPXR_PYTHON_SHEBANG="${PYTHON}"
 		-DPXR_SET_INTERNAL_NAMESPACE="usdBlender"
-		-DPXR_USE_INTERNAL_BOOST_PYTHON=OFF
 		#-DCMAKE_FIND_DEBUG_MODE=yes
 	)
 	cmake_src_configure
@@ -354,7 +361,6 @@ src_install() {
 		find "${ED}" -name '*.pyo' -exec rm -f {} \; || die
 		python_optimize
 	fi
-	use doc && einstalldocs
 	use usdview && domenu "${FILESDIR}/org.openusd.usdview.desktop"
 	use usdview && newicon -s scalable "${FILESDIR}/openusd.svg" "openusd.svg"
 	dodoc LICENSE.txt NOTICE.txt
