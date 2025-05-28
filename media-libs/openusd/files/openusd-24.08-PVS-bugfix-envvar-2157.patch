@@ -68,57 +68,6 @@ index 4acaa4b2c2..4f9a121afb 100644
      // Unable to obtain consensus.  Take best median we saw.
      if (reachedConsensus) {
 
-From c8a3bac56517eb400b8e25e64cf767eaf722d801 Mon Sep 17 00:00:00 2001
-From: Dmitry Tsarevich <dimhotepus@gmail.com>
-Date: Fri, 13 Jan 2023 15:09:19 +0400
-Subject: [PATCH 03/10] [arch] Handle allocation failure
-
----
- pxr/base/arch/fileSystem.cpp | 3 ++-
- 1 file changed, 2 insertions(+), 1 deletion(-)
-
-diff --git a/pxr/base/arch/fileSystem.cpp b/pxr/base/arch/fileSystem.cpp
-index e2d5db4447..c06c026dbd 100644
---- a/pxr/base/arch/fileSystem.cpp
-+++ b/pxr/base/arch/fileSystem.cpp
-@@ -557,8 +557,9 @@ ArchGetFileName(FILE *file)
-     static constexpr DWORD bufSize =
-         sizeof(FILE_NAME_INFO) + sizeof(WCHAR) * 4096;
-     HANDLE hfile = _FileToWinHANDLE(file);
--    auto fileNameInfo = reinterpret_cast<PFILE_NAME_INFO>(malloc(bufSize));
-     string result;
-+    auto fileNameInfo = reinterpret_cast<PFILE_NAME_INFO>(malloc(bufSize));
-+    if (!fileNameInfo) return result;
-     if (GetFileInformationByHandleEx(
-             hfile, FileNameInfo, static_cast<void *>(fileNameInfo), bufSize)) {
-         size_t outSize = WideCharToMultiByte(
-
-From be7e552a64a7dbc1a3f7709cfdf94ac60e66776a Mon Sep 17 00:00:00 2001
-From: Dmitry Tsarevich <dimhotepus@gmail.com>
-Date: Fri, 13 Jan 2023 15:12:24 +0400
-Subject: [PATCH 04/10] [arch] Move unreachable statement above exit point
-
-ARCH_ERROR cause program abort / exit. Move assignment
-above exit point
----
- pxr/base/arch/fileSystem.cpp | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
-
-diff --git a/pxr/base/arch/fileSystem.cpp b/pxr/base/arch/fileSystem.cpp
-index c06c026dbd..cada0e7edc 100644
---- a/pxr/base/arch/fileSystem.cpp
-+++ b/pxr/base/arch/fileSystem.cpp
-@@ -738,8 +738,8 @@ Arch_InitTmpDir()
-     // On Windows, let GetTempPath use the standard env vars, not our own.
-     int sizeOfPath = GetTempPathW(MAX_PATH - 1, tmpPath);
-     if (sizeOfPath > MAX_PATH || sizeOfPath == 0) {
--        ARCH_ERROR("Call to GetTempPath failed.");
-         _TmpDir = ".";
-+        ARCH_ERROR("Call to GetTempPath failed.");
-         return;
-     }
- 
-
 From b3583d80bd58ca8e9ea90e1926b671a1c1e1c48b Mon Sep 17 00:00:00 2001
 From: Dmitry Tsarevich <dimhotepus@gmail.com>
 Date: Fri, 13 Jan 2023 15:17:01 +0400
@@ -236,50 +185,6 @@ index 6c592685d9..ee7c1e3486 100644
          GetEnvironmentVariable(name.c_str(), buffer.get(), size);
          return std::string(buffer.get());
      }
-diff --git a/pxr/base/arch/fileSystem.cpp b/pxr/base/arch/fileSystem.cpp
-index cada0e7edc..4cad22a32a 100644
---- a/pxr/base/arch/fileSystem.cpp
-+++ b/pxr/base/arch/fileSystem.cpp
-@@ -1127,7 +1127,7 @@ int ArchFileAccess(const char* path, int mode)
-     }
- 
-     // Get the SECURITY_DESCRIPTOR.
--    std::unique_ptr<unsigned char[]> buffer(new unsigned char[length]);
-+    std::unique_ptr<unsigned char[]> buffer = std::make_unique<unsigned char[]>(length);
-     PSECURITY_DESCRIPTOR security = (PSECURITY_DESCRIPTOR)buffer.get();
-     if (!GetFileSecurityW(
-             wpath.c_str(), securityInfo, security, length, &length)) {
-@@ -1231,8 +1231,8 @@ std::string ArchReadLink(const char* path)
-     if (handle == INVALID_HANDLE_VALUE)
-         return std::string();
- 
--    std::unique_ptr<unsigned char[]> buffer(new
--                               unsigned char[MAX_REPARSE_DATA_SIZE]);
-+    std::unique_ptr<unsigned char[]> buffer =
-+        std::make_unique<unsigned char[]>(MAX_REPARSE_DATA_SIZE);
-     REPARSE_DATA_BUFFER* reparse = (REPARSE_DATA_BUFFER*)buffer.get();
- 
-     if (!DeviceIoControl(handle, FSCTL_GET_REPARSE_POINT, NULL, 0, reparse,
-@@ -1247,7 +1247,8 @@ std::string ArchReadLink(const char* path)
-             const size_t length =
-                 reparse->SymbolicLinkReparseBuffer.PrintNameLength /
-                                                                 sizeof(WCHAR);
--            std::unique_ptr<WCHAR[]> reparsePath(new WCHAR[length + 1]);
-+            std::unique_ptr<WCHAR[]> reparsePath =
-+                std::make_unique<WCHAR[]>(length + 1);
-             wcsncpy(reparsePath.get(),
-               &reparse->SymbolicLinkReparseBuffer.PathBuffer[
-               reparse->SymbolicLinkReparseBuffer.PrintNameOffset / sizeof(WCHAR)
-@@ -1281,7 +1282,7 @@ std::string ArchReadLink(const char* path)
-             const size_t length =
-                 reparse->MountPointReparseBuffer.PrintNameLength /
-                                                                 sizeof(WCHAR);
--            std::unique_ptr<WCHAR[]> reparsePath(new WCHAR[length + 1]);
-+            std::unique_ptr<WCHAR[]> reparsePath = std::make_unique<WCHAR[]>(length + 1);
-             wcsncpy(reparsePath.get(),
-               &reparse->MountPointReparseBuffer.PathBuffer[
-               reparse->MountPointReparseBuffer.PrintNameOffset / sizeof(WCHAR)
-
 From a89e4148339d705b28f43fdf7e4f4c5742a5b4a4 Mon Sep 17 00:00:00 2001
 From: Dmitry Tsarevich <dimhotepus@gmail.com>
 Date: Fri, 13 Jan 2023 15:39:44 +0400

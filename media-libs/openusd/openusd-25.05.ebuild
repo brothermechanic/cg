@@ -173,20 +173,12 @@ PATCHES=(
 	"${FILESDIR}/openusd-23.11-defaultfonts.patch"
 	"${FILESDIR}/openusd-21.11-gcc-11-numeric_limits.patch"
 	"${FILESDIR}/openusd-21.11-use-whole-archive-for-lld.patch"
-	#"${FILESDIR}/openusd-24.08-ONEtbb-based-on-3207.patch"
 	"${FILESDIR}/openusd-24.08-fix-monolithic-build-2400.patch"
-	#"${FILESDIR}/openusd-24.08-fix-materialx-build-3159.patch"
-	#"${FILESDIR}/openusd-24.08-fix-materialx-plugin-resources-2904.patch"
-	#"${FILESDIR}/openusd-24.08-fix-onetbb-2022-interface-3392.patch"
-	#"${FILESDIR}/openusd-24.08-fix-openimageio3-plugin-3365.patch"
-	#"${FILESDIR}/openusd-24.08-embree-4-plugin-2313.patch"
 	"${FILESDIR}/openusd-24.08-PVS-bugfix-base-trace-2313.patch"
-	#"${FILESDIR}/openusd-24.08-PVS-bugfix-envvar-2157.patch"
+	"${FILESDIR}/openusd-24.08-PVS-bugfix-envvar-2157.patch"
 	"${FILESDIR}/openusd-24.08-PVS-bugfix-base-tf-2161.patch"
 	"${FILESDIR}/openusd-24.08-PVS-bugfix-usd-2165.patch"
 	"${FILESDIR}/openusd-25.05-cmake-FindBoost-fix.patch"
-	#"${FILESDIR}/openusd-25.05-explicitly-adding-template-keyword.patch"
-	#"${FILESDIR}/openusd-25.05-fix-removes-unused-path.patch"
 )
 S="${WORKDIR}/OpenUSD-${PV}"
 DOCS=( "CHANGELOG.md" "README.md" )
@@ -261,7 +253,7 @@ src_configure() {
 		-DPXR_BUILD_DRACO_PLUGIN=$(usex draco ON OFF)
 		-DPXR_BUILD_EMBREE_PLUGIN=$(usex embree ON OFF)
 		#-DIMATH_INCLUDE_DIR="/usr/include/Imath"
-		-DALEMBIC_DIR="/usr/$(get_libdir)"
+		#-DALEMBIC_DIR="/usr/$(get_libdir)"
 		-DOPENEXR_LOCATION="/usr/$(get_libdir)"
 		-DPXR_BUILD_EXAMPLES=$(usex examples ON OFF)
 		-DPXR_BUILD_IMAGING=$(usex imaging ON OFF)
