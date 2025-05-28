@@ -40,6 +40,7 @@ src_configure() {
 	CMAKE_BUILD_TYPE=Release
 	EMSCRIPTEN=
 	local mycmakeargs=(
+		-DCMAKE_CXX_STANDARD=17
 		-DDRACO_EIGEN_PATH="${EPREFIX}/usr/include/eigen3"
 		#-DDRACO_TINYGLTF_PATH=
 		# currently only used for javascript/emscripten build

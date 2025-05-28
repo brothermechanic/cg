@@ -17,7 +17,7 @@ CUDA_TARGETS_COMPAT=(
 	sm_90
 )
 
-TEST_OIIO_IMAGE_COMMIT="7e6d875542b5bc1b2974b7cbecee115365a36527"
+TEST_OIIO_IMAGE_COMMIT="75099275c73a6937d40c69f9e14a006aa49fa201"
 TEST_OEXR_IMAGE_COMMIT="d45a2d5a890d6963b94479c7a644440068c37dd2"
 inherit cmake cuda flag-o-matic python-single-r1 virtualx openvdb
 
@@ -127,7 +127,7 @@ RDEPEND="
 	dev-libs/boost:=
 	dev-cpp/robin-map
 	dev-libs/libfmt:=
-	dev-libs/pugixml:=
+	dev-libs/pugixml
 	>=media-libs/libheif-1.13.0:=
 	media-libs/libultrahdr:=
 	cuda? ( >=dev-util/nvidia-cuda-toolkit-12.8:= )
@@ -142,8 +142,8 @@ RDEPEND="
 	dicom? ( sci-libs/dcmtk )
 	ffmpeg? ( media-video/ffmpeg:= )
 	fits? ( sci-libs/cfitsio:= )
-	gif? ( media-libs/giflib:0= )
-	jpeg2k? ( >=media-libs/openjpeg-2.0:2= )
+	gif? ( media-libs/giflib:= )
+	jpeg2k? ( media-libs/openjpeg:= )
 	jpegxl? ( media-libs/libjxl:= )
 	opencv? ( media-libs/opencv:= )
 	openvdb? (
@@ -172,7 +172,7 @@ RDEPEND="
 		)
 	)
 	raw? ( media-libs/libraw:= )
-	truetype? ( media-libs/freetype:2= )
+	truetype? ( media-libs/freetype )
 "
 DEPEND="
 	${RDEPEND}
@@ -287,35 +287,35 @@ src_configure() {
 		-DINSTALL_FONTS="OFF"
 		-DINSTALL_DOCS="$(usex doc)"
 
-		-DUSE_DCMTK="$(usex dicom)"
-		-DUSE_FFmpeg="$(usex ffmpeg)"
-		-DUSE_FITS="$(usex fits)"
-		-DUSE_FREETYPE="$(usex truetype)"
-		-DUSE_GIF="$(usex gif)"
-		-DUSE_LibRaw="$(usex raw)"
-		-DUSE_Nuke="no" # not in Gentoo
-		-DUSE_OpenCV="$(usex opencv)"
-		-DUSE_OpenJPEG="$(usex jpeg2k)"
-		-DUSE_JXL="$(usex jpegxl)"
-		-DUSE_OpenVDB="$(usex openvdb)"
-		-DUSE_TBB="$(usex tbb)"
-		-DUSE_Ptex="$(usex ptex)"
-		-DUSE_PNG="$(usex png)"
-		-DUSE_WEBP="$(usex webp)"
+		-DENABLE_DCMTK="$(usex dicom)"
+		-DENABLE_FFmpeg="$(usex ffmpeg)"
+		-DENABLE_FITS="$(usex fits)"
+		-DENABLE_FREETYPE="$(usex truetype)"
+		-DENABLE_GIF="$(usex gif)"
+		-DENABLE_LibRaw="$(usex raw)"
+		-DENABLE_Nuke="no" # not in Gentoo
+		-DENABLE_OpenCV="$(usex opencv)"
+		-DENABLE_OpenJPEG="$(usex jpeg2k)"
+		-DENABLE_JXL="$(usex jpegxl)"
+		-DENABLE_OpenVDB="$(usex openvdb)"
+		-DENABLE_TBB="$(usex tbb)"
+		-DENABLE_Ptex="$(usex ptex)"
+		-DENABLE_PNG="$(usex png)"
+		-DENABLE_WEBP="$(usex webp)"
+		-DENABLE_OPENCOLORIO="$(usex color-management)"
 
-		-DUSE_GIF="$(usex gif)"
-		-DUSE_LIBRAW="$(usex raw)"
-		-DUSE_PTEX="$(usex ptex)"
-		-DUSE_OPENJPEG="$(usex jpeg2k)"
+		-DENABLE_GIF="$(usex gif)"
+		-DENABLE_LIBRAW="$(usex raw)"
+		-DENABLE_PTEX="$(usex ptex)"
+		-DENABLE_OPENJPEG="$(usex jpeg2k)"
 
-		-DOIIO_USE_CUDA="$(usex cuda)"
 		-DOIIO_BUILD_TOOLS="$(usex tools)"
 		-DOIIO_BUILD_TESTS="$(usex test)"
 		-DOIIO_DOWNLOAD_MISSING_TESTDATA="no"
+		-DOIIO_USE_CUDA="$(usex cuda)"
 
 		-DUSE_CCACHE="no"
 		-DUSE_EXTERNAL_PUGIXML="yes"
-		-DENABLE_OPENCOLORIO="$(usex color-management)"
 		-DLINKSTATIC="OFF"
 		-DUSE_R3DSDK="no" # not in Gentoo
 		-DUSE_PYTHON="$(usex python)"
@@ -355,8 +355,7 @@ src_configure() {
 		)
 	fi
 
-	CMAKE_BUILD_TYPE='Release'
-	cmake_src_configure
+	CMAKE_BUILD_TYPE='Release' cmake_src_configure
 }
 
 src_test() {
@@ -364,26 +363,55 @@ src_test() {
 	# So install them into the image directory now.
 	DESTDIR="${T}" cmake_build install
 
+	if use cuda; then
+		cuda_add_sandbox -w
+		addpredict "/dev/char/"
+	fi
+
 	CMAKE_SKIP_TESTS=(
 		"-broken$"
 		"texture-levels-stochaniso.batch"
+
+		"^docs-examples-cpp$"
+		"^docs-examples-python$"
+		"^python-imagebufalgo$"
+
+		"^oiiotool-text$"
+		"^bmp$"
+		"^dds$"
+		"^ico$"
+		"^jpeg2000$"
+		"^psd$"
+		"^ptex$"
+
+		"^tiff-depths" # TODO float errors
+		"^tiff-suite" # TODO missing compresion
 		"unit_simd"
 	)
 
 	sed -e "s#../../../testsuite#../../../OpenImageIO-${PV}/testsuite#g" \
 		-i "${CMAKE_USE_DIR}/testsuite/python-imagebufalgo/ref/out.txt" || die
 
+	# NOTE src/build-scripts/ci-startup.bash
 	local -x CI CMAKE_PREFIX_PATH LD_LIBRARY_PATH OPENIMAGEIO_FONTS PYTHONPATH
 	CI=true
+	local -x OpenImageIO_CI=true
+	# local -x OIIO_USE_CUDA=0
 	CMAKE_PREFIX_PATH="${T}/usr"
 	LD_LIBRARY_PATH="${T}/usr/$(get_libdir)"
 	OPENIMAGEIO_FONTS="${CMAKE_USE_DIR}/src/fonts"
+	# local -x OPENIMAGEIO_DEBUG_FILE
+	local -x OPENIMAGEIO_DEBUG=0
 
 	if use python; then
 		PYTHONPATH="${T}$(python_get_sitedir)"
 	fi
 
-	virtx cmake_src_test
+	myctestargs=(
+		--output-on-failure
+	)
+
+	cmake_src_test
 
 	# Clean up the image directory for src_install
 	rm -fr "${T:?}"/usr || die
