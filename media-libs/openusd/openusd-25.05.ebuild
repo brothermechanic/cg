@@ -32,6 +32,7 @@ REQUIRED_USE+="
 	)
 	embree? (
 		imaging
+		opengl
 	)
 	hdf5? (
 		alembic
@@ -49,6 +50,7 @@ REQUIRED_USE+="
 		${OPENVDB_REQUIRED_USE}
 		imaging
 		openexr
+		opengl
 	)
 	osl? (
 		openexr
@@ -244,24 +246,20 @@ src_configure() {
 		$(usex usdview "-DPYSIDEUICBINARY:PATH=${S}/pyside6-uic" "")
 		-DBUILD_SHARED_LIBS=ON
 		-DCMAKE_CXX_STANDARD=17
-		-DPXR_VALIDATE_GENERATED_CODE=OFF
 		-DCMAKE_INSTALL_PREFIX="${EPREFIX}${USD_PATH}"
-		-DCMAKE_FIND_PACKAGE_PREFER_CONFIG="yes"
+		-DPXR_VALIDATE_GENERATED_CODE=OFF
 		-DPXR_BUILD_ALEMBIC_PLUGIN=$(usex alembic ON OFF)
 		-DPXR_BUILD_DOCUMENTATION=$(usex man ON OFF)
 		-DPXR_BUILD_PYTHON_DOCUMENTATION=$(usex man $(usex python ON OFF) OFF)
 		-DPXR_BUILD_DRACO_PLUGIN=$(usex draco ON OFF)
 		-DPXR_BUILD_EMBREE_PLUGIN=$(usex embree ON OFF)
-		#-DIMATH_INCLUDE_DIR="/usr/include/Imath"
-		#-DALEMBIC_DIR="/usr/$(get_libdir)"
-		-DOPENEXR_LOCATION="/usr/$(get_libdir)"
 		-DPXR_BUILD_EXAMPLES=$(usex examples ON OFF)
 		-DPXR_BUILD_IMAGING=$(usex imaging ON OFF)
 		-DPXR_BUILD_MONOLITHIC=$(usex monolithic ON OFF)
 		-DPXR_BUILD_OPENCOLORIO_PLUGIN=$(usex color-management ON OFF)
 		-DPXR_BUILD_OPENIMAGEIO_PLUGIN=$(usex openimageio ON OFF)
 		-DPXR_BUILD_PRMAN_PLUGIN=OFF
-		-DPXR_BUILD_METAL_PLUGIN=OFF
+		#-DPXR_BUILD_METAL_PLUGIN=OFF
 		-DPXR_BUILD_TESTS=$(usex test ON OFF)
 		-DPXR_BUILD_TUTORIALS=$(usex tutorials ON OFF)
 		-DPXR_BUILD_USD_IMAGING=$(usex imaging ON OFF)

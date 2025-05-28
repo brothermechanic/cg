@@ -21,17 +21,29 @@ REQUIRED_USE="
 "
 RESTRICT="!test? ( test ) mirror"
 
-RDEPEND="
+DEPEND="
 	${PYTHON_DEPS}
 	>=dev-libs/imath-3.1.11-r1:=
-	python? ( dev-libs/imath:=[python,${PYTHON_SINGLE_USEDEP}] )
 	hdf5? (
 		>=sci-libs/hdf5-1.10.2:=[zlib(+)]
 		>=sys-libs/zlib-1.2.11-r1
 	)
-	python? ( $(python_gen_cond_dep 'dev-libs/boost[python,${PYTHON_USEDEP}]') )
+	python? (
+		dev-libs/imath:=[python,${PYTHON_SINGLE_USEDEP}]
+		$(python_gen_cond_dep '
+			>=dev-libs/boost-1.53.0[python,${PYTHON_USEDEP}]
+			dev-python/numpy[${PYTHON_USEDEP}]
+		')
+	)
 "
-DEPEND="${RDEPEND}"
+BDEPEND="
+	>=dev-build/cmake-3.13
+	python? (
+		$(python_gen_cond_dep '
+			dev-python/setuptools[${PYTHON_USEDEP}]
+		')
+	)
+"
 
 PATCHES=(
 	"${FILESDIR}/${PN}-1.8.3-0001-find-py-ilmbase-in-config-mode.patch"
@@ -50,8 +62,8 @@ src_prepare() {
 
 src_configure() {
 	CMAKE_BUILD_TYPE=Release
-	CMAKE_CXX_STANDARD=17
 	local mycmakeargs=(
+		-DCMAKE_CXX_STANDARD=17
 		-DALEMBIC_BUILD_LIBS=ON
 		-DALEMBIC_DEBUG_WARNINGS_AS_ERRORS=OFF
 		-DALEMBIC_SHARED_LIBS=ON
