@@ -126,7 +126,7 @@ RDEPEND+="
 			>=dev-libs/boost-1.76.0:=[python,${PYTHON_USEDEP}]
 			usdview? (
 				(
-					>=dev-python/pyside6-6.2.0[${PYTHON_USEDEP},quick(+),tools(+),opengl?]
+					>=dev-python/pyside-6.2.0[${PYTHON_USEDEP},quick(+),tools(+),opengl?]
 				)
 			)
 		')
@@ -198,8 +198,8 @@ pkg_setup() {
 	use openvdb && openvdb_pkg_setup
 }
 
-gen_pyside6_uic_file() {
-	echo -e "#!"${EPREFIX}"/bin/bash\n/usr/"$(get_libdir)"/qt6/libexec/uic -g python \$@" > pyside6-uic
+gen_pyside_uic_file() {
+	echo -e "#!"${EPREFIX}"/bin/bash\n/usr/"$(get_libdir)"/qt6/libexec/uic -g python \$@" > pyside-uic
 }
 
 src_prepare() {
@@ -223,8 +223,8 @@ src_prepare() {
 
 	# make dummy pyside-uid
 	if use usdview ; then
-		gen_pyside6_uic_file
-		chmod +x pyside6-uic
+		gen_pyside_uic_file
+		chmod +x pyside-uic
 	fi
 }
 
@@ -243,7 +243,7 @@ src_configure() {
     # See https://github.com/PixarAnimationStudios/USD/blob/v24.05/cmake/defaults/Options.cmake
 	local mycmakeargs+=(
 		$(usex jemalloc "-DPXR_MALLOC_LIBRARY=${ESYSROOT}/usr/$(get_libdir)/${PN}/$(get_libdir)/libjemalloc.so" "")
-		$(usex usdview "-DPYSIDEUICBINARY:PATH=${S}/pyside6-uic" "")
+		$(usex usdview "-DPYSIDEUICBINARY:PATH=${S}/pyside-uic" "")
 		-DBUILD_SHARED_LIBS=ON
 		-DCMAKE_CXX_STANDARD=17
 		-DCMAKE_INSTALL_PREFIX="${EPREFIX}${USD_PATH}"
