@@ -34,7 +34,7 @@ else
 fi
 
 [[ "4.0 3.6" =~ "${MY_PV}"  ]] && OSL_PV="13" || OSL_PV="14"
-[[ "4.0 3.6 4.2 4.3 4.4" =~ "${MY_PV}" ]] && AUD_PV="1.5.1" || AUD_PV="1.6.1"
+[[ "4.0 3.6 4.2 4.3 4.4" =~ "${MY_PV}" ]] && AUD_PV="5" || AUD_PV="6"
 
 SLOT="$MY_PV"
 LICENSE="|| ( GPL-3 BL )"
@@ -220,7 +220,8 @@ RDEPEND="
 	)
 	nls? ( virtual/libiconv )
 	openal? ( >=media-libs/openal-1.23.1 )
-	<=media-libs/audaspace-${AUD_PV}:=[python,openal?,sdl?,pulseaudio?]
+	<media-libs/audaspace-1.$((${AUD_PV}+1)).0:=[python,openal?,sdl?,pulseaudio?]
+	>=media-libs/audaspace-1.${AUD_PV}.0:=[python,openal?,sdl?,pulseaudio?]
 	oneapi? ( dev-libs/intel-compute-runtime[l0] )
 	media-libs/glew:*
 	oidn? ( >=media-libs/oidn-2.1.0[cuda?] )
