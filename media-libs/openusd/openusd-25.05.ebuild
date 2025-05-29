@@ -21,7 +21,7 @@ LICENSE="
 SLOT="0"
 KEYWORDS="~amd64 ~x86 ~arm ~arm64"
 # test USE flag is enabled upstream
-IUSE="alembic debug draco embree examples hdf5 +imaging +jemalloc man
+IUSE="alembic debug doc draco embree examples hdf5 +imaging +jemalloc man
 materialx monolithic color-management opengl openimageio openvdb openexr osl
 ptex +python +safety-over-speed -static-libs tutorials -test tools usdview vulkan"
 
@@ -73,13 +73,13 @@ RDEPEND+="
 	)
 	>=sys-libs/zlib-1.2.11
 	alembic? (
-		>=media-gfx/alembic-1.8.5[hdf5?]
+		>=media-gfx/alembic-1.8.5:=[hdf5?]
 	)
 	draco? (
-		>=media-libs/draco-1.4.3
+		>=media-libs/draco-1.4.3:=
 	)
 	embree? (
-		>=media-libs/embree-4.2.0
+		>=media-libs/embree-4.2.0:=[backface-culling]
 	)
 	>=dev-cpp/tbb-2021.9:=
 	hdf5? (
@@ -112,13 +112,13 @@ RDEPEND+="
 	)
 	openvdb? (
 		>=dev-libs/c-blosc-1.17
-		>=media-gfx/openvdb-9.1.0[${OPENVDB_SINGLE_USEDEP}]
+		>=media-gfx/openvdb-9.1.0:=[${OPENVDB_SINGLE_USEDEP}]
 	)
 	osl? (
-		>=media-libs/osl-1.10.9
+		>=media-libs/osl-1.10.9:=
 	)
 	ptex? (
-		>=media-libs/ptex-2.4.2
+		>=media-libs/ptex-2.4.2:=
 	)
 	python? (
 		${PYTHON_DEPS}
@@ -152,9 +152,8 @@ BDEPEND="
 	dev-cpp/argparse
 	dev-util/patchelf
 	virtual/pkgconfig
-	man? (
-		>=app-text/doxygen-1.9.6[dot]
-	)
+	man? ( sys-apps/help2man )
+	doc? ( >=app-text/doxygen-1.9.6[dot] )
 	|| (
 		(
 			<sys-devel/gcc-16
@@ -167,7 +166,10 @@ SRC_URI="
 https://github.com/PixarAnimationStudios/USD/archive/refs/tags/v${PV}.tar.gz
 	-> ${P}.tar.gz
 "
-RESTRICT="mirror"
+RESTRICT="
+	mirror
+	!test? ( test )
+"
 
 PATCHES=(
 	"${FILESDIR}/algorithm.patch"
@@ -181,6 +183,7 @@ PATCHES=(
 	"${FILESDIR}/openusd-24.08-PVS-bugfix-base-tf-2161.patch"
 	"${FILESDIR}/openusd-24.08-PVS-bugfix-usd-2165.patch"
 	"${FILESDIR}/openusd-25.05-cmake-FindBoost-fix.patch"
+	"${FILESDIR}/openusd-25.05-embree-4-plugin-2313.patch"
 )
 S="${WORKDIR}/OpenUSD-${PV}"
 DOCS=( "CHANGELOG.md" "README.md" )
@@ -216,10 +219,7 @@ src_prepare() {
   		sed -i 's|lib/python/pxr|'$(python_get_sitedir)'/pxr|' cmake/macros/{Private,Public}.cmake pxr/usdImaging/usdviewq/CMakeLists.txt
   	fi
 
-	# Support Embree4
-	if use embree && has_version ">=media-libs/embree-4.0.0" ; then
-		find . -type f -exec gawk '/embree3/ { print FILENAME }' '{}' '+' | xargs -r sed -r -i 's/(embree)3/\14/'
-	fi
+  	rm -r docs/doxygen/doxygen-awesome-css || die
 
 	# make dummy pyside-uid
 	if use usdview ; then
@@ -249,7 +249,7 @@ src_configure() {
 		-DCMAKE_INSTALL_PREFIX="${EPREFIX}${USD_PATH}"
 		-DPXR_VALIDATE_GENERATED_CODE=OFF
 		-DPXR_BUILD_ALEMBIC_PLUGIN=$(usex alembic ON OFF)
-		-DPXR_BUILD_DOCUMENTATION=$(usex man ON OFF)
+		-DPXR_BUILD_DOCUMENTATION=$(usex doc ON OFF)
 		-DPXR_BUILD_PYTHON_DOCUMENTATION=$(usex man $(usex python ON OFF) OFF)
 		-DPXR_BUILD_DRACO_PLUGIN=$(usex draco ON OFF)
 		-DPXR_BUILD_EMBREE_PLUGIN=$(usex embree ON OFF)
@@ -339,6 +339,10 @@ src_install() {
 				einfo "Creating wrapper for ${u}"
 				echo -e "#!/bin/bash\nLD_PRELOAD=\"${EPREFIX}/usr/$(get_libdir)/openusd/$(get_libdir)/libjemalloc.so\"" "${EPREFIX}/usr/$(get_libdir)/openusd/.bin/${u}" "\$@" > "${T}/${u}"
 				doexe "${T}/${u}"
+				if use man; then
+					help2man --no-info --no-discard-stderr --version-string="${PV}" \
+						--output="${ED}/usr/share/man/man1/${u}.1" "${T}/${u}"
+				fi
 			fi
 		done
 	fi

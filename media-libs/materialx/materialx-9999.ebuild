@@ -209,7 +209,7 @@ src_configure() {
 			-DMATERIALX_BUILD_GEN_GLSL=$(usex X)
 			-DMATERIALX_BUILD_GEN_OSL=$(usex osl)
 			-DMATERIALX_BUILD_GEN_MDL=$(usex X)
-			-DMATERIALX_BUILD_GEN_MSL=OFF # Metal renderer for Apple MACOS
+			-DMATERIALX_BUILD_GEN_MSL=$(usex X)
 		)
 	fi
 	if use python ; then
