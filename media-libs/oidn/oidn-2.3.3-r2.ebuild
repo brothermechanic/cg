@@ -7,29 +7,38 @@ LLVM_COMPAT=( {17..20} )
 PYTHON_COMPAT=( python3_{11..13} )
 ROCM_VERSION="6.3"
 CUDA_DEVICE_TARGETS=1
+CUDA_TARGETS_COMPAT=(
+	sm_50
+	sm_70
+	sm_75
+	sm_80
+	sm_90
+	sm_100
+	sm_120
+)
 
 inherit cmake cuda flag-o-matic llvm-r1 python-any-r1 rocm toolchain-funcs
+inherit git-r3
 
 DESCRIPTION="Intel Open Image Denoise library"
 HOMEPAGE="https://www.openimagedenoise.org https://github.com/RenderKit/oidn"
 
-# MKL_DNN is oneDNN 2.2.4 with additional custom commits.
-MKL_DNN_COMMIT="f53274c9fef211396655fc4340cb838452334089"
-OIDN_WEIGHTS_COMMIT="28883d1769d5930e13cf7f1676dd852bd81ed9e7"
-
-IUSE="apps +built-in-weights cuda doc hip sycl openimageio test"
+IUSE="
+-${CUDA_TARGETS_COMPAT[@]/#/cuda_targets_}
+apps +built-in-weights cuda doc hip sycl openimageio test"
 
 if [[ ${PV} = *9999* ]]; then
 	EGIT_REPO_URI="https://github.com/RenderKit/oidn.git"
 	EGIT_BRANCH="master"
 	EGIT_LFS="1"
-	inherit git-r3
 else
+	OIDN_COMMIT="7d23b193ee0cf3bc3ad03a3ac1886b34f496cc5c"
+	MKL_DNN_COMMIT="f53274c9fef211396655fc4340cb838452334089"
 	SRC_URI="
-		https://github.com/RenderKit/${PN}/releases/download/v${PV}/${P}.src.tar.gz -> ${P}.tar.gz
+		https://github.com/RenderKit/${PN}/archive/${OIDN_COMMIT}.tar.gz -> ${PN}-${OIDN_COMMIT:0:7}.tar.gz
 		https://github.com/RenderKit/mkl-dnn/archive/${MKL_DNN_COMMIT}.tar.gz -> ${PN}-mkl-dnn-${MKL_DNN_COMMIT:0:7}.tar.gz
-		built-in-weights? ( https://github.com/RenderKit/oidn-weights/archive/${OIDN_WEIGHTS_COMMIT}.tar.gz -> ${PN}-weights-${OIDN_WEIGHTS_COMMIT:0:7}.tar.gz )
 	"
+	S="${WORKDIR}/${PN}-${OIDN_COMMIT}"
 	KEYWORDS="~amd64 -arm ~arm64 -ppc ~ppc64 -x86" # 64-bit-only
 fi
 
@@ -115,19 +124,24 @@ pkg_setup() {
 }
 
 src_unpack() {
-	unpack ${A}
-	# rm -rf "${S}/external/composable_kernel" || die
-	rm -rf "${S}/external/cutlass" || die
-	rm -rf "${S}/external/mkl-dnn" || die
-	ln -s \
-		"${WORKDIR}/mkl-dnn-${MKL_DNN_COMMIT}" \
-		"${S}/external/mkl-dnn" \
-		|| die
-	if use built-in-weights ; then
-		ln -s "${WORKDIR}/oidn-weights-${OIDN_WEIGHTS_COMMIT}" \
-			"${S}/weights" || die
+	if [[ ${PV} = *9999* ]]; then
+		git-r3_src_unpack
 	else
-		rm -rf "${WORKDIR}/oidn-weights-${OIDN_WEIGHTS_COMMIT}" || die
+		unpack ${A}
+		# rm -rf "${S}/external/composable_kernel" || die
+		rm -rf "${S}"/external/{cutlass,mkl-dnn} || die
+		ln -s \
+			"${WORKDIR}/mkl-dnn-${MKL_DNN_COMMIT}" \
+			"${S}/external/mkl-dnn" \
+			|| die
+
+		if use built-in-weights ; then
+			rm -rf "${S}/weights"
+			EGIT_LFS="yes"
+			EGIT_REPO_URI="https://github.com/RenderKit/oidn-weights"
+			EGIT_CHECKOUT_DIR=${S}/weights
+			git-r3_src_unpack
+		fi
 	fi
 }
 
@@ -190,7 +204,6 @@ src_configure() {
 		mycmakeargs+=( -DOIDN_APPS_OPENIMAGEIO="$(usex openimageio)" )
 	fi
 
-
 	if use hip; then
 		mycmakeargs+=(
 			-DROCM_PATH="${EPREFIX}/usr"
@@ -200,7 +213,11 @@ src_configure() {
 	fi
 
 	if use cuda ; then
+		local CUDA_TARGETS=""
 		export CUDAHOSTCXX="$(cuda_gccdir)"
+		for CT in ${CUDA_TARGETS_COMPAT[@]}; do
+			use ${CT/#/cuda_targets_} && CUDA_TARGETS+="${CT#sm_*} "
+		done
 		if use cuda_targets_sm_80 || use cuda_targets_sm_90 ; then
 			:;
 		else
@@ -258,6 +275,6 @@ src_install() {
 
 	if use hip || use cuda || use sycl; then
 		# remove garbage in /var/tmp left by subprojects
-		rm -r "${ED}/var" || die
+		rm -r "${ED}"/var || die
 	fi
 }
