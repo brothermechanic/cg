@@ -424,7 +424,7 @@ src_unpack() {
 		fi
 		EGIT_LFS="yes"
 		EGIT_REPO_URI="https://projects.blender.org/blender/blender-addons.git https://github.com/blender/blender-addons"
-		EGIT_CHECKOUT_DIR=${WORKDIR}/${P}/scripts/blender-addons
+		EGIT_CHECKOUT_DIR=${S}/scripts/blender-addons
 		git-r3_src_unpack
 	fi
 
@@ -439,7 +439,7 @@ src_unpack() {
 		fi
 		EGIT_LFS="yes"
 		EGIT_REPO_URI="https://projects.blender.org/blender/blender-addons-contrib.git https://github.com/blender/blender-addons-contrib"
-		EGIT_CHECKOUT_DIR=${WORKDIR}/${P}/scripts/blender-addons-contrib
+		EGIT_CHECKOUT_DIR=${S}/scripts/blender-addons-contrib
 		git-r3_src_unpack
 	fi
 
@@ -449,7 +449,7 @@ src_unpack() {
 			EGIT_BRANCH="blender-v${MY_PV}-release"
 			EGIT_REPO_URI="https://projects.blender.org/blender/blender-assets.git"
 			#EGIT_COMMIT="v${PV}"
-			EGIT_CHECKOUT_DIR=${WORKDIR}/${P}/release/datafiles/assets
+			EGIT_CHECKOUT_DIR=${S}/release/datafiles/assets
 			git-r3_src_unpack
 		fi
 	fi
