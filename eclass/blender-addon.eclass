@@ -128,7 +128,7 @@ blender-addon_src_install() {
 	fi
 
 	for (( i = ${#_GENTOO_BLENDER_ADDONS_HOME[@]} - 1; i >= 0; i-- )); do
-		python_optimize
+		python_optimize "${ED}"
 		insinto ${_GENTOO_BLENDER_ADDONS_HOME[i]}/addons/${PN}
 		diropts -g users -m0775
 		doins -r "${ADDON_SOURCE_SUBDIR}"/*

@@ -9,7 +9,7 @@ inherit blender-addon
 
 DESCRIPTION="Blender addon. UV and Texture tool."
 HOMEPAGE="https://blenderartists.org/t/textools-for-blender"
-EGIT_REPO_URI="https://github.com/brothermechanic/textools"
+EGIT_REPO_URI="https://github.com/franMarz/TexTools-Blender"
 
 LICENSE="GPL-3"
 

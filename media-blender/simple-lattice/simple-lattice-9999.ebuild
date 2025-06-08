@@ -13,3 +13,8 @@ EGIT_REPO_URI="https://github.com/BenjaminSauder/SimpleLattice"
 
 LICENSE="GPL-3"
 
+src_prepare() {
+    default
+    # Fix blender 3.4+ gpu shader color name
+    has_version -b '>=media-gfx/blender-3.4.0' && sed -re 's/(bpy.types.VIEW3D_MT_gpencil_edit_context_menu,)/#\1/g' -i __init__.py  || die "Sed failed"
+}
