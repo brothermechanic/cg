@@ -79,7 +79,7 @@ RDEPEND+="
 		>=media-libs/draco-1.4.3:=
 	)
 	embree? (
-		>=media-libs/embree-4.2.0:=[backface-culling]
+		>=media-libs/embree-4.2.0:=
 	)
 	>=dev-cpp/tbb-2021.9:=
 	hdf5? (

@@ -259,8 +259,8 @@ RDEPEND="
 	sndfile? ( media-libs/libsndfile )
 	tbb? ( dev-cpp/tbb:= )
 	usd? (
-		<media-libs/openusd-26[${PYTHON_SINGLE_USEDEP},monolithic,imaging,python,alembic?,draco?,embree?,materialx?,color-management?,openexr?,openimageio,openvdb?,osl?]
-		>=media-libs/openusd-25[${PYTHON_SINGLE_USEDEP},monolithic,imaging,python,alembic?,draco?,embree?,materialx?,color-management?,openexr?,openimageio,openvdb?,osl?]
+		<media-libs/openusd-26[${PYTHON_SINGLE_USEDEP},monolithic,imaging,python,alembic?,draco?,materialx?,color-management?,openexr?,openimageio,osl?]
+		>=media-libs/openusd-25[${PYTHON_SINGLE_USEDEP},monolithic,imaging,python,alembic?,draco?,materialx?,color-management?,openexr?,openimageio,osl?]
 	)
 	valgrind? ( dev-debug/valgrind )
 	webp? ( >=media-libs/libwebp-1.3.2:= )
