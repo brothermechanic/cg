@@ -29,6 +29,7 @@ src_install() {
     fperms +x /opt/blender/blender
     fperms +x /opt/blender/blender-launcher
     fperms +x /opt/blender/blender-thumbnailer
+    fperms +x /opt/blender/4.4/python/bin/python3.11
 
     dosym /opt/blender/blender-launcher /usr/bin/blender-bin
 
