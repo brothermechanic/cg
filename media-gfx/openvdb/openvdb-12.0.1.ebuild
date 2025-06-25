@@ -212,7 +212,7 @@ src_prepare() {
 }
 
 my_src_configure() {
-	export NINJAOPTS="-j2" # prevent stall
+	#export NINJAOPTS="-j2" # prevent stall
 
 	openvdb_src_configure
 
