@@ -53,6 +53,7 @@ DOCS=( README.md )
 
 PATCHES=(
 	"${FILESDIR}/${PN}-2.0.0-system-mathjax.patch"
+	"${FILESDIR}/${PN}-2.2.0-include-algorithm.patch"
 )
 
 pkg_pretend() {
