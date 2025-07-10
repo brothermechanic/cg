@@ -154,7 +154,7 @@ BDEPEND="${RDEPEND}
 S_OGT="${WORKDIR}/ogt-${OGT_COMMIT}"
 
 PATCHES=(
-	"${FILESDIR}/${PN}-8.1.0-glfw-libdir.patch"
+	#"${FILESDIR}/${PN}-8.1.0-glfw-libdir.patch"
 	"${FILESDIR}/${PN}-9.0.0-fix-atomic.patch"
 	"${FILESDIR}/${PN}-10.0.1-log4cplus-version.patch"
 	"${FILESDIR}/${PN}-11.0.0-cmake_fixes.patch"
