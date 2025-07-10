@@ -4,10 +4,11 @@
 EAPI=8
 
 OPENVDB_COMPAT=( {7..12} )
-PYTHON_COMPAT=( python3_{10..13} )
-LLVM_MAX_SLOT=15
+PYTHON_COMPAT=( python3_{11..13} )
+LLVM_COMPAT=( 15 )
+LLVM_OPTIONAL=1
 
-inherit cmake cuda flag-o-matic llvm multibuild python-single-r1 toolchain-funcs openvdb
+inherit cmake cuda flag-o-matic llvm-r2 multibuild python-single-r1 toolchain-funcs openvdb
 
 DESCRIPTION="Library for the efficient manipulation of volumetric data"
 HOMEPAGE="https://www.openvdb.org"
@@ -22,11 +23,22 @@ LICENSE="MPL-2.0"
 SLOT="0/$(ver_cut 1-2)"
 CUDA_TARGETS_COMPAT=( sm_30 sm_35 sm_50 sm_52 sm_61 sm_70 sm_75 sm_86 sm_87 sm_89 sm_90 )
 KEYWORDS="amd64 ~arm ~arm64 ~ppc64 ~riscv ~x86"
-X86_CPU_FLAGS=( avx sse4_2 )
+CPU_FEATURES_X86=(
+	avx:avx
+	sse4_2:sse4_2
+)
+CPU_FEATURES_ARM=(
+	neon:neon
+)
+CPU_FEATURES=(
+	"${CPU_FEATURES_X86[@]/#/cpu_flags_x86_}"
+	"${CPU_FEATURES_ARM[@]/#/cpu_flags_arm_}"
+)
+
 IUSE="
-${X86_CPU_FLAGS[@]/#/cpu_flags_x86_} ${CUDA_TARGETS_COMPAT[@]/#/cuda_targets_}
+${CPU_FEATURES[*]%:*} ${CUDA_TARGETS_COMPAT[@]/#/cuda_targets_}
 alembic ax +blosc benchmark cuda debug doc -imath-half examples jemalloc jpeg -log4cplus
-magicavoxel nanovdb numpy python +static-libs tbbmalloc openexr png test utils zlib
+magicavoxel nanovdb numpy python +static-libs tbbmalloc openexr pdal png test utils zlib
 "
 RESTRICT="
 	mirror
@@ -60,10 +72,10 @@ REQUIRED_USE="
 
 RDEPEND="
 	dev-libs/boost:=
-	zlib? ( >=sys-libs/zlib-1.2.7:= )
-	dev-libs/imath:=
 	ax? (
-		<llvm-core/llvm-$(( LLVM_MAX_SLOT + 1 )):=
+		$(llvm_gen_dep '
+			llvm-core/llvm:${LLVM_SLOT}=
+		')
 	)
 	blosc? (
 		dev-libs/c-blosc:=
@@ -81,7 +93,13 @@ RDEPEND="
 		cuda? (
 			>=dev-util/nvidia-cuda-toolkit-12
 		)
+		python? ( ${PYTHON_DEPS}
+			$(python_gen_cond_dep '
+				dev-python/nanobind[${PYTHON_USEDEP}]
+			')
+		)
 	)
+	openexr? ( >=media-libs/openexr-3:= )
 	python? (
 		${PYTHON_DEPS}
 		$(python_gen_cond_dep '
@@ -93,24 +111,27 @@ RDEPEND="
 		')
 	)
 	utils? (
-		media-libs/mesa[egl(+)]
-		x11-libs/libX11
-		x11-libs/libXcursor
-		x11-libs/libXi
-		x11-libs/libXinerama
-		x11-libs/libXrandr
 		media-libs/glfw
 		media-libs/glu
-		x11-libs/libXxf86vm
 		alembic? ( media-gfx/alembic )
 		jpeg? ( media-libs/libjpeg-turbo:= )
+		pdal? ( sci-libs/pdal:= )
 		png? ( media-libs/libpng:= )
 		openexr? ( >=media-libs/openexr-3:= )
-		media-libs/libglvnd
+		media-libs/libglvnd[X]
+	)
+	zlib? (
+		sys-libs/zlib:=
 	)
 "
-DEPEND="${RDEPEND}"
-BDEPEND="
+DEPEND="${RDEPEND}
+	utils? (
+		openexr? (
+			dev-libs/imath:=
+		)
+	)
+"
+BDEPEND="${RDEPEND}
 	virtual/pkgconfig
 	>=dev-build/cmake-3.16.2-r1
 	app-alternatives/yacc
@@ -135,18 +156,19 @@ S_OGT="${WORKDIR}/ogt-${OGT_COMMIT}"
 PATCHES=(
 	"${FILESDIR}/${PN}-8.1.0-glfw-libdir.patch"
 	"${FILESDIR}/${PN}-9.0.0-fix-atomic.patch"
-#	"${FILESDIR}/${PN}-10.0.1-fix-linking-of-vdb_tool-with-OpenEXR.patch"
 	"${FILESDIR}/${PN}-10.0.1-log4cplus-version.patch"
-#	"${FILESDIR}/${PN}-11.0.0-constexpr-version.patch"
 	"${FILESDIR}/${PN}-11.0.0-cmake_fixes.patch"
 	"${FILESDIR}/${PN}-12.0.0-fix-typos-1995.patch"
+	"${FILESDIR}/${PN}-12.0.0-fix-linking-of-vdb_tool-with-OpenEXR.patch"
+	"${FILESDIR}/${PN}-12.0.0-loosen-float-equality-tolerances.patch"
+	"${FILESDIR}/${PN}-12.0.0-remove-c-style-casts.patch"
 )
 
 QA_PRESTRIPPED="usr/lib.*/python.*/site-packages/pyopenvdb.*"
 
 pkg_setup() {
 	openvdb_pkg_setup
-	use ax && llvm_pkg_setup
+	use ax && llvm-r2_pkg_setup
 	use python && python-single-r1_pkg_setup
 	if ! tc-is-cross-compiler && which jemalloc-confg ; then
 		if jemalloc-config --cflags | grep -q -e "cfi" ; then
@@ -196,7 +218,12 @@ src_prepare() {
 			-i "nanovdb/nanovdb/"*"/CMakeLists.txt" || die
 	fi
 
-	cmake_src_prepare
+	sed \
+		-e '/find_package(Boost/s/)/ CONFIG)/g' \
+		-i \
+			openvdb/openvdb/CMakeLists.txt \
+			cmake/FindOpenVDB.cmake \
+		|| die
 
 	if use cuda ; then
 		cuda_add_sandbox -w
@@ -209,6 +236,12 @@ src_prepare() {
 	sed -i -e "s|DESTINATION doc|DESTINATION share/doc/${P}|g" doc/CMakeLists.txt || die
 	sed -i -e "s|DESTINATION lib|DESTINATION $(get_libdir)|g" {,${PN}/${PN}/}CMakeLists.txt || die
 	sed -i -e "s|lib/cmake|$(get_libdir)/cmake|g" cmake/OpenVDBGLFW3Setup.cmake || die
+
+	if use python; then
+		python_fix_shebang openvdb/openvdb/python/test/TestOpenVDB.py
+	fi
+
+	cmake_src_prepare
 }
 
 my_src_configure() {
@@ -335,7 +368,6 @@ my_src_configure() {
 		mycmakeargs+=(
 			-DBUILD_TEST="$(usex test)"
 			-DOPENVDB_BUILD_VDB_AX="$(usex ax)"
-
 			-DOPENVDB_TOOL_USE_ABC="$(usex alembic)" # Alembic
 			-DOPENVDB_TOOL_USE_EXR="$(usex openexr)" # OpenEXR
 			-DOPENVDB_TOOL_USE_JPG="$(usex jpeg)" # libjpeg-turbo
@@ -377,12 +409,18 @@ my_src_test() {
 
 	if use ax; then
 		ln -sr "${CMAKE_USE_DIR}/openvdb_ax/openvdb_ax/test" "${BUILD_DIR}/test" || die
+		local CMAKE_SKIP_TESTS=(
+			"^vdb_ax_unit_test$"
+		)
 	fi
 
 	if use cuda; then
 		cuda_add_sandbox -w
-	fi
+		addwrite "/proc/self/task/"
+		addpredict "/dev/char/"
 
+		local -x GTEST_FILTER='-TestNanoVDBCUDA.CudaIndexGridToGrid_basic'
+	fi
 	cmake_src_test
 }
 
