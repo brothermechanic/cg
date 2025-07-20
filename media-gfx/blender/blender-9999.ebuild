@@ -24,7 +24,7 @@ if [[ ${PV} == 9999 ]]; then
 	EGIT_BRANCH="main"
 	#EGIT_COMMIT="0f3fdd25bcabac1d68d02fb246d961ea56fe49a1"
 	EGIT_CLONE_TYPE="shallow"
-	MY_PV="4.5"
+	MY_PV="5.0"
 	KEYWORDS=""
 else
 	MY_PV="$(ver_cut 1-2)"
@@ -444,7 +444,7 @@ src_unpack() {
 	fi
 
 	if use assets; then
-		if [[ "4.2 4.3 4.4" =~ "${MY_PV}" ]]; then
+		if [[ "4.2 4.3 4.4 4.5" =~ "${MY_PV}" ]]; then
 			EGIT_LFS="yes"
 			EGIT_BRANCH="blender-v${MY_PV}-release"
 			EGIT_REPO_URI="https://projects.blender.org/blender/blender-assets.git"
