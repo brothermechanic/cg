@@ -3,9 +3,9 @@
 
 EAPI=8
 
-PYTHON_COMPAT=( python3_{10..12} )
+PYTHON_COMPAT=( python3_{11..13} )
 
-inherit cmake flag-o-matic python-single-r1 virtualx
+inherit cmake dot-a flag-o-matic python-single-r1 virtualx
 
 DESCRIPTION="A color management framework for visual effects and animation"
 HOMEPAGE="https://opencolorio.org https://github.com/AcademySoftwareFoundation/OpenColorIO"
@@ -39,9 +39,10 @@ RDEPEND="
 	apps? (
 		>=media-libs/openimageio-2.3.12.0-r3:=
 		media-libs/lcms:2
+		>=media-libs/openexr-3.1.5:=
 		media-libs/freeglut
 		media-libs/glew:=
-		virtual/opengl
+		media-libs/libglvnd
 	)
 	python? (
 		${PYTHON_DEPS}
@@ -57,7 +58,6 @@ BDEPEND="
 		app-text/doxygen
 		$(python_gen_cond_dep '
 			dev-python/breathe[${PYTHON_USEDEP}]
-			dev-python/expandvars[${PYTHON_USEDEP}]
 			dev-python/recommonmark[${PYTHON_USEDEP}]
 			dev-python/six[${PYTHON_USEDEP}]
 			dev-python/sphinx[${PYTHON_USEDEP}]
@@ -79,7 +79,9 @@ BDEPEND="
 "
 
 # Restricting tests, bugs #439790 and #447908
-RESTRICT="test"
+RESTRICT="!test? ( test )"
+
+QA_PRESTRIPPED="usr/lib/python*/site-packages/PyOpenColorIO/PyOpenColorIO.so"
 
 PATCHES=(
 	"${FILESDIR}/${PN}-2.2.1-adjust-python-installation.patch"
@@ -110,18 +112,16 @@ src_configure() {
 	# - OpenGL, GLUT and GLEW is required for building ociodisplay (USE opengl)
 	CMAKE_BUILD_TYPE=Release
 	local mycmakeargs=(
-		-DOCIO_USE_ILMBASE=OFF
-		-DOCIO_USE_OPENEXR_HALF=OFF
 		-DBUILD_SHARED_LIBS=ON
-		-DOCIO_BUILD_APPS=$(usex apps)
-		-DOCIO_BUILD_DOCS=$(usex doc)
-		-DOCIO_BUILD_FROZEN_DOCS=$(usex doc)
-		-DOCIO_BUILD_GPU_TESTS=$(usex test)
+		-DOCIO_BUILD_APPS="$(usex apps)"
+		-DOCIO_BUILD_DOCS="$(usex doc)"
+		-DOCIO_BUILD_FROZEN_DOCS="$(usex doc)"
+		-DOCIO_BUILD_GPU_TESTS="$(usex test)"
 		-DOCIO_BUILD_JAVA=OFF
 		-DOCIO_BUILD_OPENFX=OFF # Not packaged yet
-		-DOCIO_BUILD_PYTHON=$(usex python)
-		-DOCIO_BUILD_STATIC=$(usex static-libs)
-		-DOCIO_BUILD_TESTS=$(usex test)
+		-DOCIO_BUILD_PYTHON="$(usex python)"
+		-DOCIO_BUILD_STATIC="$(usex static-libs)"
+		-DOCIO_BUILD_TESTS="$(usex test)"
 		-DOCIO_INSTALL_EXT_PACKAGES=NONE
 		-DOCIO_USE_SIMD=ON
 
@@ -148,6 +148,8 @@ src_configure() {
 	 	)
 	fi
 
+	use apps && lto-guarantee-fat
+
 	use python && mycmakeargs+=(
 		"-DOCIO_PYTHON_VERSION=${EPYTHON/python/}"
 		"-DPython_EXECUTABLE=${PYTHON}"
@@ -158,6 +160,22 @@ src_configure() {
 }
 
 src_test() {
+	[[ -c /dev/udmabuf ]] && addwrite /dev/udmabuf
+
+	local CMAKE_SKIP_TESTS=(
+		"^test_cpu$"
+		"^test_cpu_no_accel$"
+		"^test_cpu_sse2$"
+		"^test_cpu_avx$"
+		"^test_cpu_avx\+f16c$"
+		"^test_cpu_avx2$"
+		"^test_cpu_avx2\+f16c$"
+		"^test_cpu_avx512$"
+		"^test_cpu_avx512\+f16c$"
+
+		"^test_gpu"
+	)
+
 	local myctestargs=(
 		-j1
 	)
@@ -171,5 +189,13 @@ src_install() {
 		# there are already files in ${ED}/usr/share/doc/${PF}
 		mv "${ED}/usr/share/doc/OpenColorIO/"* "${ED}/usr/share/doc/${PF}" || die
 		rmdir "${ED}/usr/share/doc/OpenColorIO" || die
+	fi
+
+	if use apps; then
+		strip-lto-bytecode
+	fi
+
+	if use python; then
+		python_optimize
 	fi
 }
