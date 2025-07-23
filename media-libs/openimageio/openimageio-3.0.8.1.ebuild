@@ -218,6 +218,17 @@ src_prepare() {
 	cmake_src_prepare
 	cmake_comment_add_subdirectory src/fonts
 
+	if ! use color-management; then
+		sed \
+			-e 's/checked_find_package (OpenColorIO REQUIRED/checked_find_package (OpenColorIO CONFIG/' \
+		    -e '/if (NOT OPENCOLORIO_INCLUDES)/,/include_directories(BEFORE ${OPENCOLORIO_INCLUDES})/d' \
+		    -i src/cmake/externalpackages.cmake || die
+		sed \
+			-e '/OpenColorIO::OpenColorIO/d' \
+			-e 's/color_ocio.cpp//g' \
+			-i src/libOpenImageIO/CMakeLists.txt
+	fi
+
 	if use test ; then
 		ln -s "${WORKDIR}/OpenImageIO-images-${TEST_OIIO_IMAGE_COMMIT}" "${WORKDIR}/oiio-images" || die
 		ln -s "${WORKDIR}/openexr-images-${TEST_OEXR_IMAGE_COMMIT}" "${WORKDIR}/openexr-images" || die
