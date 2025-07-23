@@ -444,7 +444,7 @@ src_unpack() {
 	fi
 
 	if use assets; then
-		if [[ "4.2 4.3 4.4 4.5" =~ "${MY_PV}" ]]; then
+		if [[ "4.2 4.3 4.4" =~ "${MY_PV}" ]]; then
 			EGIT_LFS="yes"
 			EGIT_BRANCH="blender-v${MY_PV}-release"
 			EGIT_REPO_URI="https://projects.blender.org/blender/blender-assets.git"
