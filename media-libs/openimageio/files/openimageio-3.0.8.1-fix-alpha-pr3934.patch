@@ -1,0 +1,42 @@
+From e3bb3ba644aad61c50d10d4e7b750208efb176c6 Mon Sep 17 00:00:00 2001
+From: Nicolas VIVIEN <nicolas@vivien.fr>
+Date: Mon, 31 Jul 2023 13:44:22 +0200
+Subject: [PATCH] Fix shadow text rendering on alpha buffer
+
+Signed-off-by: Nicolas VIVIEN <nicolas@vivien.fr>
+---
+ src/libOpenImageIO/imagebufalgo_draw.cpp | 14 +++++++++++---
+ 1 file changed, 11 insertions(+), 3 deletions(-)
+
+diff --git a/src/libOpenImageIO/imagebufalgo_draw.cpp b/src/libOpenImageIO/imagebufalgo_draw.cpp
+index a88aacd182..184aa3360c 100644
+--- a/src/libOpenImageIO/imagebufalgo_draw.cpp
++++ b/src/libOpenImageIO/imagebufalgo_draw.cpp
+@@ -1078,7 +1078,9 @@ ImageBufAlgo::render_text(ImageBuf& R, int x, int y, string_view text,
+         // If the buffer doesn't have an alpha, but the text color passed
+         // has 4 values, assume the last value is supposed to be alpha.
+         textalpha = textcolor[3];
+-    }
++        alpha_channel = 3;
++    } else
++        alpha_channel = -1;
+ 
+     // Convert the UTF to 32 bit unicode
+     std::vector<uint32_t> utext;
+@@ -1162,8 +1164,14 @@ ImageBufAlgo::render_text(ImageBuf& R, int x, int y, string_view text,
+         float val   = t[0];
+         float alpha = a[0] * textalpha;
+         R.getpixel(r.x(), r.y(), pixelcolor);
+-        for (int c = 0; c < nchannels; ++c)
+-            pixelcolor[c] = val * textcolor[c] + (1.0f - alpha) * pixelcolor[c];
++        if (alpha == 0.0)
++            continue;
++        for (int c = 0; c < nchannels; ++c) {
++            if (c == alpha_channel)
++                pixelcolor[c] = alpha + (1.0f - alpha) * pixelcolor[c];
++            else 
++                pixelcolor[c] = (val * alpha * textcolor[c]) + (1.0f - alpha) * pixelcolor[c];
++        }
+         R.setpixel(r.x(), r.y(), pixelcolor);
+     }
+ 
