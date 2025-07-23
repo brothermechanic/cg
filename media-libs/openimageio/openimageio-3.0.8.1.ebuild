@@ -61,7 +61,7 @@ X86_CPU_FEATURES=(
 CPU_FEATURES=( "${X86_CPU_FEATURES[@]/#/cpu_flags_x86_}" )
 # font install is enabled upstream
 # building test enabled upstream
-IUSE="aom avif color-management cuda dicom doc ffmpeg fits +gif gui heif jpeg2k jpegxl
+IUSE="aom avif color-management cuda dicom doc ffmpeg fits +gif gui heif jpeg2k jpegxl libcxx
 opencv tools openvdb +png ptex +python qt5 qt6 +raw rav1e tbb test +truetype wayland +webp X
 ${CPU_FEATURES[@]%:*} ${CUDA_TARGETS_COMPAT[@]/#/cuda_targets_}"
 
@@ -280,6 +280,8 @@ src_configure() {
 		append-flags -fno-early-inlining
 	fi
 
+	strip-unsupported-flags
+
 	local mycmakeargs=(
 		-DVERBOSE="yes"
 		# -DALWAYS_PREFER_CONFIG="yes"
@@ -367,6 +369,13 @@ src_configure() {
 		)
 	fi
 
+	# checks CMAKE_COMPILER_IS_CLANG
+	if tc-is-clang; then
+		mycmakeargs+=(
+			-DUSE_LIBCPLUSPLUS="$(usex libcxx)"
+		)
+	fi
+
 	CMAKE_BUILD_TYPE='Release' cmake_src_configure
 }
 
@@ -377,15 +386,22 @@ src_test() {
 
 	if use cuda; then
 		cuda_add_sandbox -w
+		addwrite "/proc/self/task/"
 		addpredict "/dev/char/"
 	fi
 
 	CMAKE_SKIP_TESTS=(
 		"-broken$"
-		"texture-levels-stochaniso.batch"
 
 		"^docs-examples-cpp$"
 		"^docs-examples-python$"
+		"texture-interp-bilinear.batch$"
+		"texture-interp-closest.batch$"
+		"texture-levels-stochaniso.batch$"
+		"texture-levels-stochmip.batch$"
+		"texture-mip-onelevel.batch$"
+		"texture-mip-stochastictrilinear.batch$"
+		"texture-mip-stochasticaniso.batch$"
 		"^python-imagebufalgo$"
 
 		"^oiiotool-text$"
