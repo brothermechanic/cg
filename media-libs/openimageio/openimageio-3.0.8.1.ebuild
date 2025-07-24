@@ -218,6 +218,8 @@ src_prepare() {
 	cmake_src_prepare
 	cmake_comment_add_subdirectory src/fonts
 
+	use elibc_musl && eapply "${FILESDIR}/${PN}-3.0.8.1-musl-64bit.patch"
+
 	if ! use color-management; then
 		sed \
 			-e 's/checked_find_package (OpenColorIO REQUIRED/checked_find_package (OpenColorIO CONFIG/' \
