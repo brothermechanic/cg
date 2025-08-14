@@ -223,6 +223,7 @@ src_prepare() {
 
 	use elibc_musl && eapply "${FILESDIR}"/openusd-25.08-fix-musl-build.patch
 
+	use vulkan && sed -e 's/\#include <vma\/vk_mem_alloc\.h>/\#include <vk_mem_alloc\.h>/g' -i pxr/imaging/hgiVulkan/vk_mem_alloc.h
 	# make dummy pyside-uid
 	if use usdview ; then
 		gen_pyside_uic_file
