@@ -1,0 +1,179 @@
+From 8d43d5f2c0d8b843bed874e41674c935c49965eb Mon Sep 17 00:00:00 2001
+From: Ashley Ruglys <ashley.ruglys@gmail.com>
+Date: Wed, 7 Feb 2024 14:42:09 +1300
+Subject: [PATCH 1/7] Small musl patch
+
+---
+ pxr/base/arch/assumptions.cpp | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/pxr/base/arch/assumptions.cpp b/pxr/base/arch/assumptions.cpp
+index 3952f136ca..31e0338d7b 100644
+--- a/pxr/base/arch/assumptions.cpp
++++ b/pxr/base/arch/assumptions.cpp
+@@ -36,7 +36,7 @@ static size_t
+ Arch_ObtainCacheLineSize()
+ {
+ #if defined(ARCH_OS_LINUX)
+-    return sysconf(_SC_LEVEL1_DCACHE_LINESIZE);
++    return 0;//sysconf(_SC_LEVEL1_DCACHE_LINESIZE);
+ #elif defined(ARCH_OS_WASM_VM)
+    return 64;
+ #elif defined(ARCH_OS_DARWIN)
+
+From c6de2672f0778db27d04ea136bb9a29569813d19 Mon Sep 17 00:00:00 2001
+From: Ashley Ruglys <ashley.ruglys@gmail.com>
+Date: Wed, 7 Feb 2024 14:44:43 +1300
+Subject: [PATCH 2/7] errno patch
+
+---
+ pxr/base/arch/errno.cpp | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/pxr/base/arch/errno.cpp b/pxr/base/arch/errno.cpp
+index 7dcae2839f..0664822322 100644
+--- a/pxr/base/arch/errno.cpp
++++ b/pxr/base/arch/errno.cpp
+@@ -54,7 +54,7 @@ ArchStrerror(int errorCode)
+     //   (the string may be truncated if buflen is too small and errnum is
+     //   unknown). The string always includes a terminating null byte.
+     //
+-    char* result = strerror_r(errorCode, msg_buf, sizeof(msg_buf));
++    char* result = (char*)strerror_r(errorCode, msg_buf, sizeof(msg_buf));
+     return std::string(result);
+ #elif !defined(ARCH_COMPILER_MSVC)
+     strerror_r(errorCode, msg_buf, 256);
+
+From 534241d32216aced758bdfc48a2ea845686ddf01 Mon Sep 17 00:00:00 2001
+From: Ashley Ruglys <ashley.ruglys@gmail.com>
+Date: Wed, 7 Feb 2024 14:46:33 +1300
+Subject: [PATCH 3/7] environ patch
+
+---
+ pxr/base/arch/stackTrace.cpp | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/pxr/base/arch/stackTrace.cpp b/pxr/base/arch/stackTrace.cpp
+index 1d75c7799a..2858e26309 100644
+--- a/pxr/base/arch/stackTrace.cpp
++++ b/pxr/base/arch/stackTrace.cpp
+@@ -665,7 +665,7 @@ static int
+ nonLockingExecv(const char *path, char *const argv[])
+ {
+ #if defined(ARCH_OS_LINUX)
+-     return nonLockingLinux__execve (path, argv, __environ);
++     return nonLockingLinux__execve (path, argv, environ);
+ #else
+      return execv(path, argv);
+ #endif
+
+From 2fcc08b241efb200d70424cfdf45940ae030b510 Mon Sep 17 00:00:00 2001
+From: Ashley Ruglys <ashley.ruglys@gmail.com>
+Date: Wed, 7 Feb 2024 14:48:37 +1300
+Subject: [PATCH 4/7] DEFFILEMODE
+
+---
+ pxr/base/tf/atomicRenameUtil.cpp | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/pxr/base/tf/atomicRenameUtil.cpp b/pxr/base/tf/atomicRenameUtil.cpp
+index 4cb7ece38f..2b7562e9fe 100644
+--- a/pxr/base/tf/atomicRenameUtil.cpp
++++ b/pxr/base/tf/atomicRenameUtil.cpp
+@@ -40,6 +40,8 @@
+ #include <string>
+ #include <cerrno>
+ 
++#define DEFFILEMODE 0000666
++
+ PXR_NAMESPACE_OPEN_SCOPE
+ 
+ bool
+
+From 46e8ba2749772fff81e2a4a3d2b79fc3b30dcc82 Mon Sep 17 00:00:00 2001
+From: Ashley Ruglys <ashley.ruglys@gmail.com>
+Date: Wed, 7 Feb 2024 14:51:22 +1300
+Subject: [PATCH 5/7] Accessperms
+
+---
+ pxr/base/tf/atomicOfstreamWrapper.cpp | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/pxr/base/tf/atomicOfstreamWrapper.cpp b/pxr/base/tf/atomicOfstreamWrapper.cpp
+index b3dbd0a251..0ac894851e 100644
+--- a/pxr/base/tf/atomicOfstreamWrapper.cpp
++++ b/pxr/base/tf/atomicOfstreamWrapper.cpp
+@@ -41,6 +41,9 @@
+ #include <cerrno>
+ #include <cstdio>
+ 
++#define DEFFILEMODE 0000666
++#define ACCESSPERMS 0000777
++
+ #if defined(ARCH_OS_WINDOWS)
+ #include <Windows.h>
+ #include <io.h>
+
+From 9e3e26026a65ae24b4721316177ad35636581e13 Mon Sep 17 00:00:00 2001
+From: Ashley Ruglys <ashley.ruglys@gmail.com>
+Date: Wed, 7 Feb 2024 14:53:59 +1300
+Subject: [PATCH 6/7] Accessperms
+
+This reverts commit 46e8ba2749772fff81e2a4a3d2b79fc3b30dcc82.
+---
+ pxr/base/tf/atomicOfstreamWrapper.cpp         | 3 ---
+ pxr/base/tf/testenv/atomicOfstreamWrapper.cpp | 3 +++
+ 2 files changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/pxr/base/tf/atomicOfstreamWrapper.cpp b/pxr/base/tf/atomicOfstreamWrapper.cpp
+index 0ac894851e..b3dbd0a251 100644
+--- a/pxr/base/tf/atomicOfstreamWrapper.cpp
++++ b/pxr/base/tf/atomicOfstreamWrapper.cpp
+@@ -41,9 +41,6 @@
+ #include <cerrno>
+ #include <cstdio>
+ 
+-#define DEFFILEMODE 0000666
+-#define ACCESSPERMS 0000777
+-
+ #if defined(ARCH_OS_WINDOWS)
+ #include <Windows.h>
+ #include <io.h>
+diff --git a/pxr/base/tf/testenv/atomicOfstreamWrapper.cpp b/pxr/base/tf/testenv/atomicOfstreamWrapper.cpp
+index 6207e739f2..edd3f26463 100644
+--- a/pxr/base/tf/testenv/atomicOfstreamWrapper.cpp
++++ b/pxr/base/tf/testenv/atomicOfstreamWrapper.cpp
+@@ -40,6 +40,9 @@
+ #include <sys/stat.h>
+ #include <fcntl.h>
+ 
++#define DEFFILEMODE 0000666
++#define ACCESSPERMS 0000777
++
+ using namespace std;
+ PXR_NAMESPACE_USING_DIRECTIVE
+ 
+
+From 1d0f744a0f1438173be2a2f65b3a682de6133f7f Mon Sep 17 00:00:00 2001
+From: Ashley Ruglys <ashley.ruglys@gmail.com>
+Date: Wed, 7 Feb 2024 14:57:11 +1300
+Subject: [PATCH 7/7] outputfile
+
+---
+ pxr/base/tf/testenv/safeOutputFile.cpp | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/pxr/base/tf/testenv/safeOutputFile.cpp b/pxr/base/tf/testenv/safeOutputFile.cpp
+index e09cdb6754..dc1c413844 100644
+--- a/pxr/base/tf/testenv/safeOutputFile.cpp
++++ b/pxr/base/tf/testenv/safeOutputFile.cpp
+@@ -40,6 +40,9 @@
+ #include <sys/stat.h>
+ #include <fcntl.h>
+ 
++#define DEFFILEMODE 0000666
++#define ACCESSPERMS 0000777
++
+ using namespace std;
+ PXR_NAMESPACE_USING_DIRECTIVE
+ 

@@ -247,6 +247,9 @@ src_configure() {
 
 			filter-flags -no-opaque-pointers
 
+			# Fix build with clang
+			append-ldflags "-Wl,--undefined-version"
+
 			local gcc="$(tc-getCC)"
 			local mycmakeargs=(
 				-DCMAKE_POLICY_DEFAULT_CMP0146="OLD" # BUG FindCUDA

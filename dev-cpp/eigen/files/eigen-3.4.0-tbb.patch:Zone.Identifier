@@ -1,0 +1,3 @@
+[ZoneTransfer]
+ZoneId=3
+HostUrl=https://projects.blender.org/blender/blender/raw/branch/main/extern/Eigen3/patches/blender.patch

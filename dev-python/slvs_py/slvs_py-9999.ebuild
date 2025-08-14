@@ -22,7 +22,6 @@ else
 	KEYWORDS="amd64 arm arm64 hppa ~ia64 ~mips x86"
 fi
 
-
 LICENSE="GPL-3"
 SLOT="0"
 KEYWORDS="amd64 x86"

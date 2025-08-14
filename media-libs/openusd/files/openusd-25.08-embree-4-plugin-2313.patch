@@ -215,9 +215,9 @@ index 9f613dd069..fc5fdcbb35 100644
  #include <embree3/rtcore_geometry.h>
  #include <embree3/rtcore_ray.h>
 +#endif // defined(PXR_EMBREE_MAJOR_VERSION) && PXR_EMBREE_MAJOR_VERSION >= 4
- #include <tbb/blocked_range.h>
- #include <tbb/cache_aligned_allocator.h>
- #include <tbb/concurrent_hash_map.h>
+ #ifdef PXR_PYTHON_SUPPORT_ENABLED
+ #include "pxr/base/tf/pySafePython.h"
+ #endif // PXR_PYTHON_SUPPORT_ENABLED
 diff --git a/pxr/imaging/plugin/hdEmbree/renderDelegate.h b/pxr/imaging/plugin/hdEmbree/renderDelegate.h
 index 1d8694daa6..826d020e04 100644
 --- a/pxr/imaging/plugin/hdEmbree/renderDelegate.h
@@ -427,20 +427,18 @@ index b70fcf5bdd..2c918b6493 100644
          self.buildPrman = self.buildImaging and args.build_prman
          self.prmanLocation = (os.path.abspath(args.prman_location)
                                 if args.prman_location else None)                               
-@@ -2696,6 +2710,8 @@ def _JoinVersion(v):
-       OpenVDB support:          {enableOpenVDB}
+@@ -2696,6 +2710,7 @@ def _JoinVersion(v):
        OpenImageIO support:      {buildOIIO} 
        OpenColorIO support:      {buildOCIO} 
-+      Embree support:           {buildEmbree}
+       Embree support:           {buildEmbree}
 +        Embree major version:   {embreeMajorVersion}
        PRMan support:            {buildPrman}
        Vulkan support:           {enableVulkan}
      UsdImaging                  {buildUsdImaging}
-@@ -2762,6 +2777,9 @@ def FormatBuildArguments(buildArgs):
-     enableOpenVDB=("On" if context.enableOpenVDB else "Off"),
+@@ -2762,6 +2777,8 @@ def FormatBuildArguments(buildArgs):
      buildOIIO=("On" if context.buildOIIO else "Off"),
      buildOCIO=("On" if context.buildOCIO else "Off"),
-+    buildEmbree=("On" if context.buildEmbree else "Off"),
+     buildEmbree=("On" if context.buildEmbree else "Off"),
 +    embreeMajorVersion=(context.embreeMajorVersion if context.buildEmbree
 +                        else "N/A"),
      buildPrman=("On" if context.buildPrman else "Off"),
