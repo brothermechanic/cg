@@ -29,9 +29,9 @@ index 6144de7be33..a59d6dd2b7e 100644
        set(cuda_flags ${cuda_flags}
          -D WITH_NANOVDB)
 @@ -969,7 +974,8 @@ if(WITH_CYCLES_DEVICE_OPTIX AND WITH_CYCLES_CUDA_BINARIES)
-       COMMAND
          ${CUDA_NVCC_EXECUTABLE}
          --ptx
+         -std=c++17
 -        -arch=sm_50
 +        -arch=${CYCLES_CUDA_BINARIES_ARCH}
 +        ${CUDA_NVCC_FLAGS}

@@ -1,0 +1,645 @@
+From ce481de33515bf282252436795b6309808e2941d Mon Sep 17 00:00:00 2001
+From: Thomas Dinges <thomas@blender.org>
+Date: Wed, 13 Aug 2025 09:43:01 +0200
+Subject: [PATCH 1/9] Deps: Update USD to 25.08
+
+---
+ build_files/build_environment/cmake/usd.cmake | 17 +----
+ .../build_environment/cmake/versions.cmake    |  4 +-
+ .../build_environment/patches/usd_3243.diff   | 70 -------------------
+ .../build_environment/patches/usd_3519.diff   | 70 -------------------
+ .../patches/usd_3666_vulkan_amd.diff          | 19 -----
+ .../patches/usd_forward_compat.diff           | 14 ----
+ 6 files changed, 3 insertions(+), 191 deletions(-)
+ delete mode 100644 build_files/build_environment/patches/usd_3243.diff
+ delete mode 100644 build_files/build_environment/patches/usd_3519.diff
+ delete mode 100644 build_files/build_environment/patches/usd_3666_vulkan_amd.diff
+ delete mode 100644 build_files/build_environment/patches/usd_forward_compat.diff
+
+diff --git a/build_files/build_environment/cmake/usd.cmake b/build_files/build_environment/cmake/usd.cmake
+index 0d28f4f7fa5..fa15600602a 100644
+--- a/build_files/build_environment/cmake/usd.cmake
++++ b/build_files/build_environment/cmake/usd.cmake
+@@ -45,11 +45,6 @@ elseif(UNIX)
+     list(APPEND USD_PLATFORM_FLAGS
+       -DCMAKE_SHARED_LINKER_FLAGS=${USD_SHARED_LINKER_FLAGS}
+     )
+-    # Metal only patch for MaterialX 1.39 issues.
+-    set(USD_EXTRA_PATCHES
+-      ${PATCH_CMD} -p 1 -d
+-      ${BUILD_DIR}/usd/src/external_usd <
+-      ${PATCH_DIR}/usd_3519.diff &&)
+   endif()
+ endif()
+ 
+@@ -134,7 +129,6 @@ ExternalProject_Add(external_usd
+   LIST_SEPARATOR ^^
+ 
+   PATCH_COMMAND
+-    ${USD_EXTRA_PATCHES}
+     ${PATCH_CMD} -p 1 -d
+       ${BUILD_DIR}/usd/src/external_usd <
+       ${PATCH_DIR}/usd.diff &&
+@@ -144,12 +138,6 @@ ExternalProject_Add(external_usd
+     ${PATCH_CMD} -p 1 -d
+       ${BUILD_DIR}/usd/src/external_usd <
+       ${PATCH_DIR}/usd_ctor.diff &&
+-    ${PATCH_CMD} -p 1 -d
+-      ${BUILD_DIR}/usd/src/external_usd <
+-      ${PATCH_DIR}/usd_3243.diff &&
+-    ${PATCH_CMD} -p 1 -d
+-      ${BUILD_DIR}/usd/src/external_usd <
+-      ${PATCH_DIR}/usd_forward_compat.diff &&
+     ${PATCH_CMD} -p 1 -d
+       ${BUILD_DIR}/usd/src/external_usd <
+       ${PATCH_DIR}/usd_noboost.diff &&
+@@ -158,10 +146,7 @@ ExternalProject_Add(external_usd
+       ${PATCH_DIR}/usd_no_vulkan_sdk.diff &&
+     ${PATCH_CMD} -p 1 -d
+       ${BUILD_DIR}/usd/src/external_usd <
+-      ${PATCH_DIR}/usd_storm_vulkan.diff &&
+-    ${PATCH_CMD} -p 1 -d
+-      ${BUILD_DIR}/usd/src/external_usd <
+-      ${PATCH_DIR}/usd_3666_vulkan_amd.diff
++      ${PATCH_DIR}/usd_storm_vulkan.diff
+   CMAKE_ARGS
+     -DCMAKE_INSTALL_PREFIX=${LIBDIR}/usd
+     -Wno-dev
+diff --git a/build_files/build_environment/cmake/versions.cmake b/build_files/build_environment/cmake/versions.cmake
+index 3fa18afdaf4..8833afafd8c 100644
+--- a/build_files/build_environment/cmake/versions.cmake
++++ b/build_files/build_environment/cmake/versions.cmake
+@@ -804,10 +804,10 @@ set(EMBREE_HOMEPAGE https://github.com/RenderKit/embree)
+ set(EMBREE_LICENSE SPDX:Apache-2.0)
+ set(EMBREE_COPYRIGHT "Copyright 2009-2024 Intel Corporation")
+ 
+-set(USD_VERSION 25.02)
++set(USD_VERSION 25.08)
+ set(USD_NAME USD)
+ set(USD_URI https://github.com/PixarAnimationStudios/OpenUSD/archive/v${USD_VERSION}.tar.gz)
+-set(USD_HASH 76ee61270e67002ddb2fc76dda6a498d)
++set(USD_HASH e107ce8d79471ddd8b636bb982c24a46)
+ set(USD_HASH_TYPE MD5)
+ set(USD_FILE usd-v${USD_VERSION}.tar.gz)
+ set(USD_HOMEPAGE https://openusd.org/)
+diff --git a/build_files/build_environment/patches/usd_3243.diff b/build_files/build_environment/patches/usd_3243.diff
+deleted file mode 100644
+index 6e9e6a2b363..00000000000
+--- a/build_files/build_environment/patches/usd_3243.diff
++++ /dev/null
+@@ -1,70 +0,0 @@
+-diff --git a/pxr/usd/usdMtlx/reader.cpp b/pxr/usd/usdMtlx/reader.cpp
+-index f04ab07ac1..aa4d1e65de 100644
+---- a/pxr/usd/usdMtlx/reader.cpp
+-+++ b/pxr/usd/usdMtlx/reader.cpp
+-@@ -9,6 +9,7 @@
+- #include "pxr/usd/usdMtlx/reader.h"
+- #include "pxr/usd/usdMtlx/utils.h"
+- 
+-+#include "pxr/usd/usdGeom/metrics.h"
+- #include "pxr/usd/usdGeom/primvar.h"
+- #include "pxr/usd/usdGeom/primvarsAPI.h"
+- #include "pxr/usd/usdShade/material.h"
+-@@ -740,11 +741,11 @@ _NodeGraphBuilder::Build(ShaderNamesByOutputName* outputs)
+-         return UsdPrim();
+-     }
+- 
+--    const bool isInsideNodeGraph = _mtlxContainer->isA<mx::NodeGraph>();
+-+    const bool isExplicitNodeGraph = _mtlxContainer->isA<mx::NodeGraph>();
+- 
+-     // Create the USD nodegraph.
+-     UsdPrim usdPrim;
+--    if (isInsideNodeGraph) {
+-+    if (isExplicitNodeGraph) {
+-         // Create the nodegraph.
+-         auto usdNodeGraph = UsdShadeNodeGraph::Define(_usdStage, _usdPath);
+-         if (!usdNodeGraph) {
+-@@ -769,7 +770,7 @@ _NodeGraphBuilder::Build(ShaderNamesByOutputName* outputs)
+-         }
+-     }
+-     else {
+--        usdPrim = _usdStage->DefinePrim(_usdPath);
+-+        usdPrim = UsdShadeNodeGraph::Define(_usdStage, _usdPath).GetPrim();
+-     }
+- 
+-     // Build the graph of nodes.
+-@@ -783,19 +784,7 @@ _NodeGraphBuilder::Build(ShaderNamesByOutputName* outputs)
+-         _AddNode(mtlxNode, usdPrim);
+-     }
+-     _ConnectNodes();
+--
+--    if (isInsideNodeGraph) {
+--        _ConnectTerminals(_mtlxContainer, UsdShadeConnectableAPI(usdPrim));
+--    }
+--    else if (outputs) {
+--        // Collect the outputs on the existing shader nodes.
+--        for (mx::OutputPtr& mtlxOutput :
+--                _mtlxContainer->getChildrenOfType<mx::Output>()) {
+--            if (auto nodeName = _Attr(mtlxOutput, names.nodename)) {
+--                (*outputs)[_Name(mtlxOutput)] = TfToken(nodeName);
+--            }
+--        }
+--    }
+-+    _ConnectTerminals(_mtlxContainer, UsdShadeConnectableAPI(usdPrim));
+- 
+-     return usdPrim;
+- }
+-@@ -2623,6 +2612,13 @@ UsdMtlxRead(
+-     // Translate all materials.
+-     ReadMaterials(mtlxDoc, context);
+- 
+-+    if (!mtlxDoc->getChildren().empty()) {
+-+        // This metadata is required to pass usdchecker
+-+        UsdGeomSetStageUpAxis(stage, UsdGeomGetFallbackUpAxis());
+-+        UsdGeomSetStageMetersPerUnit(stage, UsdGeomLinearUnits::centimeters);
+-+        stage->SetDefaultPrim(stage->GetPrimAtPath(internalPath));
+-+    }
+-+
+-     // If there are no looks then we're done.
+-     if (mtlxDoc->getLooks().empty()) {
+-         return;
+diff --git a/build_files/build_environment/patches/usd_3519.diff b/build_files/build_environment/patches/usd_3519.diff
+deleted file mode 100644
+index 3ed4fa7ac92..00000000000
+--- a/build_files/build_environment/patches/usd_3519.diff
++++ /dev/null
+@@ -1,70 +0,0 @@
+-commit 84c1a9f8e5a8c413dea56852894541f0cc28193b
+-Author: Brecht Van Lommel <brecht@blender.org>
+-Date:   Tue Feb 4 23:33:50 2025 +0100
+-
+-    Fix Metal shader errors with MaterialX 1.39
+-    
+-    * mx_microfacet.glsl uses functions from mx_math.metal, so the
+-      latter must be included first.
+-    * Defining atan(y, x) for GLSL compatibility conflicts with
+-      mx_math.metal using ::atan(y_over_x). Work around this by tweaking
+-      the definition.
+-    * textureQueryLevels(u_envRadiance) does not take into account that
+-      this texture is wrapped in a MetalTexture class.
+-    
+-    Signed-off-by: Brecht Van Lommel <brecht@blender.org>
+-
+-diff --git a/pxr/imaging/hdSt/materialXShaderGen.cpp b/pxr/imaging/hdSt/materialXShaderGen.cpp
+-index 58687a760..8345b6fb2 100644
+---- a/pxr/imaging/hdSt/materialXShaderGen.cpp
+-+++ b/pxr/imaging/hdSt/materialXShaderGen.cpp
+-@@ -447,8 +447,17 @@ HdStMaterialXShaderGen<Base>::_EmitMxInitFunction(
+-         emitLine("u_envIrradiance = HdGetSampler_domeLightFallback()", mxStage);
+-         emitLine("u_envRadiance = HdGetSampler_domeLightFallback()", mxStage);
+-         emitLine("#endif", mxStage, false);
+-+        emitLine("u_envRadianceMips = textureQueryLevels(u_envRadiance)", mxStage);
+-+    }
+-+    else {
+-+        if (std::is_same_v<Base, MaterialX::MslShaderGenerator>) {
+-+            // Msl has this wrapped in a MetalTexture class
+-+            emitLine("u_envRadianceMips = textureQueryLevels(u_envRadiance.tex)", mxStage);
+-+        }
+-+        else {
+-+            emitLine("u_envRadianceMips = textureQueryLevels(u_envRadiance)", mxStage);
+-+        }
+-     }
+--    emitLine("u_envRadianceMips = textureQueryLevels(u_envRadiance)", mxStage);
+-     Base::emitLineBreak(mxStage);
+- 
+-     // Initialize MaterialX Texture samplers with HdGetSampler equivalents
+-@@ -1309,12 +1318,12 @@ HdStMaterialXShaderGenMsl::_EmitMxFunctions(
+-     mx::GenContext& mxContext,
+-     mx::ShaderStage& mxStage) const
+- {
+--    mx::ShaderGenerator::emitLibraryInclude(
+--        "pbrlib/" + mx::GlslShaderGenerator::TARGET
+--        + "/lib/mx_microfacet.glsl", mxContext, mxStage);
+-     mx::ShaderGenerator::emitLibraryInclude(
+-         "stdlib/" + mx::MslShaderGenerator::TARGET
+-         + "/lib/mx_math.metal", mxContext, mxStage);
+-+    mx::ShaderGenerator::emitLibraryInclude(
+-+        "pbrlib/" + mx::GlslShaderGenerator::TARGET
+-+        + "/lib/mx_microfacet.glsl", mxContext, mxStage);
+-     _EmitConstantsUniformsAndTypeDefs(
+-         mxContext, mxStage,_syntax->getConstantQualifier());
+- 
+-diff --git a/pxr/imaging/hgiMetal/shaderGenerator.mm b/pxr/imaging/hgiMetal/shaderGenerator.mm
+-index f1db1beb1..6ace76999 100644
+---- a/pxr/imaging/hgiMetal/shaderGenerator.mm
+-+++ b/pxr/imaging/hgiMetal/shaderGenerator.mm
+-@@ -515,7 +515,9 @@ _ComputeHeader(id<MTLDevice> device, HgiShaderStage stage)
+-               "template <typename T>\n"
+-               "T mod(T y, T x) { return fmod(y, x); }\n\n"
+-               "template <typename T>\n"
+--              "T atan(T y, T x) { return atan2(y, x); }\n\n"
+-+              "T atan(T y_over_x) { return ::atan(y_over_x); }\n\n"
+-+              "template <typename T>\n"
+-+              "T atan(T y, T x) { return ::atan2(y, x); }\n\n"
+-               "template <typename T>\n"
+-               "T bitfieldReverse(T x) { return reverse_bits(x); }\n\n"
+-               "template <typename T>\n"
+diff --git a/build_files/build_environment/patches/usd_3666_vulkan_amd.diff b/build_files/build_environment/patches/usd_3666_vulkan_amd.diff
+deleted file mode 100644
+index dfd3b0a291f..00000000000
+--- a/build_files/build_environment/patches/usd_3666_vulkan_amd.diff
++++ /dev/null
+@@ -1,19 +0,0 @@
+-diff --git a/pxr/imaging/hgiVulkan/computeCmds.cpp b/pxr/imaging/hgiVulkan/computeCmds.cpp
+-index cbf9704fd..74a81c787 100644
+---- a/pxr/imaging/hgiVulkan/computeCmds.cpp
+-+++ b/pxr/imaging/hgiVulkan/computeCmds.cpp
+-@@ -119,10 +119,11 @@ HgiVulkanComputeCmds::Dispatch(int dimX, int dimY)
+-     // Determine device's num compute work group limits
+-     const VkPhysicalDeviceLimits limits = 
+-         _hgi->GetCapabilities()->vkDeviceProperties.limits;
+-+    const uint32_t maxAllowedLimit = (1 << 31) - 1;
+-     const GfVec3i maxNumWorkGroups = GfVec3i(
+--        limits.maxComputeWorkGroupCount[0],
+--        limits.maxComputeWorkGroupCount[1],
+--        limits.maxComputeWorkGroupCount[2]);
+-+        std::min<uint32_t>(maxAllowedLimit, limits.maxComputeWorkGroupCount[0]),
+-+        std::min<uint32_t>(maxAllowedLimit, limits.maxComputeWorkGroupCount[1]),
+-+        std::min<uint32_t>(maxAllowedLimit, limits.maxComputeWorkGroupCount[2]));
+- 
+-     if (numWorkGroupsX > maxNumWorkGroups[0]) {
+-         TF_WARN("Max number of work group available from device is %i, larger "
+diff --git a/build_files/build_environment/patches/usd_forward_compat.diff b/build_files/build_environment/patches/usd_forward_compat.diff
+deleted file mode 100644
+index 9cc81dfe1c5..00000000000
+--- a/build_files/build_environment/patches/usd_forward_compat.diff
++++ /dev/null
+@@ -1,14 +0,0 @@
+-diff --git a/pxr/usd/usd/crateFile.cpp b/pxr/usd/usd/crateFile.cpp
+-index 55c6d71e1..5d0fcbcfa 100644
+---- a/pxr/usd/usd/crateFile.cpp
+-+++ b/pxr/usd/usd/crateFile.cpp
+-@@ -102,7 +102,8 @@ TF_REGISTRY_FUNCTION(TfType) {
+-     TfType::Define<Usd_CrateFile::TimeSamples>();
+- }
+- 
+--#define DEFAULT_NEW_VERSION "0.10.0"
+-+// BLENDER: Keep USD files forward compatible for longer.
+-+#define DEFAULT_NEW_VERSION "0.9.0"
+- TF_DEFINE_ENV_SETTING(
+-     USD_WRITE_NEW_USDC_FILES_AS_VERSION, DEFAULT_NEW_VERSION,
+-     "When writing new Usd Crate files, write them as this version.  "
+-- 
+2.49.1
+
+
+From e8344088a90ad7420dce52876afbef14c533540c Mon Sep 17 00:00:00 2001
+From: Thomas Dinges <thomas@blender.org>
+Date: Wed, 13 Aug 2025 09:46:45 +0200
+Subject: [PATCH 2/9] Deps: Update MaterialX to 1.39.3
+
+---
+ build_files/build_environment/cmake/versions.cmake | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/build_files/build_environment/cmake/versions.cmake b/build_files/build_environment/cmake/versions.cmake
+index 8833afafd8c..07688d5f1ea 100644
+--- a/build_files/build_environment/cmake/versions.cmake
++++ b/build_files/build_environment/cmake/versions.cmake
+@@ -820,10 +820,10 @@ This product includes software developed at:
+ Pixar (http://www.pixar.com/).
+ ]=])
+ 
+-set(MATERIALX_VERSION 1.39.2)
++set(MATERIALX_VERSION 1.39.3)
+ set(MATERIALX_NAME MaterialX)
+ set(MATERIALX_URI https://github.com/AcademySoftwareFoundation/MaterialX/archive/refs/tags/v${MATERIALX_VERSION}.tar.gz)
+-set(MATERIALX_HASH e3e413755f525aec96c60af631753044)
++set(MATERIALX_HASH 43fdf32d52d6e04e40761e3c08f66476)
+ set(MATERIALX_HASH_TYPE MD5)
+ set(MATERIALX_FILE materialx-v${MATERIALX_VERSION}.tar.gz)
+ set(MATERIALX_HOMEPAGE https://github.com/AcademySoftwareFoundation/MaterialX)
+-- 
+2.49.1
+
+
+From 7f6f86ee28a2abd51adf775949f60dd7153b0fba Mon Sep 17 00:00:00 2001
+From: Thomas Dinges <thomas@blender.org>
+Date: Wed, 13 Aug 2025 10:03:58 +0200
+Subject: [PATCH 3/9] Deps: Update OpenImageIO to 3.0.9.1
+
+Also build with SSE4.2 for Windows and Linux.
+---
+ build_files/build_environment/cmake/openimageio.cmake | 3 ++-
+ build_files/build_environment/cmake/versions.cmake    | 4 ++--
+ 2 files changed, 4 insertions(+), 3 deletions(-)
+
+diff --git a/build_files/build_environment/cmake/openimageio.cmake b/build_files/build_environment/cmake/openimageio.cmake
+index 0dcebf720e3..2cc42969191 100644
+--- a/build_files/build_environment/cmake/openimageio.cmake
++++ b/build_files/build_environment/cmake/openimageio.cmake
+@@ -12,6 +12,7 @@ if(UNIX AND NOT APPLE)
+   # This causes linking to static pthread libraries which gives link errors.
+   # Since we manually specify library paths it should static link other libs.
+   set(OPENIMAGEIO_LINKSTATIC -DLINKSTATIC=OFF)
++  set(OIIO_SIMD_FLAGS -DUSE_SIMD=sse4.2)
+ else()
+   set(OPENIMAGEIO_LINKSTATIC -DLINKSTATIC=ON)
+ endif()
+@@ -20,7 +21,7 @@ if(WIN32)
+   if(BLENDER_PLATFORM_ARM)
+     set(OIIO_SIMD_FLAGS -DUSE_SIMD=0)
+   else()
+-    set(OIIO_SIMD_FLAGS -DUSE_SIMD=sse2)
++    set(OIIO_SIMD_FLAGS -DUSE_SIMD=sse4.2)
+   endif()
+   set(OPENJPEG_POSTFIX _msvc)
+   if(BUILD_MODE STREQUAL Debug)
+diff --git a/build_files/build_environment/cmake/versions.cmake b/build_files/build_environment/cmake/versions.cmake
+index 07688d5f1ea..50420bfb39f 100644
+--- a/build_files/build_environment/cmake/versions.cmake
++++ b/build_files/build_environment/cmake/versions.cmake
+@@ -266,10 +266,10 @@ set(LLVM_HOMEPAGE https://github.com/llvm/llvm-project/)
+ set(LLVM_LICENSE SPDX:Apache-2.0 WITH LLVM-exception)
+ set(LLVM_COPYRIGHT "Copyright (c) 2003-2019 University of Illinois at Urbana-Champaign. All rights reserved.")
+ 
+-set(OPENIMAGEIO_VERSION v3.0.6.1)
++set(OPENIMAGEIO_VERSION v3.0.9.1)
+ set(OPENIMAGEIO_NAME OpenImageIO)
+ set(OPENIMAGEIO_URI https://github.com/AcademySoftwareFoundation/OpenImageIO/archive/refs/tags/${OPENIMAGEIO_VERSION}.tar.gz)
+-set(OPENIMAGEIO_HASH 935f926a7457ffd49fa4774449e99325)
++set(OPENIMAGEIO_HASH 5a3490d405615f48d7340ba4af41380d)
+ set(OPENIMAGEIO_HASH_TYPE MD5)
+ set(OPENIMAGEIO_FILE OpenImageIO-${OPENIMAGEIO_VERSION}.tar.gz)
+ set(OPENIMAGEIO_HOMEPAGE https://github.com/AcademySoftwareFoundation/OpenImageIO)
+-- 
+2.49.1
+
+
+From 00aac5060db94ebcd0467a8d99c492c80f99563a Mon Sep 17 00:00:00 2001
+From: Thomas Dinges <thomas@blender.org>
+Date: Wed, 13 Aug 2025 10:10:02 +0200
+Subject: [PATCH 4/9] Deps: Update libharu to 2.4.5
+
+---
+ build_files/build_environment/cmake/versions.cmake | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/build_files/build_environment/cmake/versions.cmake b/build_files/build_environment/cmake/versions.cmake
+index 50420bfb39f..a27e170d617 100644
+--- a/build_files/build_environment/cmake/versions.cmake
++++ b/build_files/build_environment/cmake/versions.cmake
+@@ -991,9 +991,9 @@ set(POTRACE_LICENSE SPDX:GPL-2.0-or-later)
+ set(POTRACE_COPYRIGHT "Copyright © 2001-2019 Peter Selinger.")
+ 
+ 
+-set(HARU_VERSION 2_3_0)
+-set(HARU_URI https://github.com/libharu/libharu/archive/RELEASE_${HARU_VERSION}.tar.gz)
+-set(HARU_HASH 4f916aa49c3069b3a10850013c507460)
++set(HARU_VERSION 2.4.5)
++set(HARU_URI https://github.com/libharu/libharu/archive/refs/tags/v${HARU_VERSION}.tar.gz)
++set(HARU_HASH d5633fb741079a7675bb3e9e8e8a58ce)
+ set(HARU_HASH_TYPE MD5)
+ set(HARU_FILE libharu-${HARU_VERSION}.tar.gz)
+ set(HARU_HOMEPAGE http://libharu.org/)
+-- 
+2.49.1
+
+
+From 19f17c7275b095562c85d9fec6b6110ba8b101db Mon Sep 17 00:00:00 2001
+From: Thomas Dinges <thomas@blender.org>
+Date: Wed, 13 Aug 2025 10:14:44 +0200
+Subject: [PATCH 5/9] Deps: Remove obsolete OIIO patch for Windows Arm64
+
+---
+ .../build_environment/cmake/openimageio.cmake      |  5 +----
+ .../patches/oiio_windows_arm64.diff                | 14 --------------
+ 2 files changed, 1 insertion(+), 18 deletions(-)
+ delete mode 100644 build_files/build_environment/patches/oiio_windows_arm64.diff
+
+diff --git a/build_files/build_environment/cmake/openimageio.cmake b/build_files/build_environment/cmake/openimageio.cmake
+index 2cc42969191..aed574a6d65 100644
+--- a/build_files/build_environment/cmake/openimageio.cmake
++++ b/build_files/build_environment/cmake/openimageio.cmake
+@@ -131,10 +131,7 @@ ExternalProject_Add(external_openimageio
+   PATCH_COMMAND
+     ${PATCH_CMD} -p 1 -N -d
+       ${BUILD_DIR}/openimageio/src/external_openimageio/ <
+-      ${PATCH_DIR}/openimageio.diff &&
+-    ${PATCH_CMD} -p 1 -N -d
+-      ${BUILD_DIR}/openimageio/src/external_openimageio/ <
+-      ${PATCH_DIR}/oiio_windows_arm64.diff
++      ${PATCH_DIR}/openimageio.diff
+   CMAKE_ARGS
+     -DCMAKE_INSTALL_PREFIX=${LIBDIR}/openimageio
+     ${DEFAULT_CMAKE_FLAGS}
+diff --git a/build_files/build_environment/patches/oiio_windows_arm64.diff b/build_files/build_environment/patches/oiio_windows_arm64.diff
+deleted file mode 100644
+index c630f0c63e7..00000000000
+--- a/build_files/build_environment/patches/oiio_windows_arm64.diff
++++ /dev/null
+@@ -1,14 +0,0 @@
+-diff --git a/src/include/OpenImageIO/simd.h b/src/include/OpenImageIO/simd.h
+-index b1701946f..d148a89d3 100644
+---- a/src/include/OpenImageIO/simd.h
+-+++ b/src/include/OpenImageIO/simd.h
+-@@ -119,6 +119,9 @@
+-     // Cuda -- don't include any of these headers
+- #elif defined(_WIN32)
+- #  include <intrin.h>
+-+#  if defined(__ARM_NEON__) && !defined(OIIO_NO_NEON)
+-+#    include <arm_neon.h>
+-+#  endif
+- #elif defined(__GNUC__) && (defined(__x86_64__) || defined(__i386__)) || defined(__e2k__)
+- #  include <x86intrin.h>
+- #elif defined(__GNUC__) && defined(__ARM_NEON__) && !defined(OIIO_NO_NEON)
+-- 
+2.49.1
+
+
+From 6e15ebf4d58d9b7d0ab114765518b157a993fbc9 Mon Sep 17 00:00:00 2001
+From: Thomas Dinges <thomas@blender.org>
+Date: Wed, 13 Aug 2025 10:18:14 +0200
+Subject: [PATCH 6/9] Deps: Update ShaderC to 2025.3
+
+---
+ build_files/build_environment/cmake/versions.cmake | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/build_files/build_environment/cmake/versions.cmake b/build_files/build_environment/cmake/versions.cmake
+index a27e170d617..3aaf5e062c9 100644
+--- a/build_files/build_environment/cmake/versions.cmake
++++ b/build_files/build_environment/cmake/versions.cmake
+@@ -1302,9 +1302,9 @@ set(HARFBUZZ_FILE harfbuzz-${HARFBUZZ_VERSION}.tar.gz)
+ set(HARFBUZZ_DEPSBUILDTIMEONLY "UI module asked for preliminary libs so they could work on integrating it")
+ set(HARFBUZZ_HOMEPAGE https://github.com/harfbuzz/harfbuzz)
+ 
+-set(SHADERC_VERSION v2024.3)
++set(SHADERC_VERSION v2025.3)
+ set(SHADERC_URI https://github.com/google/shaderc/archive/${SHADERC_VERSION}.tar.gz)
+-set(SHADERC_HASH e8d45a77fe8bc954c3ca79aeba8476bd)
++set(SHADERC_HASH c110401f6e36ee234008b4cabe991ee0)
+ set(SHADERC_HASH_TYPE MD5)
+ set(SHADERC_FILE shaderc-${SHADERC_VERSION}.tar.gz)
+ set(SHADERC_NAME ShaderC)
+-- 
+2.49.1
+
+
+From 7fbece4bdbb4bb0e0b8794126eb216f3d0bc55f3 Mon Sep 17 00:00:00 2001
+From: Thomas Dinges <thomas@blender.org>
+Date: Wed, 13 Aug 2025 10:20:17 +0200
+Subject: [PATCH 7/9] Deps: Update Wayland to 1.24.0
+
+---
+ build_files/build_environment/cmake/versions.cmake | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/build_files/build_environment/cmake/versions.cmake b/build_files/build_environment/cmake/versions.cmake
+index 3aaf5e062c9..8debb68508e 100644
+--- a/build_files/build_environment/cmake/versions.cmake
++++ b/build_files/build_environment/cmake/versions.cmake
+@@ -901,10 +901,10 @@ Copyright © 2014-2015 Collabora, Ltd.
+ Copyright © 2015 Red Hat Inc.
+ ]=])
+ 
+-set(WAYLAND_VERSION 1.23.1)
++set(WAYLAND_VERSION 1.24.0)
+ set(WAYLAND_FILE wayland-${WAYLAND_VERSION}.tar.xz)
+ set(WAYLAND_URI https://gitlab.freedesktop.org/wayland/wayland/-/releases/${WAYLAND_VERSION}/downloads/wayland-${WAYLAND_VERSION}.tar.xz)
+-set(WAYLAND_HASH 5d27c7d3658fa90f40111b47cdb4a8fb)
++set(WAYLAND_HASH fda0b2a73ea2716f61d75767e02008e1)
+ set(WAYLAND_HASH_TYPE MD5)
+ set(WAYLAND_HOMEPAGE https://gitlab.freedesktop.org/wayland/wayland)
+ set(WAYLAND_LICENSE SPDX:MIT)
+-- 
+2.49.1
+
+
+From eb54b24584db1e65e52724096d29c7ed4d407951 Mon Sep 17 00:00:00 2001
+From: Jesse Yurkovich <jesse.y@gmail.com>
+Date: Wed, 13 Aug 2025 13:15:58 -0700
+Subject: [PATCH 8/9] Deps: Adapt to libharu's upstream changes
+
+Summary:
+- They have a new cmake variable for shared vs. static determination
+- They no longer use the 'lib' prefix on the resulting binary
+- We (should) no longer need the TIFFFax*Codes workaround or patch
+
+Tested locally only on Windows. Unsure if other platforms need further
+changes.
+---
+ build_files/build_environment/cmake/haru.cmake  | 11 +++--------
+ build_files/build_environment/patches/haru.diff | 12 ------------
+ build_files/cmake/platform/platform_win32.cmake |  2 +-
+ source/blender/io/grease_pencil/CMakeLists.txt  |  5 -----
+ 4 files changed, 4 insertions(+), 26 deletions(-)
+ delete mode 100644 build_files/build_environment/patches/haru.diff
+
+diff --git a/build_files/build_environment/cmake/haru.cmake b/build_files/build_environment/cmake/haru.cmake
+index 77a55a02cb7..880118783a0 100644
+--- a/build_files/build_environment/cmake/haru.cmake
++++ b/build_files/build_environment/cmake/haru.cmake
+@@ -3,8 +3,7 @@
+ # SPDX-License-Identifier: GPL-2.0-or-later
+ 
+ set(HARU_EXTRA_ARGS
+-  -DLIBHPDF_SHARED=OFF
+-  -DLIBHPDF_STATIC=ON
++  -DBUILD_SHARED_LIBS=OFF
+   -DLIBHPDF_EXAMPLES=OFF
+   -DLIBHPDF_ENABLE_EXCEPTIONS=ON
+ )
+@@ -15,10 +14,6 @@ ExternalProject_Add(external_haru
+   URL_HASH ${HARU_HASH_TYPE}=${HARU_HASH}
+   PREFIX ${BUILD_DIR}/haru
+ 
+-  PATCH_COMMAND ${PATCH_CMD} -p 1 -d
+-    ${BUILD_DIR}/haru/src/external_haru <
+-    ${PATCH_DIR}/haru.diff
+-
+   CMAKE_ARGS
+     -DCMAKE_POSITION_INDEPENDENT_CODE=ON -DCMAKE_INSTALL_PREFIX=${LIBDIR}/haru
+     ${DEFAULT_CMAKE_FLAGS} ${HARU_EXTRA_ARGS}
+@@ -33,8 +28,8 @@ if(WIN32)
+         ${LIBDIR}/haru/include
+         ${HARVEST_TARGET}/haru/include
+       COMMAND ${CMAKE_COMMAND} -E copy
+-        ${LIBDIR}/haru/lib/libhpdfs.lib
+-        ${HARVEST_TARGET}/haru/lib/libhpdfs.lib
++        ${LIBDIR}/haru/lib/hpdf.lib
++        ${HARVEST_TARGET}/haru/lib/hpdf.lib
+ 
+       DEPENDEES install
+     )
+diff --git a/build_files/build_environment/patches/haru.diff b/build_files/build_environment/patches/haru.diff
+deleted file mode 100644
+index fed551b4bf0..00000000000
+--- a/build_files/build_environment/patches/haru.diff
++++ /dev/null
+@@ -1,12 +0,0 @@
+-diff --git a/src/hpdf_image_ccitt.c b/src/hpdf_image_ccitt.c
+-index 8672763..9be531a 100644
+---- a/src/hpdf_image_ccitt.c
+-+++ b/src/hpdf_image_ccitt.c
+-@@ -21,7 +21,6 @@
+- #include <memory.h>
+- #include <assert.h>
+- 
+--#define	G3CODES
+- #include "t4.h"
+- 
+- typedef unsigned int uint32;
+diff --git a/build_files/cmake/platform/platform_win32.cmake b/build_files/cmake/platform/platform_win32.cmake
+index b527f774d50..50483b2d369 100644
+--- a/build_files/cmake/platform/platform_win32.cmake
++++ b/build_files/cmake/platform/platform_win32.cmake
+@@ -1249,7 +1249,7 @@ if(WITH_HARU)
+   set(HARU_FOUND ON)
+   set(HARU_ROOT_DIR ${LIBDIR}/haru)
+   set(HARU_INCLUDE_DIRS ${HARU_ROOT_DIR}/include)
+-  set(HARU_LIBRARIES ${HARU_ROOT_DIR}/lib/libhpdfs.lib)
++  set(HARU_LIBRARIES ${HARU_ROOT_DIR}/lib/hpdf.lib)
+ endif()
+ 
+ if(WITH_VULKAN_BACKEND)
+diff --git a/source/blender/io/grease_pencil/CMakeLists.txt b/source/blender/io/grease_pencil/CMakeLists.txt
+index 467ba7f2ea2..2e924f4ad4b 100644
+--- a/source/blender/io/grease_pencil/CMakeLists.txt
++++ b/source/blender/io/grease_pencil/CMakeLists.txt
+@@ -63,11 +63,6 @@ if(WITH_HARU)
+   )
+   list(APPEND LIB
+     ${HARU_LIBRARIES}
+-
+-    # Haru needs `TIFFFaxBlackCodes` & `TIFFFaxWhiteCodes` symbols from TIFF.
+-    # Can be removed with Haru 2.4.0. They should be shipping with their own
+-    # Fax codes defined by default from that version onward.
+-    ${TIFF_LIBRARY}
+   )
+   add_definitions(-DWITH_HARU)
+ endif()
+-- 
+2.49.1
+
+
+From c2273ecedb1a158ff809f3c437b8bfc3df468832 Mon Sep 17 00:00:00 2001
+From: Jesse Yurkovich <jesse.y@gmail.com>
+Date: Wed, 13 Aug 2025 13:38:19 -0700
+Subject: [PATCH 9/9] Allow both old and new versions of haru in
+ platform_win32.cmake
+
+---
+ build_files/cmake/platform/platform_win32.cmake | 6 +++++-
+ 1 file changed, 5 insertions(+), 1 deletion(-)
+
+diff --git a/build_files/cmake/platform/platform_win32.cmake b/build_files/cmake/platform/platform_win32.cmake
+index 50483b2d369..853e22fc98b 100644
+--- a/build_files/cmake/platform/platform_win32.cmake
++++ b/build_files/cmake/platform/platform_win32.cmake
+@@ -1249,7 +1249,11 @@ if(WITH_HARU)
+   set(HARU_FOUND ON)
+   set(HARU_ROOT_DIR ${LIBDIR}/haru)
+   set(HARU_INCLUDE_DIRS ${HARU_ROOT_DIR}/include)
+-  set(HARU_LIBRARIES ${HARU_ROOT_DIR}/lib/hpdf.lib)
++  if(EXISTS ${HARU_ROOT_DIR}/lib/hpdf.lib) # blender 5.0+
++    set(HARU_LIBRARIES ${HARU_ROOT_DIR}/lib/hpdf.lib)
++  else()
++    set(HARU_LIBRARIES ${HARU_ROOT_DIR}/lib/libhpdfs.lib)
++  endif()
+ endif()
+ 
+ if(WITH_VULKAN_BACKEND)
+-- 
+2.49.1
+

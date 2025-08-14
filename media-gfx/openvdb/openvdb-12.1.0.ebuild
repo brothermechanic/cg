@@ -157,11 +157,12 @@ PATCHES=(
 	#"${FILESDIR}/${PN}-8.1.0-glfw-libdir.patch"
 	"${FILESDIR}/${PN}-9.0.0-fix-atomic.patch"
 	"${FILESDIR}/${PN}-10.0.1-log4cplus-version.patch"
-	"${FILESDIR}/${PN}-11.0.0-cmake_fixes.patch"
-	"${FILESDIR}/${PN}-12.0.0-fix-typos-1995.patch"
+	#"${FILESDIR}/${PN}-12.0.0-fix-typos-1995.patch"
 	"${FILESDIR}/${PN}-12.0.0-fix-linking-of-vdb_tool-with-OpenEXR.patch"
 	"${FILESDIR}/${PN}-12.0.0-loosen-float-equality-tolerances.patch"
 	"${FILESDIR}/${PN}-12.0.0-remove-c-style-casts.patch"
+	"${FILESDIR}/${PN}-12.1.0-cmake_fixes.patch"
+	"${FILESDIR}/${PN}-12.1.0-fix-host-TM-pr2072.patch"
 )
 
 QA_PRESTRIPPED="usr/lib.*/python.*/site-packages/pyopenvdb.*"

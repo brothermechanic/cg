@@ -137,7 +137,6 @@ src_prepare() {
 }
 
 src_configure() {
-	CMAKE_BUILD_TYPE="Release"
 	local mycmakeargs=(
 		-DCMAKE_INSTALL_BINDIR="share/${PN}/bin"
 		-DNO_DOC="$(usex !doc)"
@@ -208,7 +207,7 @@ src_configure() {
 		)
 	fi
 
-	cmake_src_configure
+	CMAKE_BUILD_TYPE="Release" cmake_src_configure
 }
 
 src_test() {

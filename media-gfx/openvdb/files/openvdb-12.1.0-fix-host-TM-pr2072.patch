@@ -1,0 +1,114 @@
+From 46371bbde9d73edb5203d10e16ff7963fba6f68f Mon Sep 17 00:00:00 2001
+From: Nicholas Avramoussis <navramoussis@wetafx.co.nz>
+Date: Wed, 13 Aug 2025 13:20:53 +1200
+Subject: [PATCH] Fixed missing host Target Machine when building and using the
+ new LLVM PassManager with LLVM 16+
+
+Signed-off-by: Nicholas Avramoussis <navramoussis@wetafx.co.nz>
+---
+ openvdb_ax/openvdb_ax/compiler/Compiler.cc | 38 ++++++++++++++++------
+ pendingchanges/axoptfix.txt                |  4 +++
+ 2 files changed, 32 insertions(+), 10 deletions(-)
+ create mode 100644 pendingchanges/axoptfix.txt
+
+diff --git a/openvdb_ax/openvdb_ax/compiler/Compiler.cc b/openvdb_ax/openvdb_ax/compiler/Compiler.cc
+index 5436ea684a..569bdd596f 100644
+--- a/openvdb_ax/openvdb_ax/compiler/Compiler.cc
++++ b/openvdb_ax/openvdb_ax/compiler/Compiler.cc
+@@ -443,7 +443,9 @@ initializeExecutionEngine(Logger& logger)
+     return std::move(*LLJIT);
+ }
+ 
+-void LLVMoptimise(llvm::Module& M, const llvm::OptimizationLevel opt)
++void LLVMoptimise(llvm::Module& M,
++    const llvm::OptimizationLevel opt,
++    llvm::TargetMachine* TM)
+ {
+     // Create the analysis managers.
+     // These must be declared in this order so that they are destroyed in the
+@@ -457,7 +459,7 @@ void LLVMoptimise(llvm::Module& M, const llvm::OptimizationLevel opt)
+     // Take a look at the PassBuilder constructor parameters for more
+     // customization, e.g. specifying a TargetMachine or various debugging
+     // options.
+-    llvm::PassBuilder PB;
++    llvm::PassBuilder PB(TM);
+ 
+     // Register all the basic analyses with the managers.
+     PB.registerModuleAnalyses(MAM);
+@@ -472,31 +474,33 @@ void LLVMoptimise(llvm::Module& M, const llvm::OptimizationLevel opt)
+     MPM.run(M, MAM);
+ }
+ 
+-void optimise(llvm::Module& module, const CompilerOptions::OptLevel optLevel)
++void optimise(llvm::Module& module,
++    const CompilerOptions::OptLevel optLevel,
++    llvm::TargetMachine* TM)
+ {
+     switch (optLevel) {
+         case CompilerOptions::OptLevel::O0 : {
+-            LLVMoptimise(module, llvm::OptimizationLevel::O0);
++            LLVMoptimise(module, llvm::OptimizationLevel::O0, TM);
+             break;
+         }
+         case CompilerOptions::OptLevel::O1 : {
+-            LLVMoptimise(module, llvm::OptimizationLevel::O1);
++            LLVMoptimise(module, llvm::OptimizationLevel::O1, TM);
+             break;
+         }
+         case CompilerOptions::OptLevel::O2 : {
+-            LLVMoptimise(module, llvm::OptimizationLevel::O2);
++            LLVMoptimise(module, llvm::OptimizationLevel::O2, TM);
+             break;
+         }
+         case CompilerOptions::OptLevel::Os : {
+-            LLVMoptimise(module, llvm::OptimizationLevel::Os);
++            LLVMoptimise(module, llvm::OptimizationLevel::Os, TM);
+             break;
+         }
+         case CompilerOptions::OptLevel::Oz : {
+-            LLVMoptimise(module, llvm::OptimizationLevel::Oz);
++            LLVMoptimise(module, llvm::OptimizationLevel::Oz, TM);
+             break;
+         }
+         case CompilerOptions::OptLevel::O3 : {
+-            LLVMoptimise(module, llvm::OptimizationLevel::O3);
++            LLVMoptimise(module, llvm::OptimizationLevel::O3, TM);
+             break;
+         }
+         case CompilerOptions::OptLevel::NONE :
+@@ -953,10 +957,24 @@ Compiler::compile(const ast::Tree& tree,
+         return nullptr;
+     }
+ 
++    // create the target machine for optimization passes in the new PM.
++    // The LLJIT engine creates this in the same way (there doesn't seem to be
++    // an easy way to retrieve the TM from the EE - could instead pass out JITTM
++    // to the EE to be clearer that these are expected to match).
++
++    std::unique_ptr<llvm::TargetMachine> TM{nullptr};
++    if (auto JITTM = llvm::orc::JITTargetMachineBuilder::detectHost()) {
++        llvm::Expected<std::unique_ptr<llvm::TargetMachine>> result = JITTM->createTargetMachine();
++        if (result) TM = std::move(*result);
++    }
++    if (!TM) {
++        logger.warning("Unable to determine CPU host features");
++    }
++
+     // optimise and verify
+ 
+     if (mCompilerOptions.mVerify && !verify(M, logger)) return nullptr;
+-    optimise(M, mCompilerOptions.mOptLevel);
++    optimise(M, mCompilerOptions.mOptLevel, TM.get());
+     if (mCompilerOptions.mOptLevel != CompilerOptions::OptLevel::NONE) {
+         if (mCompilerOptions.mVerify && !verify(M, logger)) return nullptr;
+     }
+diff --git a/pendingchanges/axoptfix.txt b/pendingchanges/axoptfix.txt
+new file mode 100644
+index 0000000000..eafedad842
+--- /dev/null
++++ b/pendingchanges/axoptfix.txt
+@@ -0,0 +1,4 @@
++OpenVDB AX:
++  Fixes:
++  - Fixed an issue which was causing host specific optimization passes to be 
++  	omitted when using LLVM 16 and higher.

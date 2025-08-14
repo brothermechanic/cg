@@ -20,6 +20,7 @@ HOMEPAGE="https://www.blender.org"
 EGIT_REPO_URI="https://projects.blender.org/blender/blender.git https://github.com/blender/blender.git"
 EGIT_SUBMODULES=( '*' '-lib/*' '-tools/*' '-release/datafiles/assets' )
 EGIT_LFS="yes"
+EGIT_LFS_CLONE_TYPE="single"
 if [[ ${PV} == 9999 ]]; then
 	EGIT_BRANCH="main"
 	#EGIT_COMMIT="0f3fdd25bcabac1d68d02fb246d961ea56fe49a1"
@@ -106,15 +107,15 @@ REQUIRED_USE="${PYTHON_REQUIRED_USE}
 	oneapi? ( cycles )
 	optix? ( cycles )
 	openvdb? ( ${OPENVDB_REQUIRED_USE} cycles tbb )
-	opensubdiv? ( X )
 	osl? ( cycles llvm pugixml )
 	hip? ( cycles llvm )
 	vulkan? ( llvm )
 	test? ( gtests color-management )
 	usd? ( tbb )
 "
+# opensubdiv? ( X )
 
-LANGS="en en_GB ab ar be bg ca cs da de el eo es es_ES eu fa fi fr ha he hi hr hu id it ja ka km ko ky lt ne nl pl pt_BR pt ro ru sl sk sr@latin sr sv sw ta th tr zh_TW uk ur vi zh_CN zh_HANS zh_HANT"
+LANGS="en en_GB ab ar be bg ca cs da de el eo es es_ES eu fa fi fr ha he hi hr hu id it ja ka km ko ky lt ml ne nl pl pt_BR pt ro ru sl sk sr@latin sr sv sw ta th tr zh_TW uk ur vi zh_CN zh_HANS zh_HANT"
 
 for X in ${LANGS} ; do
 	IUSE+=" l10n_${X}"
@@ -250,7 +251,7 @@ RDEPEND="
 		<media-libs/osl-1.$((${OSL_PV}+1)):=[optix?]
 		media-libs/mesa[${LLVM_USEDEP}]
 	)
-	pdf? ( >=media-libs/libharu-2.3.0 )
+	pdf? ( >=media-libs/libharu-2.4.5 )
 	potrace? ( >=media-gfx/potrace-1.16 )
 	pugixml? ( dev-libs/pugixml )
 	pulseaudio? ( media-libs/libpulse )
@@ -265,7 +266,7 @@ RDEPEND="
 	valgrind? ( dev-debug/valgrind )
 	webp? ( >=media-libs/libwebp-1.3.2:= )
 	wayland? (
-		>=dev-libs/wayland-1.23
+		>=dev-libs/wayland-1.24
 		>=dev-libs/wayland-protocols-1.36
 		>=x11-libs/libxkbcommon-0.2.0
 		dev-util/wayland-scanner
@@ -301,7 +302,7 @@ RDEPEND="
 "
 
 DEPEND="
-	dev-cpp/eigen:=[cuda?]
+	dev-cpp/eigen:=[cuda?,tbb?]
 	vulkan? (
 		>=media-libs/shaderc-2022.3
 		>=media-libs/vulkan-loader-1.3.268[X?,wayland?,layers]
@@ -1033,7 +1034,7 @@ src_install() {
 	# Fix doc installdir
 	docinto html
 	dodoc "${CMAKE_USE_DIR}/release/text/readme.html"
-	rm -r "${ED%/}/usr/share/doc/blender*"
+	rm -r "${ED%/}/usr/share/doc/blender"*
 	python_optimize "${ED%/}/usr/share/blender/${SLOT}/scripts"
 
 	use portable && dodir "${ED%/}"/usr/bin
