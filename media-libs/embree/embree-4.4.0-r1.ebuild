@@ -1,4 +1,4 @@
-# Copyright 1999-2024 Gentoo Authors
+# Copyright 1999-2025 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
 
 EAPI=8
@@ -143,6 +143,9 @@ DOCS=( CHANGELOG.md README.md readme.pdf )
 
 PATCHES=(
 	"${FILESDIR}/${PN}-4.3.2-findtbb-alt-lib-path.patch"
+	"${FILESDIR}/${PN}-4.4.0-fix-includes-gcc15-pr557.patch"
+	"${FILESDIR}/${PN}-4.4.0-fix-typo-cmake-pr546.patch"
+	"${FILESDIR}/${PN}-4.4.0-fix-clang-flags.patch"
 )
 
 RESTRICT="mirror"
