@@ -1,0 +1,818 @@
+From bd4e20af868d231829be66b48b6a95a660b66778 Mon Sep 17 00:00:00 2001
+From: Aleksi Sapon <aleksi.sapon@autodesk.com>
+Date: Mon, 21 Jul 2025 15:31:39 -0400
+Subject: [PATCH] [hdSt, hgiVulkan] UMA and ReBAR support
+
+---
+ pxr/imaging/hdSt/resourceRegistry.cpp  |  16 ++-
+ pxr/imaging/hdSt/stagingBuffer.cpp     |  12 +-
+ pxr/imaging/hdSt/stagingBuffer.h       |   4 +-
+ pxr/imaging/hgiVulkan/blitCmds.cpp     |  81 ++++++-------
+ pxr/imaging/hgiVulkan/buffer.cpp       | 154 ++++++++++++++-----------
+ pxr/imaging/hgiVulkan/buffer.h         |  46 +++++++-
+ pxr/imaging/hgiVulkan/capabilities.cpp |  64 +++++++++-
+ pxr/imaging/hgiVulkan/texture.cpp      |  24 ++--
+ pxr/imaging/hgiVulkan/texture.h        |   7 +-
+ 9 files changed, 265 insertions(+), 143 deletions(-)
+
+diff --git a/pxr/imaging/hdSt/resourceRegistry.cpp b/pxr/imaging/hdSt/resourceRegistry.cpp
+index 0fbf362674..6b13caa9d6 100644
+--- a/pxr/imaging/hdSt/resourceRegistry.cpp
++++ b/pxr/imaging/hdSt/resourceRegistry.cpp
+@@ -843,15 +843,18 @@ HdStResourceRegistry::_Commit()
+                                 if (req.range && req.range->RequiresStaging()) {
+                                     const size_t numElements =
+                                         source->GetNumElements();
+-                                    // Avoid calling functions on 
++                                    // Avoid calling functions on
+                                     // HdNullBufferSources
+                                     if (numElements > 0) {
+-                                        stagingBufferSize += numElements *
++                                        stagingBufferSize.fetch_add(
++                                            numElements *
+                                             HdDataSizeOfTupleType(
+-                                                source->GetTupleType());
++                                                source->GetTupleType()),
++                                                std::memory_order_relaxed);
+                                     }
+-                                    stagingBufferSize += 
+-                                        _GetChainedStagingSize(source);
++                                    stagingBufferSize.fetch_add(
++                                        _GetChainedStagingSize(source),
++                                        std::memory_order_relaxed);
+                                 }
+                             }
+                         }
+@@ -934,7 +937,8 @@ HdStResourceRegistry::_Commit()
+         HD_TRACE_SCOPE("Copy");
+         // 4. copy phase:
+         //
+-        _stagingBuffer->Resize(stagingBufferSize);
++        _stagingBuffer->Resize(
++            stagingBufferSize.load(std::memory_order_relaxed));
+ 
+         for (_PendingSource &pendingSource : _pendingSources) {
+             HdBufferArrayRangeSharedPtr &dstRange = pendingSource.range;
+diff --git a/pxr/imaging/hdSt/stagingBuffer.cpp b/pxr/imaging/hdSt/stagingBuffer.cpp
+index 15383fa6ec..1a663b2a0f 100644
+--- a/pxr/imaging/hdSt/stagingBuffer.cpp
++++ b/pxr/imaging/hdSt/stagingBuffer.cpp
+@@ -19,7 +19,7 @@ HdStStagingBuffer::HdStStagingBuffer(HdStResourceRegistry *resourceRegistry)
+     , _capacity(0)
+     , _activeSlot(0)
+ {
+-    _tripleBuffered = resourceRegistry->GetHgi()->GetCapabilities()->
++    _isUma = resourceRegistry->GetHgi()->GetCapabilities()->
+                           IsSet(HgiDeviceCapabilitiesBitsUnifiedMemory);
+ }
+ 
+@@ -70,8 +70,8 @@ HdStStagingBuffer::StageCopy(HgiBufferCpuToGpuOp const &copyOp)
+     // expensive than just submitting the CPU to GPU copy operation directly.
+     // The value of 'queueThreshold' is estimated (when is the extra memcpy
+     // into the staging buffer slower than immediately issuing a gpu upload)
+-    static const int queueThreshold = 512*1024;
+-    if (!_tripleBuffered && copyOp.byteSize > queueThreshold) {
++    static constexpr int queueThreshold = 512 * 1024;
++    if (!_isUma && copyOp.byteSize > queueThreshold) {
+         HgiBlitCmds* blitCmds = _resourceRegistry->GetGlobalBlitCmds();
+         blitCmds->CopyBufferCpuToGpu(copyOp);
+         return;
+@@ -153,7 +153,7 @@ HdStStagingBuffer::Flush()
+ 
+     blitCmds->PushDebugGroup(__ARCH_PRETTY_FUNCTION__);
+ 
+-    if (!_tripleBuffered) {
++    if (!_isUma) {
+         // If this isn't UMA then blit the staging buffer to GPU.
+         HgiBufferCpuToGpuOp op;
+         HgiBufferHandle buffer = _handles[_activeSlot];
+@@ -166,9 +166,9 @@ HdStStagingBuffer::Flush()
+         op.destinationByteOffset = 0;
+         op.byteSize = _head;
+         blitCmds->CopyBufferCpuToGpu(op);
+-        blitCmds->InsertMemoryBarrier(HgiMemoryBarrierAll);
+     }
+ 
++    blitCmds->InsertMemoryBarrier(HgiMemoryBarrierAll);
+     for (auto const &copyOp : _gpuCopyOps) {
+         blitCmds->CopyBufferGpuToGpu(copyOp);
+     }
+@@ -178,7 +178,7 @@ HdStStagingBuffer::Flush()
+     _gpuCopyOps.clear();
+     _head = 0;
+ 
+-    if (_tripleBuffered) {
++    if (_isUma) {
+         _activeSlot++;
+         _activeSlot = (_activeSlot < MULTIBUFFERING) ? _activeSlot : 0;
+     }
+diff --git a/pxr/imaging/hdSt/stagingBuffer.h b/pxr/imaging/hdSt/stagingBuffer.h
+index 750c4919d6..44e8194d6e 100644
+--- a/pxr/imaging/hdSt/stagingBuffer.h
++++ b/pxr/imaging/hdSt/stagingBuffer.h
+@@ -65,11 +65,11 @@ class HdStStagingBuffer
+ 
+     HdStResourceRegistry *_resourceRegistry;
+     HgiBufferHandle _handles[MULTIBUFFERING];
++    std::vector<HgiBufferGpuToGpuOp> _gpuCopyOps;
+     size_t _head;
+     size_t _capacity;
+     size_t _activeSlot;
+-    bool _tripleBuffered;
+-    std::vector<HgiBufferGpuToGpuOp> _gpuCopyOps;
++    bool _isUma;
+ };
+ 
+ PXR_NAMESPACE_CLOSE_SCOPE
+diff --git a/pxr/imaging/hgiVulkan/blitCmds.cpp b/pxr/imaging/hgiVulkan/blitCmds.cpp
+index b4bf6bd5c7..d0b0848ef2 100644
+--- a/pxr/imaging/hgiVulkan/blitCmds.cpp
++++ b/pxr/imaging/hgiVulkan/blitCmds.cpp
+@@ -391,24 +391,24 @@ void HgiVulkanBlitCmds::CopyBufferCpuToGpu(
+     if (!buffer->IsCPUStagingAddress(copyOp.cpuSourceBuffer) ||
+         copyOp.sourceByteOffset != copyOp.destinationByteOffset) {
+ 
+-        // Offset into the src buffer.
+-        const uint8_t* const src =
+-            static_cast<const uint8_t*>(copyOp.cpuSourceBuffer) +
+-                copyOp.sourceByteOffset;
++        // Offset into the src buffer
++        const auto src =
++            static_cast<const std::byte*>(copyOp.cpuSourceBuffer) +
++            copyOp.sourceByteOffset;
+ 
+         // Offset into the dst buffer.
+-        uint8_t* const dst =
+-            static_cast<uint8_t*>(buffer->GetCPUStagingAddress()) +
+-                copyOp.destinationByteOffset;
++        const auto dst =
++            static_cast<std::byte*>(buffer->GetCPUStagingAddress()) +
++            copyOp.destinationByteOffset;
+ 
+         memcpy(dst, src, copyOp.byteSize);
+     }
+ 
+-    // Schedule copy data from staging buffer to device-local buffer.
+-    HgiVulkanBuffer* stagingBuffer = buffer->GetStagingBuffer();
+-
+-    if (TF_VERIFY(stagingBuffer)) {
+-        VkBufferCopy copyRegion = {};
++    // Schedule copy data from staging buffer to device-local buffer if needed.
++    // With UMA/ReBAR, the staging address is already the device buffer, so no
++    // additional copy is necessary.
++    if (HgiVulkanBuffer* stagingBuffer = buffer->GetStagingBuffer()) {
++        VkBufferCopy copyRegion{};
+         // Note we use the destinationByteOffset as the srcOffset here. The staging buffer
+         // should be prepared with the same data layout of the destination buffer.
+         copyRegion.srcOffset = copyOp.destinationByteOffset;
+@@ -416,10 +416,10 @@ void HgiVulkanBlitCmds::CopyBufferCpuToGpu(
+         copyRegion.size = copyOp.byteSize;
+ 
+         vkCmdCopyBuffer(
+-            _commandBuffer->GetVulkanCommandBuffer(), 
++            _commandBuffer->GetVulkanCommandBuffer(),
+             stagingBuffer->GetVulkanBuffer(),
+             buffer->GetVulkanBuffer(),
+-            1, 
++            1,
+             &copyRegion);
+     }
+ }
+@@ -439,43 +439,44 @@ HgiVulkanBlitCmds::CopyBufferGpuToCpu(HgiBufferGpuToCpuOp const& copyOp)
+     HgiVulkanBuffer* buffer = static_cast<HgiVulkanBuffer*>(
+         copyOp.gpuSourceBuffer.Get());
+ 
+-    // Make sure there is a staging buffer in the buffer by asking for cpuAddr.
+-    void* cpuAddress = buffer->GetCPUStagingAddress();
+-    HgiVulkanBuffer* stagingBuffer = buffer->GetStagingBuffer();
+-    if (!TF_VERIFY(stagingBuffer)) {
+-        return;
++    // Schedule copy data from device-local buffer to staging buffer if needed.
++    // With UMA/ReBAR, the staging address is already the device buffer, so no
++    // additional copy is necessary.
++    size_t srcOffset = copyOp.sourceByteOffset;
++    if (HgiVulkanBuffer* stagingBuffer = buffer->GetStagingBuffer()) {
++        // Copy from device-local GPU buffer into CPU staging buffer
++        VkBufferCopy copyRegion = {};
++        copyRegion.srcOffset = srcOffset;
++        // No need to use dst offset during intermediate step of copying into 
++        // staging buffer.
++        copyRegion.dstOffset = 0;
++        copyRegion.size = copyOp.byteSize;
++        vkCmdCopyBuffer(
++            _commandBuffer->GetVulkanCommandBuffer(), 
++            buffer->GetVulkanBuffer(),
++            stagingBuffer->GetVulkanBuffer(),
++            1, 
++            &copyRegion);
++        // No need to offset into the staging buffer for the next copy.
++        srcOffset = 0;
+     }
+ 
+-    // Copy from device-local GPU buffer into GPU staging buffer
+-    VkBufferCopy copyRegion = {};
+-    copyRegion.srcOffset = copyOp.sourceByteOffset;
+-    // No need to use dst offset during intermediate step of copying into 
+-    // staging buffer.
+-    copyRegion.dstOffset = 0;
+-    copyRegion.size = copyOp.byteSize;
+-    vkCmdCopyBuffer(
+-        _commandBuffer->GetVulkanCommandBuffer(), 
+-        buffer->GetVulkanBuffer(),
+-        stagingBuffer->GetVulkanBuffer(),
+-        1, 
+-        &copyRegion);
+-
+-    // Next schedule a callback when the above GPU-GPU copy completes.
++    // Next schedule a callback when the above GPU-CPU copy completes.
+ 
+     // Offset into the dst buffer
+-    char* dst = ((char*) copyOp.cpuDestinationBuffer) +
++    const auto dst = static_cast<std::byte*>(copyOp.cpuDestinationBuffer) +
+         copyOp.destinationByteOffset;
+ 
+-    // No need to offset into src buffer since we copied into staging buffer
+-    // without dst offset.
+-    const char* src = ((const char*) cpuAddress);
++    const auto src =
++        static_cast<const std::byte*>(buffer->GetCPUStagingAddress()) +
++        srcOffset;
+ 
+     // bytes to copy
+-    size_t size = copyOp.byteSize;
++    const size_t size = copyOp.byteSize;
+ 
+     // Copy to cpu buffer when cmd buffer has been executed
+     _commandBuffer->AddCompletedHandler(
+-        [dst, src, size]{ memcpy(dst, src, size);}
++        [dst, src, size]{ memcpy(dst, src, size); }
+     );
+ }
+ 
+diff --git a/pxr/imaging/hgiVulkan/buffer.cpp b/pxr/imaging/hgiVulkan/buffer.cpp
+index 7484e71e12..907fa0ade1 100644
+--- a/pxr/imaging/hgiVulkan/buffer.cpp
++++ b/pxr/imaging/hgiVulkan/buffer.cpp
+@@ -17,7 +17,6 @@
+ 
+ PXR_NAMESPACE_OPEN_SCOPE
+ 
+-
+ HgiVulkanBuffer::HgiVulkanBuffer(
+     HgiVulkan* hgi,
+     HgiVulkanDevice* device,
+@@ -27,8 +26,8 @@ HgiVulkanBuffer::HgiVulkanBuffer(
+     , _vkBuffer(nullptr)
+     , _vmaAllocation(nullptr)
+     , _inflightBits(0)
+-    , _stagingBuffer(nullptr)
+     , _cpuStagingAddress(nullptr)
++    , _isUma(false)
+ {
+     if (_descriptor.byteSize == 0) {
+         TF_CODING_ERROR("The size of buffer [%p] is zero.", this);
+@@ -52,9 +51,16 @@ HgiVulkanBuffer::HgiVulkanBuffer(
+     VmaAllocationCreateInfo ai = {};
+     ai.preferredFlags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT; // GPU efficient
+ 
++    if (hgi->GetCapabilities()->
++        IsSet(HgiDeviceCapabilitiesBitsUnifiedMemory)) {
++        _isUma = true;
++        ai.requiredFlags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT |
++                           VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
++                           VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
++    }
++
+     HGIVULKAN_VERIFY_VK_RESULT(
+-        vmaCreateBuffer(vma,&bi,&ai,&_vkBuffer,&_vmaAllocation,0)
+-    );
++        vmaCreateBuffer(vma, &bi, &ai, &_vkBuffer, &_vmaAllocation, 0));
+ 
+     // Debug label
+     if (!_descriptor.debugName.empty()) {
+@@ -67,36 +73,41 @@ HgiVulkanBuffer::HgiVulkanBuffer(
+     }
+ 
+     if (_descriptor.initialData) {
+-        // Use a 'staging buffer' to schedule uploading the 'initialData' to
+-        // the device-local GPU buffer.
+-        HgiBufferDesc stagingDesc = _descriptor;
+-        if (!stagingDesc.debugName.empty()) {
+-            stagingDesc.debugName =
+-                "Staging Buffer for " + stagingDesc.debugName;
++        if (const auto umaPointer = GetUmaPointer()) {
++            memcpy(umaPointer.get(), _descriptor.initialData,
++                _descriptor.byteSize);
++        } else {
++            // Use a 'staging buffer' to schedule uploading the 'initialData' to
++            // the device-local GPU buffer.
++            HgiBufferDesc stagingDesc = _descriptor;
++            if (!stagingDesc.debugName.empty()) {
++                stagingDesc.debugName =
++                    "Staging Buffer for " + stagingDesc.debugName;
++            }
++
++            std::unique_ptr<HgiVulkanBuffer> stagingBuffer = CreateStagingBuffer(
++                _device, stagingDesc);
++            VkBuffer vkStagingBuf = stagingBuffer->GetVulkanBuffer();
++
++            HgiVulkanCommandQueue* queue = device->GetCommandQueue();
++            HgiVulkanCommandBuffer* cb = queue->AcquireResourceCommandBuffer();
++            VkCommandBuffer vkCmdBuf = cb->GetVulkanCommandBuffer();
++
++            // Copy data from staging buffer to device-local buffer.
++            VkBufferCopy copyRegion = {};
++            copyRegion.srcOffset = 0;
++            copyRegion.dstOffset = 0;
++            copyRegion.size = stagingDesc.byteSize;
++            vkCmdCopyBuffer(vkCmdBuf, vkStagingBuf, _vkBuffer, 1, &copyRegion);
++
++            // We don't know if this buffer is a static (immutable) or
++            // dynamic (animated) buffer. We assume that most buffers are
++            // static and schedule garbage collection of staging resource.
++            HgiBufferHandle stagingHandle(stagingBuffer.release(), 0);
++            hgi->TrashObject(
++                &stagingHandle,
++                hgi->GetGarbageCollector()->GetBufferList());
+         }
+-
+-        HgiVulkanBuffer* stagingBuffer = CreateStagingBuffer(
+-            _device, stagingDesc);
+-        VkBuffer vkStagingBuf = stagingBuffer->GetVulkanBuffer();
+-
+-        HgiVulkanCommandQueue* queue = device->GetCommandQueue();
+-        HgiVulkanCommandBuffer* cb = queue->AcquireResourceCommandBuffer();
+-        VkCommandBuffer vkCmdBuf = cb->GetVulkanCommandBuffer();
+-
+-        // Copy data from staging buffer to device-local buffer.
+-        VkBufferCopy copyRegion = {};
+-        copyRegion.srcOffset = 0;
+-        copyRegion.dstOffset = 0;
+-        copyRegion.size = stagingDesc.byteSize;
+-        vkCmdCopyBuffer(vkCmdBuf, vkStagingBuf, _vkBuffer, 1, &copyRegion);
+-
+-        // We don't know if this buffer is a static (immutable) or
+-        // dynamic (animated) buffer. We assume that most buffers are
+-        // static and schedule garbage collection of staging resource.
+-        HgiBufferHandle stagingHandle(stagingBuffer, 0);
+-        hgi->TrashObject(
+-            &stagingHandle,
+-            hgi->GetGarbageCollector()->GetBufferList());
+     }
+ 
+     _descriptor.initialData = nullptr;
+@@ -114,19 +125,13 @@ HgiVulkanBuffer::HgiVulkanBuffer(
+     , _inflightBits(0)
+     , _stagingBuffer(nullptr)
+     , _cpuStagingAddress(nullptr)
++    , _isUma(false)
+ {
+ }
+ 
+ HgiVulkanBuffer::~HgiVulkanBuffer()
+ {
+-    if (_cpuStagingAddress && _stagingBuffer) {
+-        vmaUnmapMemory(
+-            _device->GetVulkanMemoryAllocator(),
+-            _stagingBuffer->GetVulkanMemoryAllocation());
+-        _cpuStagingAddress = nullptr;
+-    }
+-
+-    delete _stagingBuffer;
++    _cpuStagingAddress = nullptr;
+     _stagingBuffer = nullptr;
+ 
+     vmaDestroyBuffer(
+@@ -150,36 +155,37 @@ HgiVulkanBuffer::GetRawResource() const
+ void*
+ HgiVulkanBuffer::GetCPUStagingAddress()
+ {
+-    if (!_stagingBuffer) {
+-        HgiBufferDesc stagingDesc = _descriptor;
+-        stagingDesc.initialData = nullptr;
+-        if (!stagingDesc.debugName.empty()) {
+-            stagingDesc.debugName =
+-                "Staging Buffer for " + stagingDesc.debugName;
+-        }
+-
+-        _stagingBuffer = CreateStagingBuffer(_device, stagingDesc);
++    if (!_cpuStagingAddress) {
++        _cpuStagingAddress = GetUmaPointer();
+     }
+ 
+     if (!_cpuStagingAddress) {
+-        HGIVULKAN_VERIFY_VK_RESULT(
+-            vmaMapMemory(
+-                _device->GetVulkanMemoryAllocator(),
+-                _stagingBuffer->GetVulkanMemoryAllocation(),
+-                &_cpuStagingAddress)
+-        );
++        if (!_stagingBuffer) {
++            HgiBufferDesc stagingDesc = _descriptor;
++            stagingDesc.initialData = nullptr;
++            if (!stagingDesc.debugName.empty()) {
++                stagingDesc.debugName =
++                    "Staging Buffer for " + stagingDesc.debugName;
++            }
++
++            _stagingBuffer = CreateStagingBuffer(_device, stagingDesc);
++        }
++
++        VmaAllocator vma = _device->GetVulkanMemoryAllocator();
++        VmaAllocation allocation = _stagingBuffer->GetVulkanMemoryAllocation();
++        void* memory = nullptr;
++        HGIVULKAN_VERIFY_VK_RESULT(vmaMapMemory(vma, allocation, &memory));
++        _cpuStagingAddress = HgiVulkanMappedMemoryUniquePointer{memory,
++            {vma, _vmaAllocation}};
+     }
+ 
+-    // This lets the client code memcpy into the staging buffer directly.
+-    // The staging data must be explicitely copied to the device-local
+-    // GPU buffer via CopyBufferCpuToGpu cmd by the client.
+-    return _cpuStagingAddress;
++    return _cpuStagingAddress.get();
+ }
+ 
+ bool
+ HgiVulkanBuffer::IsCPUStagingAddress(const void* address) const
+ {
+-    return (address == _cpuStagingAddress);
++    return address == _cpuStagingAddress.get();
+ }
+ 
+ VkBuffer
+@@ -195,9 +201,10 @@ HgiVulkanBuffer::GetVulkanMemoryAllocation() const
+ }
+ 
+ HgiVulkanBuffer*
+-HgiVulkanBuffer::GetStagingBuffer() const
++HgiVulkanBuffer::GetStagingBuffer()
+ {
+-    return _stagingBuffer;
++    (void)GetCPUStagingAddress();
++    return _stagingBuffer.get();
+ }
+ 
+ HgiVulkanDevice*
+@@ -212,7 +219,20 @@ HgiVulkanBuffer::GetInflightBits()
+     return _inflightBits;
+ }
+ 
+-HgiVulkanBuffer*
++HgiVulkanMappedMemoryUniquePointer
++HgiVulkanBuffer::GetUmaPointer() const
++{
++    if (!_isUma) {
++        return {};
++    }
++
++    VmaAllocator vma = _device->GetVulkanMemoryAllocator();
++    void* memory = nullptr;
++    HGIVULKAN_VERIFY_VK_RESULT(vmaMapMemory(vma, _vmaAllocation, &memory));
++    return HgiVulkanMappedMemoryUniquePointer(memory, {vma, _vmaAllocation});
++}
++
++std::unique_ptr<HgiVulkanBuffer>
+ HgiVulkanBuffer::CreateStagingBuffer(
+     HgiVulkanDevice* device,
+     HgiBufferDesc const& desc)
+@@ -247,8 +267,8 @@ HgiVulkanBuffer::CreateStagingBuffer(
+         vmaUnmapMemory(vma, alloc);
+     }
+ 
+-    // Return new staging buffer (caller manages lifetime)
+-    return new HgiVulkanBuffer(device, buffer, alloc, desc);
++    return std::unique_ptr<HgiVulkanBuffer>(
++        new HgiVulkanBuffer{device, buffer, alloc, desc});
+ }
+ 
+-PXR_NAMESPACE_CLOSE_SCOPE
+\ No newline at end of file
++PXR_NAMESPACE_CLOSE_SCOPE
+diff --git a/pxr/imaging/hgiVulkan/buffer.h b/pxr/imaging/hgiVulkan/buffer.h
+index acc56041fa..5d90f4e776 100644
+--- a/pxr/imaging/hgiVulkan/buffer.h
++++ b/pxr/imaging/hgiVulkan/buffer.h
+@@ -17,6 +17,36 @@ class HgiVulkan;
+ class HgiVulkanCommandBuffer;
+ class HgiVulkanDevice;
+ 
++///
++/// \struct HgiVulkanUmaUniquePointerDeleter
++///
++/// For use with std::unique_ptr. Unmaps a pointer to host visible memory when
++/// the owning pointer is destroyed.
++///
++struct HgiVulkanMappedMemoryUniquePointerDeleter
++{
++    void operator()([[maybe_unused]] void* memory) const
++    {
++        vmaUnmapMemory(_vma, _allocation);
++    }
++
++    HgiVulkanMappedMemoryUniquePointerDeleter() = default;
++
++    HgiVulkanMappedMemoryUniquePointerDeleter(VmaAllocator vma,
++        VmaAllocation allocation)
++        : _vma(vma)
++        , _allocation(allocation)
++    {
++    }
++
++private:
++    VmaAllocator _vma{};
++    VmaAllocation _allocation{};
++};
++
++using HgiVulkanMappedMemoryUniquePointer =
++    std::unique_ptr<void, HgiVulkanMappedMemoryUniquePointerDeleter>;
++
+ ///
+ /// \class HgiVulkanBuffer
+ ///
+@@ -51,7 +81,7 @@ class HgiVulkanBuffer final : public HgiBuffer
+ 
+     /// Returns the staging buffer.
+     HGIVULKAN_API
+-    HgiVulkanBuffer* GetStagingBuffer() const;
++    HgiVulkanBuffer* GetStagingBuffer();
+ 
+     /// Returns the device used to create this object.
+     HGIVULKAN_API
+@@ -61,10 +91,17 @@ class HgiVulkanBuffer final : public HgiBuffer
+     HGIVULKAN_API
+     uint64_t & GetInflightBits();
+ 
++    /// Returns a device local, host writeable pointer to the buffer allocaiton,
++    /// if UMA or equivalent like ReBAR is available. Returns null otherwise.
++    /// Writing sequentially to this pointer should be the fastest way to write
++    /// to device memory.
++    HGIVULKAN_API
++    HgiVulkanMappedMemoryUniquePointer GetUmaPointer() const;
++
+     /// Creates a staging buffer.
+     /// The caller is responsible for the lifetime (destruction) of the buffer.
+     HGIVULKAN_API
+-    static HgiVulkanBuffer* CreateStagingBuffer(
++    static std::unique_ptr<HgiVulkanBuffer> CreateStagingBuffer(
+         HgiVulkanDevice* device,
+         HgiBufferDesc const& desc);
+ 
+@@ -95,8 +132,9 @@ class HgiVulkanBuffer final : public HgiBuffer
+     VkBuffer _vkBuffer;
+     VmaAllocation _vmaAllocation;
+     uint64_t _inflightBits;
+-    HgiVulkanBuffer* _stagingBuffer;
+-    void* _cpuStagingAddress;
++    std::unique_ptr<HgiVulkanBuffer> _stagingBuffer;
++    HgiVulkanMappedMemoryUniquePointer _cpuStagingAddress;
++    bool _isUma;
+ };
+ 
+ 
+diff --git a/pxr/imaging/hgiVulkan/capabilities.cpp b/pxr/imaging/hgiVulkan/capabilities.cpp
+index a1c427ae25..3ad1d65f54 100644
+--- a/pxr/imaging/hgiVulkan/capabilities.cpp
++++ b/pxr/imaging/hgiVulkan/capabilities.cpp
+@@ -23,6 +23,9 @@ TF_DEFINE_ENV_SETTING(HGIVULKAN_ENABLE_BUILTIN_BARYCENTRICS, false,
+                       "Use Vulkan built in barycentric coordinates");
+ TF_DEFINE_ENV_SETTING(HGIVULKAN_ENABLE_NATIVE_INTEROP, true,
+                       "Enable native interop with OpenGL (if device supports)");
++TF_DEFINE_ENV_SETTING(HGIVULKAN_DISABLE_UMA_OR_REBAR, false,
++                      "Don't use Vulkan with UMA/ReBAR even if supported");
++
+ static void _DumpDeviceDeviceMemoryProperties(
+     const VkPhysicalDeviceMemoryProperties& vkMemoryProperties)
+ {
+@@ -80,6 +83,57 @@ static void _DumpDeviceDeviceMemoryProperties(
+     std::cout << std::flush;
+ }
+ 
++// Returns true if the device supports UMA (uniform memory access) or something
++// equivalent like ReBAR (resizable base address register). This should be true
++// for integrated GPUs, dedicated GPUs on systems with ReBAR enabled, and
++// software renderers (like Lavapipe). For simplicity we'll refer to UMA or
++// ReBAR as just "UMA".
++static bool
++_SupportsUma(const VkPhysicalDeviceMemoryProperties& memoryProperties)
++{
++    if (TfGetEnvSetting(HGIVULKAN_DISABLE_UMA_OR_REBAR)) {
++        return false;
++    }
++
++    for (uint32_t heapIndex = 0;
++        heapIndex < memoryProperties.memoryHeapCount; heapIndex++) {
++        const auto& heap = memoryProperties.memoryHeaps[heapIndex];
++
++        // ReBAR has a more basic predecessor called simply BAR. It's limited
++        // to only 256MiB, but otherwise has the exact same flags. While it has
++        // its uses for small resources that change often like uniforms, it
++        // would be much more difficult to use with Hgi, so we'll ignore it.
++        static constexpr size_t barMaxSize = 256 * 1024 * 1024;
++        if (!(heap.flags & VK_MEMORY_HEAP_DEVICE_LOCAL_BIT) ||
++            heap.size <= barMaxSize) {
++            continue;
++        }
++
++         for (uint32_t typeIndex = 0;
++                typeIndex < memoryProperties.memoryTypeCount; typeIndex++) {
++            const auto& memoryType = memoryProperties.memoryTypes[typeIndex];
++            if (memoryType.heapIndex != heapIndex) {
++                continue;
++            }
++
++            // We're looking for a heap that's on the device, but is host
++            // visible. We also want host coherence so writes are automatically
++            // visible and available on the device. Heaps with these properties
++            // show up on UMA and ReBAR enabled GPUs. See:
++            // https://asawicki.info/news_1740_vulkan_memory_types_on_pc_and_how_to_use_them
++            static constexpr auto umaFlags =
++                VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT |
++                VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
++                VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
++             if ((memoryType.propertyFlags & umaFlags) == umaFlags) {
++                return true;
++            }
++        }
++    }
++
++    return false;
++}
++
+ HgiVulkanCapabilities::HgiVulkanCapabilities(HgiVulkanDevice* device)
+     : supportsTimeStamps(false),
+     supportsNativeInterop(false)
+@@ -198,8 +252,11 @@ HgiVulkanCapabilities::HgiVulkanCapabilities(HgiVulkanDevice* device)
+     TF_VERIFY(
+         vkVertexAttributeDivisorFeatures.vertexAttributeInstanceRateDivisor);
+ 
++    const bool unifiedMemory = _SupportsUma(vkMemoryProperties);
+     if (HgiVulkanIsDebugEnabled()) {
+-        TF_WARN("Selected GPU %s", vkDeviceProperties2.properties.deviceName);
++        TF_WARN("Selected GPU: \"%s\"%s",
++            vkDeviceProperties2.properties.deviceName,
++            unifiedMemory ? " (UMA/ReBAR)" : "");
+     }
+ 
+     _maxClipDistances = vkDeviceProperties2.properties.limits.maxClipDistances;
+@@ -210,8 +267,8 @@ HgiVulkanCapabilities::HgiVulkanCapabilities(HgiVulkanDevice* device)
+     _uniformBufferOffsetAlignment =
+         vkDeviceProperties2.properties.limits.minUniformBufferOffsetAlignment;
+ 
+-    const bool conservativeRasterEnabled = (device->IsSupportedExtension(
+-        VK_EXT_CONSERVATIVE_RASTERIZATION_EXTENSION_NAME));
++    const bool conservativeRasterEnabled = device->IsSupportedExtension(
++        VK_EXT_CONSERVATIVE_RASTERIZATION_EXTENSION_NAME);
+     const bool shaderDrawParametersEnabled =
+         vkVulkan11Features.shaderDrawParameters;
+     bool multiDrawIndirectEnabled = true;
+@@ -227,6 +284,7 @@ HgiVulkanCapabilities::HgiVulkanCapabilities(HgiVulkanDevice* device)
+         builtinBarycentricsEnabled = false;
+     }
+ 
++    _SetFlag(HgiDeviceCapabilitiesBitsUnifiedMemory, unifiedMemory);
+     _SetFlag(HgiDeviceCapabilitiesBitsDepthRangeMinusOnetoOne, false);
+     _SetFlag(HgiDeviceCapabilitiesBitsStencilReadback, true);
+     _SetFlag(HgiDeviceCapabilitiesBitsShaderDoublePrecision, true);
+diff --git a/pxr/imaging/hgiVulkan/texture.cpp b/pxr/imaging/hgiVulkan/texture.cpp
+index fd55a2f2cd..6123f5ee4d 100644
+--- a/pxr/imaging/hgiVulkan/texture.cpp
++++ b/pxr/imaging/hgiVulkan/texture.cpp
+@@ -19,6 +19,7 @@
+ 
+ PXR_NAMESPACE_OPEN_SCOPE
+ 
++
+ static bool
+ _CheckFormatSupport(
+     VkPhysicalDevice pDevice,
+@@ -60,7 +61,6 @@ HgiVulkanTexture::HgiVulkanTexture(
+     bool optimalTiling,
+     bool interop)
+     : HgiTexture(desc)
+-    , _isTextureView(false)
+     , _vkImage(nullptr)
+     , _vkImageView(nullptr)
+     , _vkImageLayout(VK_IMAGE_LAYOUT_UNDEFINED)
+@@ -69,6 +69,7 @@ HgiVulkanTexture::HgiVulkanTexture(
+     , _inflightBits(0)
+     , _stagingBuffer(nullptr)
+     , _cpuStagingAddress(nullptr)
++    , _isTextureView(false)
+ {
+     GfVec3i const& dimensions = desc.dimensions;
+     bool const isDepthBuffer = desc.usage & HgiTextureUsageBitsDepthTarget;
+@@ -231,18 +232,18 @@ HgiVulkanTexture::HgiVulkanTexture(
+         stageDesc.byteSize = 
+             std::min(GetByteSizeOfResource(), desc.pixelsByteSize);
+         stageDesc.initialData = desc.initialData;
+-        HgiVulkanBuffer* stagingBuffer = 
++        std::unique_ptr<HgiVulkanBuffer> stagingBuffer =
+             HgiVulkanBuffer::CreateStagingBuffer(_device, stageDesc);
+ 
+         // Schedule transfer from staging buffer to device-local texture
+         HgiVulkanCommandQueue* queue = device->GetCommandQueue();
+         HgiVulkanCommandBuffer* cb = queue->AcquireResourceCommandBuffer();
+-        CopyBufferToTexture(cb, stagingBuffer);
++        CopyBufferToTexture(cb, stagingBuffer.get());
+ 
+         // We don't know if this texture is a static (immutable) or
+         // dynamic (animated) texture. We assume that most textures are
+         // static and schedule garbage collection of staging resource.
+-        HgiBufferHandle stagingHandle(stagingBuffer, 0);
++        HgiBufferHandle stagingHandle(stagingBuffer.release(), 0);
+         hgi->TrashObject(
+             &stagingHandle,
+             hgi->GetGarbageCollector()->GetBufferList());
+@@ -280,7 +281,6 @@ HgiVulkanTexture::HgiVulkanTexture(
+     HgiVulkanDevice* device,
+     HgiTextureViewDesc const & desc)
+     : HgiTexture(desc.sourceTexture->GetDescriptor())
+-    , _isTextureView(true)
+     , _vkImage(nullptr)
+     , _vkImageView(nullptr)
+     , _vkImageLayout(VK_IMAGE_LAYOUT_UNDEFINED)
+@@ -289,6 +289,7 @@ HgiVulkanTexture::HgiVulkanTexture(
+     , _inflightBits(0)
+     , _stagingBuffer(nullptr)
+     , _cpuStagingAddress(nullptr)
++    , _isTextureView(true)
+ {
+     // Update the texture descriptor to reflect the view desc
+     _descriptor.debugName = desc.debugName;
+@@ -355,7 +356,6 @@ HgiVulkanTexture::~HgiVulkanTexture()
+         _cpuStagingAddress = nullptr;
+     }
+ 
+-    delete _stagingBuffer;
+     _stagingBuffer = nullptr;
+ 
+     if (_vkImageView) {
+@@ -422,7 +422,7 @@ HgiVulkanTexture::IsCPUStagingAddress(const void* address) const
+ HgiVulkanBuffer*
+ HgiVulkanTexture::GetStagingBuffer() const
+ {
+-    return _stagingBuffer;
++    return _stagingBuffer.get();
+ }
+ 
+ VkImage
+@@ -484,12 +484,12 @@ HgiVulkanTexture::CopyBufferToTexture(
+             _descriptor.layerCount,
+             srcBuffer->GetDescriptor().byteSize);
+ 
+-    const size_t mipLevels = std::min(
+-        mipInfos.size(), size_t(_descriptor.mipLevels));
++    const int mipLevels = std::min(static_cast<int>(mipInfos.size()),
++        static_cast<int>(_descriptor.mipLevels));
+ 
+-    for (size_t mip = 0; mip < mipLevels; mip++) {
++    for (int mip = 0; mip < mipLevels; mip++) {
+         // Skip this mip if it isn't a mipLevel we want to copy
+-        if (mipLevel > -1 && (int)mip != mipLevel) {
++        if (mipLevel > -1 && mip != mipLevel) {
+             continue;
+         }
+ 
+@@ -497,7 +497,7 @@ HgiVulkanTexture::CopyBufferToTexture(
+         VkBufferImageCopy bufferCopyRegion = {};
+         bufferCopyRegion.imageSubresource.aspectMask =
+             HgiVulkanConversions::GetImageAspectFlag(_descriptor.usage);
+-        bufferCopyRegion.imageSubresource.mipLevel = (uint32_t) mip;
++        bufferCopyRegion.imageSubresource.mipLevel = static_cast<uint32_t>(mip);
+         bufferCopyRegion.imageSubresource.baseArrayLayer = 0;
+         bufferCopyRegion.imageSubresource.layerCount = _descriptor.layerCount;
+         bufferCopyRegion.imageExtent.width = mipInfo.dimensions[0];
+diff --git a/pxr/imaging/hgiVulkan/texture.h b/pxr/imaging/hgiVulkan/texture.h
+index d3c3296b30..247cce7731 100644
+--- a/pxr/imaging/hgiVulkan/texture.h
++++ b/pxr/imaging/hgiVulkan/texture.h
+@@ -8,8 +8,9 @@
+ #define PXR_IMAGING_HGI_VULKAN_TEXTURE_H
+ 
+ #include "pxr/pxr.h"
+-#include "pxr/imaging/hgiVulkan/api.h"
+ #include "pxr/imaging/hgi/texture.h"
++#include "pxr/imaging/hgiVulkan/api.h"
++#include "pxr/imaging/hgiVulkan/vulkan.h"
+ 
+ 
+ PXR_NAMESPACE_OPEN_SCOPE
+@@ -142,15 +143,15 @@ class HgiVulkanTexture final : public HgiTexture
+     HgiVulkanTexture & operator=(const HgiVulkanTexture&) = delete;
+     HgiVulkanTexture(const HgiVulkanTexture&) = delete;
+ 
+-    bool _isTextureView;
+     VkImage _vkImage;
+     VkImageView _vkImageView;
+     VkImageLayout _vkImageLayout;
+     VmaAllocation _vmaImageAllocation;
+     HgiVulkanDevice* _device;
+     uint64_t _inflightBits;
+-    HgiVulkanBuffer* _stagingBuffer;
++    std::unique_ptr<HgiVulkanBuffer> _stagingBuffer;
+     void* _cpuStagingAddress;
++    bool _isTextureView;
+ };
+ 
+ 

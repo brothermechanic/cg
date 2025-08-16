@@ -184,6 +184,9 @@ PATCHES=(
 	#"${FILESDIR}/openusd-24.08-PVS-bugfix-usd-2165.patch"
 	"${FILESDIR}/openusd-25.05-cmake-FindBoost-fix.patch"
 	"${FILESDIR}/openusd-25.08-embree-4-plugin-2313.patch"
+	"${FILESDIR}/openusd-25.08-fix-vulkan-UMA-ReBAR-pr3763.patch"
+ 	#"${FILESDIR}/openusd-25.08-fix-vulkan-crash-AMD-pr3678.patch"
+ 	"${FILESDIR}/openusd-25.08-fix-vulkan-memory-barrier-issues-pr3761.patch"
 )
 S="${WORKDIR}/OpenUSD-${PV}"
 DOCS=( "CHANGELOG.md" "README.md" )
