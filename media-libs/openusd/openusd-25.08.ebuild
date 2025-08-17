@@ -102,7 +102,7 @@ RDEPEND+="
 		>=media-libs/openexr-3.1.5-r1:=
 	)
 	opengl? (
-		>=media-libs/glew-2.0.0
+		>=media-libs/glew-2.0.0:=[X]
 	)
 	openimageio? (
 		>=media-libs/libpng-1.6.29
@@ -183,10 +183,10 @@ PATCHES=(
 	"${FILESDIR}/openusd-24.08-PVS-bugfix-base-tf-2161.patch"
 	#"${FILESDIR}/openusd-24.08-PVS-bugfix-usd-2165.patch"
 	"${FILESDIR}/openusd-25.05-cmake-FindBoost-fix.patch"
+	#"${FILESDIR}/openusd-25.08-cmake-FindOpenGL-fix.patch"
 	"${FILESDIR}/openusd-25.08-embree-4-plugin-2313.patch"
 	"${FILESDIR}/openusd-25.08-fix-vulkan-UMA-ReBAR-pr3763.patch"
- 	#"${FILESDIR}/openusd-25.08-fix-vulkan-crash-AMD-pr3678.patch"
- 	"${FILESDIR}/openusd-25.08-fix-vulkan-memory-barrier-issues-pr3761.patch"
+	"${FILESDIR}/openusd-25.08-fix-vulkan-memory-barrier-issues-pr3761.patch"
 )
 S="${WORKDIR}/OpenUSD-${PV}"
 DOCS=( "CHANGELOG.md" "README.md" )
@@ -226,7 +226,9 @@ src_prepare() {
 
 	use elibc_musl && eapply "${FILESDIR}"/openusd-25.08-fix-musl-build.patch
 
-	use vulkan && sed -e 's/\#include <vma\/vk_mem_alloc\.h>/\#include <vk_mem_alloc\.h>/g' -i pxr/imaging/hgiVulkan/vk_mem_alloc.h
+	#use vulkan && (
+	#	sed -e 's/\#include <vma\/vk_mem_alloc\.h>/\#include <vk_mem_alloc\.h>/g' -i pxr/imaging/hgiVulkan/{vk_mem_alloc.h,vk_mem_alloc.cpp} || die "Sed failed."
+	#)
 	# make dummy pyside-uid
 	if use usdview ; then
 		gen_pyside_uic_file
@@ -235,7 +237,7 @@ src_prepare() {
 }
 
 src_configure() {
-	CMAKE_BUILD_TYPE=$(usex debug 'Debug' 'Release')
+	CMAKE_BUILD_TYPE=$(usex debug 'RelWithDefInfo' 'Release')
 	append-cppflags $(usex debug '-DDEBUG' '-DNDEBUG')
 	append-cppflags -DTBB_ALLOCATOR_TRAITS_BROKEN
 	export USD_PATH="/usr/$(get_libdir)/${PN}"
@@ -253,6 +255,7 @@ src_configure() {
 		$(usex usdview "-DPYSIDEUICBINARY:PATH=${S}/pyside-uic" "")
 		-DBUILD_SHARED_LIBS=ON
 		-DCMAKE_CXX_STANDARD=17
+		-DCMAKE_POLICY_DEFAULT_CMP0177="OLD"
 		-DCMAKE_INSTALL_PREFIX="${EPREFIX}${USD_PATH}"
 		-DPXR_VALIDATE_GENERATED_CODE=OFF
 		-DPXR_BUILD_ALEMBIC_PLUGIN=$(usex alembic ON OFF)
@@ -284,7 +287,7 @@ src_configure() {
 		-DPXR_INSTALL_LOCATION="${EPREFIX}${USD_PATH}"
 		-DPXR_PREFER_SAFETY_OVER_SPEED=$(usex safety-over-speed ON OFF)
 		-DPXR_PYTHON_SHEBANG="${PYTHON}"
-		-DPXR_SET_INTERNAL_NAMESPACE="usdBlender"
+		#-DPXR_SET_INTERNAL_NAMESPACE="usdBlender"
 		#-DCMAKE_FIND_DEBUG_MODE=yes
 	)
 	cmake_src_configure

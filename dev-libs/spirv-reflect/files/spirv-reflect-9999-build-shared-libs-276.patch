@@ -4,28 +4,12 @@ Date: Thu, 25 Jul 2024 16:25:54 +0200
 Subject: [PATCH] Add support for shared library build
 
 ---
- .gitignore      |  6 +++-
  CMakeLists.txt  | 19 +++++++++++-
  README.md       | 20 ++++++++++++
  spirv_reflect.c |  1 +
  spirv_reflect.h | 81 ++++++++++++++++++++++++++++++++++++++++---------
  5 files changed, 111 insertions(+), 16 deletions(-)
 
-diff --git a/.gitignore b/.gitignore
-index cf6c326f..7e9b02b6 100644
---- a/.gitignore
-+++ b/.gitignore
-@@ -7,4 +7,8 @@ bazel-spirv-reflect
- bazel-SPIRV-Reflect
- bazel-testlogs
- /.vs
--/.vscode
-\ No newline at end of file
-+/.vscode
-+
-+# CLion-specific:
-+/.idea
-+/cmake-build*
 diff --git a/CMakeLists.txt b/CMakeLists.txt
 index e0181c1f..725cfdb2 100644
 --- a/CMakeLists.txt
@@ -55,10 +39,11 @@ index e0181c1f..725cfdb2 100644
      # ==========================================================================
      # Compile spirv_reflect.c as C
      # ==========================================================================
-@@ -118,3 +120,18 @@ if(SPIRV_REFLECT_STATIC_LIB)
-             ARCHIVE DESTINATION lib)
+@@ -118,3 +120,19 @@ if(SPIRV_REFLECT_STATIC_LIB)
+                 PUBLIC_HEADER DESTINATION include)
+     endif()
  endif()
- 
++ 
 +if(BUILD_SHARED_LIBS)
 +    add_library(spirv-reflect SHARED ${CMAKE_CURRENT_SOURCE_DIR}/spirv_reflect.h
 +            ${CMAKE_CURRENT_SOURCE_DIR}/spirv_reflect.c)

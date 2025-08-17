@@ -93,7 +93,7 @@ RDEPEND="
 	python? (
 		${PYTHON_DEPS}
 		$(python_gen_cond_dep '
-			>=dev-python/pybind11-2.4.2[${PYTHON_USEDEP}]
+			>=dev-python/pybind11-3.0.0[${PYTHON_USEDEP}]
 			dev-python/numpy[${PYTHON_USEDEP}]
 		')
 	)
@@ -367,11 +367,9 @@ src_test() {
 		"^render-veachmis.opt$"
 
 		# optix
-		"^render-mx-generalized-schlick.optix$"
-		"^render-mx-generalized-schlick.optix.opt$"
-		"^render-mx-generalized-schlick.optix.fused$"
 		"^render-microfacet.optix.opt$"
 		"^render-microfacet.optix.fused$"
+		"^render-mx-burley-diffuse.opt$"
 	)
 
 	local myctestargs=(
