@@ -226,9 +226,9 @@ src_prepare() {
 
 	use elibc_musl && eapply "${FILESDIR}"/openusd-25.08-fix-musl-build.patch
 
-	#use vulkan && (
-	#	sed -e 's/\#include <vma\/vk_mem_alloc\.h>/\#include <vk_mem_alloc\.h>/g' -i pxr/imaging/hgiVulkan/{vk_mem_alloc.h,vk_mem_alloc.cpp} || die "Sed failed."
-	#)
+	use embree && (
+		sed -e 's/\#include <tbb\/tbb_stddef\.h>/\#include <tbb\/tbb\.h>/g' -i pxr/imaging/plugin/hdEmbree/renderer.cpp || die
+	)
 	# make dummy pyside-uid
 	if use usdview ; then
 		gen_pyside_uic_file
