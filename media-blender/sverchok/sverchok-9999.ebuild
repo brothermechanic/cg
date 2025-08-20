@@ -30,8 +30,10 @@ src_prepare() {
     # set icons by default
     sed -i '/name="Show icons in Shift-A menu",/{n;s/.*/\t\default=True,/}' settings.py
     # Fix blender 3.4+ gpu shader color name
-    has_version -b '>=media-gfx/blender-3.4.0' && sed -re 's/[2,3]D_([A-Z]+_COLOR)/\1/g' -i node_scripts/SNLite_templates/bpy_stuff/bgl_3dview_drawing.py \
+    has_version -b '>=media-gfx/blender-3.4.0' && (
+        sed -re 's/[2,3]D_([A-Z]+_COLOR)/\1/g' -i node_scripts/SNLite_templates/bpy_stuff/bgl_3dview_drawing.py \
         nodes/viz/*.py nodes/solid/solid_viewer.py utils/sv_batch_primitives.py old_nodes/vd_draw_experimental.py || die "Sed failed"
+    )
 }
 
 src_install() {
