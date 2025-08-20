@@ -18,5 +18,5 @@ ADDON_SOURCE_SUBDIR=${S}/2.91/${PN}
 src_prepare() {
     default
     # Fix blender 3.4+ gpu shader color name
-    has_version -b '>=media-gfx/blender-3.4.0' && sed -re 's/[2,3]D_([A-Z]+_COLOR)/\1/g' -i 2.91/${PN}/utils.py || die "Sed failed"
+    has_version -b '>=media-gfx/blender-3.4.0' && ( sed -re 's/[2,3]D_([A-Z]+_COLOR)/\1/g' -i 2.91/${PN}/utils.py || die "Sed failed" )
 }
