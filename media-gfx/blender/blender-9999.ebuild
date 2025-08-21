@@ -370,7 +370,6 @@ PATCHES=(
 	"${FILESDIR}/${PN}-3.5.1-tbb-rpath.patch"
 	"${FILESDIR}/x112.patch"
 	"${FILESDIR}/${PN}-4.1.1-FindLLVM.patch"
-	"${FILESDIR}/${PN}-4.4.0-optix-compile-flags.patch"
 )
 
 blender_check_requirements() {
