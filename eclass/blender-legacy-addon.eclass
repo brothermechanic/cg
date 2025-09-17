@@ -1,7 +1,7 @@
 # Copyright 2019-2025 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
 
-# @ECLASS: blender-addon.eclass
+# @ECLASS: blender-legacy-addon.eclass
 # @MAINTAINER:
 # brothermechanic <brothermechanic@gmail.com>
 # anex5 <anex5.2008@gmail.com>
@@ -10,7 +10,7 @@
 # @SUPPORTED_EAPIS: 7 8
 # @BLURB: Eclass used to create and maintain blender addons
 # @DESCRIPTION:
-# This eclass represents and creates an addon for blender.
+# This eclass represents and creates an addon for old blender prior to version 4.2.
 # Additional variables are provided to override the default directory
 # for blender addons.
 
@@ -20,28 +20,14 @@ case "${EAPI:-0}" in
 	*)     die "Unsupported EAPI=${EAPI} (unknown) for ${ECLASS}" ;;
 esac
 
-if [[ ! ${_BLENDER_ADDON_ECLASS} ]]; then
-_BLENDER_ADDON_ECLASS=1
+if [[ ! ${_BLENDER_LEGACY_ADDON_ECLASS} ]]; then
+_BLENDER_LEGACY_ADDON_ECLASS=1
 
 PYTHON_COMPAT=( python3_{10..13} )
 
 inherit git-r3 vcs-clean python-single-r1 cg-blender-scripts-dir
 
 # << Eclass variables >>
-
-# @ECLASS_VARIABLE: EGIT_REPO_URI
-# @USER_VARIABLE
-# @DEFAULT_SET
-# @DESCRIPTION:
-# Git sources URI for current addon.
-: ${EGIT_REPO_URI:="https://projects.blender.org/extensions/${PN}"}
-
-# @ECLASS_VARIABLE: HOMEPAGE
-# @USER_VARIABLE
-# @DEFAULT_SET
-# @DESCRIPTION:
-# HOMEPAGE URI for current addon.
-: ${HOMEPAGE:="https://extensions.blender.org/add-ons/${PN}"}
 
 # @ECLASS_VARIABLE: _GENTOO_BLENDER_ADDONS_HOME
 # @DEFAULT_UNSET
@@ -52,16 +38,16 @@ _GENTOO_BLENDER_ADDONS_HOME=()
 
 # @ECLASS_VARIABLE: ADDON_SOURCE_SUBDIR
 # @USER_VARIABLE
-# @DEFAULT_SET
+# @DEFAULT_UNSET
 # @DESCRIPTION:
-# Directory within ${S} which contains sources of blender addon.
-: ${ADDON_SOURCE_SUBDIR:="${S}/source"}
+# Directory which contains sources of blender addon, usually it's identical to gentoo variable S.
+: ${ADDON_SOURCE_SUBDIR:="${S}"}
 
 # @ECLASS_VARIABLE: _BLENDER_ALL_IMPLS
 # @INTERNAL
 # @DESCRIPTION:
 # All possible implementations of blender
-_BLENDER_ALL_IMPLS=( 4_{2..5} 5_0 )
+_BLENDER_ALL_IMPLS=( 2_93 3_{0..6} 4_{1..5} 5_0 )
 readonly _BLENDER_ALL_IMPLS
 
 # @ECLASS_VARIABLE: _BLENDER_SEL_IMPLS
@@ -76,7 +62,6 @@ _BLENDER_SEL_IMPLS=()
 # This variable contains a list of Blender implementations the package
 # supports. It must be set before the `inherit' call. It has to be
 # an array.
-declare -p BLENDER_COMPAT >/dev/null 2>&1 || BLENDER_COMPAT=( 4_{2..5} 5_0 )
 
 # << Boilerplate ebuild variables >>
 : ${DESCRIPTION:="Addon ${PN} for blender"}
@@ -89,23 +74,23 @@ RDEPEND+="media-gfx/blender"
 # << Phase functions >>
 EXPORT_FUNCTIONS pkg_pretend pkg_setup src_install src_compile pkg_postinst pkg_postrm
 
-# @FUNCTION: blender-addon_pkg_pretend
+# @FUNCTION: blender-legacy-addon_pkg_pretend
 # @DESCRIPTION:
 # Performs sanity checks for correct eclass usage, and early-checks.
-blender-addon_pkg_pretend() {
+blender-legacy-addon_pkg_pretend() {
 	debug-print-function ${FUNCNAME} "${@}"
 
 	for i in "${BLENDER_COMPAT[@]}"; do
-		if [[ "${i}" =~ "${_BLENDER_ALL_IMPLS[@]}" ]]; then
+		if ! has "${i}" "${_BLENDER_ALL_IMPLS[@]}"; then
 			die "Invalid BLENDER_COMPAT : ${BLENDER_COMPAT[@]}"
 		fi
 	done
 }
 
-# @FUNCTION: blender-addon_pkg_setup
+# @FUNCTION: blender-legacy-addon_pkg_setup
 # @DESCRIPTION:
 # Performs some checks.
-blender-addon_pkg_setup() {
+blender-legacy-addon_pkg_setup() {
 	debug-print-function ${FUNCNAME} "${@}"
 
 	[[ ${MERGE_TYPE} != binary ]] && python-single-r1_pkg_setup
@@ -118,59 +103,72 @@ blender-addon_pkg_setup() {
 }
 
 
-# @FUNCTION: blender-addon_src_compile
+# @FUNCTION: blender-legacy-addon_src_compile
 # @DESCRIPTION:
-# Nothing to compile here
-blender-addon_src_compile() {
+# Nothing to compile here by default. Override this function if needed.
+blender-legacy-addon_src_compile() {
 	:
 }
 
-# @FUNCTION: blender-addon_src_install
+# @FUNCTION: blender-legacy-addon_src_install
 # @DESCRIPTION:
 # Installs an addon into the CG_BLENDER_SCRIPTS_DIR of default directory
-blender-addon_src_install() {
+blender-legacy-addon_src_install() {
 	debug-print-function ${FUNCNAME} "${@}"
 
 	egit_clean
 	[[ -a .github ]] && rm -r .github
 
-	for i in "${_BLENDER_SEL_IMPLS[@]}"; do
-		_GENTOO_BLENDER_ADDONS_HOME+=( "/usr/share/blender/${i/_/\.}" )
-	done
+	if [ ${CG_BLENDER_SCRIPTS_DIR} ]; then
+		_GENTOO_BLENDER_ADDONS_HOME=( "${CG_BLENDER_SCRIPTS_DIR}" )
+	else
+		for i in "${_BLENDER_SEL_IMPLS[@]}"; do
+			_GENTOO_BLENDER_ADDONS_HOME+=( "/usr/share/blender/${i/_/\.}/scripts" )
+		done
+	fi
 
 	for (( i = ${#_GENTOO_BLENDER_ADDONS_HOME[@]} - 1; i >= 0; i-- )); do
 		python_optimize "${ED}"
-		insinto ${_GENTOO_BLENDER_ADDONS_HOME[i]}/extensions/system/${PN}
+		insinto ${_GENTOO_BLENDER_ADDONS_HOME[i]}/addons/${PN}
 		diropts -g users -m0775
 		doins -r "${ADDON_SOURCE_SUBDIR}"/*
 	done
 }
 
-# @FUNCTION: blender-addon_pkg_postinst
+# @FUNCTION: blender-legacy-addon_pkg_postinst
 # @DESCRIPTION:
 # output common info after installing blender addon.
-blender-addon_pkg_postinst() {
+blender-legacy-addon_pkg_postinst() {
 	debug-print-function ${FUNCNAME} "${@}"
 
 	elog "This blender addon installs to following system subdirectory:"
 	elog "${_GENTOO_BLENDER_ADDONS_HOME[@]}"
+	elog "You can override this value by setting following variable to your make.conf file:"
+	elog "CG_BLENDER_SCRIPTS_DIR"
 	elog "Each blender slot will use this single directory for the addons."
+	elog "Please, set this value to PreferencesFilePaths.scripts_directory"
+	elog "More info you can find at page "
+	elog "https://docs.blender.org/manual/en/4.5/editors/preferences/file_paths.html#data"
 }
 
-# @FUNCTION: blender-addon_pkg_postrm
+# @FUNCTION: blender-legacy-addon_pkg_postrm
 # @DESCRIPTION:
 # remove addon dir on uninstalling blender addon.
-blender-addon_pkg_postrm() {
+blender-legacy-addon_pkg_postrm() {
 	if [[ -z "${REPLACED_BY_VERSION}" ]]; then
-		for i in "${_BLENDER_SEL_IMPLS[@]}"; do
-			_GENTOO_BLENDER_ADDONS_HOME+=( "/usr/share/blender/${i/_/\.}/scripts" )
-		done
+		if [ -d ${CG_BLENDER_SCRIPTS_DIR} ]; then
+			_GENTOO_BLENDER_ADDONS_HOME=( "${CG_BLENDER_SCRIPTS_DIR}" )
+		else
+			for i in "${_BLENDER_SEL_IMPLS[@]}"; do
+				_GENTOO_BLENDER_ADDONS_HOME+=( "/usr/share/blender/${i/_/\.}/scripts" )
+			done
+		fi
 		for (( i = ${#_GENTOO_BLENDER_ADDONS_HOME[@]} - 1; i >= 0; i-- )); do
 			rm -r ${ROOT}${GENTOO_BLENDER_ADDONS_HOME[i]}/addons/${PN}
 		done
 	fi
 }
 
-fi # ${_BLENDER_ADDON_ECLASS}
+fi # [[ ! ${_BLENDER_LEGACY_ADDON_ECLASS} ]]
 
 EXPORT_FUNCTIONS pkg_setup pkg_pretend pkg_postrm pkg_postinst src_compile src_install

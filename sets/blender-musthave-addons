@@ -1,7 +1,7 @@
-media-blender/align-to-gpencil
-media-blender/curve-cad
-media-blender/mira-tools
-media-blender/df-tools
-media-blender/mifth-tools
-media-blender/simple-lattice
-media-blender/uvsquares
+media-blender-legacy/align-to-gpencil
+media-blender-legacy/curve-cad
+media-blender-legacy/mira-tools
+media-blender-legacy/df-tools
+media-blender-legacy/mifth-tools
+media-blender-legacy/simple-lattice
+media-blender-legacy/uvsquares
