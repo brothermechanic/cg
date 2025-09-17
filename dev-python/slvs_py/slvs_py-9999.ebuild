@@ -16,7 +16,7 @@ if [[ ${PV} == 9999 ]]; then
 	inherit git-r3
 	EGIT_REPO_URI="https://github.com/realthunder/${PN}"
 	EGIT_BRANCH="master"
-	EGIT_SUBMODULES=( slvs )
+	EGIT_SUBMODULES=()
 else
 	SRC_URI="https://github.com/realthunder/${PN}/archive/refs/tags/v${PV}.tar.gz -> ${P}.tar.gz"
 	KEYWORDS="amd64 arm arm64 hppa ~ia64 ~mips x86"
@@ -30,6 +30,7 @@ IUSE=""
 BDEPEND="
 	dev-lang/swig
 	dev-libs/libpcre
+	media-gfx/solvespace
 	dev-python/scikit-build[${PYTHON_USEDEP}]
 	dev-python/setuptools[${PYTHON_USEDEP}]
 "
