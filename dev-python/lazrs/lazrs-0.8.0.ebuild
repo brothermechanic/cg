@@ -16,8 +16,8 @@ CRATES="
 	redox_syscall@0.3.5
 	byteorder@1.4.3
 	memoffset@0.6.5
-	pyo3-macros@0.22.2
-	target-lexicon@0.12.14
+	pyo3-macros@0.26.0
+	target-lexicon@0.13.0
 	quote@1.0.35
 	hermit-abi@0.3.2
 	heck@0.5.0
@@ -25,18 +25,18 @@ CRATES="
 	lock_api@0.4.10
 	unicode-ident@1.0.11
 	crossbeam-utils@0.8.16
-	pyo3-build-config@0.22.2
+	pyo3-build-config@0.26.0
 	parking_lot@0.12.1
-	pyo3-macros-backend@0.22.2
+	pyo3-macros-backend@0.26.0
 	crossbeam-epoch@0.9.15
 	proc-macro2@1.0.80
 	parking_lot_core@0.9.8
 	portable-atomic@1.0.0
 	rayon-core@1.11.0
-	pyo3-ffi@0.22.2
-	laz@0.9.2
+	pyo3-ffi@0.26.0
+	laz@0.11.0
 	crossbeam-channel@0.5.8
-	once_cell@1.18.0
+	once_cell@1.21.0
 	crossbeam-deque@0.8.3
 	either@1.9.0
 	bitflags@1.3.2
@@ -45,7 +45,7 @@ CRATES="
 	rayon@1.7.0
 	cfg-if@1.0.0
 	syn@2.0.59
-	pyo3@0.22.2
+	pyo3@0.26.0
 	windows_x86_64_gnullvm@0.48.5
 	windows_aarch64_gnullvm@0.48.5
 	libc@0.2.147
@@ -75,4 +75,4 @@ BDEPEND="
 
 RESTRICT="mirror"
 
-S=${WORKDIR}/${MY_PN}-${PV}
+S="${WORKDIR}/${MY_PN}-${PV}"

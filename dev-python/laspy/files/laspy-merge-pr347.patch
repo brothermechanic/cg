@@ -1,0 +1,174 @@
+From b0555adf932fa89a6f85f6c18f3bc362583bee91 Mon Sep 17 00:00:00 2001
+From: Florian de Boissieu <fdeboiss@gmail.com>
+Date: Mon, 7 Jul 2025 01:12:11 +0200
+Subject: [PATCH] Fix min/max tracking on 1D extrabytes
+
+---
+ laspy/point/format.py    |  2 +-
+ laspy/vlrs/known.py      | 16 ++++-----
+ tests/test_extrabytes.py | 70 ++++++++++++++++++++++++++++++++++------
+ 3 files changed, 68 insertions(+), 20 deletions(-)
+
+diff --git a/laspy/point/format.py b/laspy/point/format.py
+index 019d4b9..e9e741b 100644
+--- a/laspy/point/format.py
++++ b/laspy/point/format.py
+@@ -39,7 +39,7 @@ def __init__(
+         self.scales = np.array(scales) if scales is not None else scales
+         """ The scales to use if its a 'scaled dimension', can be none """
+         self.no_data = np.array(no_data) if no_data is not None else no_data
+-        """ The no data values, can be none """
++        """ The encoded no data values, can be none """
+ 
+ 
+ class PointFormat:
+diff --git a/laspy/vlrs/known.py b/laspy/vlrs/known.py
+index 9d27cdc..ffdedce 100644
+--- a/laspy/vlrs/known.py
++++ b/laspy/vlrs/known.py
+@@ -416,29 +416,27 @@ def grow(self, points: PackedPointRecord):
+         long_type = self._long_type()
+         no_data = self.no_data
+ 
++        if isinstance(pts, ScaledArrayView):
++            pts = pts.array
++        pts = pts.reshape(-1, num_elements)
++
+         local_min = np.zeros(num_elements, dtype=long_type)
+         local_max = np.zeros(num_elements, dtype=long_type)
+ 
+         for i in range(num_elements):
+             if no_data is not None:
+                 valid_indices = pts[..., i] != no_data[i]
+-                if valid_indices.ndim == 0:
++                if not valid_indices.any():
+                     return
+                 sub_pts = pts[valid_indices, i]
+             else:
+                 sub_pts = pts[..., i]
+ 
+             if self.min_is_relevant():
+-                if isinstance(sub_pts, ScaledArrayView):
+-                    local_min[i] = sub_pts.array.min()
+-                else:
+-                    local_min[i] = sub_pts.min()
++                local_min[i] = sub_pts.min()
+ 
+             if self.max_is_relevant():
+-                if isinstance(sub_pts, ScaledArrayView):
+-                    local_max[i] = sub_pts.array.max()
+-                else:
+-                    local_max[i] = sub_pts.max()
++                local_max[i] = sub_pts.max()
+ 
+         if self.min_is_relevant():
+             raw_min = self._raw_min()
+diff --git a/tests/test_extrabytes.py b/tests/test_extrabytes.py
+index 0880ef0..f064dda 100644
+--- a/tests/test_extrabytes.py
++++ b/tests/test_extrabytes.py
+@@ -131,7 +131,7 @@ def test_scaled_extra_byte_array_type(simple_las_path):
+     assert np.allclose(las.test_dim[..., 2], 123.0)
+ 
+ 
+-def test_scaled_extra_byte_min_max(simple_las_path):
++def test_scaled_extra_byte_min_max_3D(simple_las_path):
+     """
+     To make sure we handle scaled extra bytes
+     """
+@@ -167,9 +167,9 @@ def test_scaled_extra_byte_min_max(simple_las_path):
+     las.test_dim[1, 1] = MAX
+     las.test_dim[1, 2] = MAX
+ 
+-    las.test_dim[2, 0] = NODATA
+-    las.test_dim[2, 1] = NODATA
+-    las.test_dim[2, 2] = NODATA
++    las.test_dim[2, 0] = (NODATA * SCALE + OFFSET)[0]
++    las.test_dim[2, 1] = (NODATA * SCALE + OFFSET)[1]
++    las.test_dim[2, 2] = (NODATA * SCALE + OFFSET)[2]
+ 
+     las.header.vlrs[0].extra_bytes_structs[0].no_data = [NODATA, NODATA, NODATA]
+ 
+@@ -193,6 +193,56 @@ def test_scaled_extra_byte_min_max(simple_las_path):
+     assert np.allclose(ebs.max[:], MAX, atol=1)
+ 
+ 
++def test_scaled_extra_byte_min_max_1D(simple_las_path):
++    """
++    To make sure we handle scaled extra bytes
++    """
++    MIN = -10
++    MAX = 1000
++    NODATA = -10000
++    SCALE = np.array([2.0])
++    OFFSET = np.array([20.0])
++    las = laspy.read(simple_las_path)
++
++    las.add_extra_dim(
++        laspy.ExtraBytesParams(
++            name="test_dim",
++            type="int16",
++            scales=np.array(SCALE, np.float64),
++            offsets=np.array(OFFSET, np.float64),
++        )
++    )
++
++    assert np.allclose(las.test_dim, 20.0)
++
++    las.test_dim[:] = 42.0
++
++    las.test_dim[0] = MIN
++
++    las.test_dim[1] = MAX
++
++    las.test_dim[2] = NODATA * SCALE + OFFSET
++
++    las.header.vlrs[0].extra_bytes_structs[0].no_data = [NODATA]
++
++    las.update_header()
++
++    assert las.header.vlrs[0].extra_bytes_structs[0].data_type == 4  # int16
++    assert len(las.header.vlrs[0].extra_bytes_structs[0].min) == 1
++    assert las.header.vlrs[0].extra_bytes_structs[0].min.dtype == np.float64
++
++    ebs = las.header.vlrs[0].extra_bytes_structs[0]
++    assert np.allclose(ebs.min[:], MIN, atol=1)
++    assert np.allclose(ebs.max[:], MAX, atol=1)
++
++    las = write_then_read_again(las)
++    assert np.allclose(las.test_dim[3:], 42.0)
++
++    ebs = las.header.vlrs[0].extra_bytes_structs[0]
++    assert np.allclose(ebs.min[:], MIN, atol=1)
++    assert np.allclose(ebs.max[:], MAX, atol=1)
++
++
+ def test_extra_bytes_description_is_ok(extra_bytes_params, simple_las_path):
+     """
+     Test that the description in ok
+@@ -384,9 +434,9 @@ def test_remove_all_extra_dimensions():
+     las = laspy.read(EXTRA_BYTES_LAS_FILE_PATH)
+ 
+     extra_dimension_names = list(las.point_format.extra_dimension_names)
+-    assert len(extra_dimension_names) > 0, (
+-        "If the input file has no extra dimension, " "this test is useless"
+-    )
++    assert (
++        len(extra_dimension_names) > 0
++    ), "If the input file has no extra dimension, this test is useless"
+ 
+     copied_standard_values = [
+         (name, np.copy(las[name])) for name in las.point_format.standard_dimension_names
+@@ -413,9 +463,9 @@ def test_remove_some_extra_dimensions():
+     las = laspy.read(EXTRA_BYTES_LAS_FILE_PATH)
+ 
+     extra_dimension_names = list(las.point_format.extra_dimension_names)
+-    assert len(extra_dimension_names) > 0, (
+-        "If the input file has no extra dimension, " "this test is useless"
+-    )
++    assert (
++        len(extra_dimension_names) > 0
++    ), "If the input file has no extra dimension, this test is useless"
+ 
+     extra_dimensions_to_keep = ["Colors", "Time"]
+     dims_to_copy = (
