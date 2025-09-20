@@ -1,0 +1,11 @@
+--- a/cmake/macros/Public.cmake
++++ b/cmake/macros/Public.cmake
+@@ -1198,7 +1198,7 @@ function(pxr_toplevel_epilogue)
+                 PRIVATE
+                     -Wl,--whole-archive $<BUILD_INTERFACE:$<TARGET_FILE:usd_m>> -Wl,--no-whole-archive
+             )
+-        elseif("${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
++        elseif(APPLE AND "${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
+             target_link_libraries(usd_ms
+                 PRIVATE
+                     -Wl,-force_load $<BUILD_INTERFACE:$<TARGET_FILE:usd_m>>

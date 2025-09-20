@@ -32,7 +32,6 @@ REQUIRED_USE+="
 	)
 	embree? (
 		imaging
-		opengl
 	)
 	hdf5? (
 		alembic
@@ -40,8 +39,8 @@ REQUIRED_USE+="
 	color-management? (
 		imaging
 	)
-	opengl? (
-		imaging
+	imaging? (
+		opengl
 	)
 	openimageio? (
 		imaging
@@ -50,7 +49,6 @@ REQUIRED_USE+="
 		${OPENVDB_REQUIRED_USE}
 		imaging
 		openexr
-		opengl
 	)
 	osl? (
 		openexr
@@ -93,7 +91,7 @@ RDEPEND+="
 		dev-libs/jemalloc-usd
 	)
 	materialx? (
-		>=media-libs/materialx-1.38.8:=[renderer]
+		>=media-libs/materialx-1.38.8:=[X,renderer]
 	)
 	color-management? (
 		>=media-libs/opencolorio-2.1.3
@@ -162,8 +160,10 @@ BDEPEND="
 		<llvm-core/clang-21
 	)
 "
+COMMIT="60a8d58c3953a005e604c4f760caa018a90ae846"
+#https://github.com/PixarAnimationStudios/USD/archive/refs/tags/v${PV}.tar.gz
 SRC_URI="
-https://github.com/PixarAnimationStudios/USD/archive/refs/tags/v${PV}.tar.gz
+https://github.com/PixarAnimationStudios/USD/archive/${COMMIT}.tar.gz
 	-> ${P}.tar.gz
 "
 RESTRICT="
@@ -175,20 +175,21 @@ PATCHES=(
 	"${FILESDIR}/algorithm.patch"
 	"${FILESDIR}/packageUtils.cpp.patch"
 	"${FILESDIR}/openusd-23.11-defaultfonts.patch"
-	"${FILESDIR}/openusd-21.11-gcc-11-numeric_limits.patch"
-	"${FILESDIR}/openusd-21.11-use-whole-archive-for-lld.patch"
+#	"${FILESDIR}/openusd-21.11-gcc-11-numeric_limits.patch"
+#	"${FILESDIR}/openusd-21.11-use-whole-archive-for-lld.patch"
 	"${FILESDIR}/openusd-24.08-fix-monolithic-build-2400.patch"
 	"${FILESDIR}/openusd-24.08-PVS-bugfix-base-trace-2313.patch"
 	"${FILESDIR}/openusd-24.08-PVS-bugfix-envvar-2157.patch"
 	"${FILESDIR}/openusd-24.08-PVS-bugfix-base-tf-2161.patch"
 	#"${FILESDIR}/openusd-24.08-PVS-bugfix-usd-2165.patch"
 	"${FILESDIR}/openusd-25.05-cmake-FindBoost-fix.patch"
+	"${FILESDIR}/openusd-25.08-fix-monolithic-linking-with-clang.patch"
 	#"${FILESDIR}/openusd-25.08-cmake-FindOpenGL-fix.patch"
-	"${FILESDIR}/openusd-25.08-embree-4-plugin-2313.patch"
-	"${FILESDIR}/openusd-25.08-fix-vulkan-UMA-ReBAR-pr3763.patch"
-	"${FILESDIR}/openusd-25.08-fix-vulkan-memory-barrier-issues-pr3761.patch"
+	#"${FILESDIR}/openusd-25.08-embree-4-plugin-2313.patch"
+	#"${FILESDIR}/openusd-25.08-fix-vulkan-UMA-ReBAR-pr3763.patch"
+	#"${FILESDIR}/openusd-25.08-fix-vulkan-memory-barrier-issues-pr3761.patch"
 )
-S="${WORKDIR}/OpenUSD-${PV}"
+S="${WORKDIR}/OpenUSD-${COMMIT}"
 DOCS=( "CHANGELOG.md" "README.md" )
 
 pkg_setup() {
@@ -218,9 +219,18 @@ src_prepare() {
 	# Fix python dirs
 	if use python ; then
 		eapply "${FILESDIR}/${PN}-23.11-fix-python.patch"
-		sed -i 's|/python|/python'${EPYTHON/python}/site-packages'|g' cmake/macros/Private.cmake
-  		sed -i 's|lib/python/pxr|'$(python_get_sitedir)'/pxr|' cmake/macros/{Private,Public}.cmake pxr/usdImaging/usdviewq/CMakeLists.txt
+		sed -e "s/\(set(INSTALL_PYTHON_PXR_ROOT \"\).*$/\1usr\/$(get_libdir)\/openusd\/lib\/python\/pxr\"\)/" \
+			-e "s/\(--pythonPath \)\${CMAKE_INSTALL_PREFIX}\/lib\/python/\1usr\/$(get_libdir)\/openusd\/lib\/python/" \
+			-i cmake/macros/Public.cmake || die
   	fi
+
+	if ! use opengl ; then
+		# Disable X11
+		sed -e '/find_package(X11)/d' \
+			-e '/find_package(X11 REQUIRED)/d' \
+			-e '/add_definitions(-DPXR_X11_SUPPORT_ENABLED)/d' \
+			-i cmake/defaults/Packages.cmake || die
+	fi
 
 	rm -r docs/doxygen/doxygen-awesome-css || die
 
@@ -240,6 +250,7 @@ src_configure() {
 	CMAKE_BUILD_TYPE=$(usex debug 'RelWithDefInfo' 'Release')
 	append-cppflags $(usex debug '-DDEBUG' '-DNDEBUG')
 	append-cppflags -DTBB_ALLOCATOR_TRAITS_BROKEN
+	append-cppflags --no-system-header-prefix pxr
 	export USD_PATH="/usr/$(get_libdir)/${PN}"
 	use elibc_musl && append-flags -D_LARGEFILE64_SOURCE
 	use openvdb && openvdb_src_configure
@@ -258,9 +269,11 @@ src_configure() {
 		-DCMAKE_POLICY_DEFAULT_CMP0177="OLD"
 		-DCMAKE_INSTALL_PREFIX="${EPREFIX}${USD_PATH}"
 		-DPXR_VALIDATE_GENERATED_CODE=OFF
+		-DPXR_STRICT_BUILD_MODE=OFF
 		-DPXR_BUILD_ALEMBIC_PLUGIN=$(usex alembic ON OFF)
 		-DPXR_BUILD_DOCUMENTATION=$(usex doc ON OFF)
-		-DPXR_BUILD_PYTHON_DOCUMENTATION=$(usex man $(usex python ON OFF) OFF)
+		-DPXR_BUILD_PYTHON_DOCUMENTATION=$(usex doc $(usex python ON OFF) OFF)
+		-DPXR_BUILD_HTML_DOCUMENTATION=$(usex doc ON OFF)
 		-DPXR_BUILD_DRACO_PLUGIN=$(usex draco ON OFF)
 		-DPXR_BUILD_EMBREE_PLUGIN=$(usex embree ON OFF)
 		-DPXR_BUILD_EXAMPLES=$(usex examples ON OFF)
@@ -268,9 +281,10 @@ src_configure() {
 		-DPXR_BUILD_MONOLITHIC=$(usex monolithic ON OFF)
 		-DPXR_BUILD_OPENCOLORIO_PLUGIN=$(usex color-management ON OFF)
 		-DPXR_BUILD_OPENIMAGEIO_PLUGIN=$(usex openimageio ON OFF)
-		-DPXR_BUILD_PRMAN_PLUGIN=OFF
 		#-DPXR_BUILD_METAL_PLUGIN=OFF
+		-DPXR_BUILD_PRMAN_PLUGIN=OFF
 		-DPXR_BUILD_TESTS=$(usex test ON OFF)
+		-DPXR_HEADLESS_TEST_MODE=ON
 		-DPXR_BUILD_TUTORIALS=$(usex tutorials ON OFF)
 		-DPXR_BUILD_USD_IMAGING=$(usex imaging ON OFF)
 		-DPXR_BUILD_USD_TOOLS=$(usex tools ON OFF)
@@ -287,7 +301,8 @@ src_configure() {
 		-DPXR_INSTALL_LOCATION="${EPREFIX}${USD_PATH}"
 		-DPXR_PREFER_SAFETY_OVER_SPEED=$(usex safety-over-speed ON OFF)
 		-DPXR_PYTHON_SHEBANG="${PYTHON}"
-		#-DPXR_SET_INTERNAL_NAMESPACE="usdBlender"
+		#-DPXR_USE_PYTHON_3=ON
+		#-DPXR_SET_INTERNAL_NAMESPACE="pxrBlender_v0_25_11"
 		#-DCMAKE_FIND_DEBUG_MODE=yes
 	)
 	cmake_src_configure
@@ -357,9 +372,10 @@ src_install() {
 		done
 	fi
 	if use python ; then
-		cp -rp "${ED}/usr/$(get_libdir)/openusd/lib/${EPYTHON}/site-packages/pxr" \
+		mkdir -p "${ED}$(python_get_sitedir)"
+		cp -rp "${ED}/usr/$(get_libdir)/openusd/lib/python/pxr" \
 			"${ED}$(python_get_sitedir)/" || die
-		rm -r "${ED}/usr/$(get_libdir)/openusd/lib/${EPYTHON}/site-packages/pxr"
+		rm -r "${ED}/usr/$(get_libdir)/openusd/lib/python/pxr"
 		# Remove stray python files generated by the build system
 		find "${ED}" -name '*.pyc' -exec rm -f {} \; || die
 		find "${ED}" -name '*.pyo' -exec rm -f {} \; || die
