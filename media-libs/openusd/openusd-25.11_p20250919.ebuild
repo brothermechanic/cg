@@ -5,7 +5,7 @@ EAPI=8
 
 PYTHON_COMPAT=( python3_{11..13} )
 OPENVDB_COMPAT=( {10..12} )
-inherit cmake desktop python-single-r1 flag-o-matic openvdb xdg-utils
+inherit cmake desktop python-single-r1 flag-o-matic toolchain-funcs openvdb xdg-utils
 
 DESCRIPTION="Universal Scene Description"
 HOMEPAGE="http://www.openusd.org"
@@ -250,7 +250,7 @@ src_configure() {
 	CMAKE_BUILD_TYPE=$(usex debug 'RelWithDefInfo' 'Release')
 	append-cppflags $(usex debug '-DDEBUG' '-DNDEBUG')
 	append-cppflags -DTBB_ALLOCATOR_TRAITS_BROKEN
-	append-cppflags --no-system-header-prefix pxr
+	tc-is-clang && append-cppflags --no-system-header-prefix pxr
 	export USD_PATH="/usr/$(get_libdir)/${PN}"
 	use elibc_musl && append-flags -D_LARGEFILE64_SOURCE
 	use openvdb && openvdb_src_configure
