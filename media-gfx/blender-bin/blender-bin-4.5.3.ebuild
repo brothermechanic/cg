@@ -19,7 +19,7 @@ IUSE=""
 DEPEND=""
 RDEPEND="${DEPEND}"
 
-S=${WORKDIR}/blender-4.4.3-linux-x64
+S=${WORKDIR}/blender-${PV}-linux-x64
 
 QA_PREBUILT="*"
 
@@ -29,7 +29,7 @@ src_install() {
     fperms +x /opt/blender/blender
     fperms +x /opt/blender/blender-launcher
     fperms +x /opt/blender/blender-thumbnailer
-    fperms +x /opt/blender/4.4/python/bin/python3.11
+    fperms +x /opt/blender/${SLOT}/python/bin/python3.11
 
     dosym /opt/blender/blender-launcher /usr/bin/blender-bin
 
