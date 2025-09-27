@@ -175,10 +175,10 @@ src_prepare() {
 	sed -e "s/\(@PACKAGE_CMAKE_INSTALL_PREFIX@\)\/libraries/\1\/share\/${PN}\/libraries/" \
 		-e "s/\(@PACKAGE_CMAKE_INSTALL_PREFIX@\)\/resources/\1\/share\/${PN}\/resources/" \
 		-e "s|\(@PACKAGE_CMAKE_INSTALL_PREFIX@\)\/python|\1\/$(python_get_sitedir)\/${PN}|" \
-		-i cmake/modules/MaterialXConfig.cmake.in ||
+		-i cmake/modules/MaterialXConfig.cmake.in || die "Sed failed."
+
 	# Do not install docs by default
-	sed -e "/install(FILES LICENSE CHANGELOG.md README.md THIRD-PARTY.md/d" \
-        -e  "/DESTINATION .)/d" -i CMakeLists.txt || die "Sed failed."
+	sed -e '/^    install(FILES LICENSE CHANGELOG.md README.md THIRD-PARTY.md DESTINATION .)$/d' -i CMakeLists.txt || die "Sed failed."
 	cmake_src_prepare
 }
 
@@ -225,6 +225,7 @@ src_configure() {
 }
 
 src_install() {
+	DOCS=("LICENSE" "CHANGELOG.md" "README.md" "THIRD-PARTY.md")
 	cmake_src_install
 	# Remove garbage
 	rm -rf "${ED}/var" || die
@@ -239,7 +240,6 @@ src_install() {
 		cp documents/Images/MaterialXLogo_200x155.png ${D}/usr/share/icons/hicolor/256x256/apps/materialx.png
 	fi
 
-	DOCS=("LICENSE" "CHANGELOG.md" "README.md" "THIRD-PARTY.md")
 	use doc && einstalldocs
 
 	if use python ; then
