@@ -80,12 +80,12 @@ IUSE_CPU="+simd +tbb -lld -gold +mold -cpu_flags_arm_neon llvm +openmp -valgrind
 IUSE_GPU="cuda optix hip oneapi -cycles-bin-kernels ${CUDA_TARGETS_COMPAT[@]/#/cuda_targets_} ${AMDGPU_TARGETS_COMPAT[@]/#/amdgpu_targets_} vulkan"
 IUSE_DESKTOP="+cg -portable +X headless +nls icu -ndof wayland gnome"
 IUSE_LIBS="+bullet +boost +draco +manifold +materialx +color-management +oidn +opensubdiv +openvdb nanovdb openxr +libmv lzma lzo osl +fftw +potrace +pugixml +otf"
-IUSE_MOD="+fluid +smoke +oceansim +remesh +gmp +quadriflow +addons addons-contrib +assets"
-IUSE_RENDER="+cycles +openpgl +embree +freestyle"
+IUSE_MOD="+fluid +smoke +oceansim +remesh +gmp +quadriflow +uv-slim +addons addons-contrib +assets"
+IUSE_RENDER="+cycles +openpgl +embree +freestyle hydra"
 IUSE_3DFILES="-alembic usd +collada +obj +ply +stl"
 IUSE_IMAGE="-dpx +openexr jpeg2k webp +pdf"
 IUSE_CODEC="avi +ffmpeg flac -sndfile +quicktime aom lame opus theora vorbis vpx x264 xvid"
-IUSE_SOUND="jack openal -pulseaudio sdl"
+IUSE_SOUND="jack openal pipewire -pulseaudio sdl"
 IUSE_TEST="-debug -doc -man -gtests renderdoc -test -experimental"
 
 IUSE="${IUSE_CPU} ${IUSE_GPU} ${IUSE_DESKTOP} ${IUSE_LIBS} ${IUSE_MOD} ${IUSE_RENDER} ${IUSE_3DFILES} ${IUSE_IMAGE} ${IUSE_CODEC} ${IUSE_SOUND} ${IUSE_TEST}"
@@ -757,6 +757,7 @@ src_configure() {
 		-DWITH_GHOST_WAYLAND_LIBDECOR=$(usex gnome)
 		-DWITH_GHOST_SDL=$(usex sdl)
 		-DWITH_GMP=$(usex gmp)									# boolean engine
+		-DWITH_HYDRA=$(usex hydra)
 		-DWITH_HARU=$(usex pdf)									# export format support
 		-DWITH_IO_GREASE_PENCIL=$(usex pdf) 				    # export format support
 		-DWITH_INSTALL_PORTABLE=$(usex portable)
@@ -774,6 +775,7 @@ src_configure() {
 		-DWITH_JACK_DYNLOAD=$(usex jack)
 		-DWITH_PULSEAUDIO=$(usex pulseaudio)
 		-DWITH_PULSEAUDIO_DYNLOAD=$(usex pulseaudio)
+		-DWITH_PIPEWIRE=$(usex pipewire)
 		-DWITH_LZMA=$(usex lzma)								# used for pointcache only
 		-DWITH_LZO=$(usex lzo)									# used for pointcache only
 		-DWITH_LLVM=$(usex llvm)
@@ -817,6 +819,7 @@ src_configure() {
 		-DWITH_POTRACE=$(usex potrace)
 		-DWITH_TBB=$(usex tbb)
 		-DWITH_USD=$(usex usd)									# export format support
+		-DWITH_UV_SLIM=$(usex uv-slim)
 		-DWITH_VULKAN_BACKEND=$(usex vulkan)
 		#-DWITH_VULKAN_GUARDEDALLOC=$(usex vulkan)
 		-DWITH_XR_OPENXR=$(usex openxr)							# VR interface
@@ -836,7 +839,6 @@ src_configure() {
 		-DWITH_LIBS_PRECOMPILED=no
 		-DWITH_BUILDINFO=yes
 		-DWITH_UNITY_BUILD=no 									# Enable Unity build for blender modules (memory usage/compile time)
-		-DWITH_HYDRA=no 										# MacOS features enabled by default if WITH_STRICT_BUILD_OPTIONS=yes
 	)
 
 	if has_version ">=dev-python/numpy-2"; then

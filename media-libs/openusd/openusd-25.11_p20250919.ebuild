@@ -302,7 +302,7 @@ src_configure() {
 		-DPXR_PREFER_SAFETY_OVER_SPEED=$(usex safety-over-speed ON OFF)
 		-DPXR_PYTHON_SHEBANG="${PYTHON}"
 		#-DPXR_USE_PYTHON_3=ON
-		#-DPXR_SET_INTERNAL_NAMESPACE="pxrBlender_v0_25_11"
+		-DPXR_SET_INTERNAL_NAMESPACE="pxrBlender_v0_25_11"
 		#-DCMAKE_FIND_DEBUG_MODE=yes
 	)
 	cmake_src_configure
