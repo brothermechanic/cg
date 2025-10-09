@@ -35,7 +35,14 @@ else
 fi
 
 [[ "4.0 3.6" =~ "${MY_PV}"  ]] && OSL_PV="13" || OSL_PV="14"
-[[ "4.0 3.6 4.2 4.3 4.4" =~ "${MY_PV}" ]] && AUD_PV="6" || AUD_PV="7"
+
+if [[ "4.0 3.6 4.2" =~ "${MY_PV}" ]]; then
+	AUD_PV="5"
+elif [[ "4.3 4.4" =~ "${MY_PV}" ]]; then
+	AUD_PV="6"
+else
+	AUD_PV="7"
+fi
 
 SLOT="$MY_PV"
 LICENSE="|| ( GPL-3 BL )"
