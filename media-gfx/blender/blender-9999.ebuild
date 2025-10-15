@@ -322,8 +322,8 @@ RDEPEND="
 	)
 	nls? ( virtual/libiconv )
 	openal? ( >=media-libs/openal-1.23.1 )
-	<media-libs/audaspace-1.$((${AUD_PV}+1)).0:=[python,openal?,sdl?,pulseaudio?]
-	>=media-libs/audaspace-1.${AUD_PV}.0:=[python,openal?,sdl?,pulseaudio?]
+	<media-libs/audaspace-1.$((${AUD_PV}+1)).0:=[python,openal?,sdl?,pulseaudio?,rubberband]
+	>=media-libs/audaspace-1.${AUD_PV}.0:=[python,openal?,sdl?,pulseaudio?,rubberband]
 	oneapi? ( dev-libs/intel-compute-runtime[l0] )
 	media-libs/glew:*
 	oidn? ( >=media-libs/oidn-2.1.0[cuda?] )
@@ -616,7 +616,12 @@ src_prepare() {
 	sed \
 		-e "/CMAKE_INSTALL_PREFIX_WITH_CONFIG/{s|\${CMAKE_INSTALL_PREFIX}|${T}\${CMAKE_INSTALL_PREFIX}|g}" \
 		-i CMakeLists.txt \
-		|| die CMAKE_INSTALL_PREFIX_WITH_CONFIG
+		|| die "CMAKE_INSTALL_PREFIX_WITH_CONFIG"
+
+	sed \
+		-e "/set_and_warn_incompatible(WITH_SYSTEM_AUDASPACE WITH_RUBBERBAND OFF)/d" \
+		-i CMakeLists.txt
+
 #   echo -e " #define BUILD_HASH \"$(git-r3_peek_remote_ref ${EGIT_REPO_URI_LIST% *})\"\n" \
 #		"#define BUILD_COMMIT_TIMESTAMP \"\"\n" \
 #  		"#define BUILD_BRANCH \"${EGIT_BRANCH} modified\"\n" \
@@ -738,7 +743,7 @@ src_configure() {
 		-DWITH_CUDA_DYNLOAD=$(usex cuda $(usex cycles-bin-kernels no yes) no)
 		-DWITH_CYCLES_DEVICE_ONEAPI=$(usex oneapi)
 		-DWITH_CYCLES_ONEAPI_BINARIES=$(usex oneapi $(usex cycles-bin-kernels) no)
-		-DWITH_CYCLES_HYDRA_RENDER_DELEGATE="no"                # TODO: package Hydra
+		-DWITH_CYCLES_HYDRA_RENDER_DELEGATE="$(usex hydra)"                # TODO: package Hydra
 		-DWITH_CYCLES_EMBREE=$(usex embree)						# Speedup library for Cycles
 		-DWITH_CYCLES_NATIVE_ONLY=$(usex cycles)				# for native kernel only
 		-DWITH_CYCLES_OSL=$(usex osl)
@@ -811,6 +816,7 @@ src_configure() {
 		-DWITH_DRACO=$(usex draco)
 		-DWITH_SYSTEM_DRACO=$(usex !portable)
 		-DWITH_AUDASPACE=yes
+		-DWITH_RUBBERBAND=yes
 		-DWITH_SYSTEM_AUDASPACE=$(usex !portable)
 		-DWITH_SYSTEM_EIGEN3=$(usex !portable)
 		-DWITH_SYSTEM_LZO=$(usex !portable)
