@@ -21,7 +21,7 @@ if [[ ${PV} == 9999 ]]; then
 	EGIT_SUBMODULES=()
 	KEYWORDS=""
 else
-	COMMIT="fa006ac74c505c7c4e969cc3e5537c979b581cc9"
+	COMMIT="05d35ba49b4ffa3058dc35e4daf1680a6ae58323"
 	SRC_URI="https://github.com/neXyon/audaspace/archive/${COMMIT}.tar.gz -> ${P}.tar.gz"
 	S=${WORKDIR}/${PN}-${COMMIT}
 	KEYWORDS="~amd64 ~x86 ~arm64 ~arm"

@@ -35,7 +35,7 @@ if [[ "${PV}" =~ "1.13" ]]; then
 	# Check this on updates
 	LLVM_COMPAT=( {17..19} )
 else
-	LLVM_COMPAT=( {18..20} )
+	LLVM_COMPAT=( {19..21} )
 fi
 inherit llvm-r1
 
@@ -157,6 +157,10 @@ src_prepare() {
 	if ! use test ; then
 		sed -i -e "s|osl_add_all_tests|#osl_add_all_tests|g" \
 			"CMakeLists.txt" || die
+	fi
+
+	if [[ "${LLVM_SLOT}" == "21" ]]; then
+		eapply "${FILESDIR}/${PN}-1.13.7.0-llvm-21.patch"
 	fi
 
 	# optix 7.4 build fix
