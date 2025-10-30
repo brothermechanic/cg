@@ -191,30 +191,16 @@ pkg_setup() {
 }
 
 src_prepare() {
-	use bmp || ( rm "src/bmp.imageio" -r || die )
-	use cineon || ( rm "src/cineon.imageio" -r || die )
 	use dicom || ( rm "src/dicom.imageio" -r || die )
-	use dpx || ( rm "src/dpx.imageio" -r || die )
-	use dds || ( rm "src/dds.imageio" -r || die )
 	use gif || ( rm "src/gif.imageio" -r || die )
 	use jpeg2k || ( rm "src/jpeg2000.imageio" -r || die )
 	use raw || ( rm "src/raw.imageio" -r || die )
-	use fits || ( rm "src/fits.imageio" -r || die )
 	use heif || ( rm "src/heif.imageio" -r || die )
-	use hdr || ( rm "src/hdr.imageio" -r || die )
-	use pnm || ( rm "src/pnm.imageio" -r || die )
-	use rla || ( rm "src/rla.imageio" -r || die )
-	use sgi || ( rm "src/sgi.imageio" -r || die )
-	use tga || ( rm "src/targa.imageio" -r || die )
-	use tiff || ( rm "src/tiff.imageio" -r || die )
 	use webp || ( rm "src/webp.imageio" -r || die )
-	use xsi || ( rm "src/softimage.imageio" -r || die )
 
 	# remove non Linux plugins
 	rm "src/nuke" -r || die
-	rm "src/ico.imageio" -r || die
 	rm "src/r3d.imageio" -r || die
-	rm "src/psd.imageio" -r || die
 
 	cmake_src_prepare
 	cmake_comment_add_subdirectory src/fonts
