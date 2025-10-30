@@ -61,20 +61,11 @@ X86_CPU_FEATURES=(
 CPU_FEATURES=( "${X86_CPU_FEATURES[@]/#/cpu_flags_x86_}" )
 # font install is enabled upstream
 # building test enabled upstream
-IUSE="aom avif color-management cuda dicom doc ffmpeg fits +gif gui heif jpeg2k jpegxl libcxx
-opencv tools openvdb +png ptex +python qt5 qt6 +raw rav1e tbb test +truetype wayland +webp X
-${CPU_FEATURES[@]%:*} ${CUDA_TARGETS_COMPAT[@]/#/cuda_targets_}"
+IUSE="+bmp color-management +cineon cuda +dds dicom doc +dpx +ffmpeg fits +gif gui hdr heif htj2k +iff
+ jpeg2k jpegxl libcxx opencv tools openvdb +png +pnm ptex +python qt5 qt6 +raw +rla +sgi tbb test +tga +tiff
+ +truetype uhdr wayland +webp +xsi X ${CPU_FEATURES[@]%:*} ${CUDA_TARGETS_COMPAT[@]/#/cuda_targets_}"
 
 REQUIRED_USE="
-	aom? (
-		avif
-	)
-	avif? (
-		|| (
-			aom
-			rav1e
-		)
-	)
 	cuda? (
 		|| (
 			${CUDA_TARGETS_COMPAT[@]/#/cuda_targets_}
@@ -86,6 +77,9 @@ REQUIRED_USE="
 			qt6
 		)
 	)
+	htj2k? (
+		jpeg2k
+	)
 	openvdb? (
 		${OPENVDB_REQUIRED_USE}
 		tbb
@@ -95,9 +89,6 @@ REQUIRED_USE="
 	)
 	tools? (
 		gui
-	)
-	rav1e? (
-		avif
 	)
 	test? (
 		tools
@@ -128,15 +119,15 @@ RDEPEND="
 	dev-cpp/robin-map
 	dev-libs/libfmt:=
 	dev-libs/pugixml
-	>=media-libs/libheif-1.13.0:=
-	media-libs/libultrahdr:=
+	heif? ( >=media-libs/libheif-1.13.0:= )
+	htj2k? ( media-libs/openjph:= )
+	uhdr? ( media-libs/libultrahdr:= )
 	cuda? ( >=dev-util/nvidia-cuda-toolkit-12.8:= )
 	png? ( media-libs/libpng:0= )
-	webp? ( >=media-libs/libwebp-1.5.0:= )
+	webp? ( >=media-libs/libwebp-1.6.0:= )
 	>=dev-libs/imath-3.1.2-r4:=
 	color-management? ( >=media-libs/opencolorio-2.1.1-r4:= )
 	>=media-libs/openexr-3:0=
-	media-libs/tiff:=
 	sys-libs/zlib:=
 	virtual/jpeg:0
 	dicom? ( sci-libs/dcmtk )
@@ -172,6 +163,7 @@ RDEPEND="
 		)
 	)
 	raw? ( media-libs/libraw:= )
+	tiff? ( media-libs/tiff:= )
 	truetype? ( media-libs/freetype )
 "
 DEPEND="
@@ -189,7 +181,7 @@ QA_PRESTRIPPED="usr/lib/python.*/site-packages/.*"
 PATCHES=(
 	"${FILESDIR}/${PN}-2.5.8.0-fix-tests.patch"
 	"${FILESDIR}/${PN}-2.5.12.0-heif-find-fix.patch"
-	"${FILESDIR}/${PN}-2.5.18.0-tests-optional.patch"
+#	"${FILESDIR}/${PN}-2.5.18.0-tests-optional.patch"
 	"${FILESDIR}/${PN}-3.0.8.1-fix-alpha-pr3934.patch"
 )
 
@@ -199,26 +191,35 @@ pkg_setup() {
 }
 
 src_prepare() {
-	if ! use dicom; then
-		rm "src/dicom.imageio" -r || die
-	fi
+	use bmp || ( rm "src/bmp.imageio" -r || die )
+	use cineon || ( rm "src/cineon.imageio" -r || die )
+	use dicom || ( rm "src/dicom.imageio" -r || die )
+	use dpx || ( rm "src/dpx.imageio" -r || die )
+	use dds || ( rm "src/dds.imageio" -r || die )
+	use gif || ( rm "src/gif.imageio" -r || die )
+	use jpeg2k || ( rm "src/jpeg2000.imageio" -r || die )
+	use raw || ( rm "src/raw.imageio" -r || die )
+	use fits || ( rm "src/fits.imageio" -r || die )
+	use heif || ( rm "src/heif.imageio" -r || die )
+	use hdr || ( rm "src/hdr.imageio" -r || die )
+	use pnm || ( rm "src/pnm.imageio" -r || die )
+	use rla || ( rm "src/rla.imageio" -r || die )
+	use sgi || ( rm "src/sgi.imageio" -r || die )
+	use tga || ( rm "src/targa.imageio" -r || die )
+	use tiff || ( rm "src/tiff.imageio" -r || die )
+	use webp || ( rm "src/webp.imageio" -r || die )
+	use xsi || ( rm "src/softimage.imageio" -r || die )
 
-	if ! use gif; then
-		rm src/gif.imageio -r || die
-	fi
-
-	if ! use jpeg2k; then
-		rm src/jpeg2000.imageio -r || die
-	fi
-
-	if ! use raw; then
-		rm src/raw.imageio -r || die
-	fi
+	# remove non Linux plugins
+	rm "src/nuke" -r || die
+	rm "src/ico.imageio" -r || die
+	rm "src/r3d.imageio" -r || die
+	rm "src/psd.imageio" -r || die
 
 	cmake_src_prepare
 	cmake_comment_add_subdirectory src/fonts
 
-	use elibc_musl && eapply "${FILESDIR}/${PN}-3.0.8.1-musl-64bit.patch"
+	# use elibc_musl && eapply "${FILESDIR}/${PN}-3.0.8.1-musl-64bit.patch"
 
 	if ! use color-management; then
 		sed \
@@ -302,12 +303,17 @@ src_configure() {
 
 		-DINSTALL_FONTS="OFF"
 		-DINSTALL_DOCS="$(usex doc)"
-
+		-DENABLE_BMP="$(usex bmp)"
+		-DENABLE_CINEON="$(usex cineon)"
+		-DENABLE_DPX="$(usex dpx)"
+		-DENABLE_DDS="$(usex dds)"
 		-DENABLE_DCMTK="$(usex dicom)"
 		-DENABLE_FFmpeg="$(usex ffmpeg)"
 		-DENABLE_FITS="$(usex fits)"
 		-DENABLE_FREETYPE="$(usex truetype)"
 		-DENABLE_GIF="$(usex gif)"
+		-DENABLE_HDR="$(usex hdr)"
+		-DENABLE_IFF="$(usex iff)"
 		-DENABLE_LibRaw="$(usex raw)"
 		-DENABLE_Nuke="no" # not in Gentoo
 		-DENABLE_OpenCV="$(usex opencv)"
@@ -317,23 +323,24 @@ src_configure() {
 		-DENABLE_TBB="$(usex tbb)"
 		-DENABLE_Ptex="$(usex ptex)"
 		-DENABLE_PNG="$(usex png)"
+		-DENABLE_PNM="$(usex pnm)"
+		-DENABLE_RLA="$(usex rla)"
+		-DENABLE_SGI="$(usex sgi)"
+		-DENABLE_SOFTIMAGE="$(usex xsi)"
+		-DENABLE_TARGA="$(usex tga)"
+		-DENABLE_libuhdr="$(usex uhdr)"
 		-DENABLE_WEBP="$(usex webp)"
 		-DENABLE_OPENCOLORIO="$(usex color-management)"
-
-		-DENABLE_GIF="$(usex gif)"
 		-DENABLE_LIBRAW="$(usex raw)"
-		-DENABLE_PTEX="$(usex ptex)"
-		-DENABLE_OPENJPEG="$(usex jpeg2k)"
-
 		-DOIIO_BUILD_TOOLS="$(usex tools)"
 		-DOIIO_BUILD_TESTS="$(usex test)"
 		-DOIIO_DOWNLOAD_MISSING_TESTDATA="no"
 		-DOIIO_USE_CUDA="$(usex cuda)"
-
 		-DUSE_CCACHE="no"
 		-DUSE_EXTERNAL_PUGIXML="yes"
 		-DLINKSTATIC="OFF"
 		-DUSE_R3DSDK="no" # not in Gentoo
+
 		-DUSE_PYTHON="$(usex python)"
 		-DUSE_SIMD="$(local IFS=','; echo "${mysimd[*]}")"
 	)

@@ -77,7 +77,7 @@ RDEPEND="
 	openvdb? ( >=media-gfx/openvdb-9.0.0:=[${OPENVDB_SINGLE_USEDEP},cuda?] )
 	$(python_gen_cond_dep '
 		>=media-libs/openimageio-2.4.12.0:=[${PYTHON_SINGLE_USEDEP}]
-		<media-libs/openimageio-3.1:=[${PYTHON_SINGLE_USEDEP}]
+		<media-libs/openimageio-3.2:=[${PYTHON_SINGLE_USEDEP}]
 	')
 	dev-libs/libfmt[${MULTILIB_USEDEP}]
 	sys-libs/zlib:=[${MULTILIB_USEDEP}]

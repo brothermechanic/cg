@@ -84,7 +84,7 @@ AMDGPU_TARGETS_COMPAT=(
 )
 
 IUSE_CPU="+simd +tbb -lld -gold +mold -cpu_flags_arm_neon llvm +openmp -valgrind +jemalloc"
-IUSE_GPU="cuda optix hip oneapi -cycles-bin-kernels ${CUDA_TARGETS_COMPAT[@]/#/cuda_targets_} ${AMDGPU_TARGETS_COMPAT[@]/#/amdgpu_targets_} vulkan"
+IUSE_GPU="cuda optix hip hiprt oneapi -cycles-bin-kernels ${CUDA_TARGETS_COMPAT[@]/#/cuda_targets_} ${AMDGPU_TARGETS_COMPAT[@]/#/amdgpu_targets_} vulkan"
 IUSE_DESKTOP="+cg -portable +X headless +nls icu -ndof wayland gnome"
 IUSE_LIBS="+bullet +boost +draco +manifold +materialx +color-management +oidn +opensubdiv +openvdb nanovdb openxr +libmv lzma lzo osl +fftw +potrace +pugixml +otf"
 IUSE_MOD="+fluid +smoke +oceansim +remesh +gmp +quadriflow +uv-slim +addons addons-contrib +assets"
@@ -116,6 +116,7 @@ REQUIRED_USE="${PYTHON_REQUIRED_USE}
 	openvdb? ( ${OPENVDB_REQUIRED_USE} cycles tbb )
 	osl? ( cycles llvm pugixml )
 	hip? ( cycles llvm )
+	hiprt? ( hip )
 	vulkan? ( llvm )
 	test? ( gtests color-management )
 	usd? ( tbb )
@@ -288,7 +289,7 @@ RDEPEND="
 	cuda? ( dev-util/nvidia-cuda-toolkit:= )
 	draco? ( >=media-libs/draco-1.5.2:= )
 	embree? (
-		>=media-libs/embree-4.3.2[raymask,tbb?]
+		>=media-libs/embree-4.3.2:=[raymask,tbb?]
 		<media-libs/embree-5
 	)
 	ffmpeg? (
@@ -296,10 +297,13 @@ RDEPEND="
 		>media-video/ffmpeg-5:=[jpeg2k?,opus?,lame?,sdl,theora?,vorbis?,vpx?,x264?,xvid?,zlib]
 	)
 	fftw? ( sci-libs/fftw:3.0=[threads] )
-	flac? (	>=media-libs/flac-1.4.2	)
+	flac? ( >=media-libs/flac-1.4.2 )
 	gmp? ( >=dev-libs/gmp-6.2.1[cxx] )
 	hip? (
 		>=dev-util/hip-6.1:=
+		hiprt? (
+			dev-libs/hiprt:2.5=
+		)
 	)
 	gtests? (
 		dev-cpp/glog:=[gflags]
@@ -327,7 +331,7 @@ RDEPEND="
 	oneapi? ( dev-libs/intel-compute-runtime[l0] )
 	media-libs/glew:*
 	oidn? ( >=media-libs/oidn-2.1.0[cuda?] )
-	<media-libs/openimageio-3.1[${PYTHON_SINGLE_USEDEP},${OPENVDB_SINGLE_USEDEP},python,color-management?]
+	<media-libs/openimageio-3.2:=[${PYTHON_SINGLE_USEDEP},${OPENVDB_SINGLE_USEDEP},python,color-management?]
 	>=media-libs/openimageio-2.5.11.0[${PYTHON_SINGLE_USEDEP},${OPENVDB_SINGLE_USEDEP},python,color-management?]
 	>=dev-cpp/robin-map-0.6.2
 	>=dev-libs/libfmt-9.1.0
@@ -677,6 +681,10 @@ src_prepare() {
 	else
 		cmake_comment_add_subdirectory tests
 	fi
+	# Use slotted libhiprt64
+	sed \
+		-e "s|\"libhiprt64.so\"|\"/usr/lib/hiprt/2.5/$(get_libdir)/libhiprt64.so\"|" \
+		-i extern/hipew/src/hiprtew.cc || die
 
 	ewarn "$(echo "Remaining bundled dependencies:";
 			( find extern -mindepth 1 -maxdepth 1 -type d; ) | sed 's|^|- |')"

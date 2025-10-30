@@ -1,0 +1,19 @@
+--- a/tests/CMakeLists.txt
++++ b/tests/CMakeLists.txt
+@@ -10,7 +10,7 @@ FetchContent_Declare(
+ set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
+ set(BUILD_GMOCK OFF CACHE BOOL "" FORCE)
+ option(INSTALL_GTEST "Enable installation of googletest." OFF)
+-FetchContent_MakeAvailable(googletest)
++find_package(GTest REQUIRED)
+ 
+ # Fetch test files
+ FetchContent_Declare(
+@@ -18,7 +18,6 @@ FetchContent_Declare(
+   URL               https://github.com/aous72/jp2k_test_codestreams/archive/refs/heads/main.zip
+   SOURCE_DIR        jp2k_test_codestreams/
+ )
+-FetchContent_MakeAvailable(jp2k_test_codestreams)
+ 
+ # create the mse_pae executable
+ include(mse_pae.cmake)
