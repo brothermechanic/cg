@@ -19,7 +19,7 @@ if [[ -z ${PV%%*9999} ]]; then
 	inherit git-r3
 	SLOT="0/${PV}"
 else
-	MY_PV="8b9e25d"
+	MY_PV="626e18b"
 	[[ -n ${PV%%*_p*} ]] && MY_PV="${PV}"
 	SRC_URI+="
 		mirror://githubcl/aous72/${MY_PN}/tar.gz/${MY_PV} -> ${P}.tar.gz
@@ -75,6 +75,7 @@ multilib_src_configure() {
 			-DOJPH_DISABLE_NEON=$(usex !cpu_flags_arm_neon)
 		)
 	fi
+	CMAKE_BUILD_TYPE=Release
 	cmake_src_configure
 	use test && ln -sf ../../${MY_TST} tests/${MY_TST%-*}
 }

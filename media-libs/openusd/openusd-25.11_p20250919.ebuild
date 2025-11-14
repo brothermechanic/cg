@@ -157,7 +157,7 @@ BDEPEND="
 			<sys-devel/gcc-16
 			>=sys-devel/gcc-9.0.1
 		)
-		<llvm-core/clang-21
+		<llvm-core/clang-22
 	)
 "
 COMMIT="60a8d58c3953a005e604c4f760caa018a90ae846"
