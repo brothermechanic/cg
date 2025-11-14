@@ -41,7 +41,7 @@ if [[ "4.0 3.6 4.2" =~ "${MY_PV}" ]]; then
 elif [[ "4.3 4.4" =~ "${MY_PV}" ]]; then
 	AUD_PV="6"
 else
-	AUD_PV="7"
+	AUD_PV="8"
 fi
 
 SLOT="$MY_PV"
@@ -504,6 +504,12 @@ pkg_pretend() {
 		einfo "The Intel oneAPI support is rudimentary."
 		einfo ""
 		einfo "Please report any bugs you find to https://bugs.gentoo.org/"
+		if ! command -v icpx &>/dev/null && ! command -v dpcpp &>/dev/null; then
+			eerror "Could not find icpx or dpcpp."
+			eerror "You need SYCL/DPC++ to enable oneapi support."
+			eerror "Try sys-devel/DPC++::science"
+			die "FindSYCL would fail. Aborting."
+		fi
 	fi
 }
 
@@ -889,16 +895,16 @@ src_configure() {
 
 	if use hip; then
 		mycmakeargs+=(
-			# -DROCM_PATH="$(hipconfig -R)"
 			-DHIP_ROOT_DIR="$(hipconfig -p)"
-
-			-DHIP_HIPCC_FLAGS="-fcf-protection=none"
-
-			# -DHIP_LINKER_EXECUTABLE="$(get_llvm_prefix)/bin/clang++"
-			-DCMAKE_HIP_LINK_EXECUTABLE="$(get_llvm_prefix)/bin/clang++"
 
 			-DCYCLES_HIP_BINARIES_ARCH="$(get_amdgpu_flags)"
 		)
+		if use hiprt; then
+			mycmakeargs+=(
+				-DHIPRT_ROOT_DIR="${ESYSROOT}/usr/lib/hiprt/2.5"
+				-DHIPRT_COMPILER_PARALLEL_JOBS="$(makeopts_jobs)"
+			)
+		fi
 	fi
 
 	if use llvm; then
@@ -942,6 +948,8 @@ src_configure() {
 			use cuda && CYCLES_TEST_DEVICES+=( "CUDA" )
 			use optix && CYCLES_TEST_DEVICES+=( "OPTIX" )
 			use hip && CYCLES_TEST_DEVICES+=( "HIP" )
+			use hiprt && CYCLES_TEST_DEVICES+=( "HIP-RT" )
+			use oneapi && CYCLES_TEST_DEVICES+=( "ONEAPI" )
 		fi
 		mycmakeargs+=(
 			-DCMAKE_INSTALL_PREFIX_WITH_CONFIG="${T}/usr"
