@@ -25,7 +25,7 @@ if [[ ${PV} == 9999 ]]; then
 	EGIT_BRANCH="main"
 	#EGIT_COMMIT="0f3fdd25bcabac1d68d02fb246d961ea56fe49a1"
 	EGIT_CLONE_TYPE="shallow"
-	MY_PV="5.0"
+	MY_PV="5.1"
 	KEYWORDS=""
 else
 	MY_PV="$(ver_cut 1-2)"

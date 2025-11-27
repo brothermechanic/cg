@@ -19,7 +19,7 @@ if [[ -z ${PV%%*9999} ]]; then
 	inherit git-r3
 	SLOT="0/${PV}"
 else
-	MY_PV="626e18b"
+	MY_PV="f9fdf80"
 	[[ -n ${PV%%*_p*} ]] && MY_PV="${PV}"
 	SRC_URI+="
 		mirror://githubcl/aous72/${MY_PN}/tar.gz/${MY_PV} -> ${P}.tar.gz
@@ -53,7 +53,7 @@ BDEPEND="
 "
 PATCHES=(
 	"${FILESDIR}"/tests.diff
-	"${FILESDIR}"/openjph-0.24.2-fix-pointer-conversion.patch
+	#"${FILESDIR}"/openjph-0.24.2-fix-pointer-conversion.patch
 )
 
 multilib_src_configure() {
