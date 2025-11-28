@@ -8,3 +8,4 @@ inherit blender-addon
 DESCRIPTION="Various pie menus to speed up your workflow"
 LICENSE="GPL-3"
 
+EGIT_SUBMODULES=()
