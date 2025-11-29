@@ -8,4 +8,4 @@ inherit blender-addon
 DESCRIPTION="Various pie menus to speed up your workflow"
 LICENSE="GPL-3"
 
-EGIT_SUBMODULES=()
+EGIT_OVERRIDE_REPO_GIT_GIT_BLENDER_ORG_METS_BLENDER_STUDIO_UTILS="https://projects.blender.org/Mets/blender_studio_utils"
