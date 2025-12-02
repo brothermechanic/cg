@@ -3,7 +3,7 @@
 
 EAPI=8
 
-PYTHON_COMPAT=( python3_{11..13} )
+PYTHON_COMPAT=( python3_{12..14} )
 OPENVDB_COMPAT=( {10..12} )
 inherit cmake desktop python-single-r1 flag-o-matic toolchain-funcs openvdb xdg-utils
 
@@ -160,10 +160,10 @@ BDEPEND="
 		<llvm-core/clang-22
 	)
 "
-COMMIT="60a8d58c3953a005e604c4f760caa018a90ae846"
-#https://github.com/PixarAnimationStudios/USD/archive/refs/tags/v${PV}.tar.gz
+#COMMIT="60a8d58c3953a005e604c4f760caa018a90ae846"
+#https://github.com/PixarAnimationStudios/USD/archive/${COMMIT}.tar.gz
 SRC_URI="
-https://github.com/PixarAnimationStudios/USD/archive/${COMMIT}.tar.gz
+https://github.com/PixarAnimationStudios/USD/archive/refs/tags/v${PV}.tar.gz
 	-> ${P}.tar.gz
 "
 RESTRICT="
@@ -177,19 +177,20 @@ PATCHES=(
 	"${FILESDIR}/openusd-23.11-defaultfonts.patch"
 #	"${FILESDIR}/openusd-21.11-gcc-11-numeric_limits.patch"
 #	"${FILESDIR}/openusd-21.11-use-whole-archive-for-lld.patch"
-	"${FILESDIR}/openusd-24.08-fix-monolithic-build-2400.patch"
+#	"${FILESDIR}/openusd-24.08-fix-monolithic-build-2400.patch"
 	"${FILESDIR}/openusd-24.08-PVS-bugfix-base-trace-2313.patch"
 	"${FILESDIR}/openusd-24.08-PVS-bugfix-envvar-2157.patch"
 	"${FILESDIR}/openusd-24.08-PVS-bugfix-base-tf-2161.patch"
 	#"${FILESDIR}/openusd-24.08-PVS-bugfix-usd-2165.patch"
 	"${FILESDIR}/openusd-25.05-cmake-FindBoost-fix.patch"
-	"${FILESDIR}/openusd-25.08-fix-monolithic-linking-with-clang.patch"
+#	"${FILESDIR}/openusd-25.08-fix-monolithic-linking-with-clang.patch"
 	#"${FILESDIR}/openusd-25.08-cmake-FindOpenGL-fix.patch"
 	#"${FILESDIR}/openusd-25.08-embree-4-plugin-2313.patch"
 	#"${FILESDIR}/openusd-25.08-fix-vulkan-UMA-ReBAR-pr3763.patch"
 	#"${FILESDIR}/openusd-25.08-fix-vulkan-memory-barrier-issues-pr3761.patch"
 )
-S="${WORKDIR}/OpenUSD-${COMMIT}"
+#S="${WORKDIR}/OpenUSD-${COMMIT}"
+S="${WORKDIR}/OpenUSD-${PV}"
 DOCS=( "CHANGELOG.md" "README.md" )
 
 pkg_setup() {

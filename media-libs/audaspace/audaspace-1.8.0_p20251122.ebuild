@@ -3,7 +3,7 @@
 
 EAPI=8
 
-PYTHON_COMPAT=( python3_{11..13} )
+PYTHON_COMPAT=( python3_{11..14} )
 DISTUTILS_OPTIONAL=1
 DISTUTILS_USE_PEP517=setuptools
 DISTUTILS_SINGLE_IMPL=1
@@ -21,7 +21,7 @@ if [[ ${PV} == 9999 ]]; then
 	EGIT_SUBMODULES=()
 	KEYWORDS=""
 else
-	COMMIT="96e37531359cb497a0922266d13698c346036493"
+	COMMIT="ddda09e7541113436d3b7bdaf4e3bffe0a18e4d6"
 	SRC_URI="https://github.com/neXyon/audaspace/archive/${COMMIT}.tar.gz -> ${P}.tar.gz"
 	S=${WORKDIR}/${PN}-${COMMIT}
 	KEYWORDS="~amd64 ~x86 ~arm64 ~arm"
@@ -92,7 +92,7 @@ src_configure() {
 	CMAKE_BUILD_TYPE=Release
 	local mycmakeargs=(
 		-DCMAKE_POLICY_DEFAULT_CMP0148="OLD"
-		-DCMAKE_INSTALL_DOCDIR="/usr/share/doc/${PF}"
+		-DDOCUMENTATION_INSTALL_PATH="/usr/share/doc/${PF}"
 		-DWITH_OPENAL=$(usex openal)
 		-DWITH_JACK=$(usex jack)
 		-DWITH_PYTHON=$(usex python)

@@ -20,11 +20,11 @@ HOMEPAGE="https://www.blender.org"
 EGIT_REPO_URI="https://projects.blender.org/blender/blender.git https://github.com/blender/blender.git"
 EGIT_SUBMODULES=( '*' '-lib/*' '-tools/*' '-release/datafiles/assets' )
 EGIT_LFS="yes"
+# using shallow causes long wait times.
 EGIT_LFS_CLONE_TYPE="single"
 if [[ ${PV} == 9999 ]]; then
 	EGIT_BRANCH="main"
 	#EGIT_COMMIT="0f3fdd25bcabac1d68d02fb246d961ea56fe49a1"
-	EGIT_CLONE_TYPE="shallow"
 	MY_PV="5.1"
 	KEYWORDS=""
 else
@@ -123,7 +123,7 @@ REQUIRED_USE="${PYTHON_REQUIRED_USE}
 "
 # opensubdiv? ( X )
 
-LANGS="en en_GB ab ar be bg ca cs da de el eo es es_ES eu fa fi fr ha he hi hr hu id it ja ka km ko ky lt ml ne nl pl pt_BR pt ro ru sl sk sr@latin sr sv sw ta th tr zh_TW uk ur vi zh_CN zh_HANS zh_HANT"
+LANGS="en en_GB ab ar be bg ca cs da de el eo es es_ES eu fa fi fr ha he hi hr hu id it ja ka km ko ky lt ml nb_NO ne nl pl pt_BR pt ro ru sl sk sr@latin sr sv sw ta th tr zh_TW uk ur vi zh_CN zh_HANS zh_HANT"
 
 for X in ${LANGS} ; do
 	IUSE+=" l10n_${X}"
@@ -414,6 +414,18 @@ DEPEND="
 	)
 "
 
+if [[ "${PV}" == *9999* ]]; then
+DEPEND+="
+	test? (
+		experimental? (
+			wayland? (
+				dev-libs/weston
+			)
+		)
+	)
+"
+fi
+
 BDEPEND="
 	$(python_gen_cond_dep '
 		>=dev-python/setuptools-63.2.0[${PYTHON_USEDEP}]
@@ -582,7 +594,6 @@ src_prepare() {
 
 	use portable || eapply "${FILESDIR}/${SLOT}"
 	use optix && eapply "${FILESDIR}/blender-fix-optix-build.patch"
-	#use elibc_musl && append-cflags "-D_GNU_SOURCE"
 	eapply "${FILESDIR}/blender-fix-lld-17-linking.patch"
 
 	#no need `if use cg && [ -d ${CG_BLENDER_SCRIPTS_DIR} ]; then`
@@ -997,7 +1008,7 @@ src_configure() {
 src_test() {
 	# A lot of tests need to have access to the installed data files.
 	# So install them into the image directory now.
-	DESTDIR="${T}" cmake_build install
+	DESTDIR="${T%/}" cmake_build install
 
 	blender_get_version
 	# Define custom blender data/script file paths, or we won't be able to find them otherwise during testing.
@@ -1011,7 +1022,8 @@ src_test() {
 	# TODO only picks first card
 	addwrite "/dev/dri/card0"
 	addwrite "/dev/dri/renderD128"
-	addwrite "/dev/udmabuf"
+
+	[[ -c "/dev/udmabuf" ]] && addwrite "/dev/udmabuf"
 
 	if use cuda; then
 		cuda_add_sandbox -w
@@ -1020,38 +1032,14 @@ src_test() {
 	fi
 
 	local -x CMAKE_SKIP_TESTS=(
-		"^compositor_cpu_color$"
-		"^compositor_cpu_filter$"
-		"^cycles_image_colorspace_cpu$"
 		"^script_pyapi_bpy_driver_secure_eval$"
 	)
 
 	if [[ "${RUN_FAILING_TESTS:-0}" -eq 0 ]]; then
 		einfo "not running failing tests RUN_FAILING_TESTS=${RUN_FAILING_TESTS}"
 		CMAKE_SKIP_TESTS+=(
-			"^BLI$"
-			"^asset_system$"
-			"^cycles$"
-			"^cycles_bsdf_cpu$"
-			"^cycles_bsdf_cuda$"
-			"^cycles_bsdf_optix$"
-			"^cycles_displacement_cpu$"
-			"^cycles_displacement_cuda$"
-			"^cycles_displacement_optix$"
-			"^cycles_image_data_types_cpu$"
-			"^cycles_image_data_types_cuda$"
-			"^cycles_image_data_types_optix$"
-			"^cycles_osl_cpu$"
-			"^cycles_principled_bsdf_cpu$"
-			"^cycles_principled_bsdf_cuda$"
-			"^cycles_principled_bsdf_optix$"
-			"^cycles_shader_cpu$"
-			"^cycles_shader_cuda$"
-			"^cycles_shader_optix$"
-			"^ffmpeg_libs$" # needs H265
-			"^imbuf_save$" # needs oiio with working webp
-			"^geo_node_curves_curve_to_points$"
-			"^geo_node_geometry_duplicate_elements_curve_points$"
+			# Does try to import from weird paths
+			"^io_fbx_import$"
 		)
 	fi
 
@@ -1062,46 +1050,64 @@ src_test() {
 		)
 	fi
 
-	if ! has_version "media-libs/openimageio[python]"; then
+	if has_version ">=media-video/ffmpeg-8"; then
 		CMAKE_SKIP_TESTS+=(
-			# import OpenImageIO as oiio # ModuleNotFoundError: No module named 'OpenImageIO'
-			"^compositor_cpu_file_output$"
+			# output change TODO
+			"^sequencer_render_video_output$"
 		)
 	fi
-
-	# oiio can't find webp due to missing cmake files # 937031
-	sed -e "s/ WEBP//g" -i "${BUILD_DIR}/tests/python/CTestTestfile.cmake" || die
 
 	# For debugging, print out all information.
 	local -x VERBOSE="$(usex debug "true" "false")"
 	"${VERBOSE}" && einfo "VERBOSE=${VERBOSE}"
 
+	local -x DEBUG="$(usex debug "true" "false")"
+	"${DEBUG}" && einfo "DEBUG=${DEBUG}"
+
 	# Show the window in the foreground.
+	# local -x USE_WINDOW="true" # non-zero
 	[[ -v USE_WINDOW ]] && einfo "USE_WINDOW=${USE_WINDOW}"
 
 	# local -x USE_DEBUG="true" # non-zero
 	[[ -v USE_DEBUG ]] && einfo "USE_DEBUG=${USE_DEBUG}"
 
+	# Environment OPENIMAGEIO_CUDA=0 trumps everything else, turns off
+	# Cuda functionality. We don't even initialize in this case.
+	local -x OPENIMAGEIO_CUDA=0
+
+	# Needed if openimageio wasn't build with -DNDEBUG
+	local -x OPENIMAGEIO_DEBUG=0
+
+	local -x CYCLESTEST_ARGS="-t 0"
+
 	if [[ "${EXPENSIVE_TESTS:-0}" -gt 0 ]]; then
 		einfo "running expensive tests EXPENSIVE_TESTS=${EXPENSIVE_TESTS}"
+		if [[ "${PV}" == *9999* && "${BVC}" == "alpha" ]] &&
+			use experimental && use wayland; then
+				# This runs weston
+				xdg_environment_reset
+		fi
 
-		xdg_environment_reset
-		# WITH_GPU_RENDER_TESTS_HEADED
-		if use wayland; then
-			local compositor exit_code
-			local logfile=${T}/weston.log
-			weston --xwayland --backend=headless --socket=wayland-5 --idle-time=0 2>"${logfile}" &
-			compositor=$!
-			local -x WAYLAND_DISPLAY=wayland-5
-			sleep 1 # wait for xwayland to be up
-			local -x DISPLAY="$(grep "xserver listening on display" "${logfile}" | cut -d ' ' -f 5)"
+		if [[ "${USE_WINDOW}" == "true" ]]; then
+			xdg_environment_reset
+			# WITH_GPU_RENDER_TESTS_HEADED
+			if use wayland; then
+				local compositor exit_code
+				local logfile=${T}/weston.log
+				weston --xwayland --backend=headless --width=800 --height=600 --socket=wayland-5 --idle-time=0 2>"${logfile}" &
+				compositor=$!
+				local -x WAYLAND_DISPLAY=wayland-5
+				sleep 1 # wait for xwayland to be up
+				# TODO use eapi9-pipestatus
+				local -x DISPLAY="$(grep "xserver listening on display" "${logfile}" | cut -d ' ' -f 5)"
 
-			cmake_src_test
+				cmake_src_test
 
-			exit_code=$?
-			kill "${compositor}"
-		elif use X; then
-			virtx cmake_src_test
+				exit_code=$?
+				kill "${compositor}"
+			elif use X; then
+				virtx cmake_src_test
+			fi
 		else
 			cmake_src_test
 		fi
