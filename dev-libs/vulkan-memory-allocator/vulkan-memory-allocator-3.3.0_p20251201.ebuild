@@ -5,7 +5,7 @@ EAPI=8
 
 inherit cmake
 
-COMMIT_HASH="1076b348abd17859a116f4b111c43d58a588a086"
+COMMIT_HASH="e722e57c891a8fbe3cc73ca56c19dd76be242759"
 
 DESCRIPTION="Easy to integrate Vulkan memory allocation library"
 HOMEPAGE="https://github.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator"

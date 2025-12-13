@@ -10,8 +10,8 @@ LLVM_OPTIONAL=1
 
 ROCM_SKIP_GLOBALS=1
 
-inherit cuda rocm llvm-r1
-inherit eapi9-pipestatus check-reqs flag-o-matic pax-utils python-single-r1 toolchain-funcs virtualx openvdb cg-blender-scripts-dir
+inherit cuda rocm llvm-r2
+inherit eapi9-pipestatus check-reqs flag-o-matic multiprocessing pax-utils python-single-r1 toolchain-funcs virtualx openvdb cg-blender-scripts-dir
 inherit cmake xdg-utils git-r3
 
 DESCRIPTION="Blender is a free and open-source 3D creation suite."
@@ -300,7 +300,7 @@ RDEPEND="
 	flac? ( >=media-libs/flac-1.4.2 )
 	gmp? ( >=dev-libs/gmp-6.2.1[cxx] )
 	hip? (
-		>=dev-util/hip-6.1:=
+		>=dev-util/hip-6.0:=
 		hiprt? (
 			dev-libs/hiprt:2.5=
 		)
@@ -391,6 +391,7 @@ RDEPEND="
 	)
 	X? (
 		x11-libs/libX11
+		x11-libs/libXfixes
 		x11-libs/libXi
 		x11-libs/libXxf86vm
 	)
@@ -1230,4 +1231,28 @@ pkg_postrm() {
 		ewarn "It may contain extra render kernels not tracked by portage"
 		ewarn
 	fi
+}
+
+pkg_info () {
+	debugvars () {
+		local var
+		for var in "${@}"; do
+			[[ -v "${var}" ]] && echo "${var}: ${!var}"
+		done
+	}
+
+	local blender_info_vars=(
+		CUDACXX
+		CUDAHOSTCXX
+		CUDAHOSTLD
+		CUDAARCHS
+		CUDAFLAGS
+		CUDA_PATH
+		CUDA_VERBOSE
+		NVCCFLAGS
+		NVCC_PREPEND_FLAGS
+		NVCC_APPPEND_FLAGS
+	)
+
+	debugvars "${blender_info_vars[@]}"
 }
