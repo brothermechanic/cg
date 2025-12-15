@@ -5,7 +5,7 @@ EAPI=8
 
 BLENDER_COMPAT=( 2_93 3_{1..6} 4_{0..5} 5_0 )
 
-inherit blender-addon
+inherit blender-legacy-addon
 
 DESCRIPTION="Simulate spring-like physics on Bone transforms"
 HOMEPAGE="https://github.com/shteeve3d/blender-wiggle-2"

@@ -5,7 +5,7 @@ EAPI=8
 
 BLENDER_COMPAT=( 2_93 3_{1..6} 4_{0..5} 5_0 )
 
-inherit blender-addon
+inherit blender-legacy-addon
 
 DESCRIPTION="Blender addon. Utilities for Cycles PyNodes"
 HOMEPAGE="https://github.com/Secrop/ShaderNodesExtra2.80"
@@ -14,7 +14,7 @@ EGIT_REPO_URI="https://github.com/Secrop/ShaderNodesExtra2.80"
 LICENSE="GPL-3"
 
 src_install() {
-	blender-addon_src_install
+	blender-legacy-addon_src_install
 	insinto ${CG_BLENDER_SCRIPTS_DIR}/addons/${PN}/Nodes || die
 	doins "${FILESDIR}"/Blur.py
 }

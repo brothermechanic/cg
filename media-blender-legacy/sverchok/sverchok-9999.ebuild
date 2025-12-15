@@ -5,7 +5,7 @@ EAPI=8
 
 BLENDER_COMPAT=( 2_93 3_{1..6} 4_{0..5} 5_0 )
 
-inherit blender-addon
+inherit blender-legacy-addon
 
 DESCRIPTION="Blender addon. Sverchok is a powerful parametric tool for architects"
 HOMEPAGE="http://nikitron.cc.ua/sverchok_en.html"
@@ -41,5 +41,5 @@ src_install() {
         insinto $(python_get_sitedir)/
         echo "/usr/lib64/freecad/lib64/" > ${D}/$(python_get_sitedir)/freecad_path.pth || die
     fi
-    blender-addon_src_install
+    blender-legacy-addon_src_install
 }

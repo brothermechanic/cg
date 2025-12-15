@@ -23,7 +23,7 @@ esac
 if [[ ! ${_BLENDER_LEGACY_ADDON_ECLASS} ]]; then
 _BLENDER_LEGACY_ADDON_ECLASS=1
 
-PYTHON_COMPAT=( python3_{10..13} )
+PYTHON_COMPAT=( python3_{10..14} )
 
 inherit git-r3 vcs-clean python-single-r1 cg-blender-scripts-dir
 
@@ -81,7 +81,7 @@ blender-legacy-addon_pkg_pretend() {
 	debug-print-function ${FUNCNAME} "${@}"
 
 	for i in "${BLENDER_COMPAT[@]}"; do
-		if ! has "${i}" "${_BLENDER_ALL_IMPLS[@]}"; then
+		if [[ "${i}" =~ "${_BLENDER_ALL_IMPLS[@]}" ]]; then
 			die "Invalid BLENDER_COMPAT : ${BLENDER_COMPAT[@]}"
 		fi
 	done

@@ -5,7 +5,7 @@ EAPI=8
 
 BLENDER_COMPAT=( 2_93 3_{0..6} 4_{0..5} 5_0 )
 
-inherit blender-addon
+inherit blender-legacy-addon
 
 DESCRIPTION="Align and distribute tools for blender objects."
 HOMEPAGE="https://github.com/Tuily/bl-align-and-distribute"

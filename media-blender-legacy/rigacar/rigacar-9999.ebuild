@@ -5,7 +5,7 @@ EAPI=8
 
 BLENDER_COMPAT=( 2_93 3_{1..6} 4_{0..5} 5_0 )
 
-inherit blender-addon
+inherit blender-legacy-addon
 
 DESCRIPTION="Adds a deformation rig for vehicules, generates animation rig and bake wheels animation."
 HOMEPAGE="https://github.com/digicreatures/rigacar"

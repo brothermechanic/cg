@@ -11,7 +11,7 @@ DISTUTILS_SINGLE_IMPL=1
 DISTUTILS_USE_PEP517="no"
 DISTUTILS_EXT=1
 
-inherit distutils-r1 blender-addon
+inherit distutils-r1 blender-legacy-addon
 
 DESCRIPTION="Addon for calculating collisions and for creating links between particles"
 HOMEPAGE="https://github.com/scorpion81/Blender-Molecular-Script"

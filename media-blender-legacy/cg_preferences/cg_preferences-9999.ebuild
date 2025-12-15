@@ -5,7 +5,7 @@ EAPI=8
 
 BLENDER_COMPAT=( 2_93 3_{3..6} 4_{0..5} 5_0 )
 
-inherit blender-addon
+inherit blender-legacy-addon
 
 DESCRIPTION="Setup CG preferences and hotkeys from JSON config"
 HOMEPAGE="https://gitflic.ru/project/brothermechanic/cg_preferences"

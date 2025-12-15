@@ -11,7 +11,7 @@ DISTUTILS_SINGLE_IMPL=1
 DISTUTILS_USE_PEP517="no"
 DISTUTILS_EXT=1
 
-inherit distutils-r1 blender-addon
+inherit distutils-r1 blender-legacy-addon
 
 DESCRIPTION="IsoSurface mesher addon for Blender (Updated by Gogo)"
 HOMEPAGE="https://github.com/porkminer/CubeSurfer"

@@ -9,7 +9,7 @@ PYTHON_COMPAT=( python3_{11..13} )
 
 DISTUTILS_USE_PEP517=setuptools
 DISTUTILS_SINGLE_IMPL=1
-inherit distutils-r1 blender-addon
+inherit distutils-r1 blender-legacy-addon
 
 DESCRIPTION="Blender addon. Node based visual scripting system designed for motion graphics in Blender."
 HOMEPAGE="https://github.com/JacquesLucke/animation_nodes"
@@ -25,5 +25,5 @@ src_install(){
 	echo "{\"Copy Target\" : \"${ED}${CG_BLENDER_SCRIPTS_DIR}/addons/${PN}\"}" > conf.json || die
 	${EPYTHON} setup.py build --copy --noversioncheck || die
 
-	blender-addon_src_install
+	blender-legacy-addon_src_install
 }

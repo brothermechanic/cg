@@ -3,14 +3,14 @@
 
 EAPI=8
 
-PYTHON_COMPAT=( python3_{11..13} )
+PYTHON_COMPAT=( python3_{11..14} )
 
 BLENDER_COMPAT=( 2_93 3_{1..6} 4_{0..5} 5_0 )
 
 DISTUTILS_SINGLE_IMPL=1
 DISTUTILS_USE_PEP517=no
 
-inherit distutils-r1 blender-addon
+inherit distutils-r1 blender-legacy-addon
 
 DESCRIPTION="Blender addon. Camera Calibration using Perspective Views of Rectangles"
 HOMEPAGE="https://blenderartists.org/forum/showthread.php?414359-Add-on-Camera-Calibration-using-Perspective-Views-of-Rectangles"
