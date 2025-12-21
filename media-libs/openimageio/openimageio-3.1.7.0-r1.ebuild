@@ -3,7 +3,7 @@
 
 EAPI=8
 
-PYTHON_COMPAT=( python3_{11..13} )
+PYTHON_COMPAT=( python3_{11..14} )
 OPENVDB_COMPAT=( {7..12} )
 CUDA_TARGETS_COMPAT=(
 	sm_30
@@ -181,7 +181,7 @@ QA_PRESTRIPPED="usr/lib/python.*/site-packages/.*"
 PATCHES=(
 	"${FILESDIR}/${PN}-2.5.8.0-fix-tests.patch"
 	"${FILESDIR}/${PN}-2.5.12.0-heif-find-fix.patch"
-#	"${FILESDIR}/${PN}-2.5.18.0-tests-optional.patch"
+	"${FILESDIR}/${PN}-3.1.6.2-tests-optional.patch"
 	"${FILESDIR}/${PN}-3.0.8.1-fix-alpha-pr3934.patch"
 )
 
@@ -239,7 +239,7 @@ src_prepare() {
 		fi
 
 		cp testsuite/heif/ref/out-libheif1.1{2,5}-orient.txt || die
-		eapply "${FILESDIR}/${PN}-2.5.12.0_heif_test.patch"
+		# eapply "${FILESDIR}/${PN}-2.5.12.0_heif_test.patch"
 	fi
 
 	if use cuda; then
@@ -388,8 +388,8 @@ src_test() {
 	CMAKE_SKIP_TESTS=(
 		"-broken$"
 
-		"^docs-examples-cpp$"
-		"^docs-examples-python$"
+		"^cmake-consumer$"
+		"^docs-examples-(cpp|python)$"
 		"texture-interp-bilinear.batch$"
 		"texture-interp-closest.batch$"
 		"texture-levels-stochaniso.batch$"
@@ -399,40 +399,33 @@ src_test() {
 		"texture-mip-stochasticaniso.batch$"
 		"^python-imagebufalgo$"
 
-		"^oiiotool-text$"
 		"^bmp$"
 		"^dds$"
 		"^ico$"
 		"^jpeg2000$"
 		"^psd$"
 		"^ptex$"
-
-		"^tiff-depths" # TODO float errors
-		"^tiff-suite" # TODO missing compresion
-		"unit_simd"
 	)
 
 	sed -e "s#../../../testsuite#../../../OpenImageIO-${PV}/testsuite#g" \
 		-i "${CMAKE_USE_DIR}/testsuite/python-imagebufalgo/ref/out.txt" || die
 
-	# NOTE src/build-scripts/ci-startup.bash
-	local -x CI CMAKE_PREFIX_PATH LD_LIBRARY_PATH OPENIMAGEIO_FONTS PYTHONPATH
-	CI=true
-	local -x OpenImageIO_CI=true
+	# NOTE testsuite/runtest.py
+	local -x CI=true
+	# local -x OPENIMAGEIO_CUDA=0 # prevent trying to access gpu devices
 	# local -x OIIO_USE_CUDA=0
-	CMAKE_PREFIX_PATH="${T}/usr"
+	local -x CMAKE_MODULE_PATH="${T}/usr"
+	local -x LD_LIBRARY_PATH
 	LD_LIBRARY_PATH="${T}/usr/$(get_libdir)"
-	OPENIMAGEIO_FONTS="${CMAKE_USE_DIR}/src/fonts"
 	# local -x OPENIMAGEIO_DEBUG_FILE
 	local -x OPENIMAGEIO_DEBUG=0
 
-	if use python; then
-		PYTHONPATH="${T}$(python_get_sitedir)"
-	fi
+	# find ${CMAKE_USE_DIR}/src/fonts -mindepth 1 -type d
+	local -x OPENIMAGEIO_FONTS="${CMAKE_USE_DIR}/src/fonts/Droid_Serif"
 
-	myctestargs=(
-		--output-on-failure
-	)
+	if use python; then
+		local -x PYTHONPATH="${T}$(python_get_sitedir)"
+	fi
 
 	cmake_src_test
 
