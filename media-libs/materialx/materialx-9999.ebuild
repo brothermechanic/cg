@@ -189,6 +189,7 @@ src_configure() {
 
 	local mycmakeargs=(
 		-DCMAKE_POLICY_DEFAULT_CMP0148="OLD"
+		-DCMAKE_POLICY_VERSION_MINIMUM=3.5
 		-DMATERIALX_INSTALL_LIB_PATH="$(get_libdir)"
 		-DMATERIALX_INSTALL_STDLIB_PATH="share/${PN}/libraries"
 		-DMATERIALX_PYTHON_FOLDER_NAME="$(python_get_sitedir)/${MY_PN}"
