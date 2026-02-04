@@ -14,7 +14,7 @@ inherit cuda rocm llvm-r2
 inherit eapi9-pipestatus check-reqs flag-o-matic multiprocessing pax-utils python-single-r1 toolchain-funcs virtualx openvdb cg-blender-scripts-dir
 inherit cmake xdg-utils git-r3
 
-DESCRIPTION="Blender is a free and open-source 3D creation suite."
+DESCRIPTION="Blender is a free and open-source 3D creation suite"
 HOMEPAGE="https://www.blender.org"
 
 EGIT_REPO_URI="https://projects.blender.org/blender/blender.git https://github.com/blender/blender.git"
@@ -86,7 +86,7 @@ AMDGPU_TARGETS_COMPAT=(
 IUSE_CPU="+simd +tbb -lld -gold +mold -cpu_flags_arm_neon llvm +openmp -valgrind +jemalloc"
 IUSE_GPU="cuda optix hip hiprt oneapi -cycles-bin-kernels ${CUDA_TARGETS_COMPAT[@]/#/cuda_targets_} ${AMDGPU_TARGETS_COMPAT[@]/#/amdgpu_targets_} vulkan"
 IUSE_DESKTOP="+cg -portable +X headless +nls icu -ndof wayland gnome"
-IUSE_LIBS="+bullet +boost +draco +manifold +materialx +color-management +oidn +opensubdiv +openvdb nanovdb openxr +libmv lzma lzo osl +fftw +potrace +pugixml +otf"
+IUSE_LIBS="+bullet +boost +draco +manifold +materialx +color-management +oidn +opensubdiv +openvdb nanovdb openxr +libmv lzma lzo osl +fftw +potrace +pugixml +otf rubberband"
 IUSE_MOD="+fluid +smoke +oceansim +remesh +gmp +quadriflow +uv-slim +addons addons-contrib +assets"
 IUSE_RENDER="+cycles +openpgl +embree +freestyle hydra"
 IUSE_3DFILES="-alembic usd +collada +obj +ply +stl"
@@ -123,7 +123,7 @@ REQUIRED_USE="${PYTHON_REQUIRED_USE}
 "
 # opensubdiv? ( X )
 
-LANGS="en en_GB ab ar be bg ca cs da de el eo es es_ES eu fa fi fr ha he hi hr hu id it ja ka km ko ky lt ml nb_NO ne nl pl pt_BR pt ro ru sl sk sr@latin sr sv sw ta th tr zh_TW uk ur vi zh_CN zh_HANS zh_HANT"
+LANGS="en en_GB ab ar be bg ca cs da de el eo es es_ES eu fa fi fr ha he hi hr hu id it ja ka km ko ky lt ml nb ne nl pl pt_BR pt ro ru sl sk sr@latin sr sv sw ta th tr zh_TW uk ur vi zh_CN zh_HANS zh_HANT"
 
 for X in ${LANGS} ; do
 	IUSE+=" l10n_${X}"
@@ -269,7 +269,6 @@ RDEPEND="
 		>=dev-python/requests-2.26.0[${PYTHON_USEDEP}]
 		>=dev-python/urllib3-1.26.7[${PYTHON_USEDEP}]
 	')
-	>=dev-cpp/nlohmann_json-3.10.0:=
 	dev-cpp/gflags:=
 	media-libs/freetype:=[brotli,bzip2,png]
 	media-libs/libepoxy:=
@@ -528,7 +527,7 @@ pkg_pretend() {
 
 pkg_setup() {
 	python-single-r1_pkg_setup
-	use llvm && llvm-r1_pkg_setup
+	use llvm && llvm-r2_pkg_setup
 }
 
 src_unpack() {
@@ -548,7 +547,7 @@ src_unpack() {
 		fi
 		EGIT_LFS="yes"
 		EGIT_REPO_URI="https://projects.blender.org/blender/blender-addons.git https://github.com/blender/blender-addons"
-		EGIT_CHECKOUT_DIR=${S}/scripts/blender-addons
+		EGIT_CHECKOUT_DIR=${S}/extensions/system
 		git-r3_src_unpack
 	fi
 
@@ -563,7 +562,7 @@ src_unpack() {
 		fi
 		EGIT_LFS="yes"
 		EGIT_REPO_URI="https://projects.blender.org/blender/blender-addons-contrib.git https://github.com/blender/blender-addons-contrib"
-		EGIT_CHECKOUT_DIR=${S}/scripts/blender-addons-contrib
+		EGIT_CHECKOUT_DIR=${S}/extensions/system
 		git-r3_src_unpack
 	fi
 
@@ -595,7 +594,6 @@ src_prepare() {
 
 	use portable || eapply "${FILESDIR}/${SLOT}"
 	use optix && eapply "${FILESDIR}/blender-fix-optix-build.patch"
-	eapply "${FILESDIR}/blender-fix-lld-17-linking.patch"
 
 	#no need `if use cg && [ -d ${CG_BLENDER_SCRIPTS_DIR} ]; then`
 	#because CG_BLENDER_SCRIPTS_DIR set in cg/eclass/cg-blender-scripts-dir.eclass
@@ -614,7 +612,7 @@ src_prepare() {
 	fi
 
 	# remove some bundled deps
-	use portable || rm -rf extern/{audaspace,json,Eigen3,lzo,gflags,glog,gtest,gmock,draco,ceres} || die
+	use portable || rm -rf extern/{audaspace,Eigen3,lzo,gflags,glog,gtest,gmock,draco,ceres} || die
 
 	# Disable MS Windows help generation. The variable doesn't do what it
 	# it sounds like.
@@ -623,16 +621,16 @@ src_prepare() {
 
 	# Prepare icons and .desktop files for slotting.
 	sed \
-		-e "s|blender.svg|blender-${SLOT}.svg|" \
-		-e "s|blender-symbolic.svg|blender-${SLOT}-symbolic.svg|" \
-		-e "s|blender.desktop|blender-${SLOT}.desktop|" \
-		-e "s|org.blender.Blender.metainfo.xml|blender-${BV}.metainfo.xml|" \
+		-e "s|${PN}.svg|${PN}-${SLOT}.svg|" \
+		-e "s|${PN}-symbolic.svg|${PN}-${SLOT}-symbolic.svg|" \
+		-e "s|${PN}.desktop|${PN}-${SLOT}.desktop|" \
+		-e "s|org.blender.Blender.metainfo.xml|${PN}-${SLOT}.metainfo.xml|" \
 		-i source/creator/CMakeLists.txt || die
 
 	sed \
-		-e "s|Name=Blender|Name=Blender ${SLOT}|" \
-		-e "s|Exec.*|Exec=blender-${SLOT}|" \
-		-e "s|Icon=blender|Icon=blender-${SLOT}|" \
+		-e "s|Name=${PN^}|Name=${PN^} ${SLOT}|" \
+		-e "s|Exec.*|Exec=${PN}-${SLOT}|" \
+		-e "s|Icon=${PN}|Icon=${PN}-${SLOT}|" \
 		-i release/freedesktop/blender.desktop || die
 
 	sed \
@@ -652,21 +650,21 @@ src_prepare() {
 #		"#include \"buildinfo_static.h\"\n" > build_files/cmake/buildinfo.h || die
 
 	mv \
-		"release/freedesktop/icons/scalable/apps/blender.svg" \
-		"release/freedesktop/icons/scalable/apps/blender-${SLOT}.svg" \
+		"release/freedesktop/icons/scalable/apps/${PN}.svg" \
+		"release/freedesktop/icons/scalable/apps/${PN}-${SLOT}.svg" \
 		|| die
 	mv \
-		"release/freedesktop/icons/symbolic/apps/blender-symbolic.svg" \
-		"release/freedesktop/icons/symbolic/apps/blender-${SLOT}-symbolic.svg" \
+		"release/freedesktop/icons/symbolic/apps/${PN}-symbolic.svg" \
+		"release/freedesktop/icons/symbolic/apps/${PN}-${SLOT}-symbolic.svg" \
 		|| die
 	mv \
-		"release/freedesktop/blender.desktop" \
-		"release/freedesktop/blender-${SLOT}.desktop" \
+		"release/freedesktop/${PN}.desktop" \
+		"release/freedesktop/${PN}-${SLOT}.desktop" \
 		|| die
 
 	mv \
-		"release/freedesktop/org.blender.Blender.metainfo.xml" \
-		"release/freedesktop/blender-${SLOT}.metainfo.xml" \
+		"release/freedesktop/org.${PN}.${PN^}.metainfo.xml" \
+		"release/freedesktop/${PN}-${SLOT}.metainfo.xml" \
 		|| die
 
 	sed \
@@ -769,7 +767,7 @@ src_configure() {
 		-DWITH_CUDA_DYNLOAD=$(usex cuda $(usex cycles-bin-kernels no yes) no)
 		-DWITH_CYCLES_DEVICE_ONEAPI=$(usex oneapi)
 		-DWITH_CYCLES_ONEAPI_BINARIES=$(usex oneapi $(usex cycles-bin-kernels) no)
-		-DWITH_CYCLES_HYDRA_RENDER_DELEGATE="$(usex hydra)"                # TODO: package Hydra
+		-DWITH_CYCLES_HYDRA_RENDER_DELEGATE="$(usex hydra)"     # TODO: package Hydra
 		-DWITH_CYCLES_EMBREE=$(usex embree)						# Speedup library for Cycles
 		-DWITH_CYCLES_NATIVE_ONLY=$(usex cycles)				# for native kernel only
 		-DWITH_CYCLES_OSL=$(usex osl)
@@ -791,8 +789,6 @@ src_configure() {
 		-DWITH_GHOST_XDND=$(usex X)								# drag-n-drop support on X11
 		-DWITH_GHOST_WAYLAND=$(usex wayland)					# Enable building against wayland
 		-DWITH_GHOST_WAYLAND_DYNLOAD=$(usex wayland)
-		-DWITH_GHOST_WAYLAND_APP_ID=blender-${BV}
-		-DWITH_GHOST_WAYLAND_LIBDECOR=$(usex gnome)
 		-DWITH_GHOST_SDL=$(usex sdl)
 		-DWITH_GMP=$(usex gmp)									# boolean engine
 		-DWITH_HYDRA=$(usex hydra)
@@ -842,7 +838,7 @@ src_configure() {
 		-DWITH_DRACO=$(usex draco)
 		-DWITH_SYSTEM_DRACO=$(usex !portable)
 		-DWITH_AUDASPACE=yes
-		-DWITH_RUBBERBAND=yes
+		-DWITH_RUBBERBAND=$(usex rubberband)
 		-DWITH_SYSTEM_AUDASPACE=$(usex !portable)
 		-DWITH_SYSTEM_EIGEN3=$(usex !portable)
 		-DWITH_SYSTEM_LZO=$(usex !portable)
@@ -897,7 +893,6 @@ src_configure() {
 		if [ -n "${CUDA_TARGETS}" ] ; then
 			mycmakeargs+=(
 				-DCYCLES_CUDA_BINARIES_ARCH=${CUDA_TARGETS%%;}
-
 			)
 		fi
 		mycmakeargs+=(
@@ -934,7 +929,7 @@ src_configure() {
 
 	if use wayland; then
 		mycmakeargs+=(
-			-DWITH_GHOST_WAYLAND_APP_ID="blender-${BV}"
+			-DWITH_GHOST_WAYLAND_APP_ID="${PN~}-${BV}"
 			-DWITH_GHOST_WAYLAND_LIBDECOR="$(usex gnome)"
 		)
 	fi
@@ -944,7 +939,6 @@ src_configure() {
 
 	append-cflags "$(usex debug '-DDEBUG' '-DNDEBUG')"
 	append-cxxflags "$(usex debug '-DDEBUG' '-DNDEBUG')"
-
 
 	CMAKE_BUILD_TYPE=$(usex debug RelWithDebInfo Release)
 
@@ -979,8 +973,8 @@ src_configure() {
 
 				-DWITH_GPU_DRAW_TESTS="yes"
 
-				-DWITH_GPU_RENDER_TESTS="no"
-				-DWITH_GPU_RENDER_TESTS_HEADED="no"
+				-DWITH_GPU_RENDER_TESTS="yes"
+				-DWITH_GPU_RENDER_TESTS_HEADED="yes"
 				-DWITH_GPU_RENDER_TESTS_SILENT="yes"
 				-DWITH_GPU_RENDER_TESTS_VULKAN="$(usex vulkan)"
 
@@ -990,6 +984,11 @@ src_configure() {
 
 			if [[ "${PV}" == *9999* && "${BVC}" == "alpha" ]] && use experimental; then
 				mycmakeargs+=(
+					-DWITH_GPU_MESH_PAINT_TESTS="yes"
+					# -DWITH_UI_TESTS="$(usex wayland)"
+					-DWITH_UI_TESTS="yes"
+					-DWITH_TESTS_EXPERIMENTAL="yes"
+
 					# Enable user-interface tests using a headless display server.
 					# Currently this depends on WITH_GHOST_WAYLAND and the weston compositor (Experimental)
 					-DWITH_UI_TESTS="$(usex wayland)"
@@ -1124,19 +1123,19 @@ src_install() {
 	blender_get_version
 
 	# Pax mark blender for hardened support.
-	pax-mark m "${BUILD_DIR}/bin/blender"
+	pax-mark m "${BUILD_DIR}/bin/${PN~}"
 
 	cmake_src_install
 
 	if use man; then
 		# Slot the man page
-		mv "${ED}/usr/share/man/man1/blender.1" "${ED}/usr/share/man/man1/blender-${BV}.1" || die
+		mv "${ED}/usr/share/man/man1/blender.1" "${ED}/usr/share/man/man1/${PN~}-${BV}.1" || die
 	fi
 
 	if use doc; then
 		# Define custom blender data/script file paths. Otherwise Blender will not be able to find them during doc building.
 		# (Because the data is in the image directory and it will default to look in /usr/share)
-		local -x BLENDER_SYSTEM_RESOURCES="${ED}/usr/share/blender/${BV}"
+		local -x BLENDER_SYSTEM_RESOURCES="${ED}/usr/share/${PN~}/${BV}"
 
 		# Workaround for binary drivers.
 		addpredict /dev/ati
@@ -1144,7 +1143,7 @@ src_install() {
 		addpredict /dev/nvidiactl
 
 		einfo "Generating Blender C/C++ API docs ..."
-		cd "${CMAKE_USE_DIR}/doc/doxygen" || die
+		cd "${CMAKE_USE_DIR}"/doc/doxygen || die
 		doxygen -u Doxyfile || die
 		doxygen || die "doxygen failed to build API docs."
 
@@ -1152,28 +1151,28 @@ src_install() {
 		einfo "Generating (BPY) Blender Python API docs ..."
 		"${BUILD_DIR}"/bin/blender --background --python "doc/python_api/sphinx_doc_gen.py" -noaudio || die "sphinx failed."
 
-		cd "${CMAKE_USE_DIR}/doc/python_api" || die
+		cd "${CMAKE_USE_DIR}"/doc/python_api || die
 		sphinx-build sphinx-in BPY_API || die "sphinx failed."
 
 		docinto "html/API/python"
-		dodoc -r "${CMAKE_USE_DIR}/doc/python_api/BPY_API/"
+		dodoc -r "${CMAKE_USE_DIR}"/doc/python_api/BPY_API/.
 
 		docinto "html/API/blender"
-		dodoc -r "${CMAKE_USE_DIR}/doc/doxygen/html/"
+		dodoc -r "${CMAKE_USE_DIR}"/doc/doxygen/html/.
 	fi
 
 	# Fix doc installdir
 	docinto html
-	dodoc "${CMAKE_USE_DIR}/release/text/readme.html"
-	rm -r "${ED%/}/usr/share/doc/blender"*
-	python_optimize "${ED%/}/usr/share/blender/${SLOT}/scripts"
+	dodoc "${CMAKE_USE_DIR}"/release/text/readme.html
+	rm -r "${ED%/}/usr/share/doc/${PN~}"*
+	python_optimize "${ED%/}/usr/share/${PN~}/${SLOT}/scripts"
 
 	use portable && dodir "${ED%/}"/usr/bin
 	pushd ${ED}/usr/bin
-		mv "blender-thumbnailer" "blender-${SLOT}-thumbnailer" || die
-		ln -s "blender-${SLOT}-thumbnailer" "blender-thumbnailer"
-		mv "blender" "blender-${SLOT}" || die
-		ln -s "blender-${SLOT}" "blender"
+		mv "${PN~}-thumbnailer" "${PN~}-${SLOT}-thumbnailer" || die
+		ln -s "${PN~}-${SLOT}-thumbnailer" "${PN~}-thumbnailer"
+		mv "${PN~}" "${PN~}-${SLOT}" || die
+		ln -s "${PN~}-${SLOT}" "${PN~}"
 	popd
 
 	elog "${PN^}-$( grep -Po 'CPACK_PACKAGE_VERSION "\K[^"]..' ${BUILD_DIR}/CPackConfig.cmake ) has been installed."

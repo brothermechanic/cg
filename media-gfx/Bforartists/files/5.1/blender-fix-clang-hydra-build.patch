@@ -1,0 +1,11 @@
+--- a/intern/cycles/hydra/mesh.cpp
++++ b/intern/cycles/hydra/mesh.cpp
+@@ -54,7 +54,7 @@ VtValue ComputeTriangulatedFaceVaryingPr
+                                               const HdType valueType,
+                                               HdMeshUtil &meshUtil)
+ {
+-  if (meshUtil.ComputeTriangulatedFaceVaryingPrimvar(
++  if ((bool)meshUtil.ComputeTriangulatedFaceVaryingPrimvar(
+           HdGetValueData(value), value.GetArraySize(), valueType, &value))
+   {
+     return value;

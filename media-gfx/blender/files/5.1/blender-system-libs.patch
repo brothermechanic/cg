@@ -24,77 +24,6 @@
    add_subdirectory(gtest)
    add_subdirectory(gmock)
  endif()
---- a/intern/libmv/CMakeLists.txt
-+++ b/intern/libmv/CMakeLists.txt
-@@ -29,17 +29,27 @@ if(WITH_LIBMV)
-   add_definitions(${GLOG_DEFINES})
-   add_definitions(-DLIBMV_GFLAGS_NAMESPACE=${GFLAGS_NAMESPACE})
- 
-+  if(${WITH_SYSTEM_GFLAGS})
-+    list(APPEND INC_SYS ${GFLAGS_INCLUDE_DIRS})
-+  else()
-+    list(APPEND INC ${GFLAGS_INCLUDE_DIRS}) 
-+  endif()
-+
-+  if(${WITH_SYSTEM_GLOG})
-+      list(APPEND INC_SYS ${GLOG_INCLUDE_DIRS})
-+  else()
-+      list(APPEND INC ${GLOG_INCLUDE_DIRS}) 
-+  endif() 
-+
-   if(WITH_TBB)
-     add_definitions(-DLIBMV_USE_TBB_THREADS)
-   endif()
- 
-   list(APPEND INC
-     ../guardedalloc
-   )
-
-   list(APPEND INC_SYS
--    ${GFLAGS_INCLUDE_DIRS}
--    ${GLOG_INCLUDE_DIRS}
-     ${PNG_INCLUDE_DIRS}
-     ${ZLIB_INCLUDE_DIRS}
-     ../../extern/ceres/include
-@@ -39,21 +49,35 @@ if(WITH_LIBMV)
-     ${EIGEN3_INCLUDE_DIRS}
-     ${PNG_INCLUDE_DIRS}
-     ${ZLIB_INCLUDE_DIRS}
--    ../../extern/ceres/include
--    ../../extern/ceres/config
-   )
- 
-   list(APPEND LIB
--    extern_ceres
-     PUBLIC bf::dependencies::optional::tbb
- 
-     ${GLOG_LIBRARIES}
-     ${GFLAGS_LIBRARIES}
-     ${PNG_LIBRARIES}
- 
-     PRIVATE bf::dependencies::eigen
-   )
- 
-+  if(NOT ${WITH_SYSTEM_CERES})
-+    list(APPEND INC_SYS 
-+      ../../extern/ceres/include
-+      ../../extern/ceres/config
-+    )
-+    list(APPEND LIB
-+      extern_ceres
-+    )
-+  else()
-+    list(APPEND INC_SYS
-+      ${CERES_INCLUDE_DIRS}
-+    )
-+    list(APPEND LIB
-+      ceres
-+    )
-+  endif()
-+
-   add_definitions(
-     -DWITH_LIBMV_GUARDED_ALLOC
-     -DLIBMV_NO_FAST_DETECTOR=
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
 @@ -481,11 +481,16 @@ option(WITH_LIBMV "Enable Libmv structur
@@ -132,3 +61,61 @@
  # -----------------------------------------------------------------------------
  # Extra Compile Flags
  
+--- a/intern/libmv/CMakeLists.txt
++++ b/intern/libmv/CMakeLists.txt
+@@ -33,6 +33,18 @@ if(WITH_LIBMV)
+   endif()
+   add_definitions(-DLIBMV_GFLAGS_NAMESPACE=${GFLAGS_NAMESPACE})
+ 
++  if(${WITH_SYSTEM_GFLAGS})
++    list(APPEND INC_SYS ${GFLAGS_INCLUDE_DIRS})
++  else()
++    list(APPEND INC ${GFLAGS_INCLUDE_DIRS}) 
++  endif()
++
++  if(${WITH_SYSTEM_GLOG})
++      list(APPEND INC_SYS ${GLOG_INCLUDE_DIRS})
++  else()
++      list(APPEND INC ${GLOG_INCLUDE_DIRS}) 
++  endif() 
++
+   if(WITH_TBB)
+     add_definitions(-DLIBMV_USE_TBB_THREADS)
+   endif()
+@@ -42,12 +54,9 @@ if(WITH_LIBMV)
+   )
+ 
+   list(APPEND INC_SYS
+-    ../../extern/ceres/include
+-    ../../extern/ceres/config
+   )
+ 
+   list(APPEND LIB
+-    extern_ceres
+     PUBLIC bf::dependencies::optional::tbb
+     PRIVATE bf::dependencies::zlib
+ 
+@@ -57,6 +66,23 @@ if(WITH_LIBMV)
+     PRIVATE bf::dependencies::png
+   )
+ 
++  if(NOT ${WITH_SYSTEM_CERES})
++    list(APPEND INC_SYS 
++      ../../extern/ceres/include
++      ../../extern/ceres/config
++    )
++    list(APPEND LIB
++      extern_ceres
++    )
++  else()
++    list(APPEND INC_SYS
++      ${CERES_INCLUDE_DIRS}
++    )
++    list(APPEND LIB
++      ceres
++    )
++  endif()
++
+   add_definitions(
+     -DWITH_LIBMV_GUARDED_ALLOC
+     -DLIBMV_NO_FAST_DETECTOR=
