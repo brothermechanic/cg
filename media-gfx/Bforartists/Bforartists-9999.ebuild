@@ -264,7 +264,6 @@ RDEPEND="
 		>=dev-python/requests-2.26.0[${PYTHON_USEDEP}]
 		>=dev-python/urllib3-1.26.7[${PYTHON_USEDEP}]
 	')
-	>=dev-cpp/nlohmann_json-3.10.0:=
 	dev-cpp/gflags:=
 	media-libs/freetype:=[brotli,bzip2,png]
 	media-libs/libepoxy:=
@@ -405,7 +404,7 @@ DEPEND="
 	dev-cpp/eigen:=[cuda?,tbb?]
 	vulkan? (
 		>=media-libs/shaderc-2022.3
-		>=media-libs/vulkan-loader-1.3.268[X?,wayland?,layers]
+		>=media-libs/vulkan-loader-1.3.268[X?,wayland?]
 	)
 "
 
@@ -473,7 +472,7 @@ RESTRICT="
 	!test? ( test )
 "
 
-QA_EXECSTACK="usr/share/${PN}/${SLOT}/scripts/addons/cycles/lib/kernel_*"
+QA_EXECSTACK="usr/share/${PN,}/${SLOT}/scripts/addons/cycles/lib/kernel_*"
 QA_FLAGS_IGNORED="${QA_EXECSTACK}"
 QA_PRESTRIPPED="${QA_EXECSTACK}"
 
@@ -542,10 +541,9 @@ src_prepare() {
 
 	use portable || eapply "${FILESDIR}/${SLOT}"
 	use optix && eapply "${FILESDIR}/blender-fix-optix-build.patch"
-	eapply "${FILESDIR}/blender-fix-lld-17-linking.patch"
 
 	# remove some bundled deps
-	use portable || rm -rf extern/{audaspace,json,Eigen3,lzo,gflags,glog,gtest,gmock,draco,ceres} || die
+	use portable || rm -rf extern/{audaspace,Eigen3,lzo,gflags,glog,gtest,gmock,draco,ceres} || die
 
 	# Disable MS Windows help generation. The variable doesn't do what it
 	# it sounds like.
@@ -554,26 +552,30 @@ src_prepare() {
 
 	# Prepare icons and .desktop files for slotting.
 	sed \
-		-e "s|${PN~}.svg|${PN~}-${SLOT}.svg|" \
-		-e "s|${PN~}-symbolic.svg|${PN~}-${SLOT}-symbolic.svg|" \
-		-e "s|${PN~}.desktop|${PN~}-${SLOT}.desktop|" \
-		-e "s|org.blender.Blender.metainfo.xml|${PN~}-${SLOT}.metainfo.xml|" \
+		-e "s|${PN,}.svg|${PN,}-${SLOT}.svg|" \
+		-e "s|${PN,}-symbolic.svg|${PN,}-${SLOT}-symbolic.svg|" \
+		-e "s|${PN,}.desktop|${PN,}-${SLOT}.desktop|" \
+		-e "s|org.blender.Blender.metainfo.xml|${PN,}-${SLOT}.metainfo.xml|" \
 		-i source/creator/CMakeLists.txt || die
 
 	sed \
 		-e "s|Name=${PN^}|Name=${PN^} ${SLOT}|" \
-		-e "s|Exec.*|Exec=${PN~}-${SLOT}|" \
-		-e "s|Icon=${PN~}|Icon=${PN~}-${SLOT}|" \
-		-i release/freedesktop/${PN~}.desktop || die
+		-e "s|Exec.*|Exec=${PN,}-${SLOT}|" \
+		-e "s|Icon=${PN,}|Icon=${PN,}-${SLOT}|" \
+		-i release/freedesktop/${PN,}.desktop || die
 
 	sed \
 		-e "/CMAKE_INSTALL_PREFIX_WITH_CONFIG/{s|\${CMAKE_INSTALL_PREFIX}|${T}\${CMAKE_INSTALL_PREFIX}|g}" \
 		-i CMakeLists.txt \
 		|| die "CMAKE_INSTALL_PREFIX_WITH_CONFIG"
 
+	sed -e "s/-march\=x86-64-v2/-msse4\.2/g" -i build_files/cmake/macros.cmake || die
+
 	sed \
 		-e "/set_and_warn_incompatible(WITH_SYSTEM_AUDASPACE WITH_RUBBERBAND OFF)/d" \
 		-i CMakeLists.txt
+
+	sed -e "/get_target_property(OPENIMAGEIO_TOOL OpenImageIO::oiiotool LOCATION)/" -i sed -e "/get_target_property(OPENIMAGEIO_TOOL OpenImageIO::oiiotool LOCATION)/" -i build_files/cmake/platform/dependency_targets.cmake
 
 #   echo -e " #define BUILD_HASH \"$(git-r3_peek_remote_ref ${EGIT_REPO_URI_LIST% *})\"\n" \
 #		"#define BUILD_COMMIT_TIMESTAMP \"\"\n" \
@@ -583,21 +585,21 @@ src_prepare() {
 #		"#include \"buildinfo_static.h\"\n" > build_files/cmake/buildinfo.h || die
 
 	mv \
-		"release/freedesktop/icons/scalable/apps/${PN~}.svg" \
-		"release/freedesktop/icons/scalable/apps/${PN~}-${SLOT}.svg" \
+		"release/freedesktop/icons/scalable/apps/${PN,}.svg" \
+		"release/freedesktop/icons/scalable/apps/${PN,}-${SLOT}.svg" \
 		|| die
 	mv \
-		"release/freedesktop/icons/symbolic/apps/${PN~}-symbolic.svg" \
-		"release/freedesktop/icons/symbolic/apps/${PN~}-${SLOT}-symbolic.svg" \
+		"release/freedesktop/icons/symbolic/apps/${PN,}-symbolic.svg" \
+		"release/freedesktop/icons/symbolic/apps/${PN,}-${SLOT}-symbolic.svg" \
 		|| die
 	mv \
-		"release/freedesktop/${PN~}.desktop" \
-		"release/freedesktop/${PN~}-${SLOT}.desktop" \
+		"release/freedesktop/${PN,}.desktop" \
+		"release/freedesktop/${PN,}-${SLOT}.desktop" \
 		|| die
 
 	mv \
 		"release/freedesktop/org.blender.Blender.metainfo.xml" \
-		"release/freedesktop/${PN~}-${SLOT}.metainfo.xml" \
+		"release/freedesktop/${PN,}-${SLOT}.metainfo.xml" \
 		|| die
 
 	sed \
@@ -863,7 +865,7 @@ src_configure() {
 
 	if use wayland; then
 		mycmakeargs+=(
-			-DWITH_GHOST_WAYLAND_APP_ID="${PN~}-${BV}"
+			-DWITH_GHOST_WAYLAND_APP_ID="${PN,}-${BV}"
 			-DWITH_GHOST_WAYLAND_LIBDECOR="$(usex gnome)"
 		)
 	fi
@@ -1056,19 +1058,19 @@ src_install() {
 	blender_get_version
 
 	# Pax mark blender for hardened support.
-	pax-mark m "${BUILD_DIR}/bin/${PN~}"
+	pax-mark m "${BUILD_DIR}/bin/${PN,}"
 
 	cmake_src_install
 
 	if use man; then
 		# Slot the man page
-		mv "${ED}/usr/share/man/man1/blender.1" "${ED}/usr/share/man/man1/${PN~}-${BV}.1" || die
+		mv "${ED}/usr/share/man/man1/blender.1" "${ED}/usr/share/man/man1/${PN,}-${BV}.1" || die
 	fi
 
 	if use doc; then
 		# Define custom blender data/script file paths. Otherwise Blender will not be able to find them during doc building.
 		# (Because the data is in the image directory and it will default to look in /usr/share)
-		local -x BLENDER_SYSTEM_RESOURCES="${ED}/usr/share/${PN~}/${BV}"
+		local -x BLENDER_SYSTEM_RESOURCES="${ED}/usr/share/${PN,}/${BV}"
 
 		# Workaround for binary drivers.
 		addpredict /dev/ati
@@ -1097,15 +1099,15 @@ src_install() {
 	# Fix doc installdir
 	docinto html
 	dodoc "${CMAKE_USE_DIR}"/release/text/readme.html
-	rm -r "${ED%/}/usr/share/doc/${PN~}"*
-	python_optimize "${ED%/}/usr/share/${PN~}/${SLOT}/scripts"
+	rm -r "${ED%/}/usr/share/doc/${PN,}"*
+	python_optimize "${ED%/}/usr/share/${PN,}/${SLOT}/scripts"
 
 	use portable && dodir "${ED%/}"/usr/bin
 	pushd ${ED}/usr/bin
-		mv "${PN~}-thumbnailer" "${PN~}-${SLOT}-thumbnailer" || die
-		ln -s "${PN~}-${SLOT}-thumbnailer" "${PN~}-thumbnailer"
-		mv "${PN~}" "${PN~}-${SLOT}" || die
-		ln -s "${PN~}-${SLOT}" "${PN~}"
+		mv "${PN,}-thumbnailer" "${PN,}-${SLOT}-thumbnailer" || die
+		ln -s "${PN,}-${SLOT}-thumbnailer" "${PN,}-thumbnailer"
+		mv "${PN,}" "${PN,}-${SLOT}" || die
+		ln -s "${PN,}-${SLOT}" "${PN,}"
 	popd
 
 	elog "${PN^}-$( grep -Po 'CPACK_PACKAGE_VERSION "\K[^"]..' ${BUILD_DIR}/CPackConfig.cmake ) has been installed."
