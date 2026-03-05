@@ -5,7 +5,7 @@ EAPI=8
 
 PYTHON_COMPAT=( python3_{11..14} )
 OPENVDB_COMPAT=( {7..12} )
-LLVM_COMPAT=( {19..21} )
+LLVM_COMPAT=( {19..22} )
 LLVM_OPTIONAL=1
 
 ROCM_SKIP_GLOBALS=1
@@ -34,7 +34,7 @@ else
 	KEYWORDS="~amd64 ~arm ~arm64"
 fi
 
-[[ "4.0 3.6" =~ "${MY_PV}"  ]] && OSL_PV="13" || OSL_PV="14"
+[[ "4.0 3.6" =~ "${MY_PV}"  ]] && OSL_PV="14" || OSL_PV="15"
 
 if [[ "4.0 3.6 4.2" =~ "${MY_PV}" ]]; then
 	AUD_PV="5"

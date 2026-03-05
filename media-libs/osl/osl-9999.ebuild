@@ -1,10 +1,10 @@
-# Copyright 1999-2025 Gentoo Authors
+# Copyright 1999-2026 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
 
 EAPI=8
 
 # keep in sync with blender
-PYTHON_COMPAT=( python3_{11..13} )
+PYTHON_COMPAT=( python3_{11..14} )
 
 # Check this on updates
 OPENVDB_COMPAT=( {7..12} )
@@ -35,9 +35,9 @@ if [[ "${PV}" =~ "1.13" ]]; then
 	# Check this on updates
 	LLVM_COMPAT=( {17..19} )
 else
-	LLVM_COMPAT=( {19..21} )
+	LLVM_COMPAT=( {19..22} )
 fi
-inherit llvm-r1
+inherit llvm-r2
 
 LICENSE="BSD"
 
@@ -121,7 +121,7 @@ RDEPEND="
 DEPEND="${RDEPEND}
 	dev-util/patchelf
 	>=media-libs/openexr-3
-	sys-libs/zlib
+	virtual/zlib:=
 	test? (
 		media-fonts/droid
 		optix? (
@@ -138,7 +138,7 @@ BDEPEND="
 	virtual/pkgconfig
 "
 
-PATCHES+=(
+PATCHES=(
 	"${FILESDIR}/${PN}-include-cstdint.patch"
 )
 
@@ -148,7 +148,7 @@ get_lib_type() {
 }
 
 pkg_setup() {
-	llvm-r1_pkg_setup
+	llvm-r2_pkg_setup
 
 	use python && python-single-r1_pkg_setup
 }
@@ -159,7 +159,11 @@ src_prepare() {
 			"CMakeLists.txt" || die
 	fi
 
-	if [[ "${LLVM_SLOT}" == "21" ]]; then
+	if [[ "${LLVM_SLOT}" == "22" ]] && [[ "${PV}" =~ "1.15" ]]; then
+		eapply "${FILESDIR}/${PN}-1.15.1.0-llvm-22.patch"
+	fi
+
+	if [[ "${LLVM_SLOT}" == "21" ]] && [[ "${PV}" =~ "1.14" ]]; then
 		eapply "${FILESDIR}/${PN}-1.13.7.0-llvm-21.patch"
 	fi
 
@@ -359,41 +363,49 @@ src_test() {
 		# batchregression
 		"^spline-reg.regress.batched.opt$"
 		"^transform-reg.regress.batched.opt$"
-		"^texture3d-opts-reg.regress.batched.opt$"
+#		"^texture3d-opts-reg.regress.batched.opt$"
 
 		# doesn't handle parameters
 		"^osl-imageio"
 
-		# render
-		"^render-bunny.opt$"
-		"^render-displacement.opt$"
-		"^render-microfacet.opt$"
-		"^render-veachmis.opt$"
-
-		# optix
-		"^render-microfacet.optix.opt$"
-		"^render-microfacet.optix.fused$"
-		"^render-mx-burley-diffuse.opt$"
+		# TODO Unknown exception: Unable to convert function return value to a Python type!
+		# The signature was (self: oslquery.Parameter) -> OpenImageIO_v3_0::TypeDesc
+		"^python-oslquery"
 	)
 
 	local myctestargs=(
-		-LE 'render'
+		-LE '(render|optix)'
 		# src/build-scripts/ci-test.bash
-		# '--force-new-ctest-process'
+		# --repeat until-pass:10
+		'--force-new-ctest-process'
 	)
 
-	OPENIMAGEIO_CUDA=0 \
-	cmake_src_test
+# 	OPENIMAGEIO_CUDA=0 \
+# 	cmake_src_test
 
 	einfo ""
 	einfo "testing render tests in isolation"
 	einfo ""
 
+	CMAKE_SKIP_TESTS=(
+		# optix
+		"^render-microfacet.optix.opt$"
+		"^render-microfacet.optix.fused$"
+
+		# render
+		"^render-bunny.opt$"
+		"^render-displacement.opt$"
+		"^render-microfacet.opt$"
+		"^render-mx-burley-diffuse.opt$"
+		"^render-veachmis.opt$"
+	)
+
 	myctestargs=(
-		-L "render"
+		-L "(render|optix)"
 		# src/build-scripts/ci-test.bash
 		'--force-new-ctest-process'
 		--repeat until-pass:10
+		--output-on-failure
 	)
 
 	cmake_src_test

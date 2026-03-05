@@ -1,10 +1,10 @@
-# Copyright 1999-2025 Gentoo Authors
+# Copyright 1999-2026 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
 
 EAPI=8
 
-LLVM_COMPAT=( {19..21} )
-PYTHON_COMPAT=( python3_{11..13} )
+LLVM_COMPAT=( {19..22} )
+PYTHON_COMPAT=( python3_{11..14} )
 ROCM_VERSION="6.3"
 CUDA_DEVICE_TARGETS=1
 CUDA_TARGETS_COMPAT=(
@@ -32,7 +32,7 @@ if [[ ${PV} = *9999* ]]; then
 	EGIT_BRANCH="master"
 	EGIT_LFS="1"
 else
-	OIDN_COMMIT="7d23b193ee0cf3bc3ad03a3ac1886b34f496cc5c"
+	OIDN_COMMIT="e050ac80deca5c2f76633f0054b73c6cb7d2d251"
 	MKL_DNN_COMMIT="f53274c9fef211396655fc4340cb838452334089"
 	SRC_URI="
 		https://github.com/RenderKit/${PN}/archive/${OIDN_COMMIT}.tar.gz -> ${PN}-${OIDN_COMMIT:0:7}.tar.gz
@@ -94,7 +94,7 @@ BDEPEND="
 "
 DOCS=( "CHANGELOG.md" "README.md" "readme.pdf" )
 PATCHES=(
-	"${FILESDIR}/${PN}-2.3.3-cuda-nvcc-flags.patch"
+	"${FILESDIR}/${P}-cuda-nvcc-flags.patch"
 	"${FILESDIR}/${PN}-2.3.3-amdgpu-targets.patch"
 )
 
@@ -270,7 +270,6 @@ src_install() {
 		LICENSE.txt \
 		third-party-programs.txt \
 		third-party-programs-DPCPP.txt \
-		third-party-programs-oneDNN.txt \
 		third-party-programs-oneTBB.txt
 
 	if use hip || use cuda || use sycl; then
