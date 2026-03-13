@@ -5,7 +5,7 @@ EAPI=8
 
 PYTHON_COMPAT=( python3_{11..14} )
 OPENVDB_COMPAT=( {7..12} )
-LLVM_COMPAT=( {19..21} )
+LLVM_COMPAT=( {19..22} )
 LLVM_OPTIONAL=1
 
 ROCM_SKIP_GLOBALS=1
@@ -34,7 +34,7 @@ else
 	KEYWORDS="~amd64 ~arm ~arm64"
 fi
 
-[[ "4.0 3.6" =~ "${MY_PV}"  ]] && OSL_PV="13" || OSL_PV="14"
+[[ "4.0 3.6" =~ "${MY_PV}"  ]] && OSL_PV="14" || OSL_PV="15"
 
 if [[ "4.0 3.6 4.2" =~ "${MY_PV}" ]]; then
 	AUD_PV="5"
@@ -278,7 +278,7 @@ RDEPEND="
 	>=media-libs/libpng-1.6.37:0=
 	virtual/libintl
 	addons? ( ${ADDONS} )
-	alembic? ( >=media-gfx/alembic-1.8.3-r2[boost(+),hdf5(+)] )
+	alembic? ( >=media-gfx/alembic-1.8.3-r2[boost(+),hdf(+)] )
 	collada? ( >=media-libs/opencollada-1.6.68 )
 	cuda? ( dev-util/nvidia-cuda-toolkit:= )
 	draco? ( >=media-libs/draco-1.5.2:= )
@@ -575,9 +575,11 @@ src_prepare() {
 		-e "/set_and_warn_incompatible(WITH_SYSTEM_AUDASPACE WITH_RUBBERBAND OFF)/d" \
 		-i CMakeLists.txt
 
-	sed -e "/get_target_property(OPENIMAGEIO_TOOL OpenImageIO::oiiotool LOCATION)/" -i sed -e "/get_target_property(OPENIMAGEIO_TOOL OpenImageIO::oiiotool LOCATION)/" -i build_files/cmake/platform/dependency_targets.cmake
+	sed \
+		-e "/get_target_property(OPENIMAGEIO_TOOL OpenImageIO\:\:oiiotool LOCATION)/d" \
+		-i build_files/cmake/platform/dependency_targets.cmake
 
-#   echo -e " #define BUILD_HASH \"$(git-r3_peek_remote_ref ${EGIT_REPO_URI_LIST% *})\"\n" \
+		#   echo -e " #define BUILD_HASH \"$(git-r3_peek_remote_ref ${EGIT_REPO_URI_LIST% *})\"\n" \
 #		"#define BUILD_COMMIT_TIMESTAMP \"\"\n" \
 #  		"#define BUILD_BRANCH \"${EGIT_BRANCH} modified\"\n" \
 #		"#define BUILD_DATE \"$(TZ=\"UTC\" date --date=today +%Y-%m-%d)\"\n" \
@@ -837,7 +839,6 @@ src_configure() {
 
 	if use hip; then
 		mycmakeargs+=(
-			# -DROCM_PATH="$(hipconfig -R)"
 			-DHIP_ROOT_DIR="$(hipconfig -p)"
 
 			-DCYCLES_HIP_BINARIES_ARCH="$(get_amdgpu_flags)"
@@ -1084,7 +1085,7 @@ src_install() {
 
 		cd "${CMAKE_USE_DIR}" || die
 		einfo "Generating (BPY) Blender Python API docs ..."
-		"${BUILD_DIR}"/bin/blender --background --python doc/python_api/sphinx_doc_gen.py -noaudio || die "sphinx failed."
+		"${BUILD_DIR}"/bin/blender --background --python "doc/python_api/sphinx_doc_gen.py" -noaudio || die "sphinx failed."
 
 		cd "${CMAKE_USE_DIR}"/doc/python_api || die
 		sphinx-build sphinx-in BPY_API || die "sphinx failed."

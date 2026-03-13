@@ -1,4 +1,4 @@
-# Copyright 1999-2025 Gentoo Authors
+# Copyright 1999-2026 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
 
 EAPI=8
@@ -1141,7 +1141,7 @@ src_install() {
 	if use doc; then
 		# Define custom blender data/script file paths. Otherwise Blender will not be able to find them during doc building.
 		# (Because the data is in the image directory and it will default to look in /usr/share)
-		local -x BLENDER_SYSTEM_RESOURCES="${ED}/usr/share/${PN}/${BV}"
+		local -x BLENDER_SYSTEM_RESOURCES="${ED}/usr/share/${PN,}/${BV}"
 
 		# Workaround for binary drivers.
 		addpredict /dev/ati
