@@ -148,7 +148,7 @@ DEPEND="
 PATCHES=(
 	"${FILESDIR}/${PN}-3.4.0-doc-nocompress.patch" # bug 830064
 	"${FILESDIR}/${PN}-3.4.0-buildstring.patch"
-	"${FILESDIR}/${PN}-9999-please_protect_your_min_with_parentheses.patch"
+	#"${FILESDIR}/${PN}-9999-please_protect_your_min_with_parentheses.patch"
 )
 
 # TODO should be in cuda.eclass
@@ -184,7 +184,7 @@ cuda_set_CUDAHOSTCXX() {
 }
 
 pkg_setup() {
-	use test && use cuda && use clang && llvm_pkg_setup
+	use test && use cuda && use clang && llvm-r2_pkg_setup
 }
 
 src_unpack() {
