@@ -1,4 +1,4 @@
-# Copyright 2019-2025 Gentoo Authors
+# Copyright 2019-2026 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
 
 EAPI=8
@@ -21,7 +21,7 @@ if [[ ${PV} == 9999 ]]; then
 	EGIT_SUBMODULES=()
 	KEYWORDS=""
 else
-	COMMIT="ddda09e7541113436d3b7bdaf4e3bffe0a18e4d6"
+	COMMIT="7b04aa90fc746c0ea80e876cd7c9964ae523b910"
 	SRC_URI="https://github.com/neXyon/audaspace/archive/${COMMIT}.tar.gz -> ${P}.tar.gz"
 	S=${WORKDIR}/${PN}-${COMMIT}
 	KEYWORDS="~amd64 ~x86 ~arm64 ~arm"
@@ -114,6 +114,7 @@ src_configure() {
 		$(usex doc "--build-docs" "")
 	)
 	cmake_src_configure
+	addpredict /dev/snd
 	wrap_python ${FUNCNAME}
 }
 
