@@ -3,7 +3,7 @@
 
 EAPI=8
 
-LLVM_COMPAT=( {20..22} )
+LLVM_COMPAT=( {19..22} )
 FORTRAN_NEEDED="test"
 inherit cmake cuda fortran-2 llvm-r2 toolchain-funcs
 
@@ -17,14 +17,13 @@ if [[ ${PV} = *9999* ]] ; then
 		EGIT_COMMIT="3.4"
 		SLOT="3"
 	fi
-	SLOT="5"
 else
 	SRC_URI="
 		https://gitlab.com/lib${PN}/${PN}/-/archive/${PV}/${P}.tar.bz2
 		test? ( lapack? ( https://downloads.tuxfamily.org/${PN}/lapack_addons_3.4.1.tgz -> ${PN}-lapack_addons-3.4.1.tgz ) )
 	"
-	KEYWORDS="~alpha ~amd64 ~arm ~arm64 ~hppa ~loong ~ppc ~ppc64 ~riscv ~s390 ~sparc ~x86 ~arm64-macos ~x64-macos"
 	SLOT="$(ver_cut 1)"
+	KEYWORDS="~alpha ~amd64 ~arm ~arm64 ~hppa ~loong ~ppc ~ppc64 ~riscv ~s390 ~sparc ~x86 ~amd64-linux ~x86-linux ~arm64-macos ~x64-macos"
 fi
 
 LICENSE="MPL-2.0"
@@ -83,16 +82,20 @@ IUSE_TEST_BACKENDS=(
 	"umfpack"
 )
 
-IUSE="benchmark ${CPU_FEATURES_MAP[*]%:*} clang cuda hip debug doc lapack mathjax test ${IUSE_TEST_BACKENDS[*]}" #zvector
+IUSE="benchmark ${CPU_FEATURES_MAP[*]%:*} clang cuda hip debug doc lapack mathjax tbb test ${IUSE_TEST_BACKENDS[*]}" #zvector
 
 REQUIRED_USE="
 	|| ( ${IUSE_TEST_BACKENDS[*]} )
+	^^ ( tbb openmp )
 "
 
 # Tests failing again because of compiler issues; bugs #932646, #943401
 RESTRICT="test !test? ( test )"
 
 BDEPEND="
+	tbb? (
+		>=dev-cpp/tbb-2021.9:=
+	)
 	doc? (
 		app-text/doxygen[dot]
 		dev-texlive/texlive-bibtexextra
@@ -135,9 +138,13 @@ TEST_BACKENDS="
 DEPEND="
 	test? (
 		cuda? (
+			!clang? (
 				dev-util/nvidia-cuda-toolkit
+			)
+			clang? (
 				llvm-core/clang[llvm_targets_NVPTX]
 				openmp? ( llvm-runtimes/openmp[llvm_targets_NVPTX,offload] )
+			)
 		)
 		hip? ( dev-util/hip )
 		lapack? ( virtual/lapacke )
@@ -148,7 +155,6 @@ DEPEND="
 PATCHES=(
 	"${FILESDIR}/${PN}-3.4.0-doc-nocompress.patch" # bug 830064
 	"${FILESDIR}/${PN}-3.4.0-buildstring.patch"
-	#"${FILESDIR}/${PN}-9999-please_protect_your_min_with_parentheses.patch"
 )
 
 # TODO should be in cuda.eclass
@@ -203,6 +209,8 @@ src_unpack() {
 src_prepare() {
 	cmake_src_prepare
 
+	use tbb && eapply "${FILESDIR}/${P}-tbb.patch"
+
 	sed \
 		-e "/add_subdirectory(bench\/spbench/s/^/#DONOTCOMPILE /g" \
 		-e "/add_subdirectory(demos/s/^/#DONOTCOMPILE /g" \
@@ -250,6 +258,8 @@ src_configure() {
 			-DEIGEN_TEST_OPENMP="$(usex openmp)" # Enable/Disable OpenMP in tests/examples
 
 			-DCMAKE_DISABLE_FIND_PACKAGE_MPREAL=ON
+
+			-DEIGEN_TEST_CXX11=yes
 
 			# -DEIGEN_TEST_CUSTOM_CXX_FLAGS= # Additional compiler flags when compiling unit tests.
 			# -DEIGEN_TEST_CUSTOM_LINKER_FLAGS= # Additional linker flags when linking unit tests.

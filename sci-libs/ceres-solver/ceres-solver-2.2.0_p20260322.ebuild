@@ -1,4 +1,4 @@
-# Copyright 1999-2024 Gentoo Authors
+# Copyright 1999-2026 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
 
 EAPI=8
@@ -11,7 +11,9 @@ inherit cmake-multilib cuda flag-o-matic python-any-r1 docs toolchain-funcs
 
 DESCRIPTION="Nonlinear least-squares minimizer"
 HOMEPAGE="http://ceres-solver.org/"
-SRC_URI="https://github.com/${PN}/${PN}/archive/${PV}.tar.gz"
+COMMIT="2f946a582ae4a9e7ee0492030ec12d9b1f3dbade"
+SRC_URI="https://github.com/${PN}/${PN}/archive/${COMMIT}.tar.gz"
+S="${WORKDIR}/${PN}-${COMMIT}"
 
 LICENSE="sparse? ( BSD ) !sparse? ( LGPL-2.1 )"
 SLOT="0/4" # Based on soname libceres.so.4
@@ -19,16 +21,13 @@ KEYWORDS="amd64 ~x86 ~amd64-linux ~x86-linux"
 
 CUDA_TARGETS_COMPAT=( sm_30 sm_35 sm_50 sm_52 sm_61 sm_70 sm_75 sm_86 sm_87 sm_89 sm_90 )
 IUSE="cuda debug doc examples gflags lapack metis openmp +schur sparse test ${CUDA_TARGETS_COMPAT[@]/#/cuda_targets_}"
-RESTRICT="
-	mirror
-	!test? ( test )
-"
+RESTRICT="mirror !test? ( test )"
 
 REQUIRED_USE="test? ( gflags ) sparse? ( lapack ) abi_x86_32? ( !sparse !lapack )"
 RESTRICT="!test? ( test )"
 
 BDEPEND="${PYTHON_DEPS}
-	>=dev-cpp/eigen-3.3.4:3
+	dev-cpp/eigen:5
 	lapack? ( virtual/pkgconfig )
 	doc? ( <dev-libs/mathjax-3 )
 "
@@ -53,7 +52,7 @@ DOCS=( README.md )
 
 PATCHES=(
 	"${FILESDIR}/${PN}-2.0.0-system-mathjax.patch"
-	"${FILESDIR}/${PN}-2.2.0-include-algorithm.patch"
+#	"${FILESDIR}/${PN}-2.2.0-include-algorithm.patch"
 )
 
 pkg_pretend() {
@@ -87,7 +86,7 @@ src_configure() {
 		-DBUILD_TESTING=$(usex test)
 		-DBUILD_DOCUMENTATION=$(usex doc)
 		-DCUSTOM_BLAS="yes"
-		-DMINIGLOG="no"
+		#-DMINIGLOG="no"
 		-DBUILD_SHARED_LIBS=ON
 		-DUSE_CUDA=$(usex cuda)
 		-DEIGENMETIS=$(usex metis)
@@ -97,7 +96,7 @@ src_configure() {
 		-DSUITESPARSE=$(usex sparse)
 		-DEIGENSPARSE=$(usex sparse)
 		-DEigen3_DIR=/usr/$(get_libdir)/cmake/eigen3
-		-DCERES_THREADING_MODEL=$(usex openmp OPENMP CXX_THREADS)
+		#-DCERES_THREADING_MODEL=$(usex openmp OPENMP CXX_THREADS)
 	)
 
 	use doc && mycmakeargs+=(
