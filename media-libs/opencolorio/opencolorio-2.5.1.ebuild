@@ -1,9 +1,9 @@
-# Copyright 1999-2025 Gentoo Authors
+# Copyright 1999-2026 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
 
 EAPI=8
 
-PYTHON_COMPAT=( python3_{11..13} )
+PYTHON_COMPAT=( python3_{11..14} )
 
 inherit cmake dot-a flag-o-matic python-single-r1 virtualx
 
@@ -81,7 +81,7 @@ BDEPEND="
 # Restricting tests, bugs #439790 and #447908
 RESTRICT="!test? ( test )"
 
-QA_PRESTRIPPED="usr/lib/python*/site-packages/PyOpenColorIO/PyOpenColorIO.so"
+QA_PRESTRIPPED="usr/lib/python.*/site-packages/PyOpenColorIO/PyOpenColorIO.so"
 
 PATCHES=(
 	"${FILESDIR}/${PN}-2.2.1-adjust-python-installation.patch"
@@ -115,7 +115,7 @@ src_configure() {
 		-DBUILD_SHARED_LIBS=ON
 		-DOCIO_BUILD_APPS="$(usex apps)"
 		-DOCIO_BUILD_DOCS="$(usex doc)"
-		-DOCIO_BUILD_FROZEN_DOCS="$(usex doc)"
+		#-DOCIO_BUILD_FROZEN_DOCS="$(usex doc)"
 		-DOCIO_BUILD_GPU_TESTS="$(usex test)"
 		-DOCIO_BUILD_JAVA=OFF
 		-DOCIO_BUILD_OPENFX=OFF # Not packaged yet

@@ -27,20 +27,6 @@ index 33ac8f0..5c7dc1d 100755
             "rotate90.tif", "rotate180.tif", "rotate270.tif",
             "rotated.tif", "rotated-offcenter.tif",
             "warped.tif",
-diff --git a/testsuite/texture-interp-bilinear/run.py b/testsuite/texture-interp-bilinear/run.py
-index 0617c83..8f85f90 100755
---- a/testsuite/texture-interp-bilinear/run.py
-+++ b/testsuite/texture-interp-bilinear/run.py
-@@ -4,6 +4,9 @@
- # SPDX-License-Identifier: Apache-2.0
- # https://github.com/AcademySoftwareFoundation/OpenImageIO
-
-+# Adjust error thresholds a tad to account for platform-to-platform variation
-+# in some math precision.
-+hardfail = 0.036
-
- command = testtex_command ("../common/textures/grid.tx",
-                            extraargs = "-interpmode 1  -d uint8 -o out.tif")
 diff --git a/testsuite/texture-interp-closest/run.py b/testsuite/texture-interp-closest/run.py
 index e226f44..c2c471c 100755
 --- a/testsuite/texture-interp-closest/run.py

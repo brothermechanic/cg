@@ -1,4 +1,4 @@
-# Copyright 1999-2025 Gentoo Authors
+# Copyright 1999-2026 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
 
 EAPI=8
@@ -61,7 +61,7 @@ X86_CPU_FEATURES=(
 CPU_FEATURES=( "${X86_CPU_FEATURES[@]/#/cpu_flags_x86_}" )
 # font install is enabled upstream
 # building test enabled upstream
-IUSE="+bmp color-management +cineon cuda +dds dicom doc +dpx +ffmpeg fits +gif gui hdr heif htj2k +iff
+IUSE="+bmp color-management +cineon cuda debug +dds dicom doc +dpx +ffmpeg fits +gif gui hdr heif htj2k +iff
  jpeg2k jpegxl libcxx opencv tools openvdb +png +pnm ptex +python qt5 qt6 +raw +rla +sgi tbb test +tga +tiff
  +truetype uhdr wayland +webp +xsi X ${CPU_FEATURES[@]%:*} ${CUDA_TARGETS_COMPAT[@]/#/cuda_targets_}"
 
@@ -264,6 +264,9 @@ src_configure() {
 	# Even if there are no SIMD features selected, it seems like the code will turn on NEON support if it is available.
 	use arm64 && append-flags -flax-vector-conversions
 
+	append-cflags "$(usex debug '-DDEBUG' '-DNDEBUG')"
+	append-cxxflags "$(usex debug '-DDEBUG' '-DNDEBUG')"
+
 	# https://gcc.gnu.org/bugzilla/show_bug.cgi?id=118077
 	if tc-is-gcc && [[ $(gcc-major-version) -eq 15 ]]; then
 		append-flags -fno-early-inlining
@@ -302,9 +305,9 @@ src_configure() {
 		-DENABLE_IFF="$(usex iff)"
 		-DENABLE_LibRaw="$(usex raw)"
 		-DENABLE_Nuke="no" # not in Gentoo
+		-DENABLE_JXL="$(usex jpegxl)"
 		-DENABLE_OpenCV="$(usex opencv)"
 		-DENABLE_OpenJPEG="$(usex jpeg2k)"
-		-DENABLE_JXL="$(usex jpegxl)"
 		-DENABLE_OpenVDB="$(usex openvdb)"
 		-DENABLE_TBB="$(usex tbb)"
 		-DENABLE_Ptex="$(usex ptex)"
