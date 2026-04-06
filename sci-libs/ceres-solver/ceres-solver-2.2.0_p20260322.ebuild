@@ -37,8 +37,7 @@ RDEPEND="
 	lapack? ( virtual/lapack )
 	metis? ( sci-libs/metis[-int64] )
 	sparse? (
-		sci-libs/suitesparse:=[amd,camd,colamd,ccolamd,cxsparse]
-		sci-libs/cholmod[metis(+)]
+		sci-libs/suitesparse:=[amd,camd,colamd,ccolamd,cxsparse,cholmod]
 	)
 "
 DEPEND="${RDEPEND}"

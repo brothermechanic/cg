@@ -25,7 +25,7 @@ EGIT_LFS_CLONE_TYPE="single"
 if [[ ${PV} == 9999 ]]; then
 	EGIT_BRANCH="main"
 	#EGIT_COMMIT="0f3fdd25bcabac1d68d02fb246d961ea56fe49a1"
-	MY_PV="5.1"
+	MY_PV="5.2"
 	KEYWORDS=""
 else
 	MY_PV="5.1"
@@ -36,13 +36,7 @@ fi
 
 [[ "4.0 3.6" =~ "${MY_PV}"  ]] && OSL_PV="14" || OSL_PV="15"
 
-if [[ "4.0 3.6 4.2" =~ "${MY_PV}" ]]; then
-	AUD_PV="5"
-elif [[ "4.3 4.4" =~ "${MY_PV}" ]]; then
-	AUD_PV="6"
-else
-	AUD_PV="8"
-fi
+AUD_PV="9"
 
 SLOT="$MY_PV"
 LICENSE="|| ( GPL-3 BL )"
@@ -287,7 +281,7 @@ RDEPEND="
 		<media-libs/embree-5
 	)
 	ffmpeg? (
-		<media-video/ffmpeg-8:=[jpeg2k?,opus?,lame?,sdl,theora?,vorbis?,vpx?,x264?,xvid?,zlib]
+		<media-video/ffmpeg-9:=[jpeg2k?,opus?,lame?,sdl,theora?,vorbis?,vpx?,x264?,xvid?,zlib]
 		>media-video/ffmpeg-5:=[jpeg2k?,opus?,lame?,sdl,theora?,vorbis?,vpx?,x264?,xvid?,zlib]
 	)
 	fftw? ( sci-libs/fftw:3.0=[threads] )
@@ -556,7 +550,8 @@ src_prepare() {
 		-e "s|${PN,}-symbolic.svg|${PN,}-${SLOT}-symbolic.svg|" \
 		-e "s|${PN,}.desktop|${PN,}-${SLOT}.desktop|" \
 		-e "s|org.blender.Blender.metainfo.xml|${PN,}-${SLOT}.metainfo.xml|" \
-		-i source/creator/CMakeLists.txt || die
+		-i source/creator/CMakeLists.txt \
+		-i source/blender/windowmanager/CMakeLists.txt || die
 
 	sed \
 		-e "s|Name=${PN^}|Name=${PN^} ${SLOT}|" \
@@ -579,7 +574,7 @@ src_prepare() {
 		-e "/get_target_property(OPENIMAGEIO_TOOL OpenImageIO\:\:oiiotool LOCATION)/d" \
 		-i build_files/cmake/platform/dependency_targets.cmake
 
-		#   echo -e " #define BUILD_HASH \"$(git-r3_peek_remote_ref ${EGIT_REPO_URI_LIST% *})\"\n" \
+		#echo -e " #define BUILD_HASH \"$(git-r3_peek_remote_ref ${EGIT_REPO_URI_LIST% *})\"\n" \
 #		"#define BUILD_COMMIT_TIMESTAMP \"\"\n" \
 #  		"#define BUILD_BRANCH \"${EGIT_BRANCH} modified\"\n" \
 #		"#define BUILD_DATE \"$(TZ=\"UTC\" date --date=today +%Y-%m-%d)\"\n" \
@@ -635,9 +630,10 @@ src_prepare() {
 		cmake_comment_add_subdirectory tests
 	fi
 	# Use slotted libhiprt64
-	sed \
+	if [[ "${SLOT}" != "5.1" ]]; then sed \
 		-e "s|\"libhiprt64.so\"|\"/usr/lib/hiprt/2.5/$(get_libdir)/libhiprt64.so\"|" \
 		-i extern/hipew/src/hiprtew.cc || die
+	fi
 
 	ewarn "$(echo "Remaining bundled dependencies:";
 			( find extern -mindepth 1 -maxdepth 1 -type d; ) | sed 's|^|- |')"
@@ -810,6 +806,7 @@ src_configure() {
 		-DWITH_STRICT_BUILD_OPTIONS=yes
 		-DWITH_LIBS_PRECOMPILED=no
 		-DWITH_BUILDINFO=yes
+		-DWITH_PYTHON_SAFETY=no
 		-DWITH_UNITY_BUILD=no 									# Enable Unity build for blender modules (memory usage/compile time)
 	)
 
@@ -867,7 +864,7 @@ src_configure() {
 	if use wayland; then
 		mycmakeargs+=(
 			-DWITH_GHOST_WAYLAND_APP_ID="${PN,}-${BV}"
-			-DWITH_GHOST_WAYLAND_LIBDECOR="$(usex gnome)"
+			-DWITH_GHOST_CSD="$(usex gnome)"
 		)
 	fi
 
@@ -928,7 +925,7 @@ src_configure() {
 
 					# Enable user-interface tests using a headless display server.
 					# Currently this depends on WITH_GHOST_WAYLAND and the weston compositor (Experimental)
-					-DWITH_UI_TESTS="$(usex wayland)"
+					-DWITH_UI_TESTS_HEADLESS="$(usex !X "$(usex wayland)")"
 					-DWESTON_BIN="${ESYSROOT}/usr/bin/weston"
 				)
 			fi
@@ -1099,7 +1096,7 @@ src_install() {
 
 	# Fix doc installdir
 	docinto html
-	dodoc "${CMAKE_USE_DIR}"/release/text/readme.html
+	dodoc "${CMAKE_USE_DIR}/release/text/readme.html"
 	rm -r "${ED%/}/usr/share/doc/${PN,}"*
 	python_optimize "${ED%/}/usr/share/${PN,}/${SLOT}/scripts"
 

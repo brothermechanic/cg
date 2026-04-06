@@ -37,11 +37,9 @@ fi
 [[ "4.0 3.6" =~ "${MY_PV}"  ]] && OSL_PV="14" || OSL_PV="15"
 
 if [[ "4.5 4.2 3.6" =~ "${MY_PV}" ]]; then
-	AUD_PV="6"
-elif [[ "5.0" =~ "${MY_PV}" ]]; then
-	AUD_PV="7"
-elif [[ "5.1" =~ "${MY_PV}" ]]; then
 	AUD_PV="8"
+elif [[ "5.1" =~ "${MY_PV}" ]]; then
+	AUD_PV="9"
 else
 	AUD_PV="9"
 fi
@@ -641,7 +639,7 @@ src_prepare() {
 		-i CMakeLists.txt \
 		|| die "CMAKE_INSTALL_PREFIX_WITH_CONFIG"
 
-	sed -e "s/-march\=x86-64-v2/-msse4\.2/g" -i build_files/cmake/macros.cmake
+	sed -e "s/-march\=x86-64-v2/-msse4\.2/g" -i build_files/cmake/macros.cmake || die
 
 	sed \
 		-e "/set_and_warn_incompatible(WITH_SYSTEM_AUDASPACE WITH_RUBBERBAND OFF)/d" \
@@ -651,7 +649,7 @@ src_prepare() {
 		-e "/get_target_property(OPENIMAGEIO_TOOL OpenImageIO\:\:oiiotool LOCATION)/d" \
 		-i build_files/cmake/platform/dependency_targets.cmake
 
-#   echo -e " #define BUILD_HASH \"$(git-r3_peek_remote_ref ${EGIT_REPO_URI_LIST% *})\"\n" \
+		#echo -e " #define BUILD_HASH \"$(git-r3_peek_remote_ref ${EGIT_REPO_URI_LIST% *})\"\n" \
 #		"#define BUILD_COMMIT_TIMESTAMP \"\"\n" \
 #  		"#define BUILD_BRANCH \"${EGIT_BRANCH} modified\"\n" \
 #		"#define BUILD_DATE \"$(TZ=\"UTC\" date --date=today +%Y-%m-%d)\"\n" \
@@ -883,6 +881,7 @@ src_configure() {
 		-DWITH_STRICT_BUILD_OPTIONS=yes
 		-DWITH_LIBS_PRECOMPILED=no
 		-DWITH_BUILDINFO=yes
+		-DWITH_PYTHON_SAFETY=no
 		-DWITH_UNITY_BUILD=no 									# Enable Unity build for blender modules (memory usage/compile time)
 	)
 
@@ -940,7 +939,7 @@ src_configure() {
 	if use wayland; then
 		mycmakeargs+=(
 			-DWITH_GHOST_WAYLAND_APP_ID="${PN,}-${BV}"
-			-DWITH_GHOST_WAYLAND_LIBDECOR="$(usex gnome)"
+			-DWITH_GHOST_CSD="$(usex gnome)"
 		)
 	fi
 
