@@ -109,10 +109,12 @@ src_configure() {
 		-DPYTHON_EXECUTABLE="${PYTHON}"
 		-DPYTHON_INCLUDE_DIR="$(python_get_includedir)"
 		-DPYTHON_LIBRARY="$(python_get_library_path)"
+		-DNUMPY_INCLUDE_DIR="$(python_get_sitedir)/numpy/_core/include"
 	)
 	DISTUTILS_ARGS=(
 		$(usex doc "--build-docs" "")
 	)
+	export OMP_NUM_THREADS=1
 	cmake_src_configure
 	wrap_python ${FUNCNAME}
 }
