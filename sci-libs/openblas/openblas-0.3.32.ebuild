@@ -4,9 +4,9 @@
 EAPI=8
 
 FORTRAN_NEEDED="blas lapack"
-FORTRAN_STANDARD=90
+FORTRAN_STANDARD=95
 
-inherit flag-o-matic fortran-2 toolchain-funcs
+inherit cmake flag-o-matic fortran-2 toolchain-funcs
 
 MY_P=OpenBLAS-${PV}
 DESCRIPTION="Optimized BLAS library based on GotoBLAS2"
@@ -17,10 +17,11 @@ S="${WORKDIR}"/${MY_P}
 LICENSE="BSD"
 SLOT="0"
 KEYWORDS="amd64 arm arm64 ~loong ppc ppc64 ~riscv x86 ~x64-macos"
-IUSE="+blas +cblas cpudetection eselect-ldso index64 +lapack +lapacke openmp pthread relapack static-libs test"
+IUSE="+blas +cblas cpudetection clapack debug deprecated eselect-ldso index64 +lapack +lapacke openmp pthread relapack static-libs test"
 REQUIRED_USE="
 	?? ( openmp pthread )
 	relapack? ( lapack )
+	lapacke? ( lapack )
 "
 RESTRICT="!cpudetection? ( bindist ) !test? ( test )"
 
@@ -57,11 +58,11 @@ pkg_pretend() {
 pkg_setup() {
 	[[ ${MERGE_TYPE} != binary ]] && use openmp && tc-check-openmp
 
-	fortran-2_pkg_setup
+	if use lapack || use blas; then fortran-2_pkg_setup; fi
 }
 
 src_prepare() {
-	default
+	cmake_src_prepare
 
 	# TODO: Unbundle lapack like Fedora does?
 	# https://src.fedoraproject.org/rpms/openblas/blob/rawhide/f/openblas-0.2.15-system_lapack.patch
@@ -82,147 +83,39 @@ src_configure() {
 	# Not an easy fix, https://github.com/xianyi/OpenBLAS/issues/4128
 	filter-lto
 
-	tc-export CC FC LD AR AS RANLIB
+	append-fflags $(test-flags-FC -fallow-argument-mismatch)
+	append-fflags $(test-flags-FC -Wno-error=unused-command-line-argument-hard-error-in-future)
 
-	# HOSTCC is used for scripting
-	export HOSTCC="$(tc-getBUILD_CC)"
+	local mycmakeargs=(
+		-DCMAKE_INSTALL_PREFIX="${EPREFIX}/usr"
+		-DCMAKE_C_COMPILER="$(tc-getCC)"
+		-DCMAKE_CXX_COMPILER="$(tc-getCXX)"
+		-DCMAKE_Fortran_COMPILER="$(tc-getFC)"
+		-DCMAKE_C_FLAGS="${CFLAGS}"
+		-DCMAKE_CXX_FLAGS="${CXXFLAGS}"
+		-DCMAKE_Fortran_FLAGS="${FFLAGS}"
+		-DBUILD_SHARED_LIBS=ON
+		-DBUILD_STATIC_LIBS=$(usex static-libs)
+		-DBUILD_WITHOUT_LAPACKE=$(usex !lapacke)
+		-DBUILD_WITHOUT_LAPACK=$(usex !lapack)
+		-DBUILD_WITHOUT_CBLAS=$(usex !cblas)
+		-DBUILD_LAPACK_DEPRECATED=$(usex deprecated)
+		-DBUILD_TESTING=$(usex test)
+		-DC_LAPACK=$(usex clapack)
+		-DDYNAMIC_ARCH=$(usex cpudetection)
+		-DBUILD_RELAPACK=$(usex relapack)
+		-DLAPACK_STRLEN=$(tc-get-ptr-size)
+		-DINTERFACE64=$(usex index64)
+		-DLIBNAMESUFFIX=$(usex index64 64 "")
+		-DUSE_OPENMP=$(usex openmp)
+	)
 
-	# Threading options
-	export USE_THREAD=0
-	export USE_OPENMP=0
-	if use openmp; then
-		USE_THREAD=1
-		USE_OPENMP=1
-	elif use pthread; then
-		USE_THREAD=1
-		USE_OPENMP=0
-	fi
-
-	# Disable submake with -j and default optimization flags in Makefile.system
-	# Makefile.rule says to not modify COMMON_OPT/FCOMMON_OPT...
-	export MAKE_NB_JOBS=-1 COMMON_OPT=" " FCOMMON_OPT=" "
-
-	# Target CPU ARCH options generally detected automatically from cross toolchain
-	if use cpudetection ; then
-		export DYNAMIC_ARCH=1 NO_AFFINITY=1 TARGET=GENERIC
-	fi
-
-	case $(tc-get-ptr-size) in
-		4)
-			# NUM_BUFFERS = MAX(50, (2*NUM_PARALLEL*NUM_THREADS)
-			# BUFFER_SIZE = (16 << 20) (on x86)
-			# NUM_BUFFERS * BUFFER_SIZE is allocated and must be
-			# <4GiB on 32-bit arches (bug #967251).
-			#
-			# Scale down to 2*8*(16 << 20) = 256MiB for 32-bit
-			# arches. This avoids spinning in blas_memory_alloc
-			# which doesn't handle ENOMEM.
-			export NUM_PARALLEL=${OPENBLAS_NPARALLEL:-2}
-			export NUM_THREADS=${OPENBLAS_NTHREAD:-8}
-			;;
-		8)
-			# XXX: The current values here rely on overcommit
-			# for most systems (bug #967026).
-			export NUM_PARALLEL=${OPENBLAS_NPARALLEL:-8}
-			export NUM_THREADS=${OPENBLAS_NTHREAD:-64}
-			;;
-		*)
-			die "Unexpected tc-get-ptr-size. Please file a bug."
-			;;
-	esac
-
-	# Allow setting OPENBLAS_TARGET to override auto detection in case the
-	# toolchain is not enough to detect.
-	# https://github.com/xianyi/OpenBLAS/blob/develop/TargetList.txt
-	if ! use cpudetection ; then
-		if [[ -n "${OPENBLAS_TARGET}" ]] ; then
-			export TARGET="${OPENBLAS_TARGET}"
-		elif [[ ${CBUILD} != ${CHOST} ]] ; then
-			case ${CHOST} in
-				aarch64-*)
-					export TARGET="ARMV8"
-					export BINARY="64"
-				;;
-				powerpc64le-*)
-					export TARGET="POWER8"
-					export BUILD_BFLOAT16=1
-					export BINARY=64
-				;;
-			esac
-		fi
-	fi
-
-	export NO_STATIC=$(usex !static-libs 1 0)
-	export NO_SHARED=0
-	export NO_LAPACKE=$(usex !lapacke 1 0)
-	#export NO_LAPACK=$(usex !lapack 1 0)
-	#export NO_FBLAS=$(usex !blas 1 0)
-	#export ONLY_CBLAS=$(usex !blas 1 0)
-	export NOFORTRAN=$(usex !lapack 1 0)
-	export NOFORTRAN=$(usex !blas 2 0)
-	export BUILD_RELAPACK=$(usex relapack 1 0)
-	export PREFIX="${EPREFIX}/usr"
-}
-
-emake64() {
-	emake -C "${S}-index64" \
-		INTERFACE64=1 \
-		LIBNAMESUFFIX=64 \
-		"${@}"
-}
-
-src_compile() {
-	emake shared
-
-	if use eselect-ldso; then
-		use blas && emake -C interface shared-blas
-		use lapack && emake -C interface shared-lapack
-		use cblas && emake -C interface shared-cblas
-		use lapacke && emake -C interface shared-lapacke
-	fi
-
-	if use index64; then
-		emake64 shared
-	fi
-}
-
-src_test() {
-	emake tests
-
-	if use index64; then
-		emake64 tests
-	fi
+	# Needs to be here, otherwise gets overriden by cmake.eclass
+	CMAKE_BUILD_TYPE=$(usex debug RelWithDebInfo Release) cmake_src_configure
 }
 
 src_install() {
-	local libdir=$(get_libdir)
-	emake install \
-		DESTDIR="${D}" \
-		OPENBLAS_INCLUDE_DIR='$(PREFIX)'/include/openblas \
-		OPENBLAS_LIBRARY_DIR='$(PREFIX)'/${libdir}
-
-	dodoc GotoBLAS_*.txt *.md Changelog.txt
-
-	if use index64; then
-		emake64 install \
-			DESTDIR="${D}" \
-			OPENBLAS_INCLUDE_DIR='$(PREFIX)'/include/openblas64 \
-			OPENBLAS_LIBRARY_DIR='$(PREFIX)'/${libdir}
-	fi
-
-	if use eselect-ldso; then
-		exeinto /usr/${libdir}/blas/openblas/
-		use blas && doexe interface/libblas.so.3
-		use cblas && doexe interface/libcblas.so.3
-		use blas && dosym libblas.so.3 /usr/${libdir}/blas/openblas/libblas.so
-		use cblas && dosym libcblas.so.3 /usr/${libdir}/blas/openblas/libcblas.so
-
-		exeinto /usr/${libdir}/lapack/openblas/
-		use lapack && doexe interface/liblapack.so.3
-		use lapacke && doexe interface/liblapacke.so.3
-		use lapack && dosym liblapack.so.3 /usr/${libdir}/lapack/openblas/liblapack.so
-		use lapacke && dosym liblapacke.so.3 /usr/${libdir}/lapack/openblas/liblapacke.so
-	fi
+	cmake_src_install
 }
 
 pkg_postinst() {
