@@ -1,4 +1,4 @@
-# Copyright 1999-2023 Gentoo Authors
+# Copyright 1999-2026 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
 
 EAPI=8
@@ -7,15 +7,15 @@ inherit cmake
 
 DESCRIPTION="Per-Face Texture Mapping for Production Rendering"
 HOMEPAGE="https://ptex.us/"
-COMMIT="ea6890e041c3889ff7cb80a8546d2a3b6b8804bf"
+COMMIT="065365532d108ebbfc9d9b65a2eb647923cdc5de"
 SRC_URI="https://github.com/wdas/ptex/archive/${COMMIT}.tar.gz -> ${P}.tar.gz"
 
 LICENSE="BSD"
 SLOT="0"
 KEYWORDS="amd64 ~arm ~arm64 ~riscv x86"
-IUSE="doc static-libs"
+IUSE="debug doc static-libs"
 
-RDEPEND="sys-libs/zlib"
+RDEPEND="virtual/zlib"
 DEPEND="${RDEPEND}"
 BDEPEND="doc? ( app-text/doxygen )"
 
@@ -29,10 +29,11 @@ src_prepare() {
 	v${PV}
 	EOF
 	cmake_src_prepare
+	use elibc_musl && ( sed -e "s/\#if defined(__FreeBSD__)/\#if defined(__clang__)/" -i src/ptex/PtexWriter.cpp || die )
 }
 
 src_configure() {
-	CMAKE_BUILD_TYPE='Release'
+	CMAKE_BUILD_TYPE=$(usex debug 'RelWithDebInfo' 'Release')
 	local mycmakeargs=(
 		-DCMAKE_INSTALL_DOCDIR="share/doc/${PF}/html"
 		-DPTEX_BUILD_STATIC_LIBS=$(usex static-libs)

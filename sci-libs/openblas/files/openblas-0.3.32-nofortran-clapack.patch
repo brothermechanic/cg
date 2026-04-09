@@ -1,0 +1,40 @@
+--- a/cmake/system.cmake
++++ b/cmake/system.cmake
+@@ -152,13 +152,6 @@ if (POWER)
+   set(GETARCH_FLAGS "${GETARCH_FLAGS} -DHAVE_GAS=${HAVE_GAS}")
+ endif ()
+ 
+-#if don't use Fortran, it will only compile CBLAS.
+-if (ONLY_CBLAS)
+-  set(NO_LAPACK 1)
+-else ()
+-  set(ONLY_CBLAS 0)
+-endif ()
+-
+ # N.B. this is NUM_THREAD in Makefile.system which is probably a bug -hpa
+ if (NOT CMAKE_CROSSCOMPILING)
+   if (NOT DEFINED NUM_CORES)
+@@ -850,8 +843,10 @@ set(LIBZIPNAME "${LIBNAME}.${LIBSUFFIX}.
+ set(LIBS "${PROJECT_SOURCE_DIR}/${LIBNAME}")
+ set(LIBS_P "${PROJECT_SOURCE_DIR}/${LIBNAME_P}")
+ 
++if (NOT ONLY_CBLAS)
++  set(LIB_COMPONENTS BLAS)
++endif ()
+ 
+-set(LIB_COMPONENTS BLAS)
+ if (NOT NO_CBLAS)
+   set(LIB_COMPONENTS "${LIB_COMPONENTS} CBLAS")
+ endif ()
+@@ -866,11 +861,6 @@ if (NOT NO_LAPACK)
+   endif ()
+ endif ()
+ 
+-if (ONLY_CBLAS)
+-  set(LIB_COMPONENTS CBLAS)
+-endif ()
+-
+-
+ # For GEMM3M
+ set(USE_GEMM3M 0)
+ 

@@ -340,7 +340,7 @@ RDEPEND="
 		<media-libs/openpgl-0.9[tbb?]
 		>=media-libs/openpgl-0.5[tbb?]
 	)
-	opensubdiv? ( >=media-libs/opensubdiv-3.6.0[cuda?,tbb?,opengl] )
+	opensubdiv? ( >=media-libs/opensubdiv-3.6.0[cuda?,tbb?] )
 	openvdb? (
 		>=media-gfx/openvdb-11.0.0:=[${OPENVDB_SINGLE_USEDEP},cuda?,nanovdb?]
 		<media-gfx/openvdb-13.0.0:=[${OPENVDB_SINGLE_USEDEP},cuda?,nanovdb?]
