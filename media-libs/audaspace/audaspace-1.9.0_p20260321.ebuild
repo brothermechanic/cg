@@ -116,6 +116,7 @@ src_configure() {
 	)
 	export OMP_NUM_THREADS=1
 	cmake_src_configure
+	addpredict /dev/snd
 	wrap_python ${FUNCNAME}
 }
 

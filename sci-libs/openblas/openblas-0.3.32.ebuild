@@ -157,6 +157,7 @@ src_configure() {
 	export NO_LAPACK=0
 	export NO_FBLAS=$(usex !fortran 1 0)
 	#export ONLY_CBLAS=$(usex !blas 1 0)
+	export BUILD_LAPACK_DEPRECATED=$(usex deprecated 1 0)
 	export NOFORTRAN=$(usex !fortran $(usex !lapacke 2 1) 0)
 	export BUILD_RELAPACK=$(usex relapack 1 0)
 	export PREFIX="${EPREFIX}/usr"
