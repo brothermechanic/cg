@@ -37,9 +37,9 @@ fi
 [[ "4.0 3.6" =~ "${MY_PV}"  ]] && OSL_PV="14" || OSL_PV="15"
 
 if [[ "4.5 4.2 3.6" =~ "${MY_PV}" ]]; then
-	AUD_PV="8"
+	AUD_PV="7"
 elif [[ "5.1" =~ "${MY_PV}" ]]; then
-	AUD_PV="9"
+	AUD_PV="8"
 else
 	AUD_PV="9"
 fi
