@@ -50,8 +50,11 @@ src_prepare() {
 	rm -v Makefile scripts/{unixbuild.sh,vcproj2cmake.rb} || die
 	find "${S}" -name SConscript -delete || die
 
-	sed -e 's/defined(__FreeBSD__)/defined(__clang__)/g' \
-		-i COLLADABaseUtils/include/COLLADABUhash_map.h || die
+	use elibc_musl && ( sed -e 's/__FreeBSD__/__clang__/g' \
+		-i common/libBuffer/include/CommonFWriteBufferFlusher.h \
+		-i common/libBuffer/src/CommonFWriteBufferFlusher.cpp \
+		-i COLLADABaseUtils/include/COLLADABUPlatform.h \
+		-i COLLADABaseUtils/include/COLLADABUhash_map.h || die )
 }
 
 src_configure() {
