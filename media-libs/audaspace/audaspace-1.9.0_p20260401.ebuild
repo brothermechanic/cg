@@ -36,7 +36,7 @@ BDEPEND="
 	virtual/libc
 	virtual/pkgconfig
 	sdl? ( media-libs/libsdl2[sound] )
-	sndfile? ( media-libs/libsndfile )
+	sndfile? ( media-libs/libsndfile[alsa,-minimal] )
 	ffmpeg? (
 		<media-video/ffmpeg-9:=[lame,theora,vorbis,opus]
 		>media-video/ffmpeg-5:=[lame,theora,vorbis,opus]
