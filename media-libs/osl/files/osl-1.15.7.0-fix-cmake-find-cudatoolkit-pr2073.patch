@@ -1,0 +1,154 @@
+From 30c135a2bf8e2cb609b55561a3fc5116d1f23040 Mon Sep 17 00:00:00 2001
+From: Mark Leone <mleone@nvidia.com>
+Date: Wed, 11 Feb 2026 11:23:40 -0700
+Subject: [PATCH] build: Switch from FindCUDA to FindCUDAToolkit (#2072)
+
+FindCUDA is obsolete.  FindCUDAToolkit was added in CMake 3.17.  Current cmake_minimum_required is already 3.19.
+
+Signed-off-by: Mark Leone <mleone@nvidia.com>
+---
+ src/cmake/externalpackages.cmake      | 43 +++++++++++++++++++++++----
+ testsuite/example-cuda/CMakeLists.txt | 32 ++++++++++++++++++--
+ 2 files changed, 67 insertions(+), 8 deletions(-)
+
+diff --git a/src/cmake/externalpackages.cmake b/src/cmake/externalpackages.cmake
+index 3906b8dec1..82930c271a 100644
+--- a/src/cmake/externalpackages.cmake
++++ b/src/cmake/externalpackages.cmake
+@@ -118,14 +118,42 @@ if (OSL_USE_OPTIX)
+             message (STATUS "CUDA_TOOLKIT_ROOT_DIR = ${CUDA_TOOLKIT_ROOT_DIR}")
+         endif ()
+ 
+-        checked_find_package (CUDA REQUIRED
++        if (CUDA_TOOLKIT_ROOT_DIR)
++            set (CUDAToolkit_ROOT "${CUDA_TOOLKIT_ROOT_DIR}")
++        endif ()
++
++        checked_find_package (CUDAToolkit REQUIRED
+                              VERSION_MIN 9.0
+                              RECOMMEND_MIN 11.0
+                              RECOMMEND_MIN_REASON
+                                 "We don't actively test CUDA older than 11"
+-                             PRINT CUDA_INCLUDES)
+-        set (CUDA_INCLUDES ${CUDA_TOOLKIT_ROOT_DIR}/include)
+-        include_directories (BEFORE "${CUDA_INCLUDES}")
++                             PRINT CUDAToolkit_INCLUDE_DIRS CUDAToolkit_NVCC_EXECUTABLE)
++
++        # Compatibility bridge: legacy CUDA variables.
++        set (CUDA_FOUND ${CUDAToolkit_FOUND})
++        set (CUDA_VERSION ${CUDAToolkit_VERSION})
++        set (CUDA_INCLUDES ${CUDAToolkit_INCLUDE_DIRS})
++        if (CUDA_INCLUDES)
++            list (GET CUDA_INCLUDES 0 CUDA_INCLUDES)
++        endif ()
++
++        # Derive the root dir.  See https://cmake.org/cmake/help/latest/module/FindCUDAToolkit.html
++        if (CUDAToolkit_LIBRARY_ROOT)
++            set (CUDA_TOOLKIT_ROOT_DIR "${CUDAToolkit_LIBRARY_ROOT}")
++        elseif (CUDAToolkit_TARGET_DIR)
++            set (CUDA_TOOLKIT_ROOT_DIR "${CUDAToolkit_TARGET_DIR}")
++        elseif (CUDAToolkit_BIN_DIR)
++            get_filename_component (CUDA_TOOLKIT_ROOT_DIR "${CUDAToolkit_BIN_DIR}" DIRECTORY)
++        endif ()
++        if (NOT CUDA_TOOLKIT_ROOT_DIR)
++            message (FATAL_ERROR "Could not determine CUDA toolkit root directory.")
++        endif ()
++
++        if (CUDAToolkit_NVCC_EXECUTABLE)
++            set (CUDA_NVCC_EXECUTABLE "${CUDAToolkit_NVCC_EXECUTABLE}")
++        else ()
++            find_program (CUDA_NVCC_EXECUTABLE NAMES nvcc HINTS "${CUDA_TOOLKIT_ROOT_DIR}/bin")
++        endif ()
+ 
+         STRING (FIND ${LLVM_TARGETS} "NVPTX" nvptx_index)
+         if (NOT ${nvptx_index} GREATER -1)
+@@ -138,7 +166,11 @@ if (OSL_USE_OPTIX)
+         # suffixes earlier in the suffix list. Don't forget to restore after
+         # so that this only applies to these library searches right here.
+         set (save_lib_path ${CMAKE_FIND_LIBRARY_SUFFIXES})
+-        if (CUDA_PREFER_STATIC_LIBS)
++        if (CUDA_PREFER_STATIC_LIBS AND TARGET CUDA::cudart_static)
++            set (cudart_lib CUDA::cudart_static)
++        elseif (TARGET CUDA::cudart)
++            set (cudart_lib CUDA::cudart)
++        elseif (CUDA_PREFER_STATIC_LIBS)
+             set (CMAKE_FIND_LIBRARY_SUFFIXES .lib .a ${CMAKE_FIND_LIBRARY_SUFFIXES})
+             find_library(cudart_lib REQUIRED
+                          NAMES cudart_static cudart
+@@ -148,7 +180,6 @@ if (OSL_USE_OPTIX)
+                          NAMES cudart
+                          PATHS "${CUDA_TOOLKIT_ROOT_DIR}/lib64" "${CUDA_TOOLKIT_ROOT_DIR}/x64" "${CUDA_TOOLKIT_ROOT_DIR}/lib/x64")
+         endif ()
+-        # Is it really a good idea to completely reset CUDA_LIBRARIES here?
+         set(CUDA_LIBRARIES ${cudart_lib})
+         set(CUDA_EXTRA_LIBS ${CUDA_EXTRA_LIBS} dl rt)
+         set (CMAKE_FIND_LIBRARY_SUFFIXES ${save_lib_path})
+diff --git a/testsuite/example-cuda/CMakeLists.txt b/testsuite/example-cuda/CMakeLists.txt
+index 6797802870..969d685981 100644
+--- a/testsuite/example-cuda/CMakeLists.txt
++++ b/testsuite/example-cuda/CMakeLists.txt
+@@ -2,7 +2,7 @@
+ # SPDX-License-Identifier: BSD-3-Clause
+ # https://github.com/AcademySoftwareFoundation/OpenShadingLanguage
+ 
+-cmake_minimum_required(VERSION 3.15)
++cmake_minimum_required(VERSION 3.19)  # Same as top-level CMakeLists.txt
+ project(examplecuda LANGUAGES CXX)
+ 
+ if (NOT CMAKE_BUILD_TYPE)
+@@ -19,12 +19,16 @@ include(check_is_enabled)
+ include(checked_find_package)
+ 
+ find_package(OSL REQUIRED)
+-find_package(CUDA REQUIRED)
++find_package(CUDAToolkit REQUIRED)
+ checked_find_package(LLVM 7.0 REQUIRED)
+ checked_find_package(Imath 3.1 REQUIRED)
+ checked_find_package(OpenImageIO 2.4 REQUIRED)
+ checked_find_package(OptiX REQUIRED)
+ 
++set(CUDA_TOOLKIT_ROOT_DIR ${CUDAToolkit_ROOT_DIR})
++set(CUDA_INCLUDE_DIRS ${CUDAToolkit_INCLUDE_DIRS})
++set(CUDA_NVCC_EXECUTABLE ${CUDAToolkit_NVCC_EXECUTABLE})
++set(CUDA_LIBRARIES CUDA::cudart)
+ 
+ # Make the build area layout look like we expect
+ set (CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
+@@ -34,6 +38,12 @@ set (CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
+ # TODO: what are the path suffixes on other platforms?
+ find_library(CUDA_nvrtc_LIBRARY nvrtc HINTS ${CUDA_TOOLKIT_ROOT_DIR} PATH_SUFFIXES lib lib64)
+ find_library(CUDA_cuda_LIBRARY cuda HINTS ${CUDA_TOOLKIT_ROOT_DIR} PATH_SUFFIXES lib/stubs lib64/stubs)
++if (TARGET CUDA::nvrtc)
++    set(CUDA_nvrtc_LIBRARY CUDA::nvrtc)
++endif ()
++if (TARGET CUDA::cuda_driver)
++    set(CUDA_cuda_LIBRARY CUDA::cuda_driver)
++endif ()
+ 
+ # TODO: move to sm_60?
+ set(CUDA_TARGET_ARCH sm_35)
+@@ -41,6 +51,24 @@ set(CUDA_TARGET_ARCH sm_35)
+ set (CMAKE_CXX_STANDARD 17 CACHE STRING
+      "C++ standard to build with (17, 20, etc.)")
+ 
++# Compile a CUDA source file to PTX with NVCC.  (Formerly provided by FindCUDA.cmake)
++function(cuda_compile_ptx out_var cuda_src)
++    cmake_parse_arguments(_ccp "" "" "OPTIONS" ${ARGN})
++    get_filename_component(cuda_src_we ${cuda_src} NAME_WE)
++    set(cuda_ptx "${CMAKE_CURRENT_BINARY_DIR}/${cuda_src_we}.ptx")
++    add_custom_command(OUTPUT ${cuda_ptx}
++        COMMAND ${CUDA_NVCC_EXECUTABLE}
++                ${_ccp_OPTIONS}
++                -ptx
++                ${cuda_src}
++                -o ${cuda_ptx}
++        MAIN_DEPENDENCY ${cuda_src}
++        DEPENDS ${cuda_src}
++        WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
++    )
++    set(${out_var} ${cuda_ptx} PARENT_SCOPE)
++endfunction()
++
+ # Compile our "renderer" to PTX
+ cuda_compile_ptx(CUDA_PTX_FILES cuda_grid_renderer.cu
+     OPTIONS --gpu-architecture=${CUDA_TARGET_ARCH} --use_fast_math -dc
