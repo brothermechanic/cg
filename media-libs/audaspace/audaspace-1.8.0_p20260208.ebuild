@@ -9,7 +9,7 @@ DISTUTILS_USE_PEP517=setuptools
 DISTUTILS_SINGLE_IMPL=1
 DISTUTILS_EXT=1
 
-inherit cmake distutils-r1
+inherit cmake distutils-r1 flag-o-matic
 
 DESCRIPTION="A high level and feature rich audio library written in C++ with language bindings"
 HOMEPAGE="https://audaspace.github.io"
@@ -29,14 +29,14 @@ fi
 
 LICENSE="Apache-2.0"
 SLOT="0"
-IUSE="doc examples +python jack +fftw +ffmpeg sdl +sndfile openal pulseaudio +rubberband"
+IUSE="doc examples +python jack +fftw +ffmpeg sdl +sndfile openal pipewire pulseaudio +rubberband"
 
 RDEPEND="python? ( ${PYTHON_DEPS} )"
 BDEPEND="
 	virtual/libc
 	virtual/pkgconfig
 	sdl? ( media-libs/libsdl2[sound] )
-	sndfile? ( media-libs/libsndfile )
+	sndfile? ( media-libs/libsndfile[alsa,-minimal] )
 	ffmpeg? (
 		<media-video/ffmpeg-9:=[lame,theora,vorbis,opus]
 		>media-video/ffmpeg-5:=[lame,theora,vorbis,opus]
@@ -46,6 +46,7 @@ BDEPEND="
 	openal? ( media-libs/openal )
 	pulseaudio? ( media-libs/libpulse )
 	rubberband? ( media-libs/rubberband )
+	pipewire? ( media-video/pipewire )
 	doc? (
 		app-text/doxygen[-nodot(-),dot(+)]
 		dev-python/sphinx[latex]
@@ -90,20 +91,34 @@ src_prepare() {
 
 src_configure() {
 	CMAKE_BUILD_TYPE=Release
+	append-cppflags -std=c++20
 	local mycmakeargs=(
 		-DCMAKE_POLICY_DEFAULT_CMP0148="OLD"
-		-DDOCUMENTATION_INSTALL_PATH="/usr/share/doc/${PF}"
+		-DCMAKE_INSTALL_LIBDIR="$(get_libdir)"
+		-DCMAKE_INSTALL_PREFIX="${EPREFIX}/usr"
+		-DWITH_STRICT_DEPENDENCIES=YES
+		# LIBS
+		-DWITH_FFTW=$(usex fftw)
+		-DWITH_SDL=$(usex sdl)
+		-DWITH_RUBBERBAND=$(usex rubberband)
+
+		# PLUGINS
 		-DWITH_OPENAL=$(usex openal)
 		-DWITH_JACK=$(usex jack)
-		-DWITH_PYTHON=$(usex python)
-		-DWITH_FFTW=$(usex fftw)
 		-DWITH_FFMPEG=$(usex ffmpeg)
 		-DWITH_PULSEAUDIO=$(usex pulseaudio)
-		-DWITH_RUBBERBAND=$(usex rubberband)
-		-DWITH_DOCS=$(usex doc)
-		-DWITH_SDL=$(usex sdl)
-		-DBUILD_DEMOS=$(usex examples)
+		-DWITH_PIPEWIRE=$(usex pipewire)
+		-DWITH_LIBSNDFILE=$(usex sndfile)
 		-DDEFAULT_PLUGIN_PATH="/usr/share/audaspace/plugins"
+
+		# BINDIGS
+		-DDOCUMENTATION_INSTALL_PATH="/usr/share/doc/${PF}"
+		-DWITH_DOCS=$(usex doc)
+		-DWITH_PYTHON=$(usex python)
+		-DWITH_C=YES
+		-DSEPARATE_C=YES
+
+		-DBUILD_DEMOS=$(usex examples)
 	)
 	use python && mycmakeargs+=(
 		-DPYTHON_EXECUTABLE="${PYTHON}"
@@ -116,11 +131,11 @@ src_configure() {
 	)
 	export OMP_NUM_THREADS=1
 	cmake_src_configure
-	addpredict /dev/snd
 	wrap_python ${FUNCNAME}
 }
 
 src_install(){
+	addpredict /dev/snd
 	cmake_src_install
 	if use python; then
 		rm -rf "${D}/$(python_get_sitedir)"/*.egg-info || die
