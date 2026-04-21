@@ -29,7 +29,7 @@ fi
 
 LICENSE="Apache-2.0"
 SLOT="0"
-IUSE="doc examples +python jack +fftw +ffmpeg sdl +sndfile openal pipewire pulseaudio +rubberband"
+IUSE="doc coreaudio examples +python jack +fftw +ffmpeg sdl +sndfile openal pipewire pulseaudio +rubberband"
 
 RDEPEND="python? ( ${PYTHON_DEPS} )"
 BDEPEND="
@@ -91,7 +91,6 @@ src_prepare() {
 
 src_configure() {
 	CMAKE_BUILD_TYPE=Release
-	append-cppflags -std=c++20
 	local mycmakeargs=(
 		-DCMAKE_POLICY_DEFAULT_CMP0148="OLD"
 		-DCMAKE_INSTALL_LIBDIR="$(get_libdir)"
@@ -103,6 +102,7 @@ src_configure() {
 		-DWITH_RUBBERBAND=$(usex rubberband)
 
 		# PLUGINS
+		-DWITH_COREAUDIO=$(usex coreaudio)
 		-DWITH_OPENAL=$(usex openal)
 		-DWITH_JACK=$(usex jack)
 		-DWITH_FFMPEG=$(usex ffmpeg)
