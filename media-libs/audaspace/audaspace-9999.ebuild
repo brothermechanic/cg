@@ -21,9 +21,16 @@ if [[ ${PV} == 9999 ]]; then
 	EGIT_SUBMODULES=()
 	KEYWORDS=""
 else
-	#COMMIT="04eeb56b359a5099fb9d5c132988d8422629bdfc"
+	if [[ "${PV}" =~ "1.9.0" ]]; then
+		COMMIT="546b749617ce754104e0d3bc973ecb845fa88e6b";
+	elif [[ "${PV}" =~ "1.8.0" ]]; then
+		COMMIT="7b04aa90fc746c0ea80e876cd7c9964ae523b910";
+	elif [[ "${PV}" =~ "1.7.0" ]]; then
+		COMMIT="05d35ba49b4ffa3058dc35e4daf1680a6ae58323";
+	fi
+
 	SRC_URI="https://github.com/neXyon/audaspace/archive/v${PV}.tar.gz -> ${P}.tar.gz"
-	#S=${WORKDIR}/${PN}-${COMMIT}
+	S=${WORKDIR}/${PN}-${COMMIT}
 	KEYWORDS="~amd64 ~x86 ~arm64 ~arm"
 fi
 
@@ -121,6 +128,7 @@ src_configure() {
 		-DBUILD_DEMOS=$(usex examples)
 	)
 	use python && mycmakeargs+=(
+		-DWITH_BINDING_DOCS=$(usex doc)
 		-DPYTHON_EXECUTABLE="${PYTHON}"
 		-DPYTHON_INCLUDE_DIR="$(python_get_includedir)"
 		-DPYTHON_LIBRARY="$(python_get_library_path)"
@@ -131,11 +139,11 @@ src_configure() {
 	)
 	export OMP_NUM_THREADS=1
 	cmake_src_configure
+	addpredict /dev/snd
 	wrap_python ${FUNCNAME}
 }
 
-src_install(){
-	addpredict /dev/snd
+src_install() {
 	cmake_src_install
 	if use python; then
 		rm -rf "${D}/$(python_get_sitedir)"/*.egg-info || die

@@ -140,6 +140,7 @@ BDEPEND="
 
 PATCHES=(
 	"${FILESDIR}/${PN}-include-cstdint.patch"
+	"${FILESDIR}/${PN}-1.15.3.0-fix-cmake-find-cudatoolkit-pr2073.patch"
 )
 
 get_lib_type() {
@@ -157,14 +158,6 @@ src_prepare() {
 	if ! use test ; then
 		sed -i -e "s|osl_add_all_tests|#osl_add_all_tests|g" \
 			"CMakeLists.txt" || die
-	fi
-
-	if [[ "${LLVM_SLOT}" == "22" ]] && [[ "${PV}" =~ "1.15" ]]; then
-		eapply "${FILESDIR}/${PN}-1.15.1.0-llvm-22.patch"
-	fi
-
-	if [[ "${LLVM_SLOT}" == "21" ]] && [[ "${PV}" =~ "1.14" ]]; then
-		eapply "${FILESDIR}/${PN}-1.13.7.0-llvm-21.patch"
 	fi
 
 	# optix 7.4 build fix
