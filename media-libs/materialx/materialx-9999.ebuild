@@ -4,7 +4,7 @@
 EAPI=8
 
 MY_PN="MaterialX"
-MY_P="${MY_PN}-${PV}"
+MY_P="${MY_PN}-${PV//_/-}"
 
 PYTHON_COMPAT=( python3_{11..14} ) # CI does not list 3.10 for this package.
 inherit cmake python-single-r1 desktop
@@ -27,7 +27,7 @@ else
 	EGIT_NANOVG_METAL_COMMIT="075b04f16c579728c693b46a2ce408f2325968cf"
 	EGIT_ROBIN_MAP_COMMIT="a603419b9a0687c9148e02c8bd5e3db180bb9ac0"
 	SRC_URI="
-		https://github.com/AcademySoftwareFoundation/MaterialX/archive/refs/tags/v${PV}.tar.gz -> ${P}.tar.gz
+		https://github.com/AcademySoftwareFoundation/MaterialX/archive/refs/tags/v${PV//_/-}.tar.gz -> ${P}.tar.gz
 		viewer? (
 			https://github.com/ocornut/imgui/archive/${EGIT_IMGUI_COMMIT}.tar.gz -> imgui-${EGIT_IMGUI_COMMIT:0:7}.tar.gz
 			https://github.com/mitsuba-renderer/nanogui/archive/${EGIT_NANOGUI_COMMIT}.tar.gz -> nanogui-${EGIT_NANOGUI_COMMIT:0:7}.tar.gz
