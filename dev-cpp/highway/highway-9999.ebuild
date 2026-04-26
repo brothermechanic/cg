@@ -18,7 +18,8 @@ fi
 
 LICENSE="Apache-2.0"
 SLOT="0"
-IUSE="contrib cpu_flags_arm_neon cpu_flags_x86_sse2 cpu_flags_x86_avx512vl debug header-only examples test"
+CPU_IUSE="cpu_flags_x86_fma cpu_flags_arm_neon cpu_flags_x86_sse2 cpu_flags_x86_ssse3 cpu_flags_x86_sse4_1 cpu_flags_x86_avx2 cpu_flags_x86_avx3 cpu_flags_x86_avx512vl"
+IUSE="${CPU_IUSE} contrib debug header-only examples test"
 REQUIRED="
 	contrib? ( cpu_flags_x86_avx512vl )
 "
@@ -86,7 +87,14 @@ multilib_src_configure() {
 	local mycmakeargs=(
 		-DHWY_CMAKE_HEADER_ONLY=$(usex header-only)
 		-DHWY_CMAKE_ARM7=$(usex cpu_flags_arm_neon)
-		-DHWY_CMAKE_SSE2=$(usex cpu_flags_x86_sse2)
+		#-DHWY_CMAKE_SSE2=$(usex cpu_flags_x86_sse2)
+		-DHWY_SSE2=$(usex cpu_flags_x86_sse2)
+		-DHWY_SSE4=$(usex cpu_flags_x86_sse4_1)
+		-DHWY_SSSE3=$(usex cpu_flags_x86_ssse3)
+		-DHWY_AVX2=$(usex cpu_flags_x86_avx2)
+		-DHWY_AVX3=$(usex cpu_flags_x86_avx3)
+		-DHWY_FMA=$(usex cpu_flags_x86_fma)
+		#-DHWY_TARGETS=""
 		-DBUILD_TESTING=$(usex test)
 		-DHWY_ENABLE_CONTRIB=$(usex contrib)
 		-DHWY_ENABLE_TESTS=$(usex test)

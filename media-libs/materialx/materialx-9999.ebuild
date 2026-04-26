@@ -18,11 +18,12 @@ else
 	S="${WORKDIR}/${MY_P}"
 	KEYWORDS="~amd64"
 	# Needed for static link of viewer or graph-editor
-	EGIT_GLFW_COMMIT="e130e55a990998c78fd323f21076e798e0efe8a4"
+	#EGIT_GLFW_COMMIT="e130e55a990998c78fd323f21076e798e0efe8a4"
+	EGIT_GLFW_COMMIT="38f86be2c9495a4aaacbf5360c0f79f729576a9d"
 	EGIT_IMGUI_COMMIT="9aae45eb4a05a5a1f96be1ef37eb503a12ceb889"
 	EGIT_IMGUI_NODE_EDITOR_COMMIT="e78e447900909a051817a760efe13fe83e6e1afc"
 	EGIT_NANOBIND_COMMIT="07b4e1fc9e94eeaf5e9c2f4a63bdb275a25c82c6"
-	EGIT_NANOGUI_COMMIT="f5020e2f3e5114d517642e67afbb21cb88cf04c0"
+	EGIT_NANOGUI_COMMIT="6452dd6944d2ba5c0c9bc0042a1894f703ce1ace"
 	EGIT_NANOVG_COMMIT="bf2320d1175122374a9b806d91e9e666c9336375"
 	EGIT_NANOVG_METAL_COMMIT="075b04f16c579728c693b46a2ce408f2325968cf"
 	EGIT_ROBIN_MAP_COMMIT="a603419b9a0687c9148e02c8bd5e3db180bb9ac0"
@@ -53,7 +54,7 @@ LICENSE="
 	graph-editor? ( ZLIB MIT Boost-1.0 BSD )
 "
 SLOT="0/$(ver_cut 1-2)"
-IUSE="X doc debug -examples graph-editor javascript lto openimageio +osl python +renderer resources test viewer"
+IUSE="X doc debug -examples graph-editor javascript lto openimageio +osl python +renderer resources system-nanogui slang test viewer"
 REQUIRED_USE="
 	python? (
 		${PYTHON_REQUIRED_USE}
@@ -67,6 +68,7 @@ DEPEND="
 	virtual/libc
 	openimageio? ( media-libs/openimageio )
 	osl? ( >=media-libs/osl-1.11 )
+	system-nanogui? ( >=media-libs/nanogui-0.2.0 )
 	X? (
 		x11-libs/libX11
 		x11-libs/libXt
@@ -91,7 +93,6 @@ RESTRICT="
 QA_PRESTRIPPED="usr/lib/python.*/site-packages/${MY_PN}/.*.so"
 
 PATCHES=(
-	"${FILESDIR}/materialx-1.38.9-setup.py-fix-sandbox-violation.patch"
 	"${FILESDIR}/materialx-1.39.0-include-cstdint-gcc15-fix.patch"
 )
 
@@ -183,13 +184,14 @@ src_prepare() {
 }
 
 src_configure() {
-	CMAKE_BUILD_TYPE=$(usex debug 'Debug' 'Release')
+	CMAKE_BUILD_TYPE=$(usex debug 'RelWithDebInfo' 'Release')
 	append-cppflags $(usex debug '-DDEBUG' '-DNDEBUG')
 	addpredict /usr/lib/materialx
 
 	local mycmakeargs=(
 		-DCMAKE_POLICY_DEFAULT_CMP0148="OLD"
 		-DCMAKE_POLICY_VERSION_MINIMUM=3.5
+		-DCMAKE_INSTALL_PREFIX="${EPREFIX}/usr"
 		-DMATERIALX_INSTALL_LIB_PATH="$(get_libdir)"
 		-DMATERIALX_INSTALL_STDLIB_PATH="share/${PN}/libraries"
 		-DMATERIALX_PYTHON_FOLDER_NAME="$(python_get_sitedir)/${MY_PN}"
@@ -205,12 +207,25 @@ src_configure() {
 		-DMATERIALX_BUILD_GRAPH_EDITOR=$(usex graph-editor "ON" "OFF")
 		-DMATERIALX_BUILD_VIEWER=$(usex viewer "ON" "OFF")
 	)
+	if use viewer ; then
+		mycmakeargs+=(
+			-DCMAKE_INSTALL_LIBDIR="${EPREFIX}/usr/$(get_libdir)"
+			-DMATERIALX_NANOGUI_EXTERNAL=$(usex system-nanogui)
+		)
+	fi
+	if use graph-editor ; then
+		mycmakeargs+=(
+			-DCMAKE_INSTALL_LIBDIR="${EPREFIX}/usr/$(get_libdir)"
+		)
+	fi
 	if use renderer ; then
 		mycmakeargs+=(
 			-DMATERIALX_BUILD_GEN_GLSL=$(usex X)
 			-DMATERIALX_BUILD_GEN_OSL=$(usex osl)
+			-DMATERIALX_BUILD_OSOS=$(usex osl)
 			-DMATERIALX_BUILD_GEN_MDL=$(usex X)
 			-DMATERIALX_BUILD_GEN_MSL=$(usex X)
+			-DMATERIALX_BUILD_GEN_SLANG=$(usex slang)
 		)
 	fi
 	if use python ; then
