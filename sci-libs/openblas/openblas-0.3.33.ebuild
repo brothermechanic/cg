@@ -83,6 +83,8 @@ src_configure() {
 
 	tc-export CC FC LD AR AS RANLIB
 
+	append-fflags "-I${ESYSROOT}/usr/include"
+
 	# HOSTCC is used for scripting
 	export HOSTCC="$(tc-getBUILD_CC)"
 
@@ -231,33 +233,37 @@ pkg_postinst() {
 	local libdir=$(get_libdir) me="openblas"
 
 	# check blas
-	eselect blas add ${libdir} "${EROOT}"/usr/${libdir}/blas/${me} ${me}
-	local current_blas=$(eselect blas show ${libdir} | cut -d' ' -f2)
-	if [[ ${current_blas} == "${me}" || -z ${current_blas} ]]; then
-		eselect blas set ${libdir} ${me}
-		elog "Current eselect: BLAS/CBLAS ($libdir) -> [${current_blas}]."
-	else
-		elog "Current eselect: BLAS/CBLAS ($libdir) -> [${current_blas}]."
-		elog "To use blas [${me}] implementation, you have to issue (as root):"
-		elog "\t eselect blas set ${libdir} ${me}"
+	if use fortran || use cblas; then
+		eselect blas add ${libdir} "${EROOT}"/usr/${libdir}/blas/${me} ${me}
+		local current_blas=$(eselect blas show ${libdir} | cut -d' ' -f2)
+		if [[ ${current_blas} == "${me}" || -z ${current_blas} ]]; then
+			eselect blas set ${libdir} ${me}
+			elog "Current eselect: BLAS/CBLAS ($libdir) -> [${current_blas}]."
+		else
+			elog "Current eselect: BLAS/CBLAS ($libdir) -> [${current_blas}]."
+			elog "To use blas [${me}] implementation, you have to issue (as root):"
+			elog "\t eselect blas set ${libdir} ${me}"
+		fi
 	fi
 
 	# check lapack
-	eselect lapack add ${libdir} "${EROOT}"/usr/${libdir}/lapack/${me} ${me}
-	local current_lapack=$(eselect lapack show ${libdir} | cut -d' ' -f2)
-	if [[ ${current_lapack} == "${me}" || -z ${current_lapack} ]]; then
-		eselect lapack set ${libdir} ${me}
-		elog "Current eselect: LAPACK ($libdir) -> [${current_lapack}]."
-	else
-		elog "Current eselect: LAPACK ($libdir) -> [${current_lapack}]."
-		elog "To use lapack [${me}] implementation, you have to issue (as root):"
-		elog "\t eselect lapack set ${libdir} ${me}"
+	if use fortran || use lapacke; then
+		eselect lapack add ${libdir} "${EROOT}"/usr/${libdir}/lapack/${me} ${me}
+		local current_lapack=$(eselect lapack show ${libdir} | cut -d' ' -f2)
+		if [[ ${current_lapack} == "${me}" || -z ${current_lapack} ]]; then
+			eselect lapack set ${libdir} ${me}
+			elog "Current eselect: LAPACK/LAPACKE ($libdir) -> [${current_lapack}]."
+		else
+			elog "Current eselect: LAPACK/LAPACKE ($libdir) -> [${current_lapack}]."
+			elog "To use lapack [${me}] implementation, you have to issue (as root):"
+			elog "\t eselect lapack set ${libdir} ${me}"
+		fi
 	fi
 }
 
 pkg_postrm() {
 	if use eselect-ldso; then
-		eselect blas validate
-		eselect lapack validate
+		if use fortran || use cblas ; then eselect blas validate; fi
+		if use fortran || use lapacke ; then eselect lapack validate; fi
 	fi
 }
