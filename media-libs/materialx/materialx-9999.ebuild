@@ -222,7 +222,7 @@ src_configure() {
 		mycmakeargs+=(
 			-DMATERIALX_BUILD_GEN_GLSL=$(usex X)
 			-DMATERIALX_BUILD_GEN_OSL=$(usex osl)
-			-DMATERIALX_BUILD_OSOS=$(usex osl)
+			#-DMATERIALX_BUILD_OSOS=$(usex osl)
 			-DMATERIALX_BUILD_GEN_MDL=$(usex X)
 			-DMATERIALX_BUILD_GEN_MSL=$(usex X)
 			-DMATERIALX_BUILD_GEN_SLANG=$(usex slang)
