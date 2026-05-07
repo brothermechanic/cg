@@ -37,9 +37,9 @@ fi
 [[ "4.0 3.6" =~ "${MY_PV}"  ]] && OSL_PV="14" || OSL_PV="15"
 
 if [[ "4.5 4.2 3.6" =~ "${MY_PV}" ]]; then
-	AUD_PV="7"
-elif [[ "5.1" =~ "${MY_PV}" ]]; then
 	AUD_PV="8"
+elif [[ "5.1" =~ "${MY_PV}" ]]; then
+	AUD_PV="9"
 else
 	AUD_PV="9"
 fi
@@ -364,7 +364,7 @@ RDEPEND="
 	sndfile? ( media-libs/libsndfile )
 	tbb? ( dev-cpp/tbb:= )
 	usd? (
-		<media-libs/openusd-26[${PYTHON_SINGLE_USEDEP},monolithic,imaging,python,alembic?,draco?,materialx?,color-management?,opengl,openexr,openimageio,osl?,openvdb,vulkan]
+		<media-libs/openusd-27[${PYTHON_SINGLE_USEDEP},monolithic,imaging,python,alembic?,draco?,materialx?,color-management?,opengl,openexr,openimageio,osl?,openvdb,vulkan]
 		>=media-libs/openusd-25[${PYTHON_SINGLE_USEDEP},monolithic,imaging,python,alembic?,draco?,materialx?,color-management?,opengl,openexr,openimageio,osl?,openvdb,vulkan]
 	)
 	valgrind? ( dev-debug/valgrind )

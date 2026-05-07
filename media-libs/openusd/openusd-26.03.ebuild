@@ -1,4 +1,4 @@
-# Copyright 1999-2025 Gentoo Authors
+# Copyright 1999-2026 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
 
 EAPI=8
@@ -155,10 +155,10 @@ BDEPEND="
 	doc? ( >=app-text/doxygen-1.9.6[dot] )
 	|| (
 		(
-			<sys-devel/gcc-16
+			<sys-devel/gcc-17
 			>=sys-devel/gcc-9.0.1
 		)
-		<llvm-core/clang-22
+		<llvm-core/clang-23
 	)
 "
 #COMMIT="60a8d58c3953a005e604c4f760caa018a90ae846"
