@@ -93,7 +93,7 @@ _OPENVDB_ECLASS=1
 #
 # Example use:
 # @CODE
-# OPENVDB_COMPAT=( {9..12} )
+# OPENVDB_COMPAT=( {9..13} )
 # @CODE
 #
 # @ECLASS-VARIABLE: OPENVDB_SINGLE_USEDEP
@@ -130,7 +130,7 @@ _OPENVDB_ECLASS=1
 # @DESCRIPTION:
 # All supported OpenVDB ABI
 # Update this with each new major version release of OpenVDB
-_OPENVDB_ALL_ABI=( {3..12} )
+_OPENVDB_ALL_ABI=( {3..13} )
 readonly _OPENVDB_ALL_ABI
 
 # @ECLASS_VARIABLE: OPENVDB_ABI

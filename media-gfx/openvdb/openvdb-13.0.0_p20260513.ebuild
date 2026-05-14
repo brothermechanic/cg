@@ -1,11 +1,11 @@
-# Copyright 1999-2025 Gentoo Authors
+# Copyright 1999-2026 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
 
 EAPI=8
 
-OPENVDB_COMPAT=( {7..12} )
+OPENVDB_COMPAT=( {7..13} )
 PYTHON_COMPAT=( python3_{11..13} )
-LLVM_COMPAT=( 15 )
+LLVM_COMPAT=( {20..22} )
 LLVM_OPTIONAL=1
 
 inherit cmake cuda flag-o-matic llvm-r2 multibuild python-single-r1 toolchain-funcs openvdb
@@ -14,8 +14,9 @@ DESCRIPTION="Library for the efficient manipulation of volumetric data"
 HOMEPAGE="https://www.openvdb.org"
 OGT_COMMIT="22e71873ffc55c3a6253d31302e4f5e2191f9a0b"
 OGT_DFN="ogt-${OGT_COMMIT:0:7}.tar.gz"
+COMMIT="cac4e20dcdbf401105795fdfd9501ad316773336"
 SRC_URI="
-https://github.com/AcademySoftwareFoundation/${PN}/archive/v${PV}.tar.gz -> ${P}.tar.gz
+https://github.com/AcademySoftwareFoundation/${PN}/archive/${COMMIT}.tar.gz -> ${P}-${COMMIT:0:7}.tar.gz
 magicavoxel? ( https://github.com/jpaver/opengametools/archive/${OGT_COMMIT}.tar.gz -> ${OGT_DFN} )
 "
 
@@ -117,17 +118,17 @@ RDEPEND="
 		jpeg? ( media-libs/libjpeg-turbo:= )
 		pdal? ( sci-libs/pdal:= )
 		png? ( media-libs/libpng:= )
-		openexr? ( >=media-libs/openexr-3:= )
+		openexr? ( >=media-libs/openexr-3.2:= )
 		media-libs/libglvnd[X]
 	)
 	zlib? (
-		sys-libs/zlib:=
+		virtual/zlib:=
 	)
 "
 DEPEND="${RDEPEND}
 	utils? (
 		openexr? (
-			dev-libs/imath:=
+			>=dev-libs/imath-3.2:=
 		)
 	)
 "
@@ -152,17 +153,15 @@ BDEPEND="${RDEPEND}
 "
 
 S_OGT="${WORKDIR}/ogt-${OGT_COMMIT}"
+S="${WORKDIR}/${PN}-${COMMIT}"
 
 PATCHES=(
-	#"${FILESDIR}/${PN}-8.1.0-glfw-libdir.patch"
+	"${FILESDIR}/${PN}-8.1.0-glfw-libdir.patch"
 	"${FILESDIR}/${PN}-9.0.0-fix-atomic.patch"
 	"${FILESDIR}/${PN}-10.0.1-log4cplus-version.patch"
-	#"${FILESDIR}/${PN}-12.0.0-fix-typos-1995.patch"
+	"${FILESDIR}/${PN}-13.0.0-cmake_fixes.patch"
 	"${FILESDIR}/${PN}-12.0.0-fix-linking-of-vdb_tool-with-OpenEXR.patch"
 	"${FILESDIR}/${PN}-12.0.0-loosen-float-equality-tolerances.patch"
-	"${FILESDIR}/${PN}-12.0.0-remove-c-style-casts.patch"
-	"${FILESDIR}/${PN}-12.1.0-cmake_fixes.patch"
-	"${FILESDIR}/${PN}-12.1.0-fix-host-TM-pr2072.patch"
 )
 
 QA_PRESTRIPPED="usr/lib.*/python.*/site-packages/pyopenvdb.*"
@@ -253,7 +252,7 @@ my_src_configure() {
 	local mycmakeargs=(
 		-Dnanobind_DIR="$(python_get_sitedir)/nanobind/cmake"
 		-DCMAKE_CXX_STANDARD=17
-		-DCMAKE_POLICY_DEFAULT_CMP0167="OLD"
+		#-DCMAKE_POLICY_DEFAULT_CMP0167="OLD"
 		-DCMAKE_FIND_PACKAGE_PREFER_CONFIG="yes"
 		-DCMAKE_INSTALL_DOCDIR="share/doc/${PF}/"
 
