@@ -4,7 +4,7 @@
 EAPI=8
 
 PYTHON_COMPAT=( python3_{11..14} )
-OPENVDB_COMPAT=( {7..12} )
+OPENVDB_COMPAT=( {7..13} )
 LLVM_COMPAT=( {19..22} )
 LLVM_OPTIONAL=1
 
@@ -330,8 +330,8 @@ RDEPEND="
 	oneapi? ( dev-libs/intel-compute-runtime[l0] )
 	media-libs/glew:*
 	oidn? ( >=media-libs/oidn-2.1.0[cuda?] )
-	<media-libs/openimageio-3.2:=[${PYTHON_SINGLE_USEDEP},${OPENVDB_SINGLE_USEDEP},python,color-management?]
-	>=media-libs/openimageio-2.5.11.0[${PYTHON_SINGLE_USEDEP},${OPENVDB_SINGLE_USEDEP},python,color-management?]
+	<media-libs/openimageio-3.2:=[${PYTHON_SINGLE_USEDEP},python,color-management?]
+	>=media-libs/openimageio-2.5.11.0[${PYTHON_SINGLE_USEDEP},python,color-management?]
 	>=dev-cpp/robin-map-0.6.2
 	>=dev-libs/libfmt-9.1.0
 	color-management? ( >=media-libs/opencolorio-2.3.0:= )
@@ -343,7 +343,7 @@ RDEPEND="
 	opensubdiv? ( >=media-libs/opensubdiv-3.6.0[cuda?,tbb?] )
 	openvdb? (
 		>=media-gfx/openvdb-11.0.0:=[${OPENVDB_SINGLE_USEDEP},cuda?,nanovdb?]
-		<media-gfx/openvdb-13.0.0:=[${OPENVDB_SINGLE_USEDEP},cuda?,nanovdb?]
+		<media-gfx/openvdb-14.0.0:=[${OPENVDB_SINGLE_USEDEP},cuda?,nanovdb?]
 		>=dev-libs/c-blosc-1.21.1[zlib]
 	)
 	openxr? (

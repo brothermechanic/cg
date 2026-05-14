@@ -123,7 +123,7 @@ _OPENVDB_ECLASS=1
 #
 # Example value:
 # @CODE
-# ^^ ( openvdb_abi_9 openvdb_abi_10 openvdb_abi_11 openvdb_abi_12 )
+# ^^ ( openvdb_abi_9 openvdb_abi_10 openvdb_abi_11 openvdb_abi_12 apenvdb_abi_13)
 # @CODE
 # @ECLASS-VARIABLE: _OPENVDB_ALL_ABI
 # @INTERNAL

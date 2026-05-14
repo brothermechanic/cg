@@ -4,7 +4,7 @@
 EAPI=8
 
 PYTHON_COMPAT=( python3_{11..14} )
-OPENVDB_COMPAT=( {7..12} )
+OPENVDB_COMPAT=( {7..13} )
 CUDA_TARGETS_COMPAT=(
 	sm_30
 	sm_50
@@ -179,7 +179,7 @@ DOCS=(
 QA_PRESTRIPPED="usr/lib/python.*/site-packages/.*"
 
 PATCHES=(
-	"${FILESDIR}/${PN}-2.5.8.0-fix-tests.patch"
+	#"${FILESDIR}/${PN}-2.5.8.0-fix-tests.patch"
 	"${FILESDIR}/${PN}-2.5.12.0-heif-find-fix.patch"
 	"${FILESDIR}/${PN}-3.1.6.2-tests-optional.patch"
 	"${FILESDIR}/${PN}-3.0.8.1-fix-alpha-pr3934.patch"
