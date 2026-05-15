@@ -1,9 +1,9 @@
-# Copyright 1999-2025 Gentoo Authors
+# Copyright 1999-2026 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
 
 EAPI=8
 
-PYTHON_COMPAT=( python3_{12..13} )
+PYTHON_COMPAT=( python3_{12..14} )
 
 inherit cmake python-single-r1
 
@@ -56,6 +56,7 @@ pkg_setup() {
 }
 
 src_configure() {
+	export OMP_NUM_THREADS=1
 	local mycmakeargs=(
 		-DBUILD_WEBSITE="$(usex doc)"
 		-DIMATH_ENABLE_LARGE_STACK="$(usex large-stack)"
@@ -69,11 +70,10 @@ src_configure() {
 	if use python; then
 		mycmakeargs+=(
 			-DPYTHON=ON
-			# looks up Python first, then Python3 and Python2, so we specify both..
-			-DPython_EXECUTABLE="${PYTHON}"
 			-DPython3_EXECUTABLE="${PYTHON}"
 			-DPython3_INCLUDE_DIR="$(python_get_includedir)"
 			-DPython3_LIBRARY="$(python_get_library_path)"
+			-DNUMPY_INCLUDE_DIR="$(python_get_sitedir)/numpy/_core/include"
 		)
 	fi
 
