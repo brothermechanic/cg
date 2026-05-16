@@ -77,7 +77,7 @@ src_configure() {
 		)
 	fi
 
-	cmake_src_configure
+	CMAKE_BUILD_TYPE='Release' cmake_src_configure
 }
 
 src_install() {

@@ -1,4 +1,4 @@
-# Copyright 1999-2025 Gentoo Authors
+# Copyright 1999-2026 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
 
 EAPI=8
@@ -55,9 +55,13 @@ DOCS=( ACKNOWLEDGEMENTS.txt FEEDBACK.txt NEWS.txt README.txt )
 src_prepare() {
 	cmake_src_prepare
 	# Fix libdir
-	sed -i -r -e 's|(SET[^"]+ lib)(.*)|\1\$\{LIB_SUFFIX\}\2|' CMakeLists.txt lib/Alembic/CMakeLists.txt || die
+	sed -e 's|\(SET[^"]+ lib\)\(.*\)|\1\$\{LIB_SUFFIX\}\2|' -i CMakeLists.txt lib/Alembic/CMakeLists.txt || die
+
+	# Fix PyAlembic link library Imath::PyImath
+	sed -e 's|\:\:PyImath_Python\${PYTHON_VERSION_MAJOR}_\${PYTHON_VERSION_MINOR}|\:\:PyImathConfig|g' -i cmake/AlembicPyIlmBase.cmake || die
+
 	# PyAlembic test doesn't properly find Imath, comment it for now
-	# cmake_run_in python/PyAlembic cmake_comment_add_subdirectory Tests
+	cmake_run_in python/PyAlembic cmake_comment_add_subdirectory Tests
 }
 
 src_configure() {

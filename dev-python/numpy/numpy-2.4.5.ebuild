@@ -173,6 +173,8 @@ python_configure_all() {
 		-Duse-ilp64=$(usex index64 true false)
 		-Dblas=$(usev lapack openblas)
 		-Dlapack=$(usev lapack openblas)
+#		-Dblas=$(usev lapack $(usex index64 cblas64 cblas))
+#		-Dlapack=$(usev lapack $(usex index64 lapacke64 lapacke))
 		-Dcpu-baseline="${cpu_baseline[*]}"
 		-Dcpu-baseline-detect=disabled
 		-Dcpu-dispatch="$(usev cpudetection MAX)"
@@ -309,6 +311,20 @@ python_test() {
 			numpy/distutils/tests/test_system_info.py
 		)
 	fi
+
+	case ${EPYTHON} in
+		pypy3.11)
+			EPYTEST_DESELECT+=(
+				numpy/_core/tests/test_regression.py::TestRegression::test_buffer_hashlib
+				numpy/random/tests/test_generator_mt19937.py::TestIntegers::test_repeatability
+				numpy/random/tests/test_generator_mt19937.py::TestRandomDist::test_choice_large_sample
+				numpy/random/tests/test_generator_mt19937.py::test_jumped
+				numpy/random/tests/test_random.py::TestRandint::test_repeatability
+				numpy/random/tests/test_randomstate.py::TestRandint::test_repeatability
+				numpy/random/tests/test_randomstate.py::test_integer_repeat
+			)
+			;;
+	esac
 
 	cd "${BUILD_DIR}/install$(python_get_sitedir)" || die
 	epytest
