@@ -3,7 +3,7 @@
 
 EAPI=8
 
-PYTHON_COMPAT=( python3_{11..13} )
+PYTHON_COMPAT=( python3_{12..14} )
 
 inherit cmake python-single-r1
 
@@ -26,7 +26,7 @@ DEPEND="
 	>=dev-libs/imath-3.1.11-r1:=
 	hdf5? (
 		>=sci-libs/hdf5-1.10.2:=[zlib(+)]
-		>=sys-libs/zlib-1.2.11-r1
+		>=virtual/zlib-1.2.11-r1
 	)
 	python? (
 		dev-libs/imath:=[python,${PYTHON_SINGLE_USEDEP}]
