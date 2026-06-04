@@ -1,4 +1,4 @@
-# Copyright 1999-2024 Gentoo Authors
+# Copyright 1999-2026 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
 
 EAPI=8
@@ -7,7 +7,7 @@ DISTUTILS_EXT=1
 DISTUTILS_OPTIONAL=1
 DISTUTILS_SINGLE_IMPL=1
 DISTUTILS_USE_PEP517=scikit-build-core
-PYTHON_COMPAT=( python3_{11..13} )
+PYTHON_COMPAT=( python3_{13..15} )
 # solvespace's libdxfrw is quite heavily modified and incompatible with
 # the upstream libdxfrw.
 DXFRW_COMMIT="0b7b7b709d9299565db603f878214656ef5e9ddf"
@@ -28,7 +28,7 @@ DESCRIPTION="Parametric 2d/3d CAD"
 HOMEPAGE="https://solvespace.com"
 SRC_URI="https://github.com/solvespace/solvespace/archive/v${MY_PV}.tar.gz -> ${P}.tar.gz
 	https://github.com/solvespace/libdxfrw/archive/${DXFRW_COMMIT}.tar.gz -> ${DXFRW_P}.tar.gz
-	!system-mimalloc? ( https://github.com/microsoft/mimalloc/archive/${MIMALLOC_COMMIT}.tar.gz -> ${MIMALLOC_P}.tar.gz )"
+	https://github.com/microsoft/mimalloc/archive/${MIMALLOC_COMMIT}.tar.gz -> ${MIMALLOC_P}.tar.gz"
 
 # licenses
 # + SolveSpace (GPL-3+)
@@ -36,10 +36,10 @@ SRC_URI="https://github.com/solvespace/solvespace/archive/v${MY_PV}.tar.gz -> ${
 # + libdxfrw (GPL-2+)
 # + mimalloc (MIT)
 
-LICENSE="BitstreamVera GPL-2+ GPL-3+ !system-mimalloc? ( MIT )"
+LICENSE="BitstreamVera GPL-2+ GPL-3+ MIT"
 SLOT="0"
 KEYWORDS="amd64 ~arm64 ~x86"
-IUSE="gui +lto openmp +python +system-mimalloc"
+IUSE="gui +lto openmp +python"
 REQUIRED_USE="python? ( ${PYTHON_REQUIRED_USE} )"
 
 RDEPEND="
@@ -69,7 +69,7 @@ DEPEND="
 	dev-cpp/eigen:3
 	dev-libs/glib:2
 	dev-libs/json-c:=
-	system-mimalloc? ( dev-libs/mimalloc:= )
+	dev-libs/mimalloc:=
 "
 BDEPEND="
 	python? (
@@ -104,17 +104,8 @@ src_prepare() {
 	rm -r extlib/libdxfrw || die
 	mv "${WORKDIR}"/libdxfrw-${DXFRW_COMMIT} extlib/libdxfrw || die
 
-	if use system-mimalloc; then
-		# Ideally this patch would be applied unconditionally and it
-		# would add an option like `-DUSE_SYSTEM_MIMALLOC=On', but
-		# hopefully this patch is only needed temporarily and the odd
-		# interactions with the system's libmimalloc will be fixed
-		# shortly... :)
-		PATCHES=( "${FILESDIR}"/${PN}-3.2-use-system-mimalloc.patch )
-	else
-		rm -r extlib/mimalloc || die
-		mv "${WORKDIR}"/mimalloc-${MIMALLOC_COMMIT} extlib/mimalloc || die
-	fi
+	PATCHES+=( "${FILESDIR}"/${PN}-3.2-use-system-mimalloc.patch )
+	rm -r extlib/mimalloc || die
 
 	sed -i '/include(GetGitCommitHash)/d' CMakeLists.txt || die
 

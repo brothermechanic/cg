@@ -5,15 +5,27 @@ Subject: [PATCH] build: Use system mimalloc
 
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
-@@ -185,13 +185,7 @@ endif()
- message(STATUS "Using in-tree libdxfrw")
- add_subdirectory(extlib/libdxfrw)
+@@ -185,25 +185,7 @@ endif()
+     add_subdirectory(extlib/libdxfrw)
+ endif()
  
 -message(STATUS "Using in-tree mimalloc")
 -set(MI_OVERRIDE OFF CACHE BOOL "")
 -set(MI_BUILD_SHARED OFF CACHE BOOL "")
 -set(MI_BUILD_OBJECT OFF CACHE BOOL "")
 -set(MI_BUILD_TESTS OFF CACHE BOOL "")
+-if(EMSCRIPTEN)
+-    # HACK: We only use mimalloc for the temporary heap, not as a general purpose
+-    # allocator. However, the Emscripten port of mimalloc assumes that it is used
+-    # as the system allocator, and depends on the slow emmalloc allocator.
+-    # We do not want to enable emmalloc, as that would slow down allocations all
+-    # over the place, so we must either use mimalloc as the system allocator as
+-    # well, or override its definitions to just use the existing system allocator.
+-    # The latter option is the least intrusive change from a stability standpoint,
+-    # so for now that's what we do here. We can try to convert to mimalloc wholsale
+-    # and remove this hack if we find the need to do so in the future.
+-    set(MI_EXTRA_CPPDEFS "emmalloc_free=free;emmalloc_memalign=memalign" CACHE INTERNAL "")
+-endif()
 -add_subdirectory(extlib/mimalloc EXCLUDE_FROM_ALL)
 -set(MIMALLOC_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/extlib/mimalloc/include)
 +find_package(mimalloc REQUIRED)
@@ -23,22 +35,22 @@ Subject: [PATCH] build: Use system mimalloc
 --- a/src/CMakeLists.txt
 +++ b/src/CMakeLists.txt
 @@ -27,7 +27,6 @@ target_include_directories(slvs_deps INTERFACE SYSTEM
+     ${ZLIB_INCLUDE_DIR}
      ${PNG_PNG_INCLUDE_DIR}
      ${FREETYPE_INCLUDE_DIRS}
-     ${CAIRO_INCLUDE_DIRS}
 -    ${MIMALLOC_INCLUDE_DIR}
      ${EIGEN3_INCLUDE_DIRS})
  target_link_libraries(slvs_deps INTERFACE
      dxfrw
 @@ -35,7 +34,7 @@ target_link_libraries(slvs_deps INTERFACE
+     ${ZLIB_LIBRARY}
      ${PNG_LIBRARY}
      ${FREETYPE_LIBRARY}
-     ${CAIRO_LIBRARIES}
 -    mimalloc-static)
 +    mimalloc)
  
- if(Backtrace_FOUND)
-     target_include_directories(slvs_deps INTERFACE SYSTEM
+ if(NOT USE_QT_GUI OR ENABLE_CLI)
+     target_include_directories(slvs_deps SYSTEM INTERFACE ${CAIRO_INCLUDE_DIRS})
 --- a/src/slvs/CMakeLists.txt
 +++ b/src/slvs/CMakeLists.txt
 @@ -5,7 +5,7 @@ add_library(slvs-interface INTERFACE)

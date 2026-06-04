@@ -1,9 +1,9 @@
-# Copyright 1999-2025 Gentoo Authors
+# Copyright 1999-2026 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
 
 EAPI=8
 
-PYTHON_COMPAT=( python3_{11..13} )
+PYTHON_COMPAT=( python3_{13..15} )
 inherit cmake python-single-r1
 
 DESCRIPTION="Geometry library for topological robustness"
@@ -30,7 +30,7 @@ SLOT="0/3"
 IUSE="assimp debug python +tbb test"
 REQUIRED_USE="python? ( ${PYTHON_REQUIRED_USE} )"
 
-RESTRICT="!test? ( test )"
+RESTRICT="!test? ( test ) mirror"
 
 RDEPEND="
 	sci-mathematics/clipper2
