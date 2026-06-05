@@ -80,8 +80,8 @@ AMDGPU_TARGETS_COMPAT=(
 IUSE_CPU="+simd +tbb -lld -gold +mold -cpu_flags_arm_neon llvm +openmp -valgrind +jemalloc"
 IUSE_GPU="cuda optix hip hiprt oneapi -cycles-bin-kernels ${CUDA_TARGETS_COMPAT[@]/#/cuda_targets_} ${AMDGPU_TARGETS_COMPAT[@]/#/amdgpu_targets_} vulkan"
 IUSE_DESKTOP="-portable +X headless +nls icu -ndof wayland gnome"
-IUSE_LIBS="+bullet +boost +draco +manifold +materialx +color-management +oidn +opensubdiv +openvdb nanovdb openxr +libmv lzma lzo osl +fftw +potrace +pugixml +otf rubberband"
-IUSE_MOD="+fluid +smoke +oceansim +remesh +gmp +quadriflow +uv-slim +addons addons-contrib"
+IUSE_LIBS="+bullet +boost +draco +manifold +materialx +meshoptimizer +color-management +oidn +opensubdiv +openvdb nanovdb openxr +libmv lzma lzo osl +fftw +potrace +pugixml +otf rubberband"
+IUSE_MOD="+fluid +smoke +oceansim +remesh +gmp +quadriflow +uv-slim"
 IUSE_RENDER="+cycles +openpgl +embree +freestyle hydra"
 IUSE_3DFILES="-alembic usd +collada +obj +ply +stl"
 IUSE_IMAGE="-dpx +openexr jpeg2k webp +pdf"
@@ -122,95 +122,6 @@ for X in ${LANGS} ; do
 	IUSE+=" l10n_${X}"
 	REQUIRED_USE+=" l10n_${X}? ( nls )"
 done
-
-ADDONS="
-		media-blender/add_camera_rigs
-		media-blender/add_curve_extra_objects
-		media-blender/add_curve_ivygen
-		media-blender/add_curve_sapling
-		media-blender/add_mesh_BoltFactory
-		media-blender/add_mesh_discombobulator
-		media-blender/add_mesh_extra_objects
-		media-blender/add_mesh_geodesic_domes
-		media-blender/amaranth
-		media-blender/animation_add_corrective_shape_key
-		media-blender/animation_animall
-		media-blender/ant_landscape
-		media-blender/archimesh
-		media-blender/blender_id
-		media-blender/bone_selection_sets
-		media-blender/btrace
-		media-blender/camera_turnaround
-		media-blender/curve_assign_shapekey
-		media-blender/curve_simplify
-		media-blender/curve_tools
-		media-blender/development_edit_operator
-		media-blender/development_icon_get
-		media-blender/development_iskeyfree
-		media-blender/greasepencil_tools
-		media-blender/io_anim_camera
-		media-blender/io_anim_nuke_chan
-		media-blender/io_coat3D
-		media-blender/io_export_dxf
-		media-blender/io_export_paper_model
-		media-blender/io_export_pc2
-		media-blender/io_import_BrushSet
-		media-blender/io_import_dxf
-		media-blender/io_import_palette
-		media-blender/io_mesh_atomic
-		media-blender/io_mesh_stl
-		media-blender/io_scene_3ds
-		media-blender/io_scene_x3d
-		media-blender/io_shape_mdd
-		media-blender/lighting_dynamic_sky
-		media-blender/lighting_tri_lights
-		media-blender/magic_uv
-		media-blender/materials_library_vx
-		media-blender/materials_utils
-		media-blender/measureit
-		media-blender/mesh_auto_mirror
-		media-blender/mesh_bsurfaces
-		media-blender/mesh_f2
-		media-blender/mesh_inset
-		media-blender/mesh_looptools
-		media-blender/mesh_snap_utilities_line
-		media-blender/mesh_tiny_cad
-		media-blender/mesh_tissue
-		media-blender/mesh_tools
-		media-blender/node_presets
-		media-blender/node_wrangler
-		media-blender/object_boolean_tools
-		media-blender/object_carver
-		media-blender/object_collection_manager
-		media-blender/object_color_rules
-		media-blender/object_edit_linked
-		media-blender/object_fracture_cell
-		media-blender/object_scatter
-		media-blender/object_skinify
-		media-blender/paint_palette
-		media-blender/power_sequencer
-		media-blender/precision_drawing_tools
-		media-blender/real_snow
-		media-blender/render_copy_settings
-		media-blender/render_freestyle_svg
-		media-blender/render_povray
-		media-blender/render_ui_animation_render
-		media-blender/space_clip_editor_refine_solution
-		media-blender/space_view3d_3d_navigation
-		media-blender/space_view3d_align_tools
-		media-blender/space_view3d_brush_menus
-		media-blender/space_view3d_copy_attributes
-		media-blender/space_view3d_math_vis
-		media-blender/space_view3d_modifier_tools
-		media-blender/space_view3d_pie_menus
-		media-blender/space_view3d_spacebar_menu
-		media-blender/space_view3d_stored_views
-		media-blender/storypencil
-		media-blender/system_blend_info
-		media-blender/system_demo_mode
-		media-blender/system_property_chart
-		media-blender/vdm_brush_baker
-"
 
 CODECS="
 	aom? (
@@ -271,7 +182,6 @@ RDEPEND="
 	media-libs/libsamplerate
 	>=media-libs/libpng-1.6.37:0=
 	virtual/libintl
-	addons? ( ${ADDONS} )
 	alembic? ( >=media-gfx/alembic-1.8.3-r2[boost(+),hdf(+)] )
 	collada? ( >=media-libs/opencollada-1.6.68 )
 	cuda? ( dev-util/nvidia-cuda-toolkit:= )
@@ -311,6 +221,9 @@ RDEPEND="
 	)
 	materialx? (
 		>=media-libs/materialx-1.38.8[${PYTHON_SINGLE_USEDEP},python]
+	)
+	meshoptimizer? (
+		>=media-libs/meshoptimizer-1.1:=
 	)
 	nls? ( virtual/libiconv )
 	openal? ( >=media-libs/openal-1.23.1 )
@@ -769,6 +682,7 @@ src_configure() {
 		-DWITH_SDL=$(usex sdl)									# for sound and joystick support
 		-DWITH_STATIC_LIBS=$(usex portable)
 		-DWITH_DRACO=$(usex draco)
+		-DWITH_MESHOPTIMIZER=$(usex meshoptimizer)
 		-DWITH_SYSTEM_DRACO=$(usex !portable)
 		-DWITH_AUDASPACE=yes
 		-DWITH_RUBBERBAND=$(usex rubberband)
