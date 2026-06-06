@@ -10,7 +10,7 @@ DISTUTILS_USE_PEP517=scikit-build-core
 PYTHON_COMPAT=( python3_{13..15} )
 # solvespace's libdxfrw is quite heavily modified and incompatible with
 # the upstream libdxfrw.
-DXFRW_COMMIT="0b7b7b709d9299565db603f878214656ef5e9ddf"
+DXFRW_COMMIT="8359399ff3eb96aec14fb160c9a5bc4796b60717"
 DXFRW_PV="0.6.3"
 DXFRW_P="libdxfrw-${DXFRW_PV}-${DXFRW_COMMIT}"
 
@@ -109,6 +109,8 @@ src_prepare() {
 
 	sed -i '/include(GetGitCommitHash)/d' CMakeLists.txt || die
 
+	sed -e "s|\(set(CMAKE_CXX_STANDARD \)11|\117|" -i CMakeLists.txt || die
+
 	cmake_src_prepare
 	use python && distutils-r1_src_prepare
 }
@@ -122,7 +124,8 @@ src_configure() {
 			-e "s/\(ENABLE_TESTS = \"\).\+\"/\1$(usex test)\"/" -i pyproject.toml
 
 		sed -e "/ENABLE_PYTHON_LIB = \"ON\"/a CMAKE_POLICY_VERSION_MINIMUM=3.5\n\
-CMAKE_INSTALL_LIBDIR = \"$(python_get_sitedir)\"" -i pyproject.toml
+CMAKE_INSTALL_LIBDIR = \"$(python_get_sitedir)\"\n\
+EIGEN3_INCLUDE_DIRS = \"/usr\/include\/eigen3\"" -i pyproject.toml
 	fi
 
 	local mycmakeargs=(
@@ -135,6 +138,7 @@ CMAKE_INSTALL_LIBDIR = \"$(python_get_sitedir)\"" -i pyproject.toml
 		-DENABLE_PYTHON_LIB=$(usex python)
 		-DENABLE_LTO=$(usex lto)
 		-DENABLE_TESTS=$(usex test)
+		-DEIGEN3_INCLUDE_DIRS="/usr/include/eigen3"
 	)
 
 	CMAKE_BUILD_TYPE="Release" cmake_src_configure

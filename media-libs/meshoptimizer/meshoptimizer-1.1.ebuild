@@ -20,9 +20,15 @@ fi
 
 IUSE="+gltfpack"
 
-RDEPEND="${DEPEND}"
+DEPEND="
+	app-arch/zstd
+"
 
 RESTRICT="mirror test"
+
+#PATCHES=(
+#	"${FILESDIR}/${P}-use-system-zstd.patch"
+#)
 
 src_configure() {
 	local mycmakeargs=(
