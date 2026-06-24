@@ -24,7 +24,7 @@
 +option(WITH_SYSTEM_CERES  "Use system-wide ceres-solver instead of a bundled one" OFF)
 +mark_as_advanced(WITH_SYSTEM_CERES)
 +
- # Logging/unit test libraries.
+ # Logging/unbit test libraries.
  option(WITH_SYSTEM_GFLAGS "Use system-wide Gflags instead of a bundled one" OFF)
  option(WITH_SYSTEM_GLOG "Use system-wide Glog instead of a bundled one" OFF)
 +option(WITH_SYSTEM_GTESTS    "Use system-wide Gtests instead of a bundled one" OFF)
@@ -42,7 +42,7 @@
 +# Configure libmv
 +if(WITH_LIBMV)
 +  if(WITH_SYSTEM_CERES)
-+    find_package(Ceres)
++    find_package(Ceres CONFIG)
 +    if(NOT CERES_FOUND)
 +        message(FATAL_ERROR "System wide Ceres is requested but was not found")
 +    endif()  

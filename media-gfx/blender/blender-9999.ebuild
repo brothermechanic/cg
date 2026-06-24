@@ -844,6 +844,7 @@ src_configure() {
 		-DWITH_SDL=$(usex sdl)									# for sound and joystick support
 		-DWITH_STATIC_LIBS=$(usex portable)
 		-DWITH_DRACO=$(usex draco)
+		-DWITH_MESHOPTIMIZER=$(usex meshoptimizer)
 		-DWITH_SYSTEM_DRACO=$(usex !portable)
 		-DWITH_AUDASPACE=yes
 		-DWITH_RUBBERBAND=$(usex rubberband)

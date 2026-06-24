@@ -14,7 +14,7 @@ DESCRIPTION="Library for the efficient manipulation of volumetric data"
 HOMEPAGE="https://www.openvdb.org"
 OGT_COMMIT="22e71873ffc55c3a6253d31302e4f5e2191f9a0b"
 OGT_DFN="ogt-${OGT_COMMIT:0:7}.tar.gz"
-COMMIT="cac4e20dcdbf401105795fdfd9501ad316773336"
+COMMIT="90c02c309d6b6e42c31ba62292744a7ed34238b5"
 SRC_URI="
 https://github.com/AcademySoftwareFoundation/${PN}/archive/${COMMIT}.tar.gz -> ${P}-${COMMIT:0:7}.tar.gz
 magicavoxel? ( https://github.com/jpaver/opengametools/archive/${OGT_COMMIT}.tar.gz -> ${OGT_DFN} )
@@ -156,6 +156,7 @@ S_OGT="${WORKDIR}/ogt-${OGT_COMMIT}"
 S="${WORKDIR}/${PN}-${COMMIT}"
 
 PATCHES=(
+	"${FILESDIR}/${PN}-8.1.0-glfw-libdir.patch"
 	"${FILESDIR}/${PN}-9.0.0-fix-atomic.patch"
 	"${FILESDIR}/${PN}-10.0.1-log4cplus-version.patch"
 	"${FILESDIR}/${PN}-13.0.0-cmake_fixes.patch"
@@ -365,12 +366,33 @@ my_src_configure() {
 	# options for the new vdb_tool binary
 	if use utils; then
 		mycmakeargs+=(
-			-DBUILD_TEST="$(usex test)"
 			-DOPENVDB_BUILD_VDB_AX="$(usex ax)"
-			-DOPENVDB_TOOL_USE_ABC="$(usex alembic)" # Alembic
-			-DOPENVDB_TOOL_USE_EXR="$(usex openexr)" # OpenEXR
+			-DOPENVDB_BUILD_VDB_LOD="yes"
+			-DOPENVDB_BUILD_VDB_RENDER="yes"
+			-DOPENVDB_BUILD_VDB_TOOL="yes"
+			-DOPENVDB_BUILD_VDB_VIEW="yes"
+
+			# vdb_tool
+			-DOPENVDB_BUILD_VDB_TOOL_UNITTESTS="$(usex test)"
+
+			-DOPENVDB_TOOL_USE_NANO="$(usex nanovdb)"
+			-DOPENVDB_TOOL_NANO_USE_BLOSC="$(usex nanovdb "$(usex blosc)")"
+			-DOPENVDB_TOOL_NANO_USE_ZIP="$(usex nanovdb "$(usex zlib)")"
+
+			-DOPENVDB_TOOL_USE_ABC="$(usex alembic)"
+
+			# only used by vdb_tool, defaults to OFF
+			-DOPENVDB_TOOL_USE_EXR="$(usex openexr)"
+			# only used by vdb_render, defaults to OFF
+			-DUSE_EXR="$(usex openexr)"
+
 			-DOPENVDB_TOOL_USE_JPG="$(usex jpeg)" # libjpeg-turbo
+			-DOPENVDB_TOOL_USE_PDAL="$(usex pdal)"
+
+			# only used by vdb_tool, defaults to OFF
 			-DOPENVDB_TOOL_USE_PNG="$(usex png)" # libpng
+			# only used by vdb_render, defaults to OFF
+			-DUSE_PNG="$(usex png)"
 		)
 	fi
 

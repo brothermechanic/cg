@@ -1,0 +1,38 @@
+--- a/extern/CMakeLists.txt
++++ b/extern/CMakeLists.txt
+@@ -32,7 +32,9 @@ if(WITH_BULLET)
+ endif()
+ 
+ if(WITH_DRACO)
+-  add_subdirectory(draco)
++  if(NOT WITH_SYSTEM_DRACO)
++    add_subdirectory(draco)
++  endif()
+ endif()
+ 
+ if(WITH_BINRELOC)
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -475,6 +475,10 @@ if(UNIX AND NOT APPLE)
+   option(WITH_SYSTEM_LZO "Use the system LZO library" OFF)
+ endif()
+ option(WITH_DRACO "Enable Draco mesh compression Python module (used for glTF)" ON)
++if(UNIX AND NOT APPLE)
++  option(WITH_SYSTEM_DRACO "Use the system DRACO library" OFF)
++  mark_as_advanced(WITH_SYSTEM_DRACO)
++endif()
+ 
+ # Camera/motion tracking
+ option(WITH_LIBMV "Enable Libmv structure from motion library" ON)
+--- a/source/creator/CMakeLists.txt
++++ b/source/creator/CMakeLists.txt
+@@ -481,7 +481,7 @@ if(WITH_PYTHON)
+   endif()
+   unset(FREESTYLE_EXCLUDE_CONDITIONAL)
+
+-  if(WITH_DRACO)
++  if(WITH_DRACO AND NOT WITH_SYSTEM_DRACO)
+     install(
+       PROGRAMS $<TARGET_FILE:extern_draco>
+       DESTINATION ${TARGETDIR_VER}/scripts/addons_core/io_scene_gltf2
+

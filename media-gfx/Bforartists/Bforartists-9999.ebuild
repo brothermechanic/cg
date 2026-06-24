@@ -459,9 +459,9 @@ src_prepare() {
 
 	# Prepare icons and .desktop files for slotting.
 	sed \
-		-e "s|${PN,}.svg|${PN,}-${SLOT}.svg|" \
-		-e "s|${PN,}-symbolic.svg|${PN,}-${SLOT}-symbolic.svg|" \
-		-e "s|${PN,}.desktop|${PN,}-${SLOT}.desktop|" \
+		-e "s|blender.svg|${PN,}-${SLOT}.svg|" \
+		-e "s|blender-symbolic.svg|${PN,}-${SLOT}-symbolic.svg|" \
+		-e "s|blender.desktop|${PN,}-${SLOT}.desktop|" \
 		-e "s|org.blender.Blender.metainfo.xml|${PN,}-${SLOT}.metainfo.xml|" \
 		-i source/creator/CMakeLists.txt \
 		-i source/blender/windowmanager/CMakeLists.txt || die
@@ -470,7 +470,7 @@ src_prepare() {
 		-e "s|Name=${PN^}|Name=${PN^} ${SLOT}|" \
 		-e "s|Exec.*|Exec=${PN,}-${SLOT}|" \
 		-e "s|Icon=${PN,}|Icon=${PN,}-${SLOT}|" \
-		-i release/freedesktop/${PN,}.desktop || die
+		-i release/freedesktop/blender.desktop || die
 
 	sed \
 		-e "/CMAKE_INSTALL_PREFIX_WITH_CONFIG/{s|\${CMAKE_INSTALL_PREFIX}|${T}\${CMAKE_INSTALL_PREFIX}|g}" \
@@ -495,15 +495,15 @@ src_prepare() {
 #		"#include \"buildinfo_static.h\"\n" > build_files/cmake/buildinfo.h || die
 
 	mv \
-		"release/freedesktop/icons/scalable/apps/${PN,}.svg" \
+		"release/freedesktop/icons/scalable/apps/blender.svg" \
 		"release/freedesktop/icons/scalable/apps/${PN,}-${SLOT}.svg" \
 		|| die
 	mv \
-		"release/freedesktop/icons/symbolic/apps/${PN,}-symbolic.svg" \
+		"release/freedesktop/icons/symbolic/apps/blender-symbolic.svg" \
 		"release/freedesktop/icons/symbolic/apps/${PN,}-${SLOT}-symbolic.svg" \
 		|| die
 	mv \
-		"release/freedesktop/${PN,}.desktop" \
+		"release/freedesktop/blender.desktop" \
 		"release/freedesktop/${PN,}-${SLOT}.desktop" \
 		|| die
 
@@ -693,6 +693,7 @@ src_configure() {
 		-DWITH_SYSTEM_GLOG=$(usex !portable)
 		-DWITH_SYSTEM_CERES=$(usex !portable)
 		-DCERES_INCLUDE_DIRS="/usr/include/ceres"
+		-DEigen3_DIR="/usr/share/eigen3/cmake"
 		-DWITH_GTESTS=$(usex gtests)
 		-DWITH_SYSTEM_GTESTS=$(usex !portable)
 		-DWITH_GHOST_DEBUG=$(usex debug)
