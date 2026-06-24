@@ -3,7 +3,7 @@
 
 EAPI=8
 
-PYTHON_COMPAT=( python3_{11..13} )
+PYTHON_COMPAT=( python3_{13..15} )
 DOCS_BUILDER="sphinx"
 DOCS_DEPEND="dev-python/sphinx-rtd-theme"
 DOCS_DIR="docs/source"
@@ -11,8 +11,8 @@ inherit cmake-multilib cuda flag-o-matic python-any-r1 docs toolchain-funcs
 
 DESCRIPTION="Nonlinear least-squares minimizer"
 HOMEPAGE="http://ceres-solver.org/"
-COMMIT="2f946a582ae4a9e7ee0492030ec12d9b1f3dbade"
-SRC_URI="https://github.com/${PN}/${PN}/archive/${COMMIT}.tar.gz"
+COMMIT="8a566fcc156322160b96f8ca5f0ff755241c2d33"
+SRC_URI="https://github.com/ceres-solver/ceres-solver/archive/${COMMIT}.tar.gz -> ${P}-${COMMIT:0:7}.gh.tar.gz"
 S="${WORKDIR}/${PN}-${COMMIT}"
 
 LICENSE="sparse? ( BSD ) !sparse? ( LGPL-2.1 )"
