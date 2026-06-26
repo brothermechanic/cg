@@ -43,7 +43,7 @@ IUSE+="
 RDEPEND="
 	lapack? (
 		>=virtual/lapack-3.8[index64(-)?]
-		>=virtual/cblas-3.8[index64(-)?]
+		>=virtual/blas-3.8[index64(-)?]
 	)
 "
 BDEPEND="
@@ -167,14 +167,20 @@ python_configure_all() {
 			;;
 	esac
 
+	if use fortran; then
+		local blas_imp=blas
+		local lapack_imp=lapack
+	else
+		local blas_imp=cblas
+		local lapack_imp=lapacke
+	fi
+
 	DISTUTILS_ARGS=(
 		-Dbuildtype=$(usex debug debugoptimized plain)
 		-Dallow-noblas=$(usex !lapack true false)
 		-Duse-ilp64=$(usex index64 true false)
-		-Dblas=$(usev lapack openblas)
-		-Dlapack=$(usev lapack openblas)
-#		-Dblas=$(usev lapack $(usex index64 cblas64 cblas))
-#		-Dlapack=$(usev lapack $(usex index64 lapacke64 lapacke))
+		-Dblas=$(usev lapack $(usex index64 "${blas_imp}64" "${blas_imp}"))
+		-Dlapack=$(usev lapack $(usex index64 "${lapack_imp}64" "${lapack_imp}"))
 		-Dcpu-baseline="${cpu_baseline[*]}"
 		-Dcpu-baseline-detect=disabled
 		-Dcpu-dispatch="$(usev cpudetection MAX)"
