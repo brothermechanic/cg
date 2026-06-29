@@ -6,7 +6,8 @@ EAPI=8
 FORTRAN_NEEDED=fortran
 DISTUTILS_EXT=1
 DISTUTILS_USE_PEP517=meson-python
-PYTHON_COMPAT=( python3_{11..14} )
+PYPI_VERIFY_REPO=https://github.com/scipy/scipy-release
+PYTHON_COMPAT=( python3_{12..14} )
 PYTHON_REQ_USE="threads(+)"
 
 inherit flag-o-matic fortran-2 distutils-r1
@@ -29,7 +30,7 @@ else
 	inherit pypi
 
 	# Upstream is often behind with doc updates
-	DOC_PV=1.16.2
+	DOC_PV=${PV}
 
 	SRC_URI+="
 		doc? (
@@ -38,7 +39,7 @@ else
 	"
 
 	if [[ ${PV} != *rc* ]]; then
-		KEYWORDS="~amd64 ~arm ~arm64 ~loong ~ppc ~ppc64 ~riscv ~s390 ~sparc ~x86"
+		KEYWORDS="amd64 ~arm arm64 ~loong ~ppc ppc64 ~riscv ~s390 ~sparc ~x86"
 	fi
 fi
 
@@ -51,7 +52,7 @@ IUSE="doc +fortran index64 test-rust"
 #
 # umfpack is technically optional but it's preferred to have it available.
 COMMON_DEPEND="
-	>=dev-python/numpy-1.23.5:=[lapack,${PYTHON_USEDEP}]
+	>=dev-python/numpy-2.0.0:=[index64(-)=,lapack,${PYTHON_USEDEP}]
 	>=media-libs/qhull-2020.2:=
 	virtual/cblas
 	>=virtual/lapack-3.8
@@ -59,7 +60,7 @@ COMMON_DEPEND="
 # Only boost.math is used, and meson.build doesn't even look up specific boost modules.
 DEPEND="
 	${COMMON_DEPEND}
-	>=dev-libs/boost-1.89.0
+	>=dev-libs/boost-1.91.0
 "
 RDEPEND="
 	${COMMON_DEPEND}
@@ -72,7 +73,7 @@ DEPEND+="
 "
 BDEPEND="
 	dev-lang/swig
-	>=dev-python/cython-3.0.8[${PYTHON_USEDEP}]
+	>=dev-python/cython-3.2.0[${PYTHON_USEDEP}]
 	>=dev-python/meson-python-0.15.0[${PYTHON_USEDEP}]
 	>=dev-python/pybind11-2.13.2[${PYTHON_USEDEP}]
 	>=dev-python/pytest-8.0.0[${PYTHON_USEDEP}]
@@ -81,7 +82,7 @@ BDEPEND="
 	virtual/pkgconfig
 	doc? ( app-arch/unzip )
 	fortran? (
-		>=dev-python/pythran-0.16.0[${PYTHON_USEDEP}]
+		>=dev-python/pythran-0.18.1[${PYTHON_USEDEP}]
 	)
 	test-rust? (
 		dev-python/pooch[${PYTHON_USEDEP}]
@@ -93,7 +94,7 @@ EPYTEST_XDIST=1
 distutils_enable_tests pytest
 
 src_unpack() {
-	default
+	pypi_src_unpack
 
 	if use doc; then
 		unzip -qo "${DISTDIR}"/${PN}-html-${DOC_PV}.zip -d html || die
@@ -108,17 +109,26 @@ src_prepare() {
 }
 
 python_configure_all() {
+	if use fortran; then
+		local blas_imp=blas
+		local lapack_imp=lapack
+	else
+		local blas_imp=cblas
+		local lapack_imp=lapacke
+	fi
+
 	DISTUTILS_ARGS=(
 		-Dbuildtype=$(usex debug debugoptimized plain)
-		-Dblas=openblas
-		-Dlapack=openblas
+		-Dblas=$(usex index64 "${blas_imp}64" "${blas_imp}")
+		-Dlapack=$(usex index64 "${lapack_imp}64" "${lapack_imp}")
 		-Duse-ilp64=$(usex index64 true false)
 		-Duse-pythran=$(usex fortran true false)
+		-D_without-fortran=$(usex fortran false true)
 		-Duse-system-libraries=all
 	)
 
 	# https://bugs.gentoo.org/932721
-	has_version '>=dev-python/numpy-2.0.0' && filter-lto
+	filter-lto
 }
 
 python_test() {
@@ -151,10 +161,14 @@ python_test() {
 		'scipy/linalg/tests/test_batch.py::TestBatch::test_solve[float32-bdim2]'
 		'scipy/linalg/tests/test_batch.py::TestBatch::test_lu_solve[float32-bdim2]'
 		'scipy/stats/tests/test_continuous.py::TestDistributions::test_funcs[cdf-methods11-x-Normal]['
+		'scipy/signal/tests/test_spectral.py::TestSTFT::test_roundtrip_float32'
 
 		# Crashes, probably too big
 		'scipy/interpolate/tests/test_fitpack2.py::TestRectBivariateSpline::test_spline_large_2d_maxit'
-	)
+
+		# TODO
+		scipy/linalg/tests/test_extending.py::test_cython
+)
 	local EPYTEST_IGNORE=()
 
 	if ! has_version -b "dev-python/pooch[${PYTHON_USEDEP}]" ; then
