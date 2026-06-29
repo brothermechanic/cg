@@ -16,7 +16,7 @@ S="${WORKDIR}"/${MY_P}
 
 LICENSE="BSD"
 SLOT="0"
-KEYWORDS="~amd64 ~arm ~arm64 ~loong ~ppc ~ppc64 ~riscv ~x86 ~x64-macos"
+KEYWORDS="amd64 arm arm64 ~loong ~ppc ppc64 ~riscv ~x86 ~x64-macos"
 IUSE="+cblas cpudetection debug deprecated eselect-ldso fortran index64 +lapacke openmp pthread relapack static-libs test"
 REQUIRED_USE="
 	?? ( openmp pthread )
@@ -67,7 +67,15 @@ src_prepare() {
 
 	# Don't build the tests as part of "make all". We'll do
 	# it explicitly later if the test phase is enabled.
-	sed -i -e "/^all :: tests/s: tests::g" Makefile || die
+	sed -e "/^all \:\: tests/s: tests::g" \
+		-e "/^SUBDIRS_ALL \= /s: test .* cpp_thread_test::" \
+		-e "/^.PHONY \: all/s: test ctest::" \
+		-i Makefile || die
+
+	# Fix linktest.c to use pure C functions
+	if ! use fortran ; then
+		sed -e '/^TOPDIR/aONLY_CBLAS = 1' -i exports/Makefile || die
+	fi
 
 	# If 64bit-index is needed, create second library with LIBPREFIX=libopenblas64
 	if use index64; then
@@ -84,6 +92,16 @@ src_configure() {
 	tc-export CC FC LD AR AS RANLIB
 
 	append-fflags "-I${ESYSROOT}/usr/include"
+
+	# Bypasses the f2c duplicate symbol errors (like second_ and dsecnd_)
+	append-ldflags "-Wl,--allow-multiple-definition"
+
+	# Fixes LLVM lld crashing on unmatched f2c external symbol suffixes
+	append-ldflags "-Wl,--undefined-version"
+	append-ldflags "-Wl,--allow-shlib-undefined"
+
+	# Instruct compiler to tolerate old implicit f2c signatures
+	append-cflags "-Wno-error=incompatible-pointer-types"
 
 	# HOSTCC is used for scripting
 	export HOSTCC="$(tc-getBUILD_CC)"
@@ -156,8 +174,9 @@ src_configure() {
 	export NO_STATIC=$(usex !static-libs 1 0)
 	export NO_SHARED=0
 	export NO_LAPACKE=$(usex !lapacke 1 0)
-	export NO_LAPACK=0
+	export NO_LAPACK=0 #$(usex !fortran 1 0)
 	export NO_FBLAS=$(usex !fortran 1 0)
+	export C_LAPACK=$(usex lapacke 1 0)
 	#export ONLY_CBLAS=$(usex !blas 1 0)
 	export BUILD_LAPACK_DEPRECATED=$(usex deprecated 1 0)
 	export NOFORTRAN=$(usex !fortran $(usex !lapacke 2 1) 0)
@@ -165,41 +184,51 @@ src_configure() {
 	export PREFIX="${EPREFIX}/usr"
 }
 
-emake64() {
-	emake -C "${S}-index64" \
+myemake() {
+	emake \
+		NO_STATIC=${NO_STATIC} \
+		NO_LAPACKE=${NO_LAPACKE} \
+		C_LAPACK=${C_LAPACK} \
+		NO_FBLAS=${NO_FBLAS} \
+		BUILD_LAPACK_DEPRECATED=${BUILD_LAPACK_DEPRECATED} \
+		NOFORTRAN=${NOFORTRAN} \
+		BUILD_RELAPACK=${BUILD_RELAPACK} \
+		"${@}"
+}
+
+myemake64() {
+	myemake -C "${S}-index64" \
 		INTERFACE64=1 \
 		LIBNAMESUFFIX=64 \
 		"${@}"
 }
 
 src_compile() {
-	emake shared
+	myemake shared
+	if use index64; then
+		myemake64 shared
+	fi
 
 	if use eselect-ldso; then
 		if use fortran; then
-			emake -C interface shared-blas
-			emake -C interface shared-lapack
+			myemake -C interface shared-blas
+			myemake -C interface shared-lapack
 		fi
-		use cblas && emake -C interface shared-cblas
-		use lapacke && emake -C interface shared-lapacke
-	fi
-
-	if use index64; then
-		emake64 shared
+		use cblas && myemake -C interface shared-cblas
+		use lapacke && myemake -C interface shared-lapacke
 	fi
 }
 
 src_test() {
-	emake tests
-
+	myemake "${myemakeargs[@]}" tests
 	if use index64; then
-		emake64 tests
+		myemake64 "${myemakeargs[@]}" tests
 	fi
 }
 
 src_install() {
 	local libdir=$(get_libdir)
-	emake install \
+	myemake install \
 		DESTDIR="${D}" \
 		OPENBLAS_INCLUDE_DIR='$(PREFIX)'/include/openblas \
 		OPENBLAS_LIBRARY_DIR='$(PREFIX)'/${libdir}
@@ -207,7 +236,7 @@ src_install() {
 	dodoc GotoBLAS_*.txt *.md Changelog.txt
 
 	if use index64; then
-		emake64 install \
+		myemake64 install \
 			DESTDIR="${D}" \
 			OPENBLAS_INCLUDE_DIR='$(PREFIX)'/include/openblas64 \
 			OPENBLAS_LIBRARY_DIR='$(PREFIX)'/${libdir}
@@ -247,6 +276,7 @@ URL: http://www.netlib.org/blas/#_cblas
 Libs: -L\${libdir} -lcblas
 Cflags: -I\${includedir}
 EOF
+			exeinto /usr/${libdir}/blas/openblas/
 			doexe interface/libcblas.so.3
 			dosym libcblas.so.3 /usr/${libdir}/blas/openblas/libcblas.so
 			insinto /usr/$(get_libdir)/pkgconfig
@@ -267,6 +297,7 @@ Version: 3.12.0
 URL: http://www.netlib.org/lapack/
 Libs: -L\${libdir} -llapack
 EOF
+			exeinto /usr/${libdir}/lapack/openblas/
 			doexe interface/liblapack.so.3
 			dosym liblapack.so.3 /usr/${libdir}/lapack/openblas/liblapack.so
 			insinto /usr/$(get_libdir)/pkgconfig
@@ -286,6 +317,7 @@ URL: http://www.netlib.org/lapack/#_standard_c_language_apis_for_lapack
 Libs: -L\${libdir} -llapacke
 Cflags: -I\${includedir}
 EOF
+			exeinto /usr/${libdir}/lapack/openblas/
 			doexe interface/liblapacke.so.3
 			dosym liblapacke.so.3 /usr/${libdir}/lapack/openblas/liblapacke.so
 			insinto /usr/$(get_libdir)/pkgconfig
