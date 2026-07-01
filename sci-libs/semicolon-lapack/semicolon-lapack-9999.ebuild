@@ -14,7 +14,6 @@ HOMEPAGE="https://ilayn.github.io/semicolon-lapack"
 if [[ ${PV} == *9999* ]]; then
 	inherit git-r3
 	EGIT_REPO_URI="https://github.com/ilayn/semicolon-lapack.git"
-	KEYWORDS="-*"
 else
 	COMMIT="b298d10082a1a0c5974993f5f20b1e7323e39f1e"
 	SRC_URI="https://github.com/ilayn/semicolon-lapack/archive/${COMMIT}.tar.gz -> ${P}.gh.tar.gz"
@@ -25,13 +24,11 @@ fi
 LICENSE="BSD"
 SLOT="0"
 KEYWORDS="amd64 arm arm64 ~loong ~ppc ppc64 ~riscv ~x86 ~x64-macos"
-IUSE="benchmark cpudetection debug doc eselect-ldso fortran index64 openmp pthread static-libs test"
+IUSE="benchmark debug doc eselect-ldso fortran index64 openmp pthread static-libs test"
 REQUIRED_USE="
 	?? ( openmp pthread )
-	eselect-ldso? ( fortran )
 "
 RESTRICT="
-	!cpudetection? ( bindist )
 	!test? ( test )
 	mirror
 "
@@ -61,10 +58,6 @@ BDEPEND="
 	test? ( dev-util/cmocka )
 "
 
-#PATCHES=(
-#	"${FILESDIR}/${PN}-0.1-shared-lapack.patch"
-#)
-
 pkg_pretend() {
 	[[ ${MERGE_TYPE} != binary ]] && use openmp && tc-check-openmp
 }
@@ -76,12 +69,14 @@ pkg_setup() {
 src_configure() {
 	filter-lto
 
+	if use fortran; then local blas_imp=blas; else local blas_imp=cblas; fi
+
 	local emesonargs=(
 		$(meson_use test tests)
 		$(meson_use benchmark benchmarks)
 		$(meson_use fortran fabi_shim)
 		$(meson_use index64 USE_INT64)
-		-Dblas=$(usex index64 "cblas64" "cblas")
+		-Dblas=$(usex index64 "${blas_imp}64" "${blas_imp}") #
 	)
 
 	meson_src_configure
@@ -97,11 +92,20 @@ src_install() {
 	meson_src_install
 	use doc && HTML_DOCS=( docs/build/html/* )
 	use eselect-ldso || return
-	local libdir=$(get_libdir)
+	local libdir="$(get_libdir)" me="${PN}"
 	# Create private lib directory for eselect::blas (ld.so.conf)
-	dodir /usr/${libdir}/lapack/semicolon-lapack
-	cp ${ED}/usr/${libdir}/libsemilapack_fortran.so ${ED}/usr/${libdir}/lapack/semicolon-lapack/liblapack.so.3
-	dosym liblapack.so.3 /usr/${libdir}/lapack/semicolon-lapack/liblapack.so
+	dodir "/usr/${libdir}/lapack/${me}"
+	cp -v "${ED}/usr/${libdir}/libsemilapack.so" \
+	    "${ED}/usr/${libdir}/lapack/${me}/liblapacke.so.3"
+	dosym "liblapacke.so.3" "/usr/${libdir}/lapack/${me}/liblapacke.so"
+
+	use fortran || return
+	local libdir="$(get_libdir)" me="${PN}"
+	# Create private lib directory for eselect::blas (ld.so.conf)
+	dodir "/usr/${libdir}/lapack/${me}"
+	cp -v "${ED}/usr/${libdir}/libsemilapack_fortran.so" \
+	    "${ED}/usr/${libdir}/lapack/${me}/liblapack.so.3"
+	dosym "liblapack.so.3" "/usr/${libdir}/lapack/${me}/liblapack.so"
 }
 
 pkg_postinst() {

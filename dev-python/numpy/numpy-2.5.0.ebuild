@@ -168,11 +168,11 @@ python_configure_all() {
 	esac
 
 	if use fortran; then
-		local blas_imp=blas
-		local lapack_imp=lapack
+		local blas_imp=blas;
+		local lapack_imp=lapack;
 	else
-		local blas_imp=cblas
-		local lapack_imp=lapacke
+		local blas_imp=cblas;
+		local lapack_imp=lapacke;
 	fi
 
 	DISTUTILS_ARGS=(

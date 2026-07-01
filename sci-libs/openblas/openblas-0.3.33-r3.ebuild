@@ -30,7 +30,7 @@ RESTRICT="!cpudetection? ( bindist ) !test? ( test )"
 RDEPEND="
 	eselect-ldso? (
 		>=app-eselect/eselect-blas-0.2
-		>=app-eselect/eselect-lapack-0.2
+		lapack? ( >=app-eselect/eselect-lapack-0.2 )
 	)
 "
 BDEPEND="virtual/pkgconfig"
@@ -207,10 +207,10 @@ src_test() {
 }
 
 src_install() {
-	local libdir=$(get_libdir)
+	local libdir=$(get_libdir) me="${PN}"
 	emake install \
 		DESTDIR="${D}" \
-		OPENBLAS_INCLUDE_DIR='$(PREFIX)'/include/openblas \
+		OPENBLAS_INCLUDE_DIR='$(PREFIX)'/include/${me} \
 		OPENBLAS_LIBRARY_DIR='$(PREFIX)'/${libdir}
 
 	dodoc GotoBLAS_*.txt *.md Changelog.txt
@@ -218,91 +218,32 @@ src_install() {
 	if use index64; then
 		emake64 install \
 			DESTDIR="${D}" \
-			OPENBLAS_INCLUDE_DIR='$(PREFIX)'/include/openblas64 \
+			OPENBLAS_INCLUDE_DIR='$(PREFIX)'/include/${me}64 \
 			OPENBLAS_LIBRARY_DIR='$(PREFIX)'/${libdir}
 	fi
 
 	use eselect-ldso || return
 	# BLAS
-	cat >> "${T}"/blas.pc <<- EOF || die
-prefix=${EPREFIX}/usr
-exec_prefix=\${prefix}
-libdir=\${exec_prefix}/$(get_libdir)/blas/openblas
-includedir=\${prefix}/include/openblas
+	exeinto "/usr/${libdir}/blas/${me}"
+	doexe "interface/libblas.so.3"
+	dosym "libblas.so.3" "/usr/${libdir}/blas/${me}/libblas.so"
 
-Name: BLAS
-Description: FORTRAN reference implementation of BLAS Basic Linear Algebra Subprograms
-Version: 3.12.0
-URL: http://www.netlib.org/blas
-Libs: -L\${libdir} -lblas
-EOF
-	exeinto /usr/${libdir}/blas/openblas/
-	doexe interface/libblas.so.3
-	dosym libblas.so.3 /usr/${libdir}/blas/openblas/libblas.so
-	insinto /usr/$(get_libdir)/pkgconfig
-	doins "${T}"/blas.pc
-
-	# CBLAS
 	if use cblas; then
-		cat >> "${T}"/cblas.pc <<- EOF || die
-prefix=${EPREFIX}/usr
-exec_prefix=\${prefix}
-libdir=\${exec_prefix}/$(get_libdir)/blas/openblas
-includedir=\${prefix}/include/openblas
-
-Name: CBLAS
-Description: C Standard Interface to BLAS Basic Linear Algebra Subprograms
-Version: 3.12.0
-URL: http://www.netlib.org/blas/#_cblas
-Libs: -L\${libdir} -lcblas
-Cflags: -I\${includedir}
-EOF
-		exeinto /usr/${libdir}/blas/openblas/
-		doexe interface/libcblas.so.3
-		dosym libcblas.so.3 /usr/${libdir}/blas/openblas/libcblas.so
-		insinto /usr/$(get_libdir)/pkgconfig
-		doins "${T}"/cblas.pc
+		exeinto "/usr/${libdir}/blas/${me}"
+		doexe "interface/libcblas.so.3"
+		dosym "libcblas.so.3" "/usr/${libdir}/blas/${me}/libcblas.so"
 	fi
 
 	if use lapack; then
-		exeinto /usr/${libdir}/lapack/openblas/
-		cat >> "${T}"/lapack.pc <<- EOF || die
-prefix=${EPREFIX}/usr
-exec_prefix=\${prefix}
-libdir=\${exec_prefix}/$(get_libdir)/lapack/openblas
-includedir=\${prefix}/include/openblas
-
-Name: LAPACK
-Description: FORTRAN reference implementation of LAPACK Linear Algebra PACKage
-Version: 3.12.0
-URL: http://www.netlib.org/lapack/
-Libs: -L\${libdir} -llapack
-EOF
-		exeinto /usr/${libdir}/lapack/openblas/
-		doexe interface/liblapack.so.3
-		dosym liblapack.so.3 /usr/${libdir}/lapack/openblas/liblapack.so
-		insinto /usr/$(get_libdir)/pkgconfig
-		doins "${T}"/lapack.pc
+		exeinto "/usr/${libdir}/lapack/${me}"
+		doexe "interface/liblapack.so.3"
+		dosym "liblapack.so.3" "/usr/${libdir}/lapack/${me}/liblapack.so"
 	fi
-	if use lapacke; then
-		cat >> "${T}"/lapacke.pc <<- EOF || die
-prefix=${EPREFIX}/usr
-exec_prefix=\${prefix}
-libdir=\${exec_prefix}/$(get_libdir)/lapack/openblas
-includedir=\${prefix}/include/openblas
 
-Name: LAPACKE
-Description: C Standard Interface to LAPACK Linear Algebra PACKage
-Version: 3.12.0
-URL: http://www.netlib.org/lapack/#_standard_c_language_apis_for_lapack
-Libs: -L\${libdir} -llapacke
-Cflags: -I\${includedir}
-EOF
-		exeinto /usr/${libdir}/lapack/openblas/
-		doexe interface/liblapacke.so.3
-		dosym liblapacke.so.3 /usr/${libdir}/lapack/openblas/liblapacke.so
-		insinto /usr/$(get_libdir)/pkgconfig
-		doins "${T}"/lapacke.pc
+	if use lapacke; then
+		exeinto "/usr/${libdir}/lapack/${me}"
+		doexe "interface/liblapacke.so.3"
+		dosym "liblapacke.so.3" "/usr/${libdir}/lapack/${me}/liblapacke.so"
 	fi
 }
 
@@ -339,7 +280,7 @@ pkg_postinst() {
 
 pkg_postrm() {
 	if use eselect-ldso; then
-		if use fortran || use cblas ; then eselect blas validate; fi
+		eselect blas validate
 		if use lapack; then eselect lapack validate; fi
 	fi
 }
