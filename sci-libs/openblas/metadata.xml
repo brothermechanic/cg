@@ -36,6 +36,21 @@
 		<flag name="relapack">
 			Build the ReLAPACK extension to OpenBLAS
 		</flag>
+		<flag name="fortran">
+			Allow to build only cblas without having fortran language installed.
+		</flag>
+		<flag name="cblas">
+			Build the CBLAS extension to OpenBLAS.
+		</flag>
+    <flag name="lapack">
+			Build the LAPACK extension to OpenBLAS.
+		</flag>
+    <flag name="lapacke">
+			Build the LAPACKe (CLAPACK) extension to OpenBLAS.
+		</flag>
+    <flag name="deprecated">
+			Build the LAPACK deprecated functions.
+		</flag>
 	</use>
 	<upstream>
 		<remote-id type="github">OpenMathLib/OpenBLAS</remote-id>

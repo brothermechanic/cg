@@ -17,9 +17,13 @@ S="${WORKDIR}"/${MY_P}
 LICENSE="BSD"
 SLOT="0"
 KEYWORDS="amd64 arm arm64 ~loong ~ppc ppc64 ~riscv ~x86 ~x64-macos"
-IUSE="+cblas cpudetection debug deprecated eselect-ldso fortran index64 +lapacke openmp pthread relapack static-libs test"
+IUSE="+cblas cpudetection debug deprecated eselect-ldso fortran index64 lapack +lapacke openmp pthread relapack static-libs test"
 REQUIRED_USE="
 	?? ( openmp pthread )
+	lapack? ( fortran )
+	deprecated? ( lapack )
+	lapacke? ( lapack )
+	relapack? ( lapack )
 "
 RESTRICT="!cpudetection? ( bindist ) !test? ( test )"
 
@@ -62,20 +66,12 @@ pkg_setup() {
 src_prepare() {
 	default
 
-	# TODO: Unbundle lapack like Fedora does?
-	# https://src.fedoraproject.org/rpms/openblas/blob/rawhide/f/openblas-0.2.15-system_lapack.patch
-
 	# Don't build the tests as part of "make all". We'll do
 	# it explicitly later if the test phase is enabled.
 	sed -e "/^all \:\: tests/s: tests::g" \
 		-e "/^SUBDIRS_ALL \= /s: test .* cpp_thread_test::" \
 		-e "/^.PHONY \: all/s: test ctest::" \
 		-i Makefile || die
-
-	# Fix linktest.c to use pure C functions
-	if ! use fortran ; then
-		sed -e '/^TOPDIR/aONLY_CBLAS = 1' -i exports/Makefile || die
-	fi
 
 	# If 64bit-index is needed, create second library with LIBPREFIX=libopenblas64
 	if use index64; then
@@ -96,9 +92,8 @@ src_configure() {
 	# Bypasses the f2c duplicate symbol errors (like second_ and dsecnd_)
 	append-ldflags "-Wl,--allow-multiple-definition"
 
-	# Fixes LLVM lld crashing on unmatched f2c external symbol suffixes
+	# Fixes linker crashing on unmatched f2c external symbol suffixes
 	append-ldflags "-Wl,--undefined-version"
-	append-ldflags "-Wl,--allow-shlib-undefined"
 
 	# Instruct compiler to tolerate old implicit f2c signatures
 	append-cflags "-Wno-error=incompatible-pointer-types"
@@ -174,61 +169,46 @@ src_configure() {
 	export NO_STATIC=$(usex !static-libs 1 0)
 	export NO_SHARED=0
 	export NO_LAPACKE=$(usex !lapacke 1 0)
-	export NO_LAPACK=0 #$(usex !fortran 1 0)
-	export NO_FBLAS=$(usex !fortran 1 0)
+	export NO_LAPACK=$(usex !lapack 1 0)
+	export NO_FBLAS=$(usex !lapack 1 0)
 	export C_LAPACK=$(usex lapacke 1 0)
-	#export ONLY_CBLAS=$(usex !blas 1 0)
+	export ONLY_CBLAS=$(usex !fortran 1 0)
 	export BUILD_LAPACK_DEPRECATED=$(usex deprecated 1 0)
-	export NOFORTRAN=$(usex !fortran $(usex !lapacke 2 1) 0)
 	export BUILD_RELAPACK=$(usex relapack 1 0)
 	export PREFIX="${EPREFIX}/usr"
 }
 
-myemake() {
-	emake \
-		NO_STATIC=${NO_STATIC} \
-		NO_LAPACKE=${NO_LAPACKE} \
-		C_LAPACK=${C_LAPACK} \
-		NO_FBLAS=${NO_FBLAS} \
-		BUILD_LAPACK_DEPRECATED=${BUILD_LAPACK_DEPRECATED} \
-		NOFORTRAN=${NOFORTRAN} \
-		BUILD_RELAPACK=${BUILD_RELAPACK} \
-		"${@}"
-}
-
 myemake64() {
-	myemake -C "${S}-index64" \
+	emake -C "${S}-index64" \
 		INTERFACE64=1 \
 		LIBNAMESUFFIX=64 \
 		"${@}"
 }
 
 src_compile() {
-	myemake shared
+	emake shared
 	if use index64; then
-		myemake64 shared
+		emake64 shared
 	fi
 
 	if use eselect-ldso; then
-		if use fortran; then
-			myemake -C interface shared-blas
-			myemake -C interface shared-lapack
-		fi
-		use cblas && myemake -C interface shared-cblas
-		use lapacke && myemake -C interface shared-lapacke
+		emake -C interface shared-blas
+		use lapack && emake -C interface shared-lapack
+		use cblas && emake -C interface shared-cblas
+		use lapacke && emake -C interface shared-lapacke
 	fi
 }
 
 src_test() {
-	myemake "${myemakeargs[@]}" tests
+	emake tests
 	if use index64; then
-		myemake64 "${myemakeargs[@]}" tests
+		emake64 tests
 	fi
 }
 
 src_install() {
 	local libdir=$(get_libdir)
-	myemake install \
+	emake install \
 		DESTDIR="${D}" \
 		OPENBLAS_INCLUDE_DIR='$(PREFIX)'/include/openblas \
 		OPENBLAS_LIBRARY_DIR='$(PREFIX)'/${libdir}
@@ -236,7 +216,7 @@ src_install() {
 	dodoc GotoBLAS_*.txt *.md Changelog.txt
 
 	if use index64; then
-		myemake64 install \
+		emake64 install \
 			DESTDIR="${D}" \
 			OPENBLAS_INCLUDE_DIR='$(PREFIX)'/include/openblas64 \
 			OPENBLAS_LIBRARY_DIR='$(PREFIX)'/${libdir}
@@ -283,7 +263,7 @@ EOF
 			doins "${T}"/cblas.pc
 		fi
 
-		if use fortran; then
+		if use lapack; then
 			exeinto /usr/${libdir}/lapack/openblas/
 			cat >> "${T}"/lapack.pc <<- EOF || die
 prefix=${EPREFIX}/usr
@@ -345,7 +325,7 @@ pkg_postinst() {
 	fi
 
 	# check lapack
-	if use fortran || use lapacke; then
+	if use lapack; then
 		eselect lapack add ${libdir} "${EROOT}"/usr/${libdir}/lapack/${me} ${me}
 		local current_lapack=$(eselect lapack show ${libdir} | cut -d' ' -f2)
 		if [[ ${current_lapack} == "${me}" || -z ${current_lapack} ]]; then
@@ -362,6 +342,6 @@ pkg_postinst() {
 pkg_postrm() {
 	if use eselect-ldso; then
 		if use fortran || use cblas ; then eselect blas validate; fi
-		if use fortran || use lapacke ; then eselect lapack validate; fi
+		if use lapack; then eselect lapack validate; fi
 	fi
 }
