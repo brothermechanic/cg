@@ -101,7 +101,7 @@ src_install() {
 	# Create private lib directory for eselect::blas (ld.so.conf)
 	dodir /usr/${libdir}/lapack/semicolon-lapack
 	cp ${ED}/usr/${libdir}/libsemilapack_fortran.so ${ED}/usr/${libdir}/lapack/semicolon-lapack/liblapack.so.3
-	dosym -r /usr/${libdir}/lapack/semicolon-lapack/liblapack.so.3 /usr/${libdir}/liblapack.so.3
+	dosym liblapack.so.3 /usr/${libdir}/lapack/semicolon-lapack/liblapack.so
 }
 
 pkg_postinst() {
