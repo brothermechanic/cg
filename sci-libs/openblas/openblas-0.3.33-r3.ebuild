@@ -222,9 +222,9 @@ src_install() {
 			OPENBLAS_LIBRARY_DIR='$(PREFIX)'/${libdir}
 	fi
 
-	if use eselect-ldso; then
-		if use fortran; then
-			cat >> "${T}"/blas.pc <<- EOF || die
+	use eselect-ldso || return
+	# BLAS
+	cat >> "${T}"/blas.pc <<- EOF || die
 prefix=${EPREFIX}/usr
 exec_prefix=\${prefix}
 libdir=\${exec_prefix}/$(get_libdir)/blas/openblas
@@ -236,14 +236,15 @@ Version: 3.12.0
 URL: http://www.netlib.org/blas
 Libs: -L\${libdir} -lblas
 EOF
-			exeinto /usr/${libdir}/blas/openblas/
-			doexe interface/libblas.so.3
-			dosym libblas.so.3 /usr/${libdir}/blas/openblas/libblas.so
-			insinto /usr/$(get_libdir)/pkgconfig
-			doins "${T}"/blas.pc
-		fi
-		if use cblas; then
-			cat >> "${T}"/cblas.pc <<- EOF || die
+	exeinto /usr/${libdir}/blas/openblas/
+	doexe interface/libblas.so.3
+	dosym libblas.so.3 /usr/${libdir}/blas/openblas/libblas.so
+	insinto /usr/$(get_libdir)/pkgconfig
+	doins "${T}"/blas.pc
+
+	# CBLAS
+	if use cblas; then
+		cat >> "${T}"/cblas.pc <<- EOF || die
 prefix=${EPREFIX}/usr
 exec_prefix=\${prefix}
 libdir=\${exec_prefix}/$(get_libdir)/blas/openblas
@@ -256,16 +257,16 @@ URL: http://www.netlib.org/blas/#_cblas
 Libs: -L\${libdir} -lcblas
 Cflags: -I\${includedir}
 EOF
-			exeinto /usr/${libdir}/blas/openblas/
-			doexe interface/libcblas.so.3
-			dosym libcblas.so.3 /usr/${libdir}/blas/openblas/libcblas.so
-			insinto /usr/$(get_libdir)/pkgconfig
-			doins "${T}"/cblas.pc
-		fi
+		exeinto /usr/${libdir}/blas/openblas/
+		doexe interface/libcblas.so.3
+		dosym libcblas.so.3 /usr/${libdir}/blas/openblas/libcblas.so
+		insinto /usr/$(get_libdir)/pkgconfig
+		doins "${T}"/cblas.pc
+	fi
 
-		if use lapack; then
-			exeinto /usr/${libdir}/lapack/openblas/
-			cat >> "${T}"/lapack.pc <<- EOF || die
+	if use lapack; then
+		exeinto /usr/${libdir}/lapack/openblas/
+		cat >> "${T}"/lapack.pc <<- EOF || die
 prefix=${EPREFIX}/usr
 exec_prefix=\${prefix}
 libdir=\${exec_prefix}/$(get_libdir)/lapack/openblas
@@ -277,14 +278,14 @@ Version: 3.12.0
 URL: http://www.netlib.org/lapack/
 Libs: -L\${libdir} -llapack
 EOF
-			exeinto /usr/${libdir}/lapack/openblas/
-			doexe interface/liblapack.so.3
-			dosym liblapack.so.3 /usr/${libdir}/lapack/openblas/liblapack.so
-			insinto /usr/$(get_libdir)/pkgconfig
-			doins "${T}"/lapack.pc
-		fi
-		if use lapacke; then
-			cat >> "${T}"/lapacke.pc <<- EOF || die
+		exeinto /usr/${libdir}/lapack/openblas/
+		doexe interface/liblapack.so.3
+		dosym liblapack.so.3 /usr/${libdir}/lapack/openblas/liblapack.so
+		insinto /usr/$(get_libdir)/pkgconfig
+		doins "${T}"/lapack.pc
+	fi
+	if use lapacke; then
+		cat >> "${T}"/lapacke.pc <<- EOF || die
 prefix=${EPREFIX}/usr
 exec_prefix=\${prefix}
 libdir=\${exec_prefix}/$(get_libdir)/lapack/openblas
@@ -297,12 +298,11 @@ URL: http://www.netlib.org/lapack/#_standard_c_language_apis_for_lapack
 Libs: -L\${libdir} -llapacke
 Cflags: -I\${includedir}
 EOF
-			exeinto /usr/${libdir}/lapack/openblas/
-			doexe interface/liblapacke.so.3
-			dosym liblapacke.so.3 /usr/${libdir}/lapack/openblas/liblapacke.so
-			insinto /usr/$(get_libdir)/pkgconfig
-			doins "${T}"/lapacke.pc
-		fi
+		exeinto /usr/${libdir}/lapack/openblas/
+		doexe interface/liblapacke.so.3
+		dosym liblapacke.so.3 /usr/${libdir}/lapack/openblas/liblapacke.so
+		insinto /usr/$(get_libdir)/pkgconfig
+		doins "${T}"/lapacke.pc
 	fi
 }
 
@@ -310,21 +310,19 @@ pkg_postinst() {
 	use eselect-ldso || return
 	local libdir=$(get_libdir) me="openblas"
 
-	# check blas
-	if use fortran || use cblas; then
-		eselect blas add ${libdir} "${EROOT}"/usr/${libdir}/blas/${me} ${me}
-		local current_blas=$(eselect blas show ${libdir} | cut -d' ' -f2)
-		if [[ ${current_blas} == "${me}" || -z ${current_blas} ]]; then
-			eselect blas set ${libdir} ${me}
-			elog "Current eselect: BLAS/CBLAS ($libdir) -> [${current_blas}]."
-		else
-			elog "Current eselect: BLAS/CBLAS ($libdir) -> [${current_blas}]."
-			elog "To use blas [${me}] implementation, you have to issue (as root):"
-			elog "\t eselect blas set ${libdir} ${me}"
-		fi
+	# check BLAS
+	eselect blas add ${libdir} "${EROOT}"/usr/${libdir}/blas/${me} ${me}
+	local current_blas=$(eselect blas show ${libdir} | cut -d' ' -f2)
+	if [[ ${current_blas} == "${me}" || -z ${current_blas} ]]; then
+		eselect blas set ${libdir} ${me}
+		elog "Current eselect: BLAS/CBLAS ($libdir) -> [${current_blas}]."
+	else
+		elog "Current eselect: BLAS/CBLAS ($libdir) -> [${current_blas}]."
+		elog "To use blas [${me}] implementation, you have to issue (as root):"
+		elog "\t eselect blas set ${libdir} ${me}"
 	fi
 
-	# check lapack
+	# check LAPACK
 	if use lapack; then
 		eselect lapack add ${libdir} "${EROOT}"/usr/${libdir}/lapack/${me} ${me}
 		local current_lapack=$(eselect lapack show ${libdir} | cut -d' ' -f2)

@@ -1,0 +1,29 @@
+--- a/interface/Makefile
++++ b/interface/Makefile
+@@ -2601,3 +2601,26 @@ cgemm_batch_strided.$(SUFFIX) cgemm_batc
+ 
+ zgemm_batch_strided.$(SUFFIX) zgemm_batch_strided.$(PSUFFIX) : gemm_batch_strided.c ../param.h
+ 	$(CC) -c $(CFLAGS) -UCBLAS $< -o $(@F)
++
++#####
++shared-blas: libblas.so.3
++shared-lapack: liblapack.so.3
++shared-cblas: libcblas.so.3
++shared-lapacke: liblapacke.so.3
++
++# The list of prerequisite is created by comparing with NETLIB BLAS public API.
++libblas.so.3: $(SBLAS1OBJS) $(SBLAS2OBJS) $(SBLAS3OBJS) $(DBLAS1OBJS) $(DBLAS2OBJS) $(DBLAS3OBJS) $(CBLAS1OBJS) $(CBLAS2OBJS) $(CBLAS3OBJS) $(ZBLAS1OBJS) $(ZBLAS2OBJS) $(ZBLAS3OBJS) ../kernel/lsame.o ../kernel/scabs1.o ../kernel/dcabs1.o ../driver/others/xerbla.o
++	$(CC) $(LDFLAGS) -shared -o $@ $^ -Wl,-soname,libblas.so.3 -L.. -lopenblas $(EXTRALIB)
++
++libcblas.so.3: $(CSBLAS1OBJS) $(CSBLAS2OBJS) $(CSBLAS3OBJS) $(CDBLAS1OBJS) $(CDBLAS2OBJS) $(CDBLAS3OBJS) $(CCBLAS1OBJS) $(CCBLAS2OBJS) $(CCBLAS3OBJS) $(CZBLAS1OBJS) $(CZBLAS2OBJS) $(CZBLAS3OBJS) ../kernel/lsame.o ../kernel/scabs1.o ../kernel/dcabs1.o ../driver/others/xerbla.o
++	$(CC) $(LDFLAGS) -shared -o $@ $^ -Wl,-soname,libcblas.so.3 -L.. -lopenblas $(EXTRALIB)
++
++# The prerequisites must match the symbols deleted in target delete-duplicate-lapack-objects
++liblapack.so.3: $(SLAPACKOBJS) $(DLAPACKOBJS) $(CLAPACKOBJS) $(ZLAPACKOBJS) ../kernel/lsame.o ../driver/others/xerbla.o
++	$(CC) $(LDFLAGS) -shared -o $@ $^ ../lapack-netlib/SRC/*.o -Wl,-soname,liblapack.so.3 -L.. -lopenblas $(EXTRALIB)
++
++liblapacke.so.3: liblapack.so.3
++	$(CC) $(LDFLAGS) -shared -o $@ `find ../lapack-netlib/LAPACKE -name "*.o"` -Wl,-soname,liblapacke.so.3 -L.. -lopenblas $(EXTRALIB)
++
++clean::
++	rm -f libblas.so.3 libcblas.so.3 liblapack.so.3 liblapacke.so.3

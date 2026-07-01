@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE pkgmetadata SYSTEM "https://www.gentoo.org/dtd/metadata.dtd">
+<pkgmetadata>
+	<maintainer type="person">
+		<email>anex5.2008@gmail.com</email>
+		<name>Алексей Прохоренко</name>
+	</maintainer>
+	<maintainer type="project">
+		<email>sci@gentoo.org</email>
+		<name>Gentoo Science Project</name>
+	</maintainer>
+	<longdescription lang="en">
+	  Semicolon LAPACK is a C implementation of LAPACK linear algebra library, removing the Fortran dependency while leveraging optimized vendor BLAS through the standard CBLAS interface.
+    This project is a line-by-line C translation of the reference LAPACK. Because we control the LAPACK layer code, our only external dependency is the ~150 CBLAS functions interface. This drastically reduces the ABI surface compared to projects wrapping vendor Fortran LAPACK, and makes LP64/ILP64 support a clean dual build without symbol mangling. In practice, this means a full BLAS/LAPACK stack that needs only a C compiler. For example, one can build OpenBLAS with only its CBLAS option and link it against this project, and you have a complete LAPACK stack built entirely with a C compiler.
+	</longdescription>
+	<use>
+		<flag name="eselect-ldso">
+			Enable BLAS/LAPACK runtime switching
+		</flag>
+		<flag name="index64">
+			Compile a separate INTERFACE64 OpenBLAS
+		</flag>
+		<flag name="pthread">
+			Build with pthread threading model
+		</flag>
+		<flag name="fortran">
+			Build fortran shim.
+		</flag>
+	</use>
+	<upstream>
+		<remote-id type="github">OpenMathLib/OpenBLAS</remote-id>
+	</upstream>
+</pkgmetadata>
