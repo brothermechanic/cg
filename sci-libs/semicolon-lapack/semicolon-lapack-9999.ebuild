@@ -69,14 +69,12 @@ pkg_setup() {
 src_configure() {
 	filter-lto
 
-	if use fortran; then local blas_imp=blas; else local blas_imp=cblas; fi
-
 	local emesonargs=(
 		$(meson_use test tests)
 		$(meson_use benchmark benchmarks)
 		$(meson_use fortran fabi_shim)
 		$(meson_use index64 USE_INT64)
-		-Dblas=$(usex index64 "${blas_imp}64" "${blas_imp}") #
+		-Dblas=$(usex index64 "cblas64" "cblas") #
 	)
 
 	meson_src_configure
