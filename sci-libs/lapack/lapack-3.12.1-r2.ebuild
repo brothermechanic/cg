@@ -47,11 +47,12 @@ PATCHES=(
 )
 
 pkg_setup() {
-	fortran-2_pkg_setup
+	use fortran && fortran-2_pkg_setup
 	use test && python-any-r1_pkg_setup
 }
 
 src_prepare() {
+	use fortran || return
 	cmake_src_prepare
 
 	if use flexiblas; then
