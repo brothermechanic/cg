@@ -24,7 +24,7 @@ fi
 LICENSE="BSD"
 SLOT="0"
 KEYWORDS="amd64 arm arm64 ~loong ~ppc ppc64 ~riscv ~x86 ~x64-macos"
-IUSE="benchmark debug doc eselect-ldso fortran index64 openmp pthread static-libs test"
+IUSE="benchmark debug doc eselect-ldso +fortran index64 openmp pthread static-libs test"
 REQUIRED_USE="
 	?? ( openmp pthread )
 "

@@ -172,7 +172,7 @@ python_configure_all() {
 		local lapack_imp=lapack;
 	else
 		local blas_imp=cblas;
-		local lapack_imp=lapacke;
+		local lapack_imp=lapack;
 	fi
 
 	DISTUTILS_ARGS=(
