@@ -73,6 +73,13 @@ src_prepare() {
 		-e "/^.PHONY \: all/s: test ctest::" \
 		-i Makefile || die
 
+	if ! use fortran ; then
+		# Fix linktest.c to not check fortran functions
+		sed -e '/^TOPDIR/aONLY_CBLAS = 1' -i exports/Makefile || die
+		# Don't link gfortran
+		sed -e '/^ifneq (\$(NO_LAPACK)\, 1)$/,/^endif$/s/\(EXTRALIB +\=\) -lgfortran/\1/' -i Makefile.system || die
+	fi
+
 	# If 64bit-index is needed, create second library with LIBPREFIX=libopenblas64
 	if use index64; then
 		cp -aL "${S}" "${S}-index64" || die
@@ -169,10 +176,11 @@ src_configure() {
 	export NO_STATIC=$(usex !static-libs 1 0)
 	export NO_SHARED=0
 	export NO_LAPACKE=$(usex !lapacke 1 0)
-	export NO_LAPACK=$(usex !lapack 1 0)
-	export NO_FBLAS=$(usex !lapack 1 0)
 	export C_LAPACK=$(usex lapacke 1 0)
-	export ONLY_CBLAS=$(usex !fortran 1 0)
+	# Should be 0 if we want suffixed functions
+	export NO_LAPACK=0
+	export NO_FBLAS=0
+	export NO_FORTRAN=$(usex !fortran 1 0)
 	export BUILD_LAPACK_DEPRECATED=$(usex deprecated 1 0)
 	export BUILD_RELAPACK=$(usex relapack 1 0)
 	export PREFIX="${EPREFIX}/usr"
@@ -207,7 +215,7 @@ src_test() {
 }
 
 src_install() {
-	local libdir=$(get_libdir) me="${PN}"
+	local libdir="$(get_libdir)" me="${PN}"
 	emake install \
 		DESTDIR="${D}" \
 		OPENBLAS_INCLUDE_DIR='$(PREFIX)'/include/${me} \
@@ -249,7 +257,7 @@ src_install() {
 
 pkg_postinst() {
 	use eselect-ldso || return
-	local libdir=$(get_libdir) me="openblas"
+	local libdir="$(get_libdir)" me="${PN}"
 
 	# check BLAS
 	eselect blas add ${libdir} "${EROOT}"/usr/${libdir}/blas/${me} ${me}

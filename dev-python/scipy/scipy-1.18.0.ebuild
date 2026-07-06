@@ -109,18 +109,10 @@ src_prepare() {
 }
 
 python_configure_all() {
-	if use fortran; then
-		local blas_imp=blas
-		local lapack_imp=lapack
-	else
-		local blas_imp=cblas
-		local lapack_imp=lapacke
-	fi
-
 	DISTUTILS_ARGS=(
 		-Dbuildtype=$(usex debug debugoptimized plain)
-		-Dblas=$(usex index64 "${blas_imp}64" "${blas_imp}")
-		-Dlapack=$(usex index64 "${lapack_imp}64" "${lapack_imp}")
+		-Dblas=$(usex index64 "blas64" "blas")
+		-Dlapack=$(usex index64 "lapack64" "lapack")
 		-Duse-ilp64=$(usex index64 true false)
 		-Duse-pythran=$(usex fortran true false)
 		-D_without-fortran=$(usex fortran false true)
