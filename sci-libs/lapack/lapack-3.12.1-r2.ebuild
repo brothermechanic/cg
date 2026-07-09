@@ -52,7 +52,6 @@ pkg_setup() {
 }
 
 src_prepare() {
-	use fortran || return
 	cmake_src_prepare
 
 	if use flexiblas; then
