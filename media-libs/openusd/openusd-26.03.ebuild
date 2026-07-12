@@ -100,7 +100,7 @@ RDEPEND+="
 		>=media-libs/openexr-3.1.5-r1:=
 	)
 	opengl? (
-		>=media-libs/glew-2.0.0:=[X]
+		>=media-libs/glew-2.0.0:=
 	)
 	openimageio? (
 		>=media-libs/libpng-1.6.29
