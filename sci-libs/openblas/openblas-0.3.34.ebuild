@@ -16,7 +16,7 @@ S="${WORKDIR}"/${MY_P}
 
 LICENSE="BSD"
 SLOT="0"
-KEYWORDS="amd64 arm arm64 ~loong ~ppc ppc64 ~riscv ~x86 ~x64-macos"
+KEYWORDS="~amd64 ~arm ~arm64 ~loong ~ppc ppc64 ~riscv ~x86 ~x64-macos"
 IUSE="+cblas cpudetection debug deprecated eselect-ldso fortran index64 lapack +lapacke openmp pthread relapack static-libs test"
 REQUIRED_USE="
 	?? ( openmp pthread )
