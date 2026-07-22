@@ -11,7 +11,7 @@ LLVM_OPTIONAL=1
 ROCM_SKIP_GLOBALS=1
 
 inherit cuda rocm llvm-r2
-inherit eapi9-pipestatus check-reqs flag-o-matic multiprocessing pax-utils python-single-r1 toolchain-funcs virtualx openvdb cg-blender-scripts-dir
+inherit eapi9-pipestatus check-reqs flag-o-matic multiprocessing pax-utils python-single-r1 toolchain-funcs virtualx openvdb
 inherit cmake xdg-utils git-r3
 
 DESCRIPTION="A fork of the popular 3D software Blender, with improved UI"
@@ -77,24 +77,23 @@ AMDGPU_TARGETS_COMPAT=(
 	gfx1151
 )
 
-IUSE_CPU="+simd +tbb -lld -gold +mold -cpu_flags_arm_neon llvm +openmp -valgrind +jemalloc"
+IUSE_CPU="+simd +tbb -lld -gold +mold -cpu_flags_arm_neon llvm -valgrind"
 IUSE_GPU="cuda optix hip hiprt oneapi -cycles-bin-kernels ${CUDA_TARGETS_COMPAT[@]/#/cuda_targets_} ${AMDGPU_TARGETS_COMPAT[@]/#/amdgpu_targets_} vulkan"
 IUSE_DESKTOP="-portable +X headless +nls icu -ndof wayland gnome"
-IUSE_LIBS="+bullet +boost +draco +manifold +materialx +meshoptimizer +color-management +oidn +opensubdiv +openvdb nanovdb openxr +libmv lzma lzo osl +fftw +potrace +pugixml +otf rubberband"
+IUSE_LIBS="+bullet +draco +manifold +materialx +meshoptimizer +color-management +oidn +opensubdiv +openvdb nanovdb openxr +libmv lzma lzo osl +fftw +potrace +pugixml +otf rubberband"
 IUSE_MOD="+fluid +smoke +oceansim +remesh +gmp +quadriflow +uv-slim"
 IUSE_RENDER="+cycles +openpgl +embree +freestyle hydra"
-IUSE_3DFILES="-alembic usd +collada +obj +ply +stl"
+IUSE_3DFILES="alembic usd +obj +ply +stl"
 IUSE_IMAGE="-dpx +openexr jpeg2k webp +pdf"
 IUSE_CODEC="avi +ffmpeg flac -sndfile +quicktime aom lame opus theora vorbis vpx x264 xvid"
 IUSE_SOUND="jack openal pipewire -pulseaudio sdl"
-IUSE_TEST="-debug -doc -man -gtests renderdoc -test -experimental"
+IUSE_TEST="-debug -doc -man -gtests renderdoc -test -experimental buildinfo"
 
 IUSE="${IUSE_CPU} ${IUSE_GPU} ${IUSE_DESKTOP} ${IUSE_LIBS} ${IUSE_MOD} ${IUSE_RENDER} ${IUSE_3DFILES} ${IUSE_IMAGE} ${IUSE_CODEC} ${IUSE_SOUND} ${IUSE_TEST}"
 
 REQUIRED_USE="${PYTHON_REQUIRED_USE}
 	^^ ( gold lld mold )
 	|| ( wayland X )
-	!boost? ( !alembic !color-management !cycles !nls !openvdb )
 	alembic? ( openexr )
 	cycles? ( openexr tbb )
 	embree? ( cycles tbb )
@@ -183,7 +182,7 @@ RDEPEND="
 	>=media-libs/libpng-1.6.37:0=
 	virtual/libintl
 	alembic? ( >=media-gfx/alembic-1.8.3-r2[boost(+),hdf(+)] )
-	collada? ( >=media-libs/opencollada-1.6.68 )
+	>=media-libs/opencollada-1.6.68
 	cuda? ( dev-util/nvidia-cuda-toolkit:= )
 	draco? ( >=media-libs/draco-1.5.2:= )
 	embree? (
@@ -208,7 +207,6 @@ RDEPEND="
 		dev-cpp/gmock:=
 	)
 	jack? ( virtual/jack )
-	jemalloc? ( dev-libs/jemalloc:= )
 	jpeg2k? ( media-libs/openjpeg:2= )
 	libmv? ( sci-libs/ceres-solver:= )
 	lzo? ( dev-libs/lzo:2= )
@@ -343,6 +341,11 @@ BDEPEND="
 	virtual/pkgconfig
 	dev-vcs/git-lfs
 	mold? ( sys-devel/mold:= )
+	buildinfo? (
+		elibc_musl? (
+			sys-libs/libexecinfo
+		)
+	)
 	$(llvm_gen_dep '
 		lld? ( llvm-core/lld:${LLVM_SLOT}= )
 		gold? ( llvm-core/llvm:${LLVM_SLOT}=[binutils-plugin] )
@@ -391,7 +394,7 @@ PATCHES=(
 )
 
 blender_check_requirements() {
-	[[ ${MERGE_TYPE} != binary ]] && ( use openmp && tc-check-openmp )
+	[[ ${MERGE_TYPE} != binary ]] && tc-check-openmp
 
 	if use doc; then
 		CHECKREQS_DISK_BUILD="4G" check-reqs_pkg_pretend
@@ -451,6 +454,11 @@ src_prepare() {
 
 	# remove some bundled deps
 	use portable || rm -rf extern/{audaspace,Eigen3,lzo,gflags,glog,gtest,gmock,draco,ceres} || die
+
+	# append execinfo lib for musl build
+	if use elibc_musl && use buildinfo; then
+		sed -e "/# -\+ done with header values./a\tlist(APPEND LIB execinfo)" -i source/creator/CMakeLists.txt || die
+	fi
 
 	# Disable MS Windows help generation. The variable doesn't do what it
 	# it sounds like.
@@ -585,7 +593,6 @@ src_configure() {
 		-DPYTHON_INCLUDE_DIR="$(python_get_includedir)"
 		-DPYTHON_LIBRARY="$(python_get_library_path)"
 		-DWITH_PYTHON_NUMPY=yes
-		-DWITH_CPU_SIMD=$(usex simd)
 		-DWITH_PYTHON_INSTALL=$(usex portable)					# Copy system python
 		-DWITH_PYTHON_INSTALL_NUMPY=$(usex portable)
 		-DWITH_PYTHON_INSTALL_ZSTANDARD=$(usex portable)
@@ -593,8 +600,6 @@ src_configure() {
 		-DWITH_HEADLESS=$(usex headless)						# server mode only
 		-DWITH_ALEMBIC=$(usex alembic)							# export format support
 		-DWITH_ASSERT_ABORT=$(usex debug)
-		-DWITH_BOOST=$(usex boost)
-		-DWITH_BOOST_ICU=$(usex icu)
 		-DWITH_BULLET=$(usex bullet)							# Physics Engine
 		-DWITH_SYSTEM_BULLET=no									# currently unsupported
 		-DWITH_CODEC_AVI=$(usex avi)
@@ -661,20 +666,17 @@ src_configure() {
 		-DWITH_LLVM=$(usex llvm)
 		-DWITH_CLANG=$(usex llvm)
 		-DWITH_LIBMV=$(usex libmv)                           	# Enable libmv sfm camera tracking
-		-DWITH_MEM_JEMALLOC=$(usex jemalloc)					# Enable malloc replacement
 		-DWITH_MEM_VALGRIND=$(usex valgrind)
 		-DWITH_MOD_FLUID=$(usex fluid)							# Mantaflow Fluid Simulation Framework
 		-DWITH_MOD_REMESH=$(usex remesh)						# Remesh Modifier
 		-DWITH_MOD_OCEANSIM=$(usex oceansim)					# Ocean Modifier
 		-DWITH_NANOVDB=$(usex nanovdb)							# OpenVDB for rendering on the GPU
 		-DWITH_OPENAL=$(usex openal)
-		-DWITH_OPENCOLLADA=$(usex collada)						# export format support
 		-DWITH_IO_WAVEFRONT_OBJ=$(usex obj)						# export format support
 		-DWITH_IO_PLY=$(usex ply)								# export format support
 		-DWITH_IO_STL=$(usex stl)								# export format support
 		-DWITH_OPENCOLORIO=$(usex color-management)
 		-DWITH_OPENIMAGEDENOISE=$(usex oidn)					# compositing node
-		-DWITH_OPENMP=$(usex openmp)
 		-DWITH_OPENSUBDIV=$(usex opensubdiv)					# for surface subdivision
 		-DWITH_OPENVDB=$(usex openvdb)							# advanced remesh and smoke
 		-DWITH_OPENVDB_BLOSC=$(usex openvdb)					# compression for OpenVDB
@@ -708,7 +710,7 @@ src_configure() {
 		-DWITH_XR_OPENXR=$(usex openxr)							# VR interface
 		#-DSYCL_LIBRARY="/usr/lib/llvm/intel"
 		#-DSYCL_INCLUDE_DIR="/usr/lib/llvm/intel/include"
-		-DUSD_ROOT_DIR="${ESYSROOT}/usr/$(get_libdir)/openusd/lib"
+		-DUSD_LIBRARY_DIR="${ESYSROOT}/usr/$(get_libdir)/openusd/lib"
 		#-DMaterialX_DIR="${ESYSROOT}/usr/$(get_libdir)/cmake/MaterialX"
 		-DWITH_MATERIALX=$(usex materialx)
 		-DWITH_MANIFOLD=$(usex manifold)
@@ -720,7 +722,7 @@ src_configure() {
 		#-DCMAKE_FIND_PACKAGE_PREFER_CONFIG=yes
 		-DWITH_STRICT_BUILD_OPTIONS=yes
 		-DWITH_LIBS_PRECOMPILED=no
-		-DWITH_BUILDINFO=yes
+		-DWITH_BUILDINFO=$(usex buildinfo)
 		-DWITH_PYTHON_SAFETY=no
 		-DWITH_UNITY_BUILD=no 									# Enable Unity build for blender modules (memory usage/compile time)
 	)
@@ -778,7 +780,7 @@ src_configure() {
 
 	if use wayland; then
 		mycmakeargs+=(
-			-DWITH_GHOST_WAYLAND_APP_ID="${PN,}-${BV}"
+			-DWITH_GHOST_WAYLAND_APP_ID="${PN,}-${SLOT}"
 			-DWITH_GHOST_CSD="$(usex gnome)"
 		)
 	fi
@@ -1013,7 +1015,7 @@ src_install() {
 	docinto html
 	dodoc "${CMAKE_USE_DIR}/release/text/readme.html"
 	rm -r "${ED%/}/usr/share/doc/${PN,}"*
-	python_optimize "${ED%/}/usr/share/${PN,}/${SLOT}/scripts"
+	python_optimize "${ED%/}/usr/share/${PN,}/${BV}/scripts"
 
 	use portable && dodir "${ED%/}"/usr/bin
 	pushd ${ED}/usr/bin
