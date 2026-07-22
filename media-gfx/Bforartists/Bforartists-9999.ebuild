@@ -341,10 +341,8 @@ BDEPEND="
 	virtual/pkgconfig
 	dev-vcs/git-lfs
 	mold? ( sys-devel/mold:= )
-	buildinfo? (
-		elibc_musl? (
-			sys-libs/libexecinfo
-		)
+	elibc_musl? (
+		sys-libs/libexecinfo
 	)
 	$(llvm_gen_dep '
 		lld? ( llvm-core/lld:${LLVM_SLOT}= )
@@ -456,7 +454,7 @@ src_prepare() {
 	use portable || rm -rv extern/{audaspace,gflags,glog,gtest,gmock} || die
 
 	# append execinfo lib for musl build
-	if use elibc_musl && use buildinfo; then
+	if use elibc_musl; then
 		sed -e "/# -\+ done with header values./a\tlist(APPEND LIB execinfo)" -i source/creator/CMakeLists.txt || die
 	fi
 
