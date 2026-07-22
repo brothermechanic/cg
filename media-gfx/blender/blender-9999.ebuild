@@ -83,17 +83,17 @@ AMDGPU_TARGETS_COMPAT=(
 	gfx1151
 )
 
-IUSE_CPU="+simd +tbb -lld -gold +mold llvm -valgrind"
-IUSE_GPU="cuda optix hip hiprt oneapi -cycles-bin-kernels ${CUDA_TARGETS_COMPAT[@]/#/cuda_targets_} ${AMDGPU_TARGETS_COMPAT[@]/#/amdgpu_targets_} vulkan"
-IUSE_DESKTOP="+cg -portable +X headless +nls icu -ndof wayland gnome"
+IUSE_CPU="+simd +tbb lld gold +mold llvm valgrind"
+IUSE_GPU="cuda optix hip hiprt oneapi cycles-bin-kernels ${CUDA_TARGETS_COMPAT[@]/#/cuda_targets_} ${AMDGPU_TARGETS_COMPAT[@]/#/amdgpu_targets_} vulkan"
+IUSE_DESKTOP="+cg portable +X headless +nls icu ndof wayland gnome"
 IUSE_LIBS="+bullet +draco +manifold +materialx +meshoptimizer +color-management +oidn +opensubdiv +openvdb nanovdb openxr +libmv osl +fftw +potrace +pugixml +otf rubberband"
 IUSE_MOD="+fluid +smoke +oceansim +remesh +gmp +quadriflow +uv-slim +addons addons-contrib +assets"
 IUSE_RENDER="+cycles +openpgl +embree +freestyle hydra"
 IUSE_3DFILES="alembic usd +obj +ply +stl"
-IUSE_IMAGE="-dpx +openexr jpeg2k webp +pdf"
+IUSE_IMAGE="dpx +openexr jpeg2k webp +pdf"
 IUSE_CODEC="avi +ffmpeg flac -sndfile +quicktime aom lame opus theora vorbis vpx x264 xvid"
-IUSE_SOUND="jack openal pipewire -pulseaudio sdl"
-IUSE_TEST="-debug -doc -man -gtests renderdoc -test -experimental buildinfo"
+IUSE_SOUND="jack openal pipewire pulseaudio sdl"
+IUSE_TEST="debug doc man gtests renderdoc test experimental +buildinfo"
 
 IUSE="${IUSE_CPU} ${IUSE_GPU} ${IUSE_DESKTOP} ${IUSE_LIBS} ${IUSE_MOD} ${IUSE_RENDER} ${IUSE_3DFILES} ${IUSE_IMAGE} ${IUSE_CODEC} ${IUSE_SOUND} ${IUSE_TEST}"
 
