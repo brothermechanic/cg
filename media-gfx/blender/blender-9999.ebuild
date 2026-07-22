@@ -618,7 +618,7 @@ src_prepare() {
 	fi
 
 	# remove some bundled deps
-	use portable || rm -rv extern/{audaspace,Eigen3,gflags,glog,gtest,gmock,draco,ceres} || die
+	use portable || rm -rv extern/{audaspace,gflags,glog,gtest,gmock} || die
 
 	# Disable MS Windows help generation. The variable doesn't do what it
 	# it sounds like.

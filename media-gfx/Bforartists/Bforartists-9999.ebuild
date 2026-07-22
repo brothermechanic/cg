@@ -453,7 +453,7 @@ src_prepare() {
 	use optix && eapply "${FILESDIR}/blender-fix-optix-build.patch"
 
 	# remove some bundled deps
-	use portable || rm -rv extern/{audaspace,Eigen3,gflags,glog,gtest,gmock,draco,ceres} || die
+	use portable || rm -rv extern/{audaspace,gflags,glog,gtest,gmock} || die
 
 	# append execinfo lib for musl build
 	if use elibc_musl && use buildinfo; then
