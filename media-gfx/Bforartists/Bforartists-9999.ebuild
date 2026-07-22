@@ -3,14 +3,14 @@
 
 EAPI=8
 
-PYTHON_COMPAT=( python3_{11..14} )
+PYTHON_COMPAT=( python3_{12..14} )
 OPENVDB_COMPAT=( {7..13} )
-LLVM_COMPAT=( {19..22} )
+LLVM_COMPAT=( {20..22} )
 LLVM_OPTIONAL=1
 
 ROCM_SKIP_GLOBALS=1
 
-inherit cuda rocm llvm-r2
+inherit cuda rocm llvm-r2 edo
 inherit eapi9-pipestatus check-reqs flag-o-matic multiprocessing pax-utils python-single-r1 toolchain-funcs virtualx openvdb
 inherit cmake xdg-utils git-r3
 
@@ -31,15 +31,15 @@ else
 	MY_PV="5.1"
 	EGIT_BRANCH="Bfa5v${PV}"
 	#EGIT_COMMIT="v${PV}"
-	KEYWORDS="~amd64 ~arm ~arm64"
+	KEYWORDS="~amd64 ~arm64"
 fi
 
 [[ "4.0 3.6" =~ "${MY_PV}"  ]] && OSL_PV="14" || OSL_PV="15"
 
 AUD_PV="9"
 
+LICENSE="GPL-3"
 SLOT="$MY_PV"
-LICENSE="|| ( GPL-3 BL )"
 
 CUDA_TARGETS_COMPAT=(
 	sm_30
@@ -77,10 +77,10 @@ AMDGPU_TARGETS_COMPAT=(
 	gfx1151
 )
 
-IUSE_CPU="+simd +tbb -lld -gold +mold -cpu_flags_arm_neon llvm -valgrind"
+IUSE_CPU="+simd +tbb -lld -gold +mold llvm -valgrind"
 IUSE_GPU="cuda optix hip hiprt oneapi -cycles-bin-kernels ${CUDA_TARGETS_COMPAT[@]/#/cuda_targets_} ${AMDGPU_TARGETS_COMPAT[@]/#/amdgpu_targets_} vulkan"
 IUSE_DESKTOP="-portable +X headless +nls icu -ndof wayland gnome"
-IUSE_LIBS="+bullet +draco +manifold +materialx +meshoptimizer +color-management +oidn +opensubdiv +openvdb nanovdb openxr +libmv lzma lzo osl +fftw +potrace +pugixml +otf rubberband"
+IUSE_LIBS="+bullet +draco +manifold +materialx +meshoptimizer +color-management +oidn +opensubdiv +openvdb nanovdb openxr +libmv osl +fftw +potrace +pugixml +otf rubberband"
 IUSE_MOD="+fluid +smoke +oceansim +remesh +gmp +quadriflow +uv-slim"
 IUSE_RENDER="+cycles +openpgl +embree +freestyle hydra"
 IUSE_3DFILES="alembic usd +obj +ply +stl"
@@ -157,6 +157,8 @@ CODECS="
 RDEPEND="
 	${CODECS}
 	${PYTHON_DEPS}
+	app-arch/zstd
+	dev-cpp/gflags:=
 	$(python_gen_cond_dep '
 		dev-libs/boost[nls?,icu?,threads(+),python,numpy,${PYTHON_USEDEP}]
 		>=dev-python/certifi-2021.10.8[${PYTHON_USEDEP}]
@@ -168,21 +170,18 @@ RDEPEND="
 		>=dev-python/requests-2.26.0[${PYTHON_USEDEP}]
 		>=dev-python/urllib3-1.26.7[${PYTHON_USEDEP}]
 	')
-	dev-cpp/gflags:=
 	media-libs/freetype:=[brotli,bzip2,png]
 	media-libs/libepoxy:=
 	>=dev-cpp/pystring-1.1.3:=
 	>=dev-libs/fribidi-1.0.12:=
 	>=sys-libs/minizip-ng-3.0.7
 	>=media-libs/tiff-4.6.0
-	>=sys-libs/zlib-1.2.13
-	dev-libs/lzo:2
 	media-libs/libglvnd
 	media-libs/libsamplerate
 	>=media-libs/libpng-1.6.37:0=
 	virtual/libintl
 	alembic? ( >=media-gfx/alembic-1.8.3-r2[boost(+),hdf(+)] )
-	>=media-libs/opencollada-1.6.68
+	bullet? ( sci-physics/bullet:=[double-precision] )
 	cuda? ( dev-util/nvidia-cuda-toolkit:= )
 	draco? ( >=media-libs/draco-1.5.2:= )
 	embree? (
@@ -204,12 +203,11 @@ RDEPEND="
 	)
 	gtests? (
 		dev-cpp/glog:=[gflags]
-		dev-cpp/gmock:=
 	)
 	jack? ( virtual/jack )
 	jpeg2k? ( media-libs/openjpeg:2= )
+	manifold? ( >=sci-mathematics/manifold-3.2.1:= )
 	libmv? ( sci-libs/ceres-solver:= )
-	lzo? ( dev-libs/lzo:2= )
 	ndof? (
 		app-misc/spacenavd
 		>=dev-libs/libspnav-1.1
@@ -255,10 +253,12 @@ RDEPEND="
 		<media-libs/osl-1.$((${OSL_PV}+1)):=[optix?]
 		media-libs/mesa[${LLVM_USEDEP}]
 	)
-	pdf? ( >=media-libs/libharu-2.4.5 )
+	pipewire? ( >=media-video/pipewire-1.1.0:= )
+	pdf? ( >=media-libs/libharu-2.4.5:= )
 	potrace? ( >=media-gfx/potrace-1.16 )
 	pugixml? ( dev-libs/pugixml )
 	pulseaudio? ( media-libs/libpulse )
+	rubberband? ( >=media-libs/rubberband-4.0.0:= )
 	quicktime? ( media-libs/libquicktime )
 	sdl? ( media-libs/libsdl2[sound,joystick,vulkan?] )
 	sndfile? ( media-libs/libsndfile )
@@ -270,7 +270,7 @@ RDEPEND="
 	valgrind? ( dev-debug/valgrind )
 	webp? ( >=media-libs/libwebp-1.3.2:= )
 	wayland? (
-		>=dev-libs/wayland-1.24
+		>=dev-libs/wayland-1.24.0
 		>=dev-libs/wayland-protocols-1.36
 		>=x11-libs/libxkbcommon-0.2.0
 		dev-util/wayland-scanner
@@ -300,7 +300,7 @@ RDEPEND="
 		>=media-libs/glu-9.0.1
 	)
 	|| (
-		virtual/jpeg:0=
+		virtual/jpeg
 		>=media-libs/libjpeg-turbo-2.1.3
 	)
 "
@@ -357,7 +357,7 @@ BDEPEND="
 	doc? (
 		app-text/doxygen[dot]
 		dev-python/sphinx[latex]
-		dev-python/sphinx_rtd_theme
+		dev-python/sphinx-rtd-theme
 		dev-texlive/texlive-bibtexextra
 		dev-texlive/texlive-fontsextra
 		dev-texlive/texlive-fontutils
@@ -453,7 +453,7 @@ src_prepare() {
 	use optix && eapply "${FILESDIR}/blender-fix-optix-build.patch"
 
 	# remove some bundled deps
-	use portable || rm -rf extern/{audaspace,Eigen3,lzo,gflags,glog,gtest,gmock,draco,ceres} || die
+	use portable || rm -rv extern/{audaspace,Eigen3,gflags,glog,gtest,gmock,draco,ceres} || die
 
 	# append execinfo lib for musl build
 	if use elibc_musl && use buildinfo; then
@@ -550,11 +550,6 @@ src_prepare() {
 	else
 		cmake_comment_add_subdirectory tests
 	fi
-	# Use slotted libhiprt64
-	if [[ "${SLOT}" != "5.1" ]]; then sed \
-		-e "s|\"libhiprt64.so\"|\"/usr/lib/hiprt/2.5/$(get_libdir)/libhiprt64.so\"|" \
-		-i extern/hipew/src/hiprtew.cc || die
-	fi
 
 	ewarn "$(echo "Remaining bundled dependencies:";
 			( find extern -mindepth 1 -maxdepth 1 -type d; ) | sed 's|^|- |')"
@@ -588,7 +583,8 @@ src_configure() {
 	use openvdb && openvdb_src_configure
 
 	mycmakeargs+=(
-		-DSUPPORT_NEON_BUILD=$(usex cpu_flags_arm_neon)
+		# we build a host-specific binary
+		-DWITH_CPU_CHECK="no"
 		-DPYTHON_VERSION="${EPYTHON/python/}"
 		-DPYTHON_INCLUDE_DIR="$(python_get_includedir)"
 		-DPYTHON_LIBRARY="$(python_get_library_path)"
@@ -661,8 +657,6 @@ src_configure() {
 		-DWITH_PULSEAUDIO=$(usex pulseaudio)
 		-DWITH_PULSEAUDIO_DYNLOAD=$(usex pulseaudio)
 		-DWITH_PIPEWIRE=$(usex pipewire)
-		-DWITH_LZMA=$(usex lzma)								# used for pointcache only
-		-DWITH_LZO=$(usex lzo)									# used for pointcache only
 		-DWITH_LLVM=$(usex llvm)
 		-DWITH_CLANG=$(usex llvm)
 		-DWITH_LIBMV=$(usex libmv)                           	# Enable libmv sfm camera tracking
@@ -992,33 +986,33 @@ src_install() {
 		addpredict /dev/dri
 		addpredict /dev/nvidiactl
 
-		einfo "Generating Blender C/C++ API docs ..."
-		cd "${CMAKE_USE_DIR}"/doc/doxygen || die
-		doxygen -u Doxyfile || die
-		doxygen || die "doxygen failed to build API docs."
+		cd "${CMAKE_USE_DIR}/doc/doxygen" || die
+		sed -e "/^NUM_PROC_THREADS/s/1/$(makeopts_jobs)/" -i Doxyfile || die
+		edob -m "Generating Blender C/C++ API docs ..." doxygen -u Doxyfile
+		edob -m "Building API docs" doxygen
 
 		cd "${CMAKE_USE_DIR}" || die
 		einfo "Generating (BPY) Blender Python API docs ..."
-		"${BUILD_DIR}"/bin/blender --background --python "doc/python_api/sphinx_doc_gen.py" -noaudio || die "sphinx failed."
+		edo "${BUILD_DIR}"/bin/bforartists --background --python "doc/python_api/sphinx_doc_gen.py" -noaudio
 
-		cd "${CMAKE_USE_DIR}"/doc/python_api || die
-		sphinx-build sphinx-in BPY_API || die "sphinx failed."
+		edo sphinx-build -j "$(makeopts_jobs)" doc/python_api/sphinx-in doc/python_api/BPY_API
 
+		cd "${CMAKE_USE_DIR}" || die
 		docinto "html/API/python"
-		dodoc -r "${CMAKE_USE_DIR}"/doc/python_api/BPY_API/.
+		dodoc -r "doc/python_api/BPY_API/"
 
 		docinto "html/API/blender"
-		dodoc -r "${CMAKE_USE_DIR}"/doc/doxygen/html/.
+		dodoc -r "doc/doxygen/html/"
 	fi
 
 	# Fix doc installdir
 	docinto html
 	dodoc "${CMAKE_USE_DIR}/release/text/readme.html"
-	rm -r "${ED%/}/usr/share/doc/${PN,}"*
-	python_optimize "${ED%/}/usr/share/${PN,}/${BV}/scripts"
+	rm -r "${ED}/usr/share/doc/${PN,}"*
+	python_optimize "${ED}/usr/share/${PN,}/${BV}/scripts"
 
-	use portable && dodir "${ED%/}"/usr/bin
-	pushd ${ED}/usr/bin
+	use portable && dodir "${ED}"/usr/bin
+	pushd "${ED}"/usr/bin
 		mv "${PN,}-thumbnailer" "${PN,}-${SLOT}-thumbnailer" || die
 		ln -s "${PN,}-${SLOT}-thumbnailer" "${PN,}-thumbnailer"
 		mv "${PN,}" "${PN,}-${SLOT}" || die
@@ -1075,7 +1069,7 @@ pkg_postrm() {
 	if [[ -z "${REPLACED_BY_VERSION}" ]]; then
 		ewarn
 		ewarn "You may want to remove the following directories"
-		ewarn "- ~/.config/${PN}/${SLOT}/cache/"
+		ewarn "- ~/.config/${PN}/${BV}/cache/"
 		ewarn "- ~/.cache/cycles/"
 		ewarn "It may contain extra render kernels not tracked by portage"
 		ewarn

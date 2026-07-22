@@ -22,7 +22,7 @@
 		</flag>
 		<flag name="alembic">
 			Add support for Alembic interchange format through
-			<pkg>media-libs/alembic</pkg>.
+			<pkg>media-gfx/alembic</pkg>.
 		</flag>
 		<flag name="avi">
 			Add support for AVI codec.

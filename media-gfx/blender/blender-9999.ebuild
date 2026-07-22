@@ -3,14 +3,14 @@
 
 EAPI=8
 
-PYTHON_COMPAT=( python3_{11..14} )
+PYTHON_COMPAT=( python3_{12..14} )
 OPENVDB_COMPAT=( {7..13} )
-LLVM_COMPAT=( {19..22} )
+LLVM_COMPAT=( {20..22} )
 LLVM_OPTIONAL=1
 
 ROCM_SKIP_GLOBALS=1
 
-inherit cuda rocm llvm-r2
+inherit cuda rocm llvm-r2 edo
 inherit eapi9-pipestatus check-reqs flag-o-matic multiprocessing pax-utils python-single-r1 toolchain-funcs virtualx openvdb cg-blender-scripts-dir
 inherit cmake xdg-utils git-r3
 
@@ -25,13 +25,13 @@ EGIT_LFS_CLONE_TYPE="single"
 if [[ ${PV} == 9999 ]]; then
 	EGIT_BRANCH="main"
 	#EGIT_COMMIT="0f3fdd25bcabac1d68d02fb246d961ea56fe49a1"
-	MY_PV="5.2"
+	MY_PV="5.3"
 	KEYWORDS=""
 else
 	MY_PV="$(ver_cut 1-2)"
 	EGIT_BRANCH="blender-v${MY_PV}-release"
 	#EGIT_COMMIT="v${PV}"
-	KEYWORDS="~amd64 ~arm ~arm64"
+	KEYWORDS="~amd64 ~arm64"
 fi
 
 [[ "4.0 3.6" =~ "${MY_PV}"  ]] && OSL_PV="14" || OSL_PV="15"
@@ -44,8 +44,8 @@ else
 	AUD_PV="9"
 fi
 
+LICENSE="GPL-3"
 SLOT="$MY_PV"
-LICENSE="|| ( GPL-3 BL )"
 
 CUDA_TARGETS_COMPAT=(
 	sm_30
@@ -83,24 +83,23 @@ AMDGPU_TARGETS_COMPAT=(
 	gfx1151
 )
 
-IUSE_CPU="+simd +tbb -lld -gold +mold -cpu_flags_arm_neon llvm +openmp -valgrind +jemalloc"
+IUSE_CPU="+simd +tbb -lld -gold +mold llvm -valgrind"
 IUSE_GPU="cuda optix hip hiprt oneapi -cycles-bin-kernels ${CUDA_TARGETS_COMPAT[@]/#/cuda_targets_} ${AMDGPU_TARGETS_COMPAT[@]/#/amdgpu_targets_} vulkan"
 IUSE_DESKTOP="+cg -portable +X headless +nls icu -ndof wayland gnome"
-IUSE_LIBS="+bullet +boost +draco +manifold +materialx +color-management +oidn +opensubdiv +openvdb nanovdb openxr +libmv lzma lzo osl +fftw +potrace +pugixml +otf rubberband"
+IUSE_LIBS="+bullet +draco +manifold +materialx +meshoptimizer +color-management +oidn +opensubdiv +openvdb nanovdb openxr +libmv osl +fftw +potrace +pugixml +otf rubberband"
 IUSE_MOD="+fluid +smoke +oceansim +remesh +gmp +quadriflow +uv-slim +addons addons-contrib +assets"
 IUSE_RENDER="+cycles +openpgl +embree +freestyle hydra"
-IUSE_3DFILES="-alembic usd +collada +obj +ply +stl"
+IUSE_3DFILES="alembic usd +obj +ply +stl"
 IUSE_IMAGE="-dpx +openexr jpeg2k webp +pdf"
 IUSE_CODEC="avi +ffmpeg flac -sndfile +quicktime aom lame opus theora vorbis vpx x264 xvid"
 IUSE_SOUND="jack openal pipewire -pulseaudio sdl"
-IUSE_TEST="-debug -doc -man -gtests renderdoc -test -experimental"
+IUSE_TEST="-debug -doc -man -gtests renderdoc -test -experimental buildinfo"
 
 IUSE="${IUSE_CPU} ${IUSE_GPU} ${IUSE_DESKTOP} ${IUSE_LIBS} ${IUSE_MOD} ${IUSE_RENDER} ${IUSE_3DFILES} ${IUSE_IMAGE} ${IUSE_CODEC} ${IUSE_SOUND} ${IUSE_TEST}"
 
 REQUIRED_USE="${PYTHON_REQUIRED_USE}
 	^^ ( gold lld mold )
 	|| ( wayland X )
-	!boost? ( !alembic !color-management !cycles !nls !openvdb )
 	alembic? ( openexr )
 	cycles? ( openexr tbb )
 	embree? ( cycles tbb )
@@ -258,6 +257,8 @@ CODECS="
 RDEPEND="
 	${CODECS}
 	${PYTHON_DEPS}
+	app-arch/zstd
+	dev-cpp/gflags:=
 	$(python_gen_cond_dep '
 		dev-libs/boost[nls?,icu?,threads(+),python,numpy,${PYTHON_USEDEP}]
 		>=dev-python/certifi-2021.10.8[${PYTHON_USEDEP}]
@@ -269,22 +270,19 @@ RDEPEND="
 		>=dev-python/requests-2.26.0[${PYTHON_USEDEP}]
 		>=dev-python/urllib3-1.26.7[${PYTHON_USEDEP}]
 	')
-	dev-cpp/gflags:=
 	media-libs/freetype:=[brotli,bzip2,png]
 	media-libs/libepoxy:=
 	>=dev-cpp/pystring-1.1.3:=
 	>=dev-libs/fribidi-1.0.12:=
 	>=sys-libs/minizip-ng-3.0.7
 	>=media-libs/tiff-4.6.0
-	>=sys-libs/zlib-1.2.13
-	dev-libs/lzo:2
 	media-libs/libglvnd
-	>=media-libs/libpng-1.6.37:0=
 	media-libs/libsamplerate
+	>=media-libs/libpng-1.6.37:0=
 	virtual/libintl
 	addons? ( ${ADDONS} )
 	alembic? ( >=media-gfx/alembic-1.8.3-r2[boost(+),hdf(+)] )
-	collada? ( >=media-libs/opencollada-1.6.68 )
+	bullet? ( sci-physics/bullet:=[double-precision] )
 	cuda? ( dev-util/nvidia-cuda-toolkit:= )
 	draco? ( >=media-libs/draco-1.5.2:= )
 	embree? (
@@ -306,13 +304,11 @@ RDEPEND="
 	)
 	gtests? (
 		dev-cpp/glog:=[gflags]
-		dev-cpp/gmock:=
 	)
 	jack? ( virtual/jack )
-	jemalloc? ( dev-libs/jemalloc:= )
 	jpeg2k? ( media-libs/openjpeg:2= )
+	manifold? ( >=sci-mathematics/manifold-3.2.1:= )
 	libmv? ( sci-libs/ceres-solver:= )
-	lzo? ( dev-libs/lzo:2= )
 	ndof? (
 		app-misc/spacenavd
 		>=dev-libs/libspnav-1.1
@@ -322,6 +318,9 @@ RDEPEND="
 	)
 	materialx? (
 		>=media-libs/materialx-1.38.8[${PYTHON_SINGLE_USEDEP},python]
+	)
+	meshoptimizer? (
+		>=media-libs/meshoptimizer-1.1:=
 	)
 	nls? ( virtual/libiconv )
 	openal? ( >=media-libs/openal-1.23.1 )
@@ -340,7 +339,7 @@ RDEPEND="
 		<media-libs/openpgl-0.9[tbb?]
 		>=media-libs/openpgl-0.5[tbb?]
 	)
-	opensubdiv? ( >=media-libs/opensubdiv-3.6.0[cuda?,tbb?] )
+	opensubdiv? ( >=media-libs/opensubdiv-3.6.0[cuda?,tbb?,opengl] )
 	openvdb? (
 		>=media-gfx/openvdb-11.0.0:=[${OPENVDB_SINGLE_USEDEP},cuda?,nanovdb?]
 		<media-gfx/openvdb-14.0.0:=[${OPENVDB_SINGLE_USEDEP},cuda?,nanovdb?]
@@ -355,10 +354,12 @@ RDEPEND="
 		<media-libs/osl-1.$((${OSL_PV}+1)):=[optix?]
 		media-libs/mesa[${LLVM_USEDEP}]
 	)
-	pdf? ( >=media-libs/libharu-2.4.5 )
+	pipewire? ( >=media-video/pipewire-1.1.0:= )
+	pdf? ( >=media-libs/libharu-2.4.5:= )
 	potrace? ( >=media-gfx/potrace-1.16 )
 	pugixml? ( dev-libs/pugixml )
 	pulseaudio? ( media-libs/libpulse )
+	rubberband? ( >=media-libs/rubberband-4.0.0:= )
 	quicktime? ( media-libs/libquicktime )
 	sdl? ( media-libs/libsdl2[sound,joystick,vulkan?] )
 	sndfile? ( media-libs/libsndfile )
@@ -370,7 +371,7 @@ RDEPEND="
 	valgrind? ( dev-debug/valgrind )
 	webp? ( >=media-libs/libwebp-1.3.2:= )
 	wayland? (
-		>=dev-libs/wayland-1.24
+		>=dev-libs/wayland-1.24.0
 		>=dev-libs/wayland-protocols-1.36
 		>=x11-libs/libxkbcommon-0.2.0
 		dev-util/wayland-scanner
@@ -401,7 +402,7 @@ RDEPEND="
 		>=media-libs/glu-9.0.1
 	)
 	|| (
-		virtual/jpeg:0=
+		virtual/jpeg
 		>=media-libs/libjpeg-turbo-2.1.3
 	)
 "
@@ -442,6 +443,11 @@ BDEPEND="
 	virtual/pkgconfig
 	dev-vcs/git-lfs
 	mold? ( sys-devel/mold:= )
+	buildinfo? (
+		elibc_musl? (
+			sys-libs/libexecinfo
+		)
+	)
 	$(llvm_gen_dep '
 		lld? ( llvm-core/lld:${LLVM_SLOT}= )
 		gold? ( llvm-core/llvm:${LLVM_SLOT}=[binutils-plugin] )
@@ -453,7 +459,7 @@ BDEPEND="
 	doc? (
 		app-text/doxygen[dot]
 		dev-python/sphinx[latex]
-		dev-python/sphinx_rtd_theme
+		dev-python/sphinx-rtd-theme
 		dev-texlive/texlive-bibtexextra
 		dev-texlive/texlive-fontsextra
 		dev-texlive/texlive-fontutils
@@ -490,7 +496,7 @@ PATCHES=(
 )
 
 blender_check_requirements() {
-	[[ ${MERGE_TYPE} != binary ]] && ( use openmp && tc-check-openmp )
+	[[ ${MERGE_TYPE} != binary ]] && tc-check-openmp
 
 	if use doc; then
 		CHECKREQS_DISK_BUILD="4G" check-reqs_pkg_pretend
@@ -612,7 +618,7 @@ src_prepare() {
 	fi
 
 	# remove some bundled deps
-	use portable || rm -rf extern/{audaspace,Eigen3,lzo,gflags,glog,gtest,gmock,draco,ceres} || die
+	use portable || rm -rv extern/{audaspace,Eigen3,gflags,glog,gtest,gmock,draco,ceres} || die
 
 	# Disable MS Windows help generation. The variable doesn't do what it
 	# it sounds like.
@@ -704,11 +710,6 @@ src_prepare() {
 	else
 		cmake_comment_add_subdirectory tests
 	fi
-	# Use slotted libhiprt64
-	if [[ "${SLOT}" != "5.2" ]]; then sed \
-		-e "s|\"libhiprt64.so\"|\"/usr/lib/hiprt/2.5/$(get_libdir)/libhiprt64.so\"|" \
-		-i extern/hipew/src/hiprtew.cc || die
-	fi
 
 	ewarn "$(echo "Remaining bundled dependencies:";
 			( find extern -mindepth 1 -maxdepth 1 -type d; ) | sed 's|^|- |')"
@@ -742,12 +743,12 @@ src_configure() {
 	use openvdb && openvdb_src_configure
 
 	mycmakeargs+=(
-		-DSUPPORT_NEON_BUILD=$(usex cpu_flags_arm_neon)
+		# we build a host-specific binary
+		-DWITH_CPU_CHECK="no"
 		-DPYTHON_VERSION="${EPYTHON/python/}"
 		-DPYTHON_INCLUDE_DIR="$(python_get_includedir)"
 		-DPYTHON_LIBRARY="$(python_get_library_path)"
 		-DWITH_PYTHON_NUMPY=yes
-		-DWITH_CPU_SIMD=$(usex simd)
 		-DWITH_PYTHON_INSTALL=$(usex portable)					# Copy system python
 		-DWITH_PYTHON_INSTALL_NUMPY=$(usex portable)
 		-DWITH_PYTHON_INSTALL_ZSTANDARD=$(usex portable)
@@ -755,8 +756,6 @@ src_configure() {
 		-DWITH_HEADLESS=$(usex headless)						# server mode only
 		-DWITH_ALEMBIC=$(usex alembic)							# export format support
 		-DWITH_ASSERT_ABORT=$(usex debug)
-		-DWITH_BOOST=$(usex boost)
-		-DWITH_BOOST_ICU=$(usex icu)
 		-DWITH_BULLET=$(usex bullet)							# Physics Engine
 		-DWITH_SYSTEM_BULLET=no									# currently unsupported
 		-DWITH_CODEC_AVI=$(usex avi)
@@ -818,25 +817,20 @@ src_configure() {
 		-DWITH_PULSEAUDIO=$(usex pulseaudio)
 		-DWITH_PULSEAUDIO_DYNLOAD=$(usex pulseaudio)
 		-DWITH_PIPEWIRE=$(usex pipewire)
-		-DWITH_LZMA=$(usex lzma)								# used for pointcache only
-		-DWITH_LZO=$(usex lzo)									# used for pointcache only
 		-DWITH_LLVM=$(usex llvm)
 		-DWITH_CLANG=$(usex llvm)
 		-DWITH_LIBMV=$(usex libmv)                           	# Enable libmv sfm camera tracking
-		-DWITH_MEM_JEMALLOC=$(usex jemalloc)					# Enable malloc replacement
 		-DWITH_MEM_VALGRIND=$(usex valgrind)
 		-DWITH_MOD_FLUID=$(usex fluid)							# Mantaflow Fluid Simulation Framework
 		-DWITH_MOD_REMESH=$(usex remesh)						# Remesh Modifier
 		-DWITH_MOD_OCEANSIM=$(usex oceansim)					# Ocean Modifier
 		-DWITH_NANOVDB=$(usex nanovdb)							# OpenVDB for rendering on the GPU
 		-DWITH_OPENAL=$(usex openal)
-		-DWITH_OPENCOLLADA=$(usex collada)						# export format support
 		-DWITH_IO_WAVEFRONT_OBJ=$(usex obj)						# export format support
 		-DWITH_IO_PLY=$(usex ply)								# export format support
 		-DWITH_IO_STL=$(usex stl)								# export format support
 		-DWITH_OPENCOLORIO=$(usex color-management)
 		-DWITH_OPENIMAGEDENOISE=$(usex oidn)					# compositing node
-		-DWITH_OPENMP=$(usex openmp)
 		-DWITH_OPENSUBDIV=$(usex opensubdiv)					# for surface subdivision
 		-DWITH_OPENVDB=$(usex openvdb)							# advanced remesh and smoke
 		-DWITH_OPENVDB_BLOSC=$(usex openvdb)					# compression for OpenVDB
@@ -850,11 +844,11 @@ src_configure() {
 		-DWITH_RUBBERBAND=$(usex rubberband)
 		-DWITH_SYSTEM_AUDASPACE=$(usex !portable)
 		-DWITH_SYSTEM_EIGEN3=$(usex !portable)
-		-DWITH_SYSTEM_LZO=$(usex !portable)
 		-DWITH_SYSTEM_GFLAGS=$(usex !portable)
 		-DWITH_SYSTEM_GLOG=$(usex !portable)
 		-DWITH_SYSTEM_CERES=$(usex !portable)
 		-DCERES_INCLUDE_DIRS="/usr/include/ceres"
+		-DEigen3_DIR="/usr/share/eigen3/cmake"
 		-DWITH_GTESTS=$(usex gtests)
 		-DWITH_SYSTEM_GTESTS=$(usex !portable)
 		-DWITH_GHOST_DEBUG=$(usex debug)
@@ -869,7 +863,7 @@ src_configure() {
 		-DWITH_XR_OPENXR=$(usex openxr)							# VR interface
 		#-DSYCL_LIBRARY="/usr/lib/llvm/intel"
 		#-DSYCL_INCLUDE_DIR="/usr/lib/llvm/intel/include"
-		-DUSD_ROOT_DIR="${ESYSROOT}/usr/$(get_libdir)/openusd/lib"
+		-DUSD_LIBRARY_DIR="${ESYSROOT}/usr/$(get_libdir)/openusd/lib"
 		#-DMaterialX_DIR="${ESYSROOT}/usr/$(get_libdir)/cmake/MaterialX"
 		-DWITH_MATERIALX=$(usex materialx)
 		-DWITH_MANIFOLD=$(usex manifold)
@@ -881,7 +875,7 @@ src_configure() {
 		#-DCMAKE_FIND_PACKAGE_PREFER_CONFIG=yes
 		-DWITH_STRICT_BUILD_OPTIONS=yes
 		-DWITH_LIBS_PRECOMPILED=no
-		-DWITH_BUILDINFO=yes
+		-DWITH_BUILDINFO=$(usex buildinfo)
 		-DWITH_PYTHON_SAFETY=no
 		-DWITH_UNITY_BUILD=no 									# Enable Unity build for blender modules (memory usage/compile time)
 	)
@@ -985,7 +979,7 @@ src_configure() {
 
 				-DWITH_GPU_RENDER_TESTS="yes"
 				-DWITH_GPU_RENDER_TESTS_HEADED="yes"
-				# -DWITH_GPU_RENDER_TESTS_SILENT="yes"
+				-DWITH_GPU_RENDER_TESTS_SILENT="yes"
 				-DWITH_GPU_RENDER_TESTS_VULKAN="$(usex vulkan)"
 
 				-DWITH_SYSTEM_PYTHON_TESTS="yes"
@@ -1152,34 +1146,34 @@ src_install() {
 		addpredict /dev/dri
 		addpredict /dev/nvidiactl
 
-		einfo "Generating Blender C/C++ API docs ..."
-		cd "${CMAKE_USE_DIR}"/doc/doxygen || die
-		doxygen -u Doxyfile || die
-		doxygen || die "doxygen failed to build API docs."
+		cd "${CMAKE_USE_DIR}/doc/doxygen" || die
+		sed -e "/^NUM_PROC_THREADS/s/1/$(makeopts_jobs)/" -i Doxyfile || die
+		edob -m "Generating Blender C/C++ API docs ..." doxygen -u Doxyfile
+		edob -m "Building API docs" doxygen
 
 		cd "${CMAKE_USE_DIR}" || die
 		einfo "Generating (BPY) Blender Python API docs ..."
-		"${BUILD_DIR}"/bin/blender --background --python "doc/python_api/sphinx_doc_gen.py" -noaudio || die "sphinx failed."
+		edo "${BUILD_DIR}"/bin/blender --background --python "doc/python_api/sphinx_doc_gen.py" -noaudio
 
-		cd "${CMAKE_USE_DIR}"/doc/python_api || die
-		sphinx-build sphinx-in BPY_API || die "sphinx failed."
+		edo sphinx-build -j "$(makeopts_jobs)" doc/python_api/sphinx-in doc/python_api/BPY_API
 
+		cd "${CMAKE_USE_DIR}" || die
 		docinto "html/API/python"
-		dodoc -r "${CMAKE_USE_DIR}"/doc/python_api/BPY_API/.
+		dodoc -r "doc/python_api/BPY_API/"
 
 		docinto "html/API/blender"
-		dodoc -r "${CMAKE_USE_DIR}"/doc/doxygen/html/.
+		dodoc -r "doc/doxygen/html/"
 	fi
 
 	# Fix doc installdir
 	docinto html
 	dodoc "${CMAKE_USE_DIR}/release/text/readme.html"
-	rm -r "${ED%/}/usr/share/doc/${PN,}"*
+	rm -r "${ED}/usr/share/doc/${PN,}"*
 
-	python_optimize "${ED%/}/usr/share/${PN,}/${SLOT}/scripts"
+	python_optimize "${ED}/usr/share/${PN,}/${BV}/scripts"
 
-	use portable && dodir "${ED%/}"/usr/bin
-	pushd ${ED}/usr/bin
+	use portable && dodir "${ED}"/usr/bin
+	pushd "${ED}"/usr/bin
 		mv "${PN,}-thumbnailer" "${PN,}-${SLOT}-thumbnailer" || die
 		ln -s "${PN,}-${SLOT}-thumbnailer" "${PN,}-thumbnailer"
 		mv "${PN,}" "${PN,}-${SLOT}" || die
@@ -1236,7 +1230,7 @@ pkg_postrm() {
 	if [[ -z "${REPLACED_BY_VERSION}" ]]; then
 		ewarn
 		ewarn "You may want to remove the following directories"
-		ewarn "- ~/.config/${PN}/${SLOT}/cache/"
+		ewarn "- ~/.config/${PN}/${BV}/cache/"
 		ewarn "- ~/.cache/cycles/"
 		ewarn "It may contain extra render kernels not tracked by portage"
 		ewarn
