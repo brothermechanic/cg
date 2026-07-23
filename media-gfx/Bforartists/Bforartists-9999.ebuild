@@ -455,7 +455,7 @@ src_prepare() {
 
 	# append execinfo lib for musl build
 	if use elibc_musl; then
-		sed -e "/# -\+ done with header values./a\tlist(APPEND LIB execinfo)" -i source/creator/CMakeLists.txt || die
+		sed -e "/# -\+ done with header values./a \\\n\tlist(APPEND LIB execinfo)" -i source/creator/CMakeLists.txt || die
 	fi
 
 	# Disable MS Windows help generation. The variable doesn't do what it
