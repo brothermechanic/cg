@@ -1,4 +1,4 @@
-# Copyright 2019-2025 Gentoo Authors
+# Copyright 2019-2026 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
 
 # @ECLASS: blender-legacy-addon.eclass
@@ -23,6 +23,22 @@ esac
 if [[ ! ${_BLENDER_LEGACY_ADDON_ECLASS} ]]; then
 _BLENDER_LEGACY_ADDON_ECLASS=1
 
+# @ECLASS_VARIABLE: PYTHON_COMPAT
+# @REQUIRED
+# @DESCRIPTION:
+# This variable contains a list of Python implementations the package
+# supports. It must be set before the `inherit' call. It has to be
+# an array.
+#
+# Example:
+# @CODE
+# PYTHON_COMPAT=( python2_7 python3_3 python3_4 )
+# @CODE
+#
+# Please note that you can also use bash brace expansion if you like:
+# @CODE
+# PYTHON_COMPAT=( python2_7 python3_{3,4} )
+# @CODE
 PYTHON_COMPAT=( python3_{10..14} )
 
 inherit git-r3 vcs-clean python-single-r1 cg-blender-scripts-dir
@@ -66,7 +82,7 @@ _BLENDER_SEL_IMPLS=()
 # << Boilerplate ebuild variables >>
 : ${DESCRIPTION:="Addon ${PN} for blender"}
 : ${SLOT:=0}
-: ${KEYWORDS:=alpha amd64 arm arm64 hppa ia64 ~loong m68k ~mips ppc ppc64 ~riscv s390 sparc x86 ~x64-cygwin ~amd64-linux ~x86-linux ~ppc-macos ~x64-macos ~sparc-solaris ~sparc64-solaris ~x64-solaris ~x86-solaris}
+: ${KEYWORDS:=amd64 arm arm64 ~loong ppc64}
 : ${RESTRICT:="mirror test"}
 #S="${WORKDIR}/"
 RDEPEND+="media-gfx/blender"
@@ -164,7 +180,7 @@ blender-legacy-addon_pkg_postrm() {
 			done
 		fi
 		for (( i = ${#_GENTOO_BLENDER_ADDONS_HOME[@]} - 1; i >= 0; i-- )); do
-			rm -r ${ROOT}${GENTOO_BLENDER_ADDONS_HOME[i]}/addons/${PN}
+			rm -rv "${ROOT}${GENTOO_BLENDER_ADDONS_HOME[i]}/addons/${PN}"
 		done
 	fi
 }

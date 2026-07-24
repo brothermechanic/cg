@@ -1,5 +1,6 @@
-# Copyright 1999-2025 Gentoo Authors
+# Copyright 1999-2026 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
+
 # @ECLASS: openvdb.eclass
 # @MAINTAINER:
 # brothermechanic <brothermechanic@gmail.com>
@@ -81,11 +82,12 @@ case ${EAPI} in
 	*) die "${ECLASS}: EAPI ${EAPI:-0} not supported" ;;
 esac
 
-inherit flag-o-matic
-
 if [[ -z ${_OPENVDB_ECLASS} ]]; then
 _OPENVDB_ECLASS=1
-# @ECLASS-VARIABLE: OPENVDB_COMPAT
+
+inherit flag-o-matic
+
+# @ECLASS_VARIABLE: OPENVDB_COMPAT
 # @REQUIRED
 # @DESCRIPTION:
 # This variable contains a list of OpenVDB ABI the package supports.
@@ -96,7 +98,8 @@ _OPENVDB_ECLASS=1
 # OPENVDB_COMPAT=( {9..13} )
 # @CODE
 #
-# @ECLASS-VARIABLE: OPENVDB_SINGLE_USEDEP
+
+# @ECLASS_VARIABLE: OPENVDB_SINGLE_USEDEP
 # @DESCRIPTION:
 # This is an eclass generated USE-dependency flag which can be used by
 # any package depending on openvdb to ensure the correct ABI version
@@ -111,7 +114,8 @@ _OPENVDB_ECLASS=1
 # @CODE
 # openvdb_abi_9(-)?,openvdb_abi_10(-)?,openvdb_abi_11(-)?...
 # @CODE
-# @ECLASS-VARIABLE: OPENVDB_REQUIRED_USE
+
+# @ECLASS_VARIABLE: OPENVDB_REQUIRED_USE
 # @DESCRIPTION:
 # This is an eclass-generated required use expression which ensures
 # that exactly one openvdb_use_X value has been enabled.
@@ -125,7 +129,8 @@ _OPENVDB_ECLASS=1
 # @CODE
 # ^^ ( openvdb_abi_9 openvdb_abi_10 openvdb_abi_11 openvdb_abi_12 apenvdb_abi_13)
 # @CODE
-# @ECLASS-VARIABLE: _OPENVDB_ALL_ABI
+
+# @ECLASS_VARIABLE: _OPENVDB_ALL_ABI
 # @INTERNAL
 # @DESCRIPTION:
 # All supported OpenVDB ABI
@@ -134,16 +139,16 @@ _OPENVDB_ALL_ABI=( {3..13} )
 readonly _OPENVDB_ALL_ABI
 
 # @ECLASS_VARIABLE: OPENVDB_ABI
-# @DEFAULT_UNSET
+# @DEFAULT_SET
 # @DESCRIPTION:
-# This variable contains an OpenVDB ABI user want to use
+# This variable contains an OpenVDB ABI number which user want to use
 # It must be set in global config such as /etc/portage/make.conf call and has to be a single number.
 #
 # Example use:
 # @CODE
-# OPENVDB_ABI=12
+# OPENVDB_ABI=13
 # @CODE
-: "${OPENVDB_ABI:=}"
+: "${OPENVDB_ABI:=13}"
 
 # @FUNCTION: _openvdb_set_globals
 # @INTERNAL
@@ -183,7 +188,7 @@ _openvdb_set_globals
 unset -f _openvdb_set_globals
 
 # @FUNCTION: openvdb_setup
-# @DESCRIPTION
+# @DESCRIPTION:
 # Ensure one and only one OpenVDB ABI version is selected
 openvdb_setup() {
     debug-print-function ${FUNCNAME} "${@}"
@@ -211,7 +216,7 @@ openvdb_setup() {
 }
 
 # @FUNCTION: openvdb_configure
-# @DESCRIPTION
+# @DESCRIPTION:
 # Set cppflags to match selected OpenVDB ABI version
 openvdb_configure() {
     debug-print-function ${FUNCNAME} "${@}"
@@ -235,7 +240,7 @@ openvdb_pkg_setup() {
 # Runs openvdb_configure.
 openvdb_src_configure() {
     debug-print-function ${FUNCNAME} "${@}"
-    [[ ${MERGE_TYPE} != binary ]] && openvdb_configure
+    openvdb_configure
 }
 
 fi

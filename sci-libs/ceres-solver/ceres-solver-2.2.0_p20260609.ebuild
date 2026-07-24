@@ -17,14 +17,16 @@ S="${WORKDIR}/${PN}-${COMMIT}"
 
 LICENSE="sparse? ( BSD ) !sparse? ( LGPL-2.1 )"
 SLOT="0/4" # Based on soname libceres.so.4
-KEYWORDS="amd64 ~x86 ~amd64-linux ~x86-linux"
+KEYWORDS="amd64 arm arm64 ~x86"
 
 CUDA_TARGETS_COMPAT=( sm_30 sm_35 sm_50 sm_52 sm_61 sm_70 sm_75 sm_86 sm_87 sm_89 sm_90 )
 IUSE="cuda debug doc examples gflags lapack metis openmp +schur sparse test ${CUDA_TARGETS_COMPAT[@]/#/cuda_targets_}"
-RESTRICT="mirror !test? ( test )"
+RESTRICT="
+	mirror
+	!test? ( test )
+"
 
 REQUIRED_USE="test? ( gflags ) sparse? ( lapack ) abi_x86_32? ( !sparse !lapack )"
-RESTRICT="!test? ( test )"
 
 BDEPEND="${PYTHON_DEPS}
 	dev-cpp/eigen

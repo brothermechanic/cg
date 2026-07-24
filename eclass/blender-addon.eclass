@@ -1,4 +1,4 @@
-# Copyright 2019-2025 Gentoo Authors
+# Copyright 2019-2026 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
 
 # @ECLASS: blender-addon.eclass
@@ -23,6 +23,22 @@ esac
 if [[ ! ${_BLENDER_ADDON_ECLASS} ]]; then
 _BLENDER_ADDON_ECLASS=1
 
+# @ECLASS_VARIABLE: PYTHON_COMPAT
+# @REQUIRED
+# @DESCRIPTION:
+# This variable contains a list of Python implementations the package
+# supports. It must be set before the `inherit' call. It has to be
+# an array.
+#
+# Example:
+# @CODE
+# PYTHON_COMPAT=( python2_7 python3_3 python3_4 )
+# @CODE
+#
+# Please note that you can also use bash brace expansion if you like:
+# @CODE
+# PYTHON_COMPAT=( python2_7 python3_{3,4} )
+# @CODE
 PYTHON_COMPAT=( python3_{10..14} )
 
 inherit git-r3 vcs-clean python-single-r1 cg-blender-scripts-dir
@@ -31,14 +47,14 @@ inherit git-r3 vcs-clean python-single-r1 cg-blender-scripts-dir
 
 # @ECLASS_VARIABLE: EGIT_REPO_URI
 # @USER_VARIABLE
-# @DEFAULT_SET
+# @DEFAULT_UNSET
 # @DESCRIPTION:
 # Git sources URI for current addon.
 : ${EGIT_REPO_URI:="https://projects.blender.org/extensions/${PN}"}
 
 # @ECLASS_VARIABLE: HOMEPAGE
 # @USER_VARIABLE
-# @DEFAULT_SET
+# @DEFAULT_UNSET
 # @DESCRIPTION:
 # HOMEPAGE URI for current addon.
 : ${HOMEPAGE:="https://extensions.blender.org/add-ons/${PN}"}
@@ -52,7 +68,7 @@ _GENTOO_BLENDER_ADDONS_HOME=()
 
 # @ECLASS_VARIABLE: ADDON_SOURCE_SUBDIR
 # @USER_VARIABLE
-# @DEFAULT_SET
+# @DEFAULT_UNSET
 # @DESCRIPTION:
 # Directory within ${S} which contains sources of blender addon.
 : ${ADDON_SOURCE_SUBDIR:="${S}/source"}
@@ -61,7 +77,7 @@ _GENTOO_BLENDER_ADDONS_HOME=()
 # @INTERNAL
 # @DESCRIPTION:
 # All possible implementations of blender
-_BLENDER_ALL_IMPLS=( 4_{2..5} 5_{0..1} )
+_BLENDER_ALL_IMPLS=( 4_{2..5} 5_{0..3} )
 readonly _BLENDER_ALL_IMPLS
 
 # @ECLASS_VARIABLE: _BLENDER_SEL_IMPLS
@@ -76,12 +92,12 @@ _BLENDER_SEL_IMPLS=()
 # This variable contains a list of Blender implementations the package
 # supports. It must be set before the `inherit' call. It has to be
 # an array.
-declare -p BLENDER_COMPAT >/dev/null 2>&1 || BLENDER_COMPAT=( 4_{2..5} 5_{0..1} )
+declare -p BLENDER_COMPAT >/dev/null 2>&1 || BLENDER_COMPAT=( 4_{2..5} 5_{0..3} )
 
 # << Boilerplate ebuild variables >>
 : ${DESCRIPTION:="Addon ${PN} for blender"}
 : ${SLOT:=0}
-: ${KEYWORDS:=alpha amd64 arm arm64 hppa ia64 ~loong m68k ~mips ppc ppc64 ~riscv s390 sparc x86 ~x64-cygwin ~amd64-linux ~x86-linux ~ppc-macos ~x64-macos ~sparc-solaris ~sparc64-solaris ~x64-solaris ~x86-solaris}
+: ${KEYWORDS:=amd64 arm64 ~loong ppc64 ~x64-macos}
 : ${RESTRICT:="mirror test"}
 #S="${WORKDIR}/"
 RDEPEND+="media-gfx/blender"
@@ -166,7 +182,7 @@ blender-addon_pkg_postrm() {
 			_GENTOO_BLENDER_ADDONS_HOME+=( "/usr/share/blender/${i/_/\.}/scripts" )
 		done
 		for (( i = ${#_GENTOO_BLENDER_ADDONS_HOME[@]} - 1; i >= 0; i-- )); do
-			rm -r ${ROOT}${GENTOO_BLENDER_ADDONS_HOME[i]}/addons/${PN}
+			rm -rv "${ROOT}${GENTOO_BLENDER_ADDONS_HOME[i]}/addons/${PN}"
 		done
 	fi
 }

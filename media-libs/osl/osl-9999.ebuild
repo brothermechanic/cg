@@ -4,7 +4,7 @@
 EAPI=8
 
 # keep in sync with blender
-PYTHON_COMPAT=( python3_{11..14} )
+PYTHON_COMPAT=( python3_{12..14} )
 
 # Check this on updates
 OPENVDB_COMPAT=( {7..13} )
@@ -18,12 +18,11 @@ if [[ ${PV} = *9999* ]]; then
 	inherit git-r3
 	EGIT_REPO_URI="https://github.com/AcademySoftwareFoundation/OpenShadingLanguage.git"
 	EGIT_BRANCH="main"
-	KEYWORDS=""
 	SLOT="0/1.14"
 else
 	MY_PV=${PV//_/-}
 	SRC_URI="https://github.com/AcademySoftwareFoundation/OpenShadingLanguage/archive/v${MY_PV}.tar.gz -> ${P}.tar.gz"
-	KEYWORDS="~amd64 ~arm ~arm64 ~ppc64"
+	KEYWORDS="amd64 ~arm64 ~loong ~ppc64"
 	S="${WORKDIR}/OpenShadingLanguage-${MY_PV}"
 	SLOT="0/$(ver_cut 1-2 ${PV})"
 fi
@@ -80,7 +79,7 @@ RDEPEND="
 		<media-libs/openimageio-3.2:=[${PYTHON_SINGLE_USEDEP}]
 	')
 	dev-libs/libfmt[${MULTILIB_USEDEP}]
-	sys-libs/zlib:=[${MULTILIB_USEDEP}]
+	virtual/zlib:=[${MULTILIB_USEDEP}]
 	cuda? (
 		$(python_gen_cond_dep '
 			>=media-libs/openimageio-2.3:=[${PYTHON_SINGLE_USEDEP}]

@@ -1,24 +1,23 @@
-# Copyright 1999-2024 Gentoo Authors
+# Copyright 1999-2026 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
 
 EAPI=8
 
-PYTHON_COMPAT=( python3_{11..13} )
-inherit cmake flag-o-matic python-any-r1 toolchain-funcs
+inherit cmake flag-o-matic
 
-DESCRIPTION="Intel Open Path Guiding Library. Algorithms for more efficient ray tracing renderings."
-LICENSE="Apache-2.0 BSD"
-HOMEPAGE="http://www.openpgl.org"
+DESCRIPTION="Intel Open Path Guiding Library"
+HOMEPAGE="https://www.openpgl.org"
 
 if [[ ${PV} == 9999 ]]; then
-	inherit git-r3
 	EGIT_REPO_URI="https://github.com/openpathguidinglibrary/openpgl"
-	KEYWORDS="-*"
+	inherit git-r3
 else
 	SRC_URI="https://github.com/openpathguidinglibrary/openpgl/archive/v${PV}.tar.gz -> ${P}.tar.gz"
-	KEYWORDS="amd64 ~arm64"
+	KEYWORDS="amd64 arm64 ~loong ppc64"
+	S="${WORKDIR}/${PN}-${PV/_/-}"
 fi
 
+LICENSE="Apache-2.0"
 SLOT="0/$(ver_cut 1-2 ${PV})"
 CPU_FLAGS_X86=(
 	sse4_1
@@ -30,14 +29,14 @@ CPU_FLAGS_X86=(
 	avx512vl
 )
 CPU_FLAGS=(
-	"${CPU_FLAGS_X86[@]/#/+cpu_flags_x86_}"
-	"cpu_flags_arm_neon cpu_flags_arm64_neon2x"
+	"${CPU_FLAGS_X86[@]/#/cpu_flags_x86_}"
+	"cpu_flags_arm_neon"
 )
 
 IUSE="debug doc static-libs tbb test tools ${CPU_FLAGS[@]%:*}"
 REQUIRED_USE+="
-	amd64? ( || ( ${CPU_FLAGS_X86[*]/#/cpu_flags_x86_} ) )
-	arm64? ( || ( cpu_flags_arm_neon cpu_flags_arm64_neon2x ) )
+	amd64? ( cpu_flags_x86_sse4_1 )
+	arm64? ( cpu_flags_arm_neon )
 	cpu_flags_x86_avx2? (
 		cpu_flags_x86_sse4_1
 	)
@@ -62,34 +61,40 @@ RDEPEND="
 	!tbb? (
 		|| (
 			sys-devel/gcc[openmp]
-			sys-devel/clang-runtime[openmp]
+			llvm-runtimes/clang-runtime[openmp]
 		)
 	)
 	tbb? (
 		>=dev-cpp/tbb-2021
 	)
 "
-DEPEND+="
-	${RDEPEND}
-"
+DEPEND="${RDEPEND}"
 BDEPEND+="
 	>=dev-build/cmake-3.1
 "
-RESTRICT="mirror test"
-S="${WORKDIR}/${PN}-${PV/_/-}"
+
+RESTRICT="
+	mirror
+	test
+"
+
 DOCS=( CHANGELOG.md README.md )
 
 src_configure() {
 	CMAKE_BUILD_TYPE=(usex debug "RelWithDebInfo" "Release")
+	filter-lto
+
+	: "${CMAKE_POLICY_VERSION_MINIMUM:=3.10}"
+	export CMAKE_POLICY_VERSION_MINIMUM
 
 	local mycmakeargs=(
 		-DOPENPGL_BUILD_STATIC=$(usex static-libs)
 		-DOPENPGL_ISA_NEON=$(usex cpu_flags_arm_neon)
-		-DOPENPGL_ISA_NEON2X=$(usex cpu_flags_arm64_neon2x)
+		-DOPENPGL_ISA_NEON2X=OFF
 		-DOPENPGL_ISA_SSE4=$(usex cpu_flags_x86_sse4_2 "ON" $(usex cpu_flags_x86_sse4_1))
 		-DOPENPGL_ISA_AVX2=$(usex cpu_flags_x86_avx2)
 		-DOPENPGL_ISA_AVX512=$(usex cpu_flags_x86_avx512f)
-		-DOPENPGL_USE_OMP_THREADING=$(usex tbb "OFF" "ON")
+		-DOPENPGL_TBB_COMPONENT=$(usex tbb "tbb" "")
 		-DOPENPGL_BUILD_TOOLS=$(usex tools)
 	)
 
