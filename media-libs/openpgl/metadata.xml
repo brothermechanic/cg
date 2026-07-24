@@ -23,6 +23,5 @@
 	</upstream>
 	<use>
 		<flag name="tools">Building Open PGL tools as well</flag>
-		<flag name="tbb">Building Open PGL with Intel TBB support</flag>
 	</use>
 </pkgmetadata>

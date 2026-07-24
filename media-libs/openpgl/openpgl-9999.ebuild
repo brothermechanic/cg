@@ -12,7 +12,7 @@ if [[ ${PV} == 9999 ]]; then
 	EGIT_REPO_URI="https://github.com/openpathguidinglibrary/openpgl"
 	inherit git-r3
 else
-	SRC_URI="https://github.com/openpathguidinglibrary/openpgl/archive/v${PV}.tar.gz -> ${P}.tar.gz"
+	SRC_URI="https://github.com/openpathguidinglibrary/openpgl/archive/v${PV}.tar.gz -> ${P}.gh.tar.gz"
 	KEYWORDS="amd64 arm64 ~loong ppc64"
 	S="${WORKDIR}/${PN}-${PV/_/-}"
 fi
@@ -58,15 +58,7 @@ REQUIRED_USE+="
 "
 RDEPEND="
 	media-libs/embree:=
-	!tbb? (
-		|| (
-			sys-devel/gcc[openmp]
-			llvm-runtimes/clang-runtime[openmp]
-		)
-	)
-	tbb? (
-		>=dev-cpp/tbb-2021
-	)
+	>=dev-cpp/tbb-2021
 "
 DEPEND="${RDEPEND}"
 BDEPEND+="
@@ -94,7 +86,6 @@ src_configure() {
 		-DOPENPGL_ISA_SSE4=$(usex cpu_flags_x86_sse4_2 "ON" $(usex cpu_flags_x86_sse4_1))
 		-DOPENPGL_ISA_AVX2=$(usex cpu_flags_x86_avx2)
 		-DOPENPGL_ISA_AVX512=$(usex cpu_flags_x86_avx512f)
-		-DOPENPGL_TBB_COMPONENT=$(usex tbb "tbb" "")
 		-DOPENPGL_BUILD_TOOLS=$(usex tools)
 	)
 
