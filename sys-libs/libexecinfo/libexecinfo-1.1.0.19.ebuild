@@ -3,28 +3,36 @@
 
 EAPI=8
 
+PYTHON_COMPAT=( python3_{13..15} )
+
+inherit python-any-r1
+
 DESCRIPTION="BSD licensed clone of the GNU libc backtrace facility"
-HOMEPAGE="https://netbsd.org/"
+HOMEPAGE="https://github.com/fam007e/libexecinfo"
 
 SRC_URI="https://github.com/fam007e/libexecinfo/releases/download/v${PV}/${P}.tar.gz -> ${P}.gh.tar.gz"
 
+LICENSE="BSD-2"
+
+SLOT="0"
+
+KEYWORDS="amd64 arm arm64 ~loong ~ppc ~ppc64 ~riscv x86"
+
 IUSE="test static-libs"
 
-LICENSE="BSD-2"
-SLOT="0"
-KEYWORDS="amd64 arm64 arm x86"
+DEPEND="${PYTHON_DEPS}"
+BDEPEND="
+	virtual/libc
+	virtual/libelf
+	|| ( llvm-runtimes/libunwind sys-libs/libunwind )
+"
+
+REQUIRED_USE="!elibc_glibc"
 
 RESTRICT="
 	!test? ( test )
 	mirror
 "
-
-DEPEND="
-	sys-libs/musl
-	virtual/libelf
-	|| ( llvm-runtimes/libunwind sys-libs/libunwind )
-"
-RDEPEND="${DEPEND}"
 
 src_compile() {
 	local -a targets=(
