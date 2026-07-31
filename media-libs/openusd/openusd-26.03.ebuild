@@ -23,7 +23,7 @@ KEYWORDS="~amd64 ~x86 ~arm ~arm64"
 # test USE flag is enabled upstream
 IUSE="alembic debug doc draco embree examples hdf5 +imaging +jemalloc man
 materialx monolithic color-management opengl openimageio openvdb openexr osl
-ptex +python +safety-over-speed -static-libs tutorials -test tools usdview vulkan"
+ptex +python +safety-over-speed -static-libs tutorials test tools usdview vulkan"
 
 REQUIRED_USE+="
 	${PYTHON_REQUIRED_USE}
@@ -69,7 +69,7 @@ RDEPEND+="
 	!python? (
 		>=dev-libs/boost-1.76.0
 	)
-	>=sys-libs/zlib-1.2.11
+	>=virtual/zlib-1.2.11
 	alembic? (
 		>=media-gfx/alembic-1.8.5:=[hdf5?]
 	)
