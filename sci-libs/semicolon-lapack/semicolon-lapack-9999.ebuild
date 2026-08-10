@@ -17,13 +17,12 @@ if [[ ${PV} == *9999* ]]; then
 else
 	COMMIT="b298d10082a1a0c5974993f5f20b1e7323e39f1e"
 	SRC_URI="https://github.com/ilayn/semicolon-lapack/archive/${COMMIT}.tar.gz -> ${P}.gh.tar.gz"
-	KEYWORDS="~amd64 ~arm64 ~arm ~x86"
+	KEYWORDS="amd64 arm arm64 ~loong ~ppc ppc64 ~x86 ~x64-macos"
 	S="${WORKDIR}"/${PN}-${COMMIT}
 fi
 
 LICENSE="BSD"
 SLOT="0"
-KEYWORDS="amd64 arm arm64 ~loong ~ppc ppc64 ~riscv ~x86 ~x64-macos"
 IUSE="benchmark debug doc eselect-ldso +fortran index64 openmp pthread static-libs test"
 REQUIRED_USE="
 	?? ( openmp pthread )

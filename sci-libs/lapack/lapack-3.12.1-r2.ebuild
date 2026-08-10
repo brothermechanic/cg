@@ -109,14 +109,14 @@ src_install() {
 		# use simple zero length files for linker to be happy
 		# in case we don't want fortran and want reference for eselect-ldso
 		dodir /usr/$(get_libdir)
-		touch ${ED}/usr/$(get_libdir)/libblas.so
-		touch ${ED}/usr/$(get_libdir)/libblas.so.3
-		touch ${ED}/usr/$(get_libdir)/libcblas.so
-		touch ${ED}/usr/$(get_libdir)/libcblas.so.3
-		touch ${ED}/usr/$(get_libdir)/liblapack.so
-		touch ${ED}/usr/$(get_libdir)/liblapack.so.3
-		use lapacke && touch ${ED}/usr/$(get_libdir)/liblapacke.so
-		use lapacke && touch ${ED}/usr/$(get_libdir)/liblapacke.so.3
+		touch "${ED}"/usr/$(get_libdir)/libblas.so
+		touch "${ED}"/usr/$(get_libdir)/libblas.so.3
+		touch "${ED}"/usr/$(get_libdir)/libcblas.so
+		touch "${ED}"/usr/$(get_libdir)/libcblas.so.3
+		touch "${ED}"/usr/$(get_libdir)/liblapack.so
+		touch "${ED}"/usr/$(get_libdir)/liblapack.so.3
+		use lapacke && touch "${ED}"/usr/$(get_libdir)/liblapacke.so
+		use lapacke && touch "${ED}"/usr/$(get_libdir)/liblapacke.so.3
 		# also we need pkgconfig files
 		cat >> "${T}"/blas.pc <<- EOF || die
 prefix=${EPREFIX}/usr

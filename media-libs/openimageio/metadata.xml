@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE pkgmetadata SYSTEM "https://www.gentoo.org/dtd/metadata.dtd">
+<pkgmetadata>
+	<maintainer type="project">
+		<email>sci@gentoo.org</email>
+		<name>Gentoo Science Project</name>
+	</maintainer>
+	<use>
+		<flag name="bmp">Enable BMP microsoft bitmap image file support</flag>
+		<flag name="cineon">Enable Kodak CINEON bitmap image file support</flag>
+		<flag name="color-management">Enable color management via <pkg>media-libs/opencolorio</pkg></flag>
+		<flag name="dicom">Enable DICOM medical image file support via <pkg>sci-libs/dcmtk</pkg></flag>
+		<flag name="dds">Enable DDS Direct Draw surface image file support</flag>
+		<flag name="dpx">Enable DPX image file support</flag>
+		<flag name="iff">Enable IFF Amiga image file support</flag>
+		<flag name="fits">Enable support for NASA's <pkg>sci-libs/cfitsio</pkg> library</flag>
+		<flag name="hdr">Enable Radiance HDR image file support</flag>
+		<flag name="htj2k">Enable support lossless JPEG 2000 image file support via <pkg>media-libs/openjph</pkg></flag>
+		<flag name="gui">Build iv</flag>
+		<flag name="libcxx">Build against <pkg>llvm-runtimes/libcxx</pkg> when using clang</flag>
+		<flag name="opencv">Enable OpenCV support via <pkg>media-libs/opencv</pkg></flag>
+		<flag name="openvdb">Enable OpenVDB support via <pkg>media-gfx/openvdb</pkg></flag>
+		<flag name="pnm">Enable PNM portable pixmap image file support via <pkg>media-libs/netpbm</pkg></flag>
+		<flag name="ptex">Enable Ptex texture mapping system file support via <pkg>media-libs/ptex</pkg></flag>
+		<flag name="rla">Enable RLA Wavefront bitmap image file support</flag>
+		<flag name="sgi">Enable SGI Silicon Graphics Image bitmap image file support</flag>
+		<flag name="tbb">Enable multithreading with the Intel Threads Building Block (<pkg>dev-cpp/tbb</pkg>)</flag>
+		<flag name="tga">Enable TGA (often referred to as TARGA) Image file support</flag>
+		<flag name="xsi">Enable XSI Softimage 3D Image file support</flag>
+		<flag name="uhdr">Enable High Dynamic Range Image file support via <pkg>media-libs/libultrahdr</pkg></flag>
+		<flag name="tools">Build the command-line tools</flag>
+	</use>
+	<upstream>
+		<remote-id type="github">AcademySoftwareFoundation/OpenImageIO</remote-id>
+	</upstream>
+</pkgmetadata>

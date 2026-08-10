@@ -69,7 +69,7 @@ RDEPEND+="
 	!python? (
 		>=dev-libs/boost-1.76.0
 	)
-	>=sys-libs/zlib-1.2.11
+	>=virtual/zlib-1.2.11
 	alembic? (
 		>=media-gfx/alembic-1.8.5[hdf5?]
 	)

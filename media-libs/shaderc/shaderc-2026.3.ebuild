@@ -1,10 +1,10 @@
-# Copyright 1999-2023 Gentoo Authors
+# Copyright 1999-2026 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
 
 EAPI=8
 
-PYTHON_COMPAT=( python3_{9..12} )
-inherit cmake-multilib multibuild python-any-r1
+PYTHON_COMPAT=( python3_{12..14} )
+inherit cmake-multilib dot-a python-any-r1
 
 DESCRIPTION="Collection of tools, libraries and tests for shader compilation"
 HOMEPAGE="https://github.com/google/shaderc"
@@ -14,16 +14,16 @@ S="${WORKDIR}/${PN}-${EGIT_COMMIT}"
 
 LICENSE="Apache-2.0"
 SLOT="0"
-KEYWORDS="~amd64 ~ppc64 ~x86"
+KEYWORDS="~amd64 ~arm ~arm64 ~loong ~ppc ~ppc64 ~riscv ~x86"
 IUSE="doc"
 
 RDEPEND="
-	>=dev-util/glslang-1.3.250:=[${MULTILIB_USEDEP}]
-	>=dev-util/spirv-tools-1.3.250[${MULTILIB_USEDEP}]
+	>=dev-util/glslang-1.4.350:=[${MULTILIB_USEDEP}]
+	>=dev-util/spirv-tools-1.4.350[${MULTILIB_USEDEP}]
 "
 DEPEND="${RDEPEND}
 	${PYTHON_DEPS}
-	>=dev-util/spirv-headers-1.3.250"
+	>=dev-util/spirv-headers-1.4.350"
 
 #dev-cpp/abseil-cpp:=
 #dev-libs/re2
@@ -82,4 +82,5 @@ multilib_src_install() {
 		use doc && local HTML_DOCS=( "${BUILD_DIR}/glslc/README.html" )
 	fi
 	cmake_src_install
+	strip-lto-bytecode
 }

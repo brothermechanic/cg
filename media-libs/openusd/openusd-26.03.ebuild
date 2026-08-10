@@ -9,6 +9,12 @@ inherit cmake desktop python-single-r1 flag-o-matic toolchain-funcs openvdb xdg-
 
 DESCRIPTION="Universal Scene Description"
 HOMEPAGE="http://www.openusd.org"
+#COMMIT="60a8d58c3953a005e604c4f760caa018a90ae846"
+#https://github.com/PixarAnimationStudios/USD/archive/${COMMIT}.tar.gz
+SRC_URI="
+https://github.com/PixarAnimationStudios/USD/archive/refs/tags/v${PV}.tar.gz
+	-> ${P}.tar.gz
+"
 LICENSE="
 	Apache-2.0
 	BSD
@@ -19,6 +25,8 @@ LICENSE="
 # custom - https://github.com/PixarAnimationStudios/OpenUSD/blob/v24.05/pxr/usdImaging/usdImaging/drawModeStandin.cpp#L9
 # custom - search "In consideration of your agreement"
 SLOT="0"
+#S="${WORKDIR}/OpenUSD-${COMMIT}"
+S="${WORKDIR}/OpenUSD-${PV}"
 KEYWORDS="~amd64 ~x86 ~arm ~arm64"
 # test USE flag is enabled upstream
 IUSE="alembic debug doc draco embree examples hdf5 +imaging +jemalloc man
@@ -129,7 +137,7 @@ RDEPEND+="
 			)
 		')
 	)
-    vulkan? (
+	vulkan? (
 		>=dev-util/vulkan-headers-1.3.296.0
 		>=media-libs/vulkan-layers-1.3.296.0
 		>=dev-libs/vulkan-memory-allocator-3.0.0
@@ -161,12 +169,7 @@ BDEPEND="
 		<llvm-core/clang-23
 	)
 "
-#COMMIT="60a8d58c3953a005e604c4f760caa018a90ae846"
-#https://github.com/PixarAnimationStudios/USD/archive/${COMMIT}.tar.gz
-SRC_URI="
-https://github.com/PixarAnimationStudios/USD/archive/refs/tags/v${PV}.tar.gz
-	-> ${P}.tar.gz
-"
+
 RESTRICT="
 	mirror
 	!test? ( test )
@@ -190,8 +193,6 @@ PATCHES=(
 	#"${FILESDIR}/openusd-25.08-fix-vulkan-UMA-ReBAR-pr3763.patch"
 	#"${FILESDIR}/openusd-25.08-fix-vulkan-memory-barrier-issues-pr3761.patch"
 )
-#S="${WORKDIR}/OpenUSD-${COMMIT}"
-S="${WORKDIR}/OpenUSD-${PV}"
 DOCS=( "CHANGELOG.md" "README.md" )
 
 pkg_setup() {
@@ -262,7 +263,7 @@ src_configure() {
 			-DDRACO_ATTRIBUTE_VALUES_DEDUPLICATION_SUPPORTED=ON \
 			-DTBB_SUPPRESS_DEPRECATED_MESSAGES=1
 	fi
-    # See https://github.com/PixarAnimationStudios/USD/blob/v24.05/cmake/defaults/Options.cmake
+	# See https://github.com/PixarAnimationStudios/USD/blob/v24.05/cmake/defaults/Options.cmake
 	local mycmakeargs+=(
 		$(usex jemalloc "-DPXR_MALLOC_LIBRARY=${ESYSROOT}/usr/$(get_libdir)/${PN}/$(get_libdir)/libjemalloc.so" "")
 		$(usex usdview "-DPYSIDEUICBINARY:PATH=${S}/pyside-uic" "")

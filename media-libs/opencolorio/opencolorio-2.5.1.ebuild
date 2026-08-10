@@ -14,7 +14,7 @@ S="${WORKDIR}/OpenColorIO-${PV}"
 
 LICENSE="BSD"
 SLOT="0/$(ver_cut 1-2)"
-KEYWORDS="amd64 ~arm ~arm64 ~ppc64 ~riscv ~x86"
+KEYWORDS="amd64 ~arm ~arm64 ~ppc64 ~x86"
 CPU_USE=(
 	x86_{avx,avx2,avx512f,f16c,sse2,sse3,sse4_1,sse4_2,ssse3}
 	arm_neon
@@ -33,7 +33,7 @@ RDEPEND="
 	>=dev-libs/expat-2.4.1
 	>=dev-libs/imath-3.1.4-r2:=
 	>=sys-libs/minizip-ng-3.0.7
-	>=sys-libs/zlib-1.2.13
+	virtual/zlib
 	dev-libs/tinyxml
 	dev-python/pybind11
 	apps? (
@@ -95,8 +95,10 @@ pkg_setup() {
 src_prepare() {
 	cmake_src_prepare
 
-	sed -i -e "s|LIBRARY DESTINATION lib|LIBRARY DESTINATION $(get_libdir)|g" {,src/bindings/python/,src/OpenColorIO/,src/libutils/oglapphelpers/}CMakeLists.txt || die
-	sed -i -e "s|ARCHIVE DESTINATION lib|ARCHIVE DESTINATION $(get_libdir)|g" {,src/bindings/python/,src/OpenColorIO/,src/libutils/oglapphelpers/}CMakeLists.txt || die
+	sed -e "s|LIBRARY DESTINATION lib|LIBRARY DESTINATION $(get_libdir)|g" \
+		-i {,src/bindings/python/,src/OpenColorIO/,src/libutils/oglapphelpers/}CMakeLists.txt || die
+	sed -e "s|ARCHIVE DESTINATION lib|ARCHIVE DESTINATION $(get_libdir)|g" \
+		-i {,src/bindings/python/,src/OpenColorIO/,src/libutils/oglapphelpers/}CMakeLists.txt || die
 
 	# Avoid automagic test dependency on OSL, bug #833933
 	# Can cause problems during e.g. OpenEXR unsplitting migration
@@ -143,9 +145,9 @@ src_configure() {
 
 	# requires https://github.com/DLTcollab/sse2neon
 	if use arm || use arm64 ; then
-	 	mycmakeargs+=(
-	 		"-DOCIO_USE_SSE2NEON=$(usex cpu_flags_arm_neon)"
-	 	)
+		mycmakeargs+=(
+			"-DOCIO_USE_SSE2NEON=$(usex cpu_flags_arm_neon)"
+		)
 	fi
 
 	use apps && lto-guarantee-fat

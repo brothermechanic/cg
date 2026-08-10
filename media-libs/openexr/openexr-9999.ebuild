@@ -21,11 +21,13 @@ if [[ ${PV} =~ 9999 ]] ; then
 	inherit git-r3
 	EGIT_REPO_URI="https://github.com/AcademySoftwareFoundation/openexr.git"
 	EGIT_BRANCH="main"
-	KEYWORDS=""
 else
 	SRC_URI+="https://github.com/AcademySoftwareFoundation/openexr/archive/refs/tags/v${PV}.tar.gz -> ${P}.tar.gz"
-	KEYWORDS="~amd64 ~arm ~arm64 ~ia64 ~loong -ppc ~ppc64 ~riscv -sparc ~x86 ~amd64-linux ~x86-linux ~x64-macos"
-	RESTRICT="mirror "
+	KEYWORDS="amd64 ~arm ~arm64 ~loong ~ppc64 ~x86 ~x64-macos"
+	RESTRICT="
+		!test? ( test )
+		mirror
+	"
 fi
 #S="${WORKDIR}/${P}"
 
@@ -34,7 +36,6 @@ SLOT="0/33" # based on SONAME
 # -ppc -sparc because broken on big endian, bug #818424
 IUSE="cpu_flags_x86_avx doc examples large-stack utils test threads"
 REQUIRED_USE="doc? ( utils )"
-RESTRICT+="!test? ( test )"
 
 RDEPEND="
 	>=app-arch/libdeflate-1.18:=[zlib(+)]

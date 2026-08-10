@@ -7,21 +7,23 @@ inherit cmake
 
 DESCRIPTION="Per-Face Texture Mapping for Production Rendering"
 HOMEPAGE="https://ptex.us/"
-COMMIT="065365532d108ebbfc9d9b65a2eb647923cdc5de"
-SRC_URI="https://github.com/wdas/ptex/archive/${COMMIT}.tar.gz -> ${P}.tar.gz"
+COMMIT="9b83d751fd1baada7d8ae0085c5a8f5045d94ff7"
+SRC_URI="https://github.com/wdas/ptex/archive/${COMMIT}.tar.gz -> ${P}-${COMMIT:0:7}.gh.tar.gz"
+S=${WORKDIR}/${PN}-${COMMIT}
 
 LICENSE="BSD"
 SLOT="0"
 KEYWORDS="amd64 ~arm ~arm64 ~riscv x86"
 IUSE="debug doc static-libs"
 
-RDEPEND="virtual/zlib"
+RDEPEND="virtual/zlib:="
 DEPEND="${RDEPEND}"
 BDEPEND="doc? ( app-text/doxygen )"
 
-RESTRICT="test mirror"
-
-S=${WORKDIR}/${PN}-${COMMIT}
+RESTRICT="
+	test
+	mirror
+"
 
 src_prepare() {
 	# https://github.com/wdas/ptex/issues/41

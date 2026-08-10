@@ -1,27 +1,27 @@
-# Copyright 1999-2023 Gentoo Authors
+# Copyright 1999-2026 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
 
 EAPI=8
 
-PYTHON_COMPAT=( python3_{10..12} )
-inherit cmake flag-o-matic python-any-r1 toolchain-funcs
+PYTHON_COMPAT=( python3_{12..14} )
+inherit cmake python-any-r1 toolchain-funcs
 
-DESCRIPTION="Generated headers and sources for OpenXR loader."
-LICENSE="Apache-2.0"
-# See also https://github.com/KhronosGroup/OpenXR-SDK-Source/blob/release-1.0.18/.reuse/dep5
-KEYWORDS="~amd64"
-HOMEPAGE="https://khronos.org/openxr"
-ORG_GH="https://github.com/KhronosGroup"
-SLOT="0/$(ver_cut 1-2 ${PV})"
+# See also https://github.com/KhronosGroup/OpenXR-SDK-Source/blob/release-1.1.62/.reuse/dep5
 MY_PN="OpenXR-SDK-Source"
-SRC_URI="${ORG_GH}/${MY_PN}/archive/release-${PV}.tar.gz -> ${P}.tar.gz"
-NV_DRIVER_VERSION_VULKAN="390.132"
+DESCRIPTION="Generated headers and sources for OpenXR loader"
+HOMEPAGE="https://khronos.org/openxr"
+SRC_URI="https://github.com/KhronosGroup/OpenXR-SDK-Source/archive/release-${PV}.tar.gz -> ${P}.tar.gz"
+S="${WORKDIR}/${MY_PN}-release-${PV}"
+LICENSE="Apache-2.0"
+SLOT="0/$(ver_cut 1-2 ${PV})"
+KEYWORDS="amd64"
+NV_DRIVER_VERSION_VULKAN="610.43"
 IUSE="doc gles2 +system-jsoncpp video_cards_amdgpu test video_cards_intel
-video_cards_nvidia video_cards_radeonsi wayland xcb xlib"
+video_cards_nvidia video_cards_radeonsi test wayland xcb X"
 REQUIRED_USE+="
 	^^ (
 		xcb
-		xlib
+		X
 		wayland
 	)
 	|| (
@@ -33,7 +33,7 @@ REQUIRED_USE+="
 "
 DEPEND+="
 	${PYTHON_DEPS}
-	media-libs/mesa[egl(+),gles2?,libglvnd(+)]
+	media-libs/mesa[libglvnd(+)]
 	media-libs/vulkan-loader
 	virtual/libc
 	system-jsoncpp? (
@@ -44,7 +44,7 @@ DEPEND+="
 		x11-libs/xcb-util-keysyms
 		x11-libs/xcb-util-wm
 	)
-	xlib? (
+	X? (
 		x11-base/xorg-proto
 		x11-libs/libX11
 	)
@@ -77,7 +77,7 @@ RDEPEND="
 "
 BDEPEND="
 	${PYTHON_DEPS}
-	$(python_gen_any_dep '>=dev-python/jinja-2[${PYTHON_USEDEP}]')
+	$(python_gen_any_dep '>=dev-python/jinja2-3.0.3[${PYTHON_USEDEP}]')
 	>=dev-build/cmake-3.0
 	virtual/pkgconfig
 	|| (
@@ -89,7 +89,6 @@ RESTRICT="
 	!test ( test )
 	mirror
 "
-S="${WORKDIR}/${MY_PN}-release-${PV}"
 
 src_configure() {
 	CMAKE_BUILD_TYPE="Release"
@@ -97,11 +96,11 @@ src_configure() {
 	export CXX=$(tc-getCXX)
 	mycmakeargs=(
 		-DBUILD_API_LAYERS=OFF
-		-DBUILD_CONFORMANCE_TESTS=$(usex test $(usex xlib ON OFF) OFF)
+		-DBUILD_CONFORMANCE_TESTS=$(usex test $(usex X ON OFF) OFF)
 		-DBUILD_TESTS=$(usex test)
 		-DBUILD_WITH_SYSTEM_JSONCPP=$(usex system-jsoncpp)
 	)
-	if use xlib ; then
+	if use X ; then
 		mycmakeargs+=( -DPRESENTATION_BACKEND=xlib )
 	elif use xcb ; then
 		mycmakeargs+=( -DPRESENTATION_BACKEND=xcb )
@@ -131,4 +130,3 @@ src_install() {
 		rm -rf "${ED}/usr/share/doc/${P}/README.md"
 	fi
 }
-
