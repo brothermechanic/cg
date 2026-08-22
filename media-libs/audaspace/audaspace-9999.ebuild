@@ -45,7 +45,7 @@ BDEPEND="
 	sdl? ( media-libs/libsdl2[sound] )
 	sndfile? ( media-libs/libsndfile[alsa,-minimal] )
 	ffmpeg? (
-		<media-video/ffmpeg-9:=[lame,theora,vorbis,opus]
+		<media-video/ffmpeg-10:=[lame,theora,vorbis,opus]
 		>media-video/ffmpeg-5:=[lame,theora,vorbis,opus]
 	)
 	fftw? ( sci-libs/fftw:3.0= )
@@ -107,7 +107,6 @@ src_configure() {
 		-DWITH_FFTW=$(usex fftw)
 		-DWITH_SDL=$(usex sdl)
 		-DWITH_RUBBERBAND=$(usex rubberband)
-
 		# PLUGINS
 		-DWITH_COREAUDIO=$(usex coreaudio)
 		-DWITH_OPENAL=$(usex openal)
@@ -117,14 +116,12 @@ src_configure() {
 		-DWITH_PIPEWIRE=$(usex pipewire)
 		-DWITH_LIBSNDFILE=$(usex sndfile)
 		-DDEFAULT_PLUGIN_PATH="/usr/share/audaspace/plugins"
-
 		# BINDIGS
 		-DDOCUMENTATION_INSTALL_PATH="/usr/share/doc/${PF}"
 		-DWITH_DOCS=$(usex doc)
 		-DWITH_PYTHON=$(usex python)
 		-DWITH_C=YES
 		-DSEPARATE_C=YES
-
 		-DBUILD_DEMOS=$(usex examples)
 	)
 	use python && mycmakeargs+=(

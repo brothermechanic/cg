@@ -189,7 +189,7 @@ RDEPEND="
 		<media-libs/embree-5
 	)
 	ffmpeg? (
-		<media-video/ffmpeg-9:=[jpeg2k?,opus?,lame?,sdl,theora?,vorbis?,vpx?,x264?,xvid?,zlib]
+		<media-video/ffmpeg-10:=[jpeg2k?,opus?,lame?,sdl,theora?,vorbis?,vpx?,x264?,xvid?,zlib]
 		>media-video/ffmpeg-5:=[jpeg2k?,opus?,lame?,sdl,theora?,vorbis?,vpx?,x264?,xvid?,zlib]
 	)
 	fftw? ( sci-libs/fftw:3.0=[threads] )
