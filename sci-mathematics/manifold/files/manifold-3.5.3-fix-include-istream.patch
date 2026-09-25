@@ -1,0 +1,22 @@
+diff --up a/include/manifold/mesh.h b/include/manifold/mesh.h
+--- a/include/manifold/mesh.h
++++ b/include/manifold/mesh.h
+@@ -14,6 +14,7 @@
+ #pragma once
+
+ #include <vector>
++#include <istream>
+
+ #include "manifold/common.h"
+
+diff --up a/include/manifold/manifold.h b/include/manifold/manifold.h
+--- a/include/manifold/manifold.h
++++ b/include/manifold/manifold.h
+@@ -14,6 +14,7 @@
+ #include <cstdint>  // uint32_t, uint64_t
+ #include <functional>
+ #include <memory>  // needed for shared_ptr
++#include <istream>
+ #include <mutex>
+
+ #include "manifold/common.h"

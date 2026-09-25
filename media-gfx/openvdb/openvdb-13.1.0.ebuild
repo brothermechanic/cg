@@ -5,7 +5,7 @@ EAPI=8
 
 OPENVDB_COMPAT=( {7..13} )
 PYTHON_COMPAT=( python3_{13..15} )
-LLVM_COMPAT=( {20..22} )
+LLVM_COMPAT=( {21..23} )
 LLVM_OPTIONAL=1
 
 inherit cmake cuda flag-o-matic llvm-r2 multibuild python-single-r1 toolchain-funcs openvdb
@@ -14,11 +14,15 @@ DESCRIPTION="Library for the efficient manipulation of volumetric data"
 HOMEPAGE="https://www.openvdb.org"
 OGT_COMMIT="22e71873ffc55c3a6253d31302e4f5e2191f9a0b"
 OGT_DFN="ogt-${OGT_COMMIT:0:7}.tar.gz"
-COMMIT="90c02c309d6b6e42c31ba62292744a7ed34238b5"
+#COMMIT="90c02c309d6b6e42c31ba62292744a7ed34238b5"
+#https://github.com/AcademySoftwareFoundation/${PN}/archive/${COMMIT}.tar.gz -> ${P}-${COMMIT:0:7}.tar.gz
 SRC_URI="
-https://github.com/AcademySoftwareFoundation/${PN}/archive/${COMMIT}.tar.gz -> ${P}-${COMMIT:0:7}.tar.gz
+https://github.com/AcademySoftwareFoundation/${PN}/archive/refs/tags/v${PV}.tar.gz -> ${P}.gh.tar.gz
 magicavoxel? ( https://github.com/jpaver/opengametools/archive/${OGT_COMMIT}.tar.gz -> ${OGT_DFN} )
 "
+
+S_OGT="${WORKDIR}/ogt-${OGT_COMMIT}"
+#S="${WORKDIR}/${PN}-${COMMIT}"
 
 LICENSE="MPL-2.0"
 SLOT="0/$(ver_cut 1-2)"
@@ -152,14 +156,11 @@ BDEPEND="${RDEPEND}
 	)
 "
 
-S_OGT="${WORKDIR}/ogt-${OGT_COMMIT}"
-S="${WORKDIR}/${PN}-${COMMIT}"
-
 PATCHES=(
 	"${FILESDIR}/${PN}-9.0.0-fix-atomic.patch"
 	"${FILESDIR}/${PN}-10.0.1-log4cplus-version.patch"
 	"${FILESDIR}/${PN}-13.0.0-cmake_fixes.patch"
-	"${FILESDIR}/${PN}-12.0.0-fix-linking-of-vdb_tool-with-OpenEXR.patch"
+	#"${FILESDIR}/${PN}-12.0.0-fix-linking-of-vdb_tool-with-OpenEXR.patch"
 	"${FILESDIR}/${PN}-12.0.0-loosen-float-equality-tolerances.patch"
 )
 

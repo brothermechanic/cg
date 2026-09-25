@@ -3,7 +3,7 @@
 
 EAPI=8
 
-LLVM_COMPAT=( {19..22} )
+LLVM_COMPAT=( {21..23} )
 FORTRAN_NEEDED="test"
 inherit cmake cuda fortran-2 llvm-r2 toolchain-funcs
 

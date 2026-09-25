@@ -1,0 +1,11 @@
+--- a/pxr/base/trace/event.h
++++ b/pxr/base/trace/event.h
+@@ -278,7 +278,7 @@ private:
+         ScopeDataLarge,
+     };
+ 
+-    using PayloadStorage = std::aligned_storage<8, 8>::type;
++    struct alignas(8) PayloadStorage { char data; };
+ 
+     Key _key;
+     TraceCategoryId _category;

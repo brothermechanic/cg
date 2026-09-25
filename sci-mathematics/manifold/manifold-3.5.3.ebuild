@@ -54,6 +54,10 @@ DEPEND="
 	${RDEPEND}
 "
 
+PATCHES=(
+	"${FILESDIR}/manifold-3.5.3-fix-include-istream.patch"
+)
+
 pkg_setup() {
 	use python && python-single-r1_pkg_setup
 }

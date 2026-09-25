@@ -5,7 +5,8 @@ EAPI=8
 
 PYTHON_COMPAT=( python3_{12..14} )
 OPENVDB_COMPAT=( {10..13} )
-inherit cmake desktop python-single-r1 flag-o-matic toolchain-funcs openvdb xdg-utils
+LLVM_COMPAT=( {21..23} )
+inherit cmake desktop python-single-r1 flag-o-matic toolchain-funcs openvdb xdg-utils llvm-r2
 
 DESCRIPTION="Universal Scene Description"
 HOMEPAGE="http://www.openusd.org"
@@ -29,9 +30,11 @@ SLOT="0"
 S="${WORKDIR}/OpenUSD-${PV}"
 KEYWORDS="~amd64 ~x86 ~arm ~arm64"
 # test USE flag is enabled upstream
-IUSE="alembic debug doc draco embree examples hdf5 +imaging +jemalloc man
+IUSE="alembic debug doc +draco embree examples hdf5 hdstorm +imaging +jemalloc man
 materialx monolithic color-management opengl openimageio openvdb openexr osl
-ptex +python +safety-over-speed -static-libs tutorials test tools usdview vulkan"
+ptex +python +safety-over-speed static-libs tutorials test tools usdview vulkan"
+
+VULKAN_PV="1.4.321.0"
 
 REQUIRED_USE+="
 	${PYTHON_REQUIRED_USE}
@@ -43,6 +46,12 @@ REQUIRED_USE+="
 	)
 	hdf5? (
 		alembic
+	)
+	hdstorm? (
+		|| (
+			opengl
+			vulkan
+		)
 	)
 	color-management? (
 		imaging
@@ -75,17 +84,17 @@ REQUIRED_USE+="
 
 RDEPEND+="
 	!python? (
-		>=dev-libs/boost-1.76.0
+		>=dev-libs/boost-1.80.0-r1
 	)
 	>=virtual/zlib-1.2.11
 	alembic? (
 		>=media-gfx/alembic-1.8.5:=[hdf5?]
 	)
 	draco? (
-		>=media-libs/draco-1.4.3:=
+		>=media-libs/draco-1.5.6:=
 	)
 	embree? (
-		>=media-libs/embree-4.2.0:=
+		>=media-libs/embree-4.1.0:=
 	)
 	>=dev-cpp/tbb-2021.9:=
 	hdf5? (
@@ -117,11 +126,11 @@ RDEPEND+="
 		virtual/jpeg
 	)
 	openvdb? (
-		>=dev-libs/c-blosc-1.17
-		>=media-gfx/openvdb-9.1.0:=[${OPENVDB_SINGLE_USEDEP}]
+		>=dev-libs/c-blosc-1.17:=
+		>=media-gfx/openvdb-10.1.0-r1:=[${OPENVDB_SINGLE_USEDEP}]
 	)
 	osl? (
-		>=media-libs/osl-1.10.9:=
+		>=media-libs/osl-1.15.0-r1:=
 	)
 	ptex? (
 		>=media-libs/ptex-2.4.2:=
@@ -138,12 +147,12 @@ RDEPEND+="
 		')
 	)
 	vulkan? (
-		>=dev-util/vulkan-headers-1.3.296.0
-		>=media-libs/vulkan-layers-1.3.296.0
+		>=dev-util/vulkan-headers-${VULKAN_PV}
+		>=media-libs/vulkan-layers-${VULKAN_PV}
 		>=dev-libs/vulkan-memory-allocator-3.0.0
-		>=dev-libs/spirv-reflect-1.3.296.0
-		>=dev-util/spirv-headers-1.3.296.0
-		>=dev-util/glslang-1.3.296.0
+		>=dev-libs/spirv-reflect-${VULKAN_PV}
+		>=dev-util/spirv-headers-${VULKAN_PV}
+		>=dev-util/glslang-${VULKAN_PV}
 	)
 "
 DEPEND="
@@ -153,7 +162,11 @@ BDEPEND="
 	$(python_gen_cond_dep '
 		>=dev-python/jinja2-2[${PYTHON_USEDEP}]
 	')
-	>=dev-build/cmake-3.17.5
+    $(llvm_gen_dep '
+        llvm-core/clang:${LLVM_SLOT}=
+        llvm-core/llvm:${LLVM_SLOT}=
+    ')
+	>=dev-build/cmake-3.26.5
 	app-alternatives/yacc
 	app-alternatives/lex
 	dev-cpp/argparse
@@ -161,13 +174,6 @@ BDEPEND="
 	virtual/pkgconfig
 	man? ( sys-apps/help2man )
 	doc? ( >=app-text/doxygen-1.9.6[dot] )
-	|| (
-		(
-			<sys-devel/gcc-17
-			>=sys-devel/gcc-9.0.1
-		)
-		<llvm-core/clang-23
-	)
 "
 
 RESTRICT="
@@ -178,20 +184,12 @@ RESTRICT="
 PATCHES=(
 	"${FILESDIR}/algorithm.patch"
 	"${FILESDIR}/packageUtils.cpp.patch"
-	"${FILESDIR}/openusd-23.11-defaultfonts.patch"
-#	"${FILESDIR}/openusd-21.11-gcc-11-numeric_limits.patch"
-#	"${FILESDIR}/openusd-21.11-use-whole-archive-for-lld.patch"
-#	"${FILESDIR}/openusd-24.08-fix-monolithic-build-2400.patch"
 	"${FILESDIR}/openusd-24.08-PVS-bugfix-base-trace-2313.patch"
 	"${FILESDIR}/openusd-24.08-PVS-bugfix-envvar-2157.patch"
 	"${FILESDIR}/openusd-24.08-PVS-bugfix-base-tf-2161.patch"
-	#"${FILESDIR}/openusd-24.08-PVS-bugfix-usd-2165.patch"
 	"${FILESDIR}/openusd-25.05-cmake-FindBoost-fix.patch"
-#	"${FILESDIR}/openusd-25.08-fix-monolithic-linking-with-clang.patch"
-	#"${FILESDIR}/openusd-25.08-cmake-FindOpenGL-fix.patch"
-	#"${FILESDIR}/openusd-25.08-embree-4-plugin-2313.patch"
-	#"${FILESDIR}/openusd-25.08-fix-vulkan-UMA-ReBAR-pr3763.patch"
-	#"${FILESDIR}/openusd-25.08-fix-vulkan-memory-barrier-issues-pr3761.patch"
+ 	"${FILESDIR}/openusd-26.08-fix-cpp23-aligned_storage.patch"
+	"${FILESDIR}/openusd-26.08-embree-fix-include-cstdlib.patch"
 )
 DOCS=( "CHANGELOG.md" "README.md" )
 
@@ -206,6 +204,7 @@ pkg_setup() {
 	fi
 	use python && python-single-r1_pkg_setup
 	use openvdb && openvdb_pkg_setup
+	llvm-r2_pkg_setup
 }
 
 gen_pyside_uic_file() {
@@ -216,7 +215,7 @@ src_prepare() {
 	cmake_src_prepare
 
 	# Fix for #2351
-	sed -i 's|CMAKE_CXX_STANDARD 14|CMAKE_CXX_STANDARD 17|g' \
+	sed -i 's|CMAKE_CXX_STANDARD 17|CMAKE_CXX_STANDARD 20|g' \
 		cmake/defaults/CXXDefaults.cmake || die
 
 	# Fix python dirs
@@ -268,7 +267,6 @@ src_configure() {
 		$(usex jemalloc "-DPXR_MALLOC_LIBRARY=${ESYSROOT}/usr/$(get_libdir)/${PN}/$(get_libdir)/libjemalloc.so" "")
 		$(usex usdview "-DPYSIDEUICBINARY:PATH=${S}/pyside-uic" "")
 		-DBUILD_SHARED_LIBS=ON
-		-DCMAKE_CXX_STANDARD=17
 		-DCMAKE_POLICY_DEFAULT_CMP0177="OLD"
 		-DCMAKE_INSTALL_PREFIX="${EPREFIX}${USD_PATH}"
 		-DPXR_VALIDATE_GENERATED_CODE=OFF
@@ -305,7 +303,7 @@ src_configure() {
 		-DPXR_PREFER_SAFETY_OVER_SPEED=$(usex safety-over-speed ON OFF)
 		-DPXR_PYTHON_SHEBANG="${PYTHON}"
 		#-DPXR_USE_PYTHON_3=ON
-		-DPXR_SET_INTERNAL_NAMESPACE="pxrBlender_v0_25_11"
+		-DPXR_SET_INTERNAL_NAMESPACE="pxrBlender_v0_${PV//./_}"
 		#-DCMAKE_FIND_DEBUG_MODE=yes
 	)
 	cmake_src_configure
@@ -375,10 +373,6 @@ src_install() {
 		done
 	fi
 	if use python ; then
-		mkdir -p "${ED}$(python_get_sitedir)"
-		cp -rp "${ED}/usr/$(get_libdir)/openusd/lib/python/pxr" \
-			"${ED}$(python_get_sitedir)/" || die
-		rm -r "${ED}/usr/$(get_libdir)/openusd/lib/python/pxr"
 		# Remove stray python files generated by the build system
 		find "${ED}" -name '*.pyc' -exec rm -f {} \; || die
 		find "${ED}" -name '*.pyo' -exec rm -f {} \; || die

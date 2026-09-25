@@ -3,7 +3,7 @@
 
 EAPI=8
 
-LLVM_COMPAT=( {19..22} )
+LLVM_COMPAT=( {21..23} )
 PYTHON_COMPAT=( python3_{11..14} )
 ROCM_VERSION="6.3"
 CUDA_DEVICE_TARGETS=1
@@ -17,10 +17,10 @@ CUDA_TARGETS_COMPAT=(
 	sm_120
 )
 
-inherit cmake cuda flag-o-matic llvm-r1 python-any-r1 rocm toolchain-funcs
+inherit cmake cuda flag-o-matic llvm-r2 python-any-r1 rocm toolchain-funcs
 inherit git-r3
 
-DESCRIPTION="Intel Open Image Denoise library"
+DESCRIPTION="Intel® Open Image Denoise library"
 HOMEPAGE="https://www.openimagedenoise.org https://github.com/RenderKit/oidn"
 
 IUSE="
@@ -32,14 +32,23 @@ if [[ ${PV} = *9999* ]]; then
 	EGIT_BRANCH="master"
 	EGIT_LFS="1"
 else
-	OIDN_COMMIT="e050ac80deca5c2f76633f0054b73c6cb7d2d251"
-	MKL_DNN_COMMIT="f53274c9fef211396655fc4340cb838452334089"
+	MKL_DNN_COMMIT="9bea36e6b8e341953f922ce5c6f5dbaca9179a86"
+	OIDN_WEIGHTS_COMMIT="28883d1769d5930e13cf7f1676dd852bd81ed9e7"
+	COMPOSABLE_KERNEL_COMMIT="3e6d21adeb33db1319899a3833113c9caf715358"
+	CUTLASS_COMMIT="d55f6beeebb6df501a250dc82827db97660f06e0"
 	SRC_URI="
-		https://github.com/RenderKit/${PN}/archive/${OIDN_COMMIT}.tar.gz -> ${PN}-${OIDN_COMMIT:0:7}.tar.gz
+		https://github.com/RenderKit/oidn/releases/download/v${PV}/${P}.src.tar.gz -> ${P}.tar.gz
 		https://github.com/RenderKit/mkl-dnn/archive/${MKL_DNN_COMMIT}.tar.gz -> ${PN}-mkl-dnn-${MKL_DNN_COMMIT:0:7}.tar.gz
+		built-in-weights? (
+			https://github.com/RenderKit/oidn-weights/archive/${OIDN_WEIGHTS_COMMIT}.tar.gz
+				-> ${PN}-weights-${OIDN_WEIGHTS_COMMIT:0:7}.tar.gz
+		)
+		https://github.com/ROCmSoftwarePlatform/composable_kernel/archive/${COMPOSABLE_KERNEL_COMMIT}.tar.gz
+			-> composable_kernel-${COMPOSABLE_KERNEL_COMMIT:0:7}.tar.gz
+		https://github.com/NVIDIA/cutlass/archive/${CUTLASS_COMMIT}.tar.gz
+			-> cutlass-${CUTLASS_COMMIT:0:7}.tar.gz
 	"
-	S="${WORKDIR}/${PN}-${OIDN_COMMIT}"
-	KEYWORDS="~amd64 -arm ~arm64 -ppc ~ppc64 -x86" # 64-bit-only
+	KEYWORDS="~amd64 ~arm64 ~ppc64" # 64-bit-only
 fi
 
 LICENSE="Apache-2.0"
@@ -94,7 +103,7 @@ BDEPEND="
 "
 DOCS=( "CHANGELOG.md" "README.md" "readme.pdf" )
 PATCHES=(
-	"${FILESDIR}/${P}-cuda-nvcc-flags.patch"
+	"${FILESDIR}/${PN}-2.4.1-cuda-nvcc-flags.patch"
 	"${FILESDIR}/${PN}-2.3.3-amdgpu-targets.patch"
 )
 
@@ -117,7 +126,7 @@ pkg_setup() {
 
 	python-any-r1_pkg_setup
 	#rocm_pkg_setup
-	llvm-r1_pkg_setup
+	llvm-r2_pkg_setup
 	if use cuda ; then
 		cuda_add_sandbox
 	fi

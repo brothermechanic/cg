@@ -12,9 +12,9 @@ index 18ce5da92e..88e971f4fa 100644
 --- a/pxr/base/trace/eventContainer.cpp
 +++ b/pxr/base/trace/eventContainer.cpp
 @@ -121,6 +121,8 @@ TraceEventContainer::_Node *
- TraceEventContainer::_Node::New(size_t capacity)
  {
-     void *p = malloc(sizeof(_Node)+sizeof(TraceEvent)*capacity);
+     void *p = ::operator new(sizeof(_Node)+sizeof(TraceEvent)*capacity, 
+         std::nothrow);
 +    if (!p) return nullptr;
 +
      TraceEvent *eventEnd = reinterpret_cast<TraceEvent*>(

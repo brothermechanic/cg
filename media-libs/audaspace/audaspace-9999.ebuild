@@ -3,7 +3,7 @@
 
 EAPI=8
 
-PYTHON_COMPAT=( python3_{11..14} )
+PYTHON_COMPAT=( python3_{11..15} )
 DISTUTILS_OPTIONAL=1
 DISTUTILS_USE_PEP517=setuptools
 DISTUTILS_SINGLE_IMPL=1
@@ -21,15 +21,18 @@ if [[ ${PV} == 9999 ]]; then
 	EGIT_SUBMODULES=()
 	KEYWORDS=""
 else
-	if [[ "${PV}" =~ "1.9.0" ]]; then
+	if [[ "${PV}" =~ "1.10.0" ]]; then
+		COMMIT="8841635656806e388b51d3f4e3696bfc247a3f5a";
+		FFMPEG_PV="10"
+	elif [[ "${PV}" =~ "1.9.0" ]]; then
 		COMMIT="546b749617ce754104e0d3bc973ecb845fa88e6b";
+		FFMPEG_PV="9"
 	elif [[ "${PV}" =~ "1.8.0" ]]; then
 		COMMIT="7b04aa90fc746c0ea80e876cd7c9964ae523b910";
-	elif [[ "${PV}" =~ "1.7.0" ]]; then
-		COMMIT="05d35ba49b4ffa3058dc35e4daf1680a6ae58323";
+		FFMPEG_PV="8"
 	fi
 
-	SRC_URI="https://github.com/neXyon/audaspace/archive/v${PV}.tar.gz -> ${P}.tar.gz"
+	SRC_URI="https://github.com/neXyon/audaspace/archive/${COMMIT}.tar.gz -> ${P}-${COMMIT:0:7}.gh.tar.gz"
 	S=${WORKDIR}/${PN}-${COMMIT}
 	KEYWORDS="~amd64 ~x86 ~arm64 ~arm"
 fi
@@ -45,8 +48,7 @@ BDEPEND="
 	sdl? ( media-libs/libsdl2[sound] )
 	sndfile? ( media-libs/libsndfile[alsa,-minimal] )
 	ffmpeg? (
-		<media-video/ffmpeg-10:=[lame,theora,vorbis,opus]
-		>media-video/ffmpeg-5:=[lame,theora,vorbis,opus]
+		<media-video/ffmpeg-${FFMPEG_PV}:=[lame,theora,vorbis,opus]
 	)
 	fftw? ( sci-libs/fftw:3.0= )
 	jack? ( virtual/jack )

@@ -1,0 +1,8 @@
+--- a/pxr/imaging/plugin/hdEmbree/pxrIES/ies.cpp
++++ b/pxr/imaging/plugin/hdEmbree/pxrIES/ies.cpp
+@@ -2,4 +2,5 @@
+ #include <string>
+ #include <vector>
++#include <cstdlib>
+ #include <cstring>
+

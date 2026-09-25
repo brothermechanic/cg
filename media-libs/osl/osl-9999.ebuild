@@ -18,7 +18,7 @@ if [[ ${PV} = *9999* ]]; then
 	inherit git-r3
 	EGIT_REPO_URI="https://github.com/AcademySoftwareFoundation/OpenShadingLanguage.git"
 	EGIT_BRANCH="main"
-	SLOT="0/1.14"
+	SLOT="0/1.15"
 else
 	MY_PV=${PV//_/-}
 	SRC_URI="https://github.com/AcademySoftwareFoundation/OpenShadingLanguage/archive/v${MY_PV}.tar.gz -> ${P}.tar.gz"
@@ -27,15 +27,7 @@ else
 	SLOT="0/$(ver_cut 1-2 ${PV})"
 fi
 
-if [[ "${PV}" =~ "1.13" ]]; then
-	PATCHES+=(
-		"${FILESDIR}/osl-1.13.6.0-lld-fix-linking.patch"
-	)
-	# Check this on updates
-	LLVM_COMPAT=( {17..19} )
-else
-	LLVM_COMPAT=( {19..22} )
-fi
+LLVM_COMPAT=( {21..23} )
 inherit llvm-r2
 
 LICENSE="BSD"
