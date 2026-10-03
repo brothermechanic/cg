@@ -65,7 +65,7 @@ RDEPEND="
 	>=dev-libs/boost-1.55:=[${MULTILIB_USEDEP}]
 	>=dev-libs/pugixml-1.8[${MULTILIB_USEDEP}]
 	>=media-libs/openexr-3.1.0:=
-	openvdb? ( >=media-gfx/openvdb-9.0.0:=[${OPENVDB_SINGLE_USEDEP},cuda?] )
+	openvdb? ( media-gfx/openvdb:=[${OPENVDB_SINGLE_USEDEP},cuda?] )
 	$(python_gen_cond_dep '
 		>=media-libs/openimageio-2.4.12.0:=[${PYTHON_SINGLE_USEDEP}]
 		<media-libs/openimageio-3.2:=[${PYTHON_SINGLE_USEDEP}]

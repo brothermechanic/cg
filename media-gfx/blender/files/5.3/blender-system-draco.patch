@@ -26,13 +26,12 @@
  # Camera/motion tracking
 --- a/source/creator/CMakeLists.txt
 +++ b/source/creator/CMakeLists.txt
-@@ -481,7 +481,7 @@ if(WITH_PYTHON)
+@@ -517,7 +517,7 @@ if(WITH_PYTHON)
+     endif()
    endif()
-   unset(FREESTYLE_EXCLUDE_CONDITIONAL)
-
+ 
 -  if(WITH_DRACO)
 +  if(WITH_DRACO AND NOT WITH_SYSTEM_DRACO)
-     install(
-       PROGRAMS $<TARGET_FILE:extern_draco>
-       DESTINATION ${TARGETDIR_VER}/scripts/addons_core/io_scene_gltf2
-
+     if(GLTF_BRIDGE_RPATH)
+       set_target_properties(bf_intern_draco_bridge PROPERTIES
+         BUILD_WITH_INSTALL_RPATH TRUE

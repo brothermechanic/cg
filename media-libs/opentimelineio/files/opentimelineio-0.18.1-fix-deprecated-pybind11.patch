@@ -1,0 +1,43 @@
+--- a/src/py-opentimelineio/opentimelineio-bindings/otio_imath.cpp
++++ b/src/py-opentimelineio/opentimelineio-bindings/otio_imath.cpp
+@@ -22,7 +22,7 @@ _type_checked(py::object const& rhs, cha
+     catch (...)
+     {
+         std::string rhs_type =
+-            py::cast<std::string>(rhs.get_type().attr("__name__"));
++            py::cast<std::string>(py::type::of(rhs).attr("__name__"));
+         throw py::type_error(string_printf(
+             "Unsupported operand type(s) for %s: "
+             "%s and %s",
+@@ -111,14 +111,14 @@ define_imath_2d(py::module m)
+             [](IMATH_NAMESPACE::V2d* v, IMATH_NAMESPACE::V2d const& v2) {
+                 return v->cross(v2);
+             })
+-        .def("length", &IMATH_NAMESPACE::V2d::length)
+-        .def("length2", &IMATH_NAMESPACE::V2d::length2)
+-        .def("normalize", &IMATH_NAMESPACE::V2d::normalize)
+-        .def("normalizeExc", &IMATH_NAMESPACE::V2d::normalizeExc)
+-        .def("normalizeNonNull", &IMATH_NAMESPACE::V2d::normalizeNonNull)
+-        .def("normalized", &IMATH_NAMESPACE::V2d::normalized)
+-        .def("normalizedExc", &IMATH_NAMESPACE::V2d::normalizedExc)
+-        .def("normalizedNonNull", &IMATH_NAMESPACE::V2d::normalizedNonNull)
++        .def("length", [](IMATH_NAMESPACE::V2d const& v) {return v.length();})
++        .def("length2", [](IMATH_NAMESPACE::V2d const& v) {return v.length2();})
++        .def("normalize", [](IMATH_NAMESPACE::V2d& v) {return v.normalize();})
++        .def("normalizeExc", [](IMATH_NAMESPACE::V2d& v) {return v.normalizeExc();})
++        .def("normalizeNonNull", [](IMATH_NAMESPACE::V2d& v) {return v.normalizeNonNull();})
++        .def("normalized", [](IMATH_NAMESPACE::V2d const& v) {return v.normalized();})
++        .def("normalizedExc", [](IMATH_NAMESPACE::V2d const& v) {return v.normalizedExc();})
++        .def("normalizedNonNull", [](IMATH_NAMESPACE::V2d const& v) {return v.normalizedNonNull();})
+         .def_static(
+             "baseTypeLowest",
+             []() { return IMATH_NAMESPACE::V2d::baseTypeLowest(); })
+@@ -153,7 +153,7 @@ define_imath_2d(py::module m)
+             [](IMATH_NAMESPACE::Box2d lhs, py::object const& rhs) {
+                 return lhs != _type_checked<IMATH_NAMESPACE::Box2d>(rhs, "!=");
+             })
+-        .def("center", &IMATH_NAMESPACE::Box2d::center)
++        .def("center", [](IMATH_NAMESPACE::Box2d const& box) {return box.center();})
+         .def(
+             "extendBy",
+             [](IMATH_NAMESPACE::Box2d* box, IMATH_NAMESPACE::V2d const& point) {

@@ -46,7 +46,7 @@ BDEPEND="
 "
 
 PATCHES=(
-	"${FILESDIR}/${PN}-1.8.3-0001-find-py-ilmbase-in-config-mode.patch"
+	"${FILESDIR}/${PN}-1.8.12-fix-pthread-include.patch"
 	"${FILESDIR}/${PN}-1.8.6-py312.patch"
 )
 
@@ -81,7 +81,6 @@ src_configure() {
 		-DUSE_PRMAN=OFF
 		-DUSE_PYALEMBIC=$(usex python)
 		-DUSE_TESTS=$(usex test)
-		$(usex python "-DPython3_EXECUTABLE=${PYTHON}" "")
 	)
 
 	cmake_src_configure

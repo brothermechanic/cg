@@ -1,0 +1,16 @@
+--- a/source/blender/editors/asset/intern/asset_indexer_remote_listing_v1.cc
++++ b/source/blender/editors/asset/intern/asset_indexer_remote_listing_v1.cc
+@@ -61,9 +61,10 @@ static std::optional<int> blender_versio
+   int major, minor;
+   const blender::StringRef major_str = str.substr(0, dot);
+   const blender::StringRef minor_str = str.substr(dot + 1);
+-  if (std::from_chars(major_str.begin(), major_str.end(), major).ec != std::errc() ||
+-      std::from_chars(minor_str.begin(), minor_str.end(), minor).ec != std::errc())
+-  {
++  try {
++    major = std::stoi(std::string(major_str));
++    minor = std::stoi(std::string(minor_str));
++  } catch (...) {
+     return {};
+   }
+   if (major < 0 || minor < 0 || minor >= 100) {

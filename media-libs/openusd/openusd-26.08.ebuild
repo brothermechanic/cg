@@ -12,10 +12,7 @@ DESCRIPTION="Universal Scene Description"
 HOMEPAGE="http://www.openusd.org"
 #COMMIT="60a8d58c3953a005e604c4f760caa018a90ae846"
 #https://github.com/PixarAnimationStudios/USD/archive/${COMMIT}.tar.gz
-SRC_URI="
-https://github.com/PixarAnimationStudios/USD/archive/refs/tags/v${PV}.tar.gz
-	-> ${P}.tar.gz
-"
+SRC_URI="https://github.com/PixarAnimationStudios/USD/archive/refs/tags/v${PV}.tar.gz -> ${P}.gh.tar.gz"
 LICENSE="
 	Apache-2.0
 	BSD
@@ -127,7 +124,7 @@ RDEPEND+="
 	)
 	openvdb? (
 		>=dev-libs/c-blosc-1.17:=
-		>=media-gfx/openvdb-10.1.0-r1:=[${OPENVDB_SINGLE_USEDEP}]
+		media-gfx/openvdb:=[${OPENVDB_SINGLE_USEDEP}]
 	)
 	osl? (
 		>=media-libs/osl-1.15.0-r1:=

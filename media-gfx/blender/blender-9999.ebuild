@@ -5,7 +5,7 @@ EAPI=8
 
 PYTHON_COMPAT=( python3_{12..14} )
 OPENVDB_COMPAT=( {7..13} )
-LLVM_COMPAT=( {20..22} )
+LLVM_COMPAT=( {20..23} )
 LLVM_OPTIONAL=1
 
 ROCM_SKIP_GLOBALS=1
@@ -41,7 +41,7 @@ if [[ "4.5 4.2 3.6" =~ "${MY_PV}" ]]; then
 elif [[ "5.1" =~ "${MY_PV}" ]]; then
 	AUD_PV="9"
 else
-	AUD_PV="9"
+	AUD_PV="10"
 fi
 
 LICENSE="GPL-3"
@@ -86,7 +86,7 @@ AMDGPU_TARGETS_COMPAT=(
 IUSE_CPU="+simd +tbb lld gold +mold llvm valgrind"
 IUSE_GPU="cuda optix hip hiprt oneapi cycles-bin-kernels ${CUDA_TARGETS_COMPAT[@]/#/cuda_targets_} ${AMDGPU_TARGETS_COMPAT[@]/#/amdgpu_targets_} vulkan"
 IUSE_DESKTOP="+cg portable +X headless +nls icu ndof wayland gnome"
-IUSE_LIBS="+bullet +draco +manifold +materialx +meshoptimizer +color-management +oidn +opensubdiv +openvdb nanovdb openxr +libmv osl +fftw +potrace +pugixml +otf rubberband"
+IUSE_LIBS="+bullet +jolt +draco +manifold +materialx +meshoptimizer +color-management +oidn +opensubdiv +openvdb nanovdb openxr +libmv osl +fftw +potrace +pugixml +otf rubberband"
 IUSE_MOD="+fluid +smoke +oceansim +remesh +gmp +quadriflow +uv-slim +addons addons-contrib +assets"
 IUSE_RENDER="+cycles +openpgl +embree +freestyle hydra"
 IUSE_3DFILES="alembic usd +obj +ply +stl"
@@ -282,7 +282,7 @@ RDEPEND="
 	virtual/libintl
 	addons? ( ${ADDONS} )
 	alembic? ( >=media-gfx/alembic-1.8.3-r2[boost(+),hdf(+)] )
-	bullet? ( sci-physics/bullet:=[double-precision] )
+	jolt? ( dev-libs/jolt:=[double-precision] )
 	cuda? ( dev-util/nvidia-cuda-toolkit:= )
 	draco? ( >=media-libs/draco-1.5.2:= )
 	embree? (
@@ -329,20 +329,18 @@ RDEPEND="
 	oneapi? ( dev-libs/intel-compute-runtime[l0] )
 	media-libs/glew:*
 	oidn? ( >=media-libs/oidn-2.1.0[cuda?] )
-	<media-libs/openimageio-3.2:=[${PYTHON_SINGLE_USEDEP},python,color-management?]
+	>=media-libs/opentimelineio-0.18.1:=[${PYTHON_SINGLE_USEDEP},python]
 	>=media-libs/openimageio-2.5.11.0[${PYTHON_SINGLE_USEDEP},python,color-management?]
 	>=dev-cpp/robin-map-0.6.2
 	>=dev-libs/libfmt-9.1.0
 	color-management? ( >=media-libs/opencolorio-2.3.0:= )
 	openexr? ( >=media-libs/openexr-3.2.1:= )
 	openpgl? (
-		<media-libs/openpgl-0.9[tbb?]
 		>=media-libs/openpgl-0.5[tbb?]
 	)
 	opensubdiv? ( >=media-libs/opensubdiv-3.6.0[cuda?,tbb?,opengl] )
 	openvdb? (
-		>=media-gfx/openvdb-11.0.0:=[${OPENVDB_SINGLE_USEDEP},cuda?,nanovdb?]
-		<media-gfx/openvdb-14.0.0:=[${OPENVDB_SINGLE_USEDEP},cuda?,nanovdb?]
+		media-gfx/openvdb:=[${OPENVDB_SINGLE_USEDEP},cuda?,nanovdb?]
 		>=dev-libs/c-blosc-1.21.1[zlib]
 	)
 	openxr? (
@@ -761,6 +759,7 @@ src_configure() {
 		-DWITH_ASSERT_ABORT=$(usex debug)
 		-DWITH_BULLET=$(usex bullet)							# Physics Engine
 		-DWITH_SYSTEM_BULLET=no									# currently unsupported
+		-DWITH_JOLT=$(usex jolt)
 		-DWITH_CODEC_AVI=$(usex avi)
 		-DWITH_CODEC_FFMPEG=$(usex ffmpeg)
 		-DWITH_CODEC_SNDFILE=$(usex sndfile)
@@ -910,7 +909,6 @@ src_configure() {
 	if use hip; then
 		mycmakeargs+=(
 			-DHIP_ROOT_DIR="$(hipconfig -p)"
-
 			-DCYCLES_HIP_BINARIES_ARCH="$(get_amdgpu_flags)"
 		)
 		if use hiprt; then
@@ -965,7 +963,7 @@ src_configure() {
 			use oneapi && CYCLES_TEST_DEVICES+=( "ONEAPI" )
 		fi
 		mycmakeargs+=(
-			-DCMAKE_INSTALL_PREFIX_WITH_CONFIG="${T}/usr"
+			-DCMAKE_INSTALL_PREFIX_WITH_CONFIG="${T%/}/usr"
 			-DCYCLES_TEST_DEVICES="$(local IFS=";"; echo "${CYCLES_TEST_DEVICES[*]}")"
 		)
 
