@@ -30,7 +30,7 @@ else
 	inherit pypi
 
 	# Upstream is often behind with doc updates
-	DOC_PV=${PV}
+	DOC_PV=1.18.0
 
 	SRC_URI+="
 		doc? (
