@@ -68,7 +68,7 @@ RDEPEND="
 "
 DEPEND+="
 	fortran? (
-		>=dev-python/pythran-0.16.0[${PYTHON_USEDEP}]
+		>=dev-python/pythran-0.19.0[${PYTHON_USEDEP}]
 	)
 "
 BDEPEND="
@@ -82,7 +82,7 @@ BDEPEND="
 	virtual/pkgconfig
 	doc? ( app-arch/unzip )
 	fortran? (
-		>=dev-python/pythran-0.18.1[${PYTHON_USEDEP}]
+		>=dev-python/pythran-0.19.0[${PYTHON_USEDEP}]
 	)
 	test-rust? (
 		dev-python/pooch[${PYTHON_USEDEP}]
