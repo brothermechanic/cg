@@ -1,0 +1,47 @@
+From f2b097f4bd5243b8392983ce0c44b02e7ca4da2c Mon Sep 17 00:00:00 2001
+From: LLM Assistant <llm-assistant>
+Date: Thu, 3 Sep 2026 18:24:11 +0200
+Subject: [PATCH] Fix: CMake error configuring a build with
+ WITH_GHOST_WAYLAND=OFF
+
+The WITH_GHOST_DBUS option was declared inside an
+if(WITH_GHOST_WAYLAND) block, so with Wayland disabled the variable
+never existed. set_and_warn_dependency() then expanded it to nothing
+and CMake aborted with "if given arguments: NOT OFF AND / Unknown
+arguments specified".
+
+Declare the option unconditionally, matching WITH_GHOST_DBUS_DYNLOAD
+right below it. set_and_warn_dependency() still turns it off when
+Wayland is disabled.
+
+This issue was introduced in f39541c7592.
+---
+ CMakeLists.txt | 10 ++++------
+ 1 file changed, 4 insertions(+), 6 deletions(-)
+
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index ad5b9d2db393..084aa4b3a652 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -344,14 +344,12 @@ if(UNIX AND NOT (APPLE OR HAIKU))
+   option(WITH_GHOST_WAYLAND "Enable building Blender against Wayland for windowing" ON)
+   mark_as_advanced(WITH_GHOST_WAYLAND)
+ 
+-  if(WITH_GHOST_WAYLAND)
+-    option(WITH_GHOST_DBUS "\
++  option(WITH_GHOST_DBUS "\
+ Enable reading desktop settings over DBUS, such as the light/dark theme preference. \
+ Requires the `dbus-1` headers at build time."
+-      ON
+-    )
+-    mark_as_advanced(WITH_GHOST_DBUS)
+-  endif()
++    ON
++  )
++  mark_as_advanced(WITH_GHOST_DBUS)
+ 
+   option(WITH_GHOST_DBUS_DYNLOAD "\
+ Enable runtime dynamic loading of `libdbus` (avoids a link time dependency)"
+-- 
+2.54.0
+

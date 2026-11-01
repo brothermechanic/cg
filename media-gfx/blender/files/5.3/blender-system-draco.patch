@@ -13,17 +13,13 @@
  if(WITH_MESHOPTIMIZER)
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
-@@ -475,6 +475,10 @@ if(UNIX AND NOT APPLE)
- 
- # Compression
+@@ -475,2 +475,6 @@ if(UNIX AND NOT APPLE)
  option(WITH_DRACO "Enable Draco mesh compression Python module (used for glTF)" ON)
 +if(UNIX AND NOT APPLE)
 +  option(WITH_SYSTEM_DRACO "Use the system DRACO library" OFF)
 +  mark_as_advanced(WITH_SYSTEM_DRACO)
 +endif()
  option(WITH_MESHOPTIMIZER "Enable meshoptimizer compression Python module (used for glTF)" ON)
- 
- # Camera/motion tracking
 --- a/source/creator/CMakeLists.txt
 +++ b/source/creator/CMakeLists.txt
 @@ -517,7 +517,7 @@ if(WITH_PYTHON)

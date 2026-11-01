@@ -25,7 +25,7 @@ EGIT_LFS_CLONE_TYPE="single"
 if [[ ${PV} == 9999 ]]; then
 	EGIT_BRANCH="main"
 	#EGIT_COMMIT="0f3fdd25bcabac1d68d02fb246d961ea56fe49a1"
-	MY_PV="5.3"
+	MY_PV="5.4"
 	KEYWORDS=""
 else
 	MY_PV="$(ver_cut 1-2)"
@@ -86,7 +86,7 @@ AMDGPU_TARGETS_COMPAT=(
 IUSE_CPU="+simd +tbb lld gold +mold llvm valgrind"
 IUSE_GPU="cuda optix hip hiprt oneapi cycles-bin-kernels ${CUDA_TARGETS_COMPAT[@]/#/cuda_targets_} ${AMDGPU_TARGETS_COMPAT[@]/#/amdgpu_targets_} vulkan"
 IUSE_DESKTOP="+cg portable +X headless +nls icu ndof wayland gnome"
-IUSE_LIBS="+bullet +jolt +draco +manifold +materialx +meshoptimizer +color-management +oidn +opensubdiv +openvdb nanovdb openxr +libmv osl +fftw +potrace +pugixml +otf rubberband"
+IUSE_LIBS="+bullet +jolt +draco +manifold +materialx +meshoptimizer +color-management +oidn +opensubdiv +openvdb nanovdb openxr +libmv osl +fftw +potrace +pugixml +otf rubberband ktx"
 IUSE_MOD="+fluid +smoke +oceansim +remesh +gmp +quadriflow +uv-slim +addons addons-contrib +assets"
 IUSE_RENDER="+cycles +openpgl +embree +freestyle hydra"
 IUSE_3DFILES="alembic usd +obj +ply +stl"
@@ -264,7 +264,7 @@ RDEPEND="
 		>=dev-python/certifi-2021.10.8[${PYTHON_USEDEP}]
 		>=dev-python/charset-normalizer-2.0.6[${PYTHON_USEDEP}]
 		>=dev-python/idna-3.2[${PYTHON_USEDEP}]
-		>=dev-python/numpy-1.24.3[${PYTHON_USEDEP}]
+		>=dev-python/numpy-2.5.3[${PYTHON_USEDEP}]
 		>=dev-python/pybind11-2.10.1[${PYTHON_USEDEP}]
 		>=dev-python/zstandard-0.16.0[${PYTHON_USEDEP}]
 		>=dev-python/requests-2.26.0[${PYTHON_USEDEP}]
@@ -333,7 +333,8 @@ RDEPEND="
 	>=media-libs/openimageio-2.5.11.0[${PYTHON_SINGLE_USEDEP},python,color-management?]
 	>=dev-cpp/robin-map-0.6.2
 	>=dev-libs/libfmt-9.1.0
-	color-management? ( >=media-libs/opencolorio-2.3.0:= )
+	color-management? ( >=media-libs/opencolorio-2.6.0:= )
+	ktx? ( media-gfx/KTX-Software:= )
 	openexr? ( >=media-libs/openexr-3.2.1:= )
 	openpgl? (
 		>=media-libs/openpgl-0.5[tbb?]
@@ -363,8 +364,8 @@ RDEPEND="
 	sndfile? ( media-libs/libsndfile )
 	tbb? ( dev-cpp/tbb:= )
 	usd? (
-		<media-libs/openusd-27[${PYTHON_SINGLE_USEDEP},monolithic,imaging,python,alembic?,draco?,materialx?,color-management?,opengl,openexr,openimageio,osl?,openvdb,vulkan]
-		>=media-libs/openusd-25[${PYTHON_SINGLE_USEDEP},monolithic,imaging,python,alembic?,draco?,materialx?,color-management?,opengl,openexr,openimageio,osl?,openvdb,vulkan]
+		<media-libs/openusd-27[${PYTHON_SINGLE_USEDEP},imaging,python,alembic?,draco?,materialx?,color-management?,opengl,openexr,openimageio,osl?,openvdb,vulkan]
+		>=media-libs/openusd-25[${PYTHON_SINGLE_USEDEP},imaging,python,alembic?,draco?,materialx?,color-management?,opengl,openexr,openimageio,osl?,openvdb,vulkan]
 	)
 	valgrind? ( dev-debug/valgrind )
 	webp? ( >=media-libs/libwebp-1.3.2:= )
@@ -409,7 +410,7 @@ DEPEND="
 	dev-cpp/eigen:=[cuda?,tbb?]
 	vulkan? (
 		>=media-libs/shaderc-2022.3
-		>=media-libs/vulkan-loader-1.3.268[X?,wayland?]
+		>=media-libs/vulkan-loader-1.3.363[X?,wayland?]
 	)
 "
 
@@ -432,10 +433,10 @@ BDEPEND="
 		>=dev-python/autopep8-1.6.0[${PYTHON_USEDEP}]
 		>=dev-python/pycodestyle-2.8.0[${PYTHON_USEDEP}]
 	')
-	>=dev-cpp/yaml-cpp-0.7.0
+	>=dev-cpp/yaml-cpp-0.9.0
 	>=dev-build/cmake-3.10
 	>=dev-build/meson-0.63.0
-	>=dev-util/vulkan-headers-1.3.268
+	>=dev-util/vulkan-headers-1.3.363
 	dev-vcs/git
 	dev-util/patchelf
 	virtual/pkgconfig
@@ -656,6 +657,10 @@ src_prepare() {
 		-e "/get_target_property(OPENIMAGEIO_TOOL OpenImageIO\:\:oiiotool LOCATION)/d" \
 		-i build_files/cmake/platform/dependency_targets.cmake
 
+	sed \
+		-e '/set(OPENSUBDIV_LIBPATH "") .*$/d' \
+		-i build_files/cmake/platform/platform_unix.cmake
+
 		#echo -e " #define BUILD_HASH \"$(git-r3_peek_remote_ref ${EGIT_REPO_URI_LIST% *})\"\n" \
 #		"#define BUILD_COMMIT_TIMESTAMP \"\"\n" \
 #  		"#define BUILD_BRANCH \"${EGIT_BRANCH} modified\"\n" \
@@ -840,6 +845,7 @@ src_configure() {
 		-DWITH_SDL=$(usex sdl)									# for sound and joystick support
 		-DWITH_STATIC_LIBS=$(usex portable)
 		-DWITH_DRACO=$(usex draco)
+		-DWITH_KTX=$(usex ktx)
 		-DWITH_MESHOPTIMIZER=$(usex meshoptimizer)
 		-DWITH_SYSTEM_DRACO=$(usex !portable)
 		-DWITH_AUDASPACE=yes
@@ -850,7 +856,8 @@ src_configure() {
 		-DWITH_SYSTEM_GLOG=$(usex !portable)
 		-DWITH_SYSTEM_CERES=$(usex !portable)
 		-DCERES_INCLUDE_DIRS="/usr/include/ceres"
-		-DEigen3_DIR="/usr/share/eigen3/cmake"
+		-DEigen3_DIR="${EPREFIX}/usr/share/eigen3/cmake"
+		-DOpenSubdiv_DIR="${EPREFIX}/usr/lib/cmake/OpenSubdiv"
 		-DWITH_GTESTS=$(usex gtests)
 		-DWITH_SYSTEM_GTESTS=$(usex !portable)
 		-DWITH_GHOST_DEBUG=$(usex debug)

@@ -1,0 +1,10 @@
+--- a/extern/curve_fit_nd/intern/curve_fit_cubic.c
++++ b/extern/curve_fit_nd/intern/curve_fit_cubic.c
+@@ -42,6 +42,7 @@
+ 
+ #include <string.h>
+ #include <stdlib.h>
++#include <alloca.h>
+ 
+ #include "../curve_fit_nd.h"
+ 

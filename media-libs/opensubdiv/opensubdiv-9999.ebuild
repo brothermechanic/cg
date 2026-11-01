@@ -17,10 +17,12 @@ if [[ ${PV} = *9999 ]]; then
 	EGIT_BRANCH="release"
 	KEYWORDS=""
 else
-	COMMIT="27a7454dd017d7e10fca44723ee53c18dfd1f3af"
-	SRC_URI="https://github.com/PixarAnimationStudios/OpenSubdiv/archive/${COMMIT}.tar.gz -> ${P}-${COMMIT:0:7}.gh.tar.gz"
+	#COMMIT="27a7454dd017d7e10fca44723ee53c18dfd1f3af"
+	#SRC_URI="https://github.com/PixarAnimationStudios/OpenSubdiv/archive/${COMMIT}.tar.gz -> ${P}-${COMMIT:0:7}.gh.tar.gz"
+	SRC_URI="https://github.com/PixarAnimationStudios/OpenSubdiv/archive/v${MY_PV}.tar.gz -> ${P}.gh.tar.gz"
 	KEYWORDS="~amd64 ~arm ~arm64 ~x86"
-	S="${WORKDIR}/OpenSubdiv-${COMMIT}"
+	#S="${WORKDIR}/OpenSubdiv-${COMMIT}"
+	S="${WORKDIR}/OpenSubdiv-${MY_PV}"
 fi
 
 
@@ -74,7 +76,6 @@ DEPEND="
 
 PATCHES=(
 	"${FILESDIR}/${PN}-3.6.0-use-gnuinstalldirs.patch"
-	"${FILESDIR}/${PN}-3.6.0-cudaflags.patch"
 	"${FILESDIR}/${PN}-3.7.0-fix-include-cmath.patch"
 )
 

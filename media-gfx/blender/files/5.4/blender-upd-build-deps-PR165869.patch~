@@ -1,0 +1,2248 @@
+From f73e6c6c5e021411af3072b8ad583cdbc32c5812 Mon Sep 17 00:00:00 2001
+From: Ray Molenkamp <github@lazydodo.com>
+Date: Thu, 1 Oct 2026 11:28:55 -0700
+Subject: [PATCH 01/11] deps: numpy 2.4.6
+
+Uneventful, version bump, no other changes needed
+---
+ build_files/build_environment/cmake/versions.cmake | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/build_files/build_environment/cmake/versions.cmake b/build_files/build_environment/cmake/versions.cmake
+index 4a56c6931316..8cce0e6ce6e9 100644
+--- a/build_files/build_environment/cmake/versions.cmake
++++ b/build_files/build_environment/cmake/versions.cmake
+@@ -497,9 +497,9 @@ set(TOMLI_W_VERSION 1.2.0)
+ 
+ # When this numpy version is bumped, please also change the limit value set for variable `install_requires`
+ # in build_files/utils/make_bpy_wheel.py
+-set(NUMPY_VERSION 2.3.4)
++set(NUMPY_VERSION 2.4.6)
+ set(NUMPY_URI https://github.com/numpy/numpy/releases/download/v${NUMPY_VERSION}/numpy-${NUMPY_VERSION}.tar.gz)
+-set(NUMPY_HASH 8717ed1828a8a390c454c6636e91c46a)
++set(NUMPY_HASH 2794346c22169a5a103cd117a3f1394f)
+ set(NUMPY_HASH_TYPE MD5)
+ set(NUMPY_FILE numpy-${NUMPY_VERSION}.tar.gz)
+ set(NUMPY_CPE "cpe:2.3:a:numpy:numpy:${NUMPY_VERSION}:*:*:*:*:*:*:*")
+-- 
+2.54.0
+
+
+From 972210474ed934b6811d96160a84561f3744408d Mon Sep 17 00:00:00 2001
+From: Ray Molenkamp <github@lazydodo.com>
+Date: Thu, 1 Oct 2026 12:28:38 -0700
+Subject: [PATCH 02/11] deps: tbb 2023.1.0
+
+Uneventful, version bump, no other changes needed
+---
+ build_files/build_environment/cmake/versions.cmake | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/build_files/build_environment/cmake/versions.cmake b/build_files/build_environment/cmake/versions.cmake
+index 8cce0e6ce6e9..fcfa4bb15a7c 100644
+--- a/build_files/build_environment/cmake/versions.cmake
++++ b/build_files/build_environment/cmake/versions.cmake
+@@ -410,9 +410,9 @@ set(PYTHON_PIP_CPE "cpe:2.3:a:pypa:pip:${PYTHON_PIP_VERSION}:*:*:*:*:*:*:*")
+ 
+ set(TBB_YEAR 2022)
+ set(TBB_NAME oneTBB)
+-set(TBB_VERSION v2022.3.0)
++set(TBB_VERSION v2023.1.0)
+ set(TBB_URI https://github.com/uxlfoundation/oneTBB/archive/refs/tags/${TBB_VERSION}.tar.gz)
+-set(TBB_HASH 2b242c465b194ac8e1451ea1354873ae)
++set(TBB_HASH 383ebd7f3c84ff7124a215ff73364e76)
+ set(TBB_HASH_TYPE MD5)
+ set(TBB_FILE oneTBB-${TBB_VERSION}.tar.gz)
+ set(TBB_CPE "cpe:2.3:a:intel:threading_building_blocks:${TBB_YEAR}:*:*:*:*:*:*:*")
+-- 
+2.54.0
+
+
+From 9a1fad21fbca1c0a65208bc10afeff2f2fd20df8 Mon Sep 17 00:00:00 2001
+From: Ray Molenkamp <github@lazydodo.com>
+Date: Thu, 1 Oct 2026 12:38:30 -0700
+Subject: [PATCH 03/11] deps: openexr 3.5.1 imath 3.2.3
+
+Uneventful, version bump, removed a patch, python folder got renamed
+---
+ .../build_environment/cmake/openexr.cmake     |  7 ++---
+ .../build_environment/cmake/versions.cmake    |  8 +++---
+ .../patches/openexr_2594.diff                 | 27 -------------------
+ 3 files changed, 6 insertions(+), 36 deletions(-)
+ delete mode 100644 build_files/build_environment/patches/openexr_2594.diff
+
+diff --git a/build_files/build_environment/cmake/openexr.cmake b/build_files/build_environment/cmake/openexr.cmake
+index be9e49662b4f..8be09273495f 100644
+--- a/build_files/build_environment/cmake/openexr.cmake
++++ b/build_files/build_environment/cmake/openexr.cmake
+@@ -44,9 +44,6 @@ ExternalProject_Add(external_openexr
+   PATCH_COMMAND ${PATCH_CMD} -p 1 -d
+     ${BUILD_DIR}/openexr/src/external_openexr <
+     ${PATCH_DIR}/openexr_deflate_cmake.diff && 
+-    ${PATCH_CMD} -p 1 -d
+-    ${BUILD_DIR}/openexr/src/external_openexr <
+-    ${PATCH_DIR}/openexr_2594.diff &&
+     ${PATCH_CMD} -p 1 -d 
+     ${BUILD_DIR}/openexr/src/external_openexr <
+     ${PATCH_DIR}/openexr_python_link.diff
+@@ -83,8 +80,8 @@ if(WIN32)
+       ${LIBDIR}/openexr/bin/OpenEXR${OPENEXR_VERSION_POSTFIX}.dll
+       ${HARVEST_TARGET}/openexr/bin/OpenEXR${OPENEXR_VERSION_POSTFIX}.dll
+     COMMAND ${CMAKE_COMMAND} -E copy_directory
+-      ${LIBDIR}/openexr/python
+-      ${HARVEST_TARGET}/openexr/python
++      ${LIBDIR}/openexr/lib/site-packages
++      ${HARVEST_TARGET}/openexr/lib/site-packages
+     DEPENDEES install
+   )
+ else()
+diff --git a/build_files/build_environment/cmake/versions.cmake b/build_files/build_environment/cmake/versions.cmake
+index fcfa4bb15a7c..ec88726f4a74 100644
+--- a/build_files/build_environment/cmake/versions.cmake
++++ b/build_files/build_environment/cmake/versions.cmake
+@@ -155,9 +155,9 @@ set(DEFLATE_HOMEPAGE https://github.com/ebiggers/libdeflate)
+ set(DEFLATE_LICENSE SPDX:MIT)
+ set(DEFLATE_COPYRIGHT "Copyright 2016 Eric Biggers")
+ 
+-set(OPENEXR_VERSION 3.4.10)
++set(OPENEXR_VERSION 3.5.1)
+ set(OPENEXR_URI https://github.com/AcademySoftwareFoundation/openexr/archive/v${OPENEXR_VERSION}.tar.gz)
+-set(OPENEXR_HASH 8926ba09c4e4cd21c7a0fa2d2b39fa82)
++set(OPENEXR_HASH 4dabf5b47cd02df93cdeaf4d5d77502c)
+ set(OPENEXR_HASH_TYPE MD5)
+ set(OPENEXR_FILE openexr-${OPENEXR_VERSION}.tar.gz)
+ set(OPENEXR_CPE "cpe:2.3:a:openexr:openexr:${OPENEXR_VERSION}:*:*:*:*:*:*:*")
+@@ -165,9 +165,9 @@ set(OPENEXR_HOMEPAGE https://github.com/AcademySoftwareFoundation/openexr)
+ set(OPENEXR_LICENSE SPDX:BSD-3-Clause)
+ set(OPENEXR_COPYRIGHT "Copyright Contributors to the OpenEXR Project. All rights reserved.")
+ 
+-set(IMATH_VERSION 3.2.2)
++set(IMATH_VERSION 3.2.3)
+ set(IMATH_URI https://github.com/AcademySoftwareFoundation/Imath/archive/v${IMATH_VERSION}.tar.gz)
+-set(IMATH_HASH e29f25ce926ac53d8e0a52197299f61b)
++set(IMATH_HASH f218124d0d3ee92b9cb919483c697639)
+ set(IMATH_HASH_TYPE MD5)
+ set(IMATH_FILE imath-${IMATH_VERSION}.tar.gz)
+ set(IMATH_HOMEPAGE https://github.com/AcademySoftwareFoundation/Imath)
+diff --git a/build_files/build_environment/patches/openexr_2594.diff b/build_files/build_environment/patches/openexr_2594.diff
+deleted file mode 100644
+index 28364084e865..000000000000
+--- a/build_files/build_environment/patches/openexr_2594.diff
++++ /dev/null
+@@ -1,27 +0,0 @@
+-diff --git a/src/lib/OpenEXR/ImfKeyCode.h b/src/lib/OpenEXR/ImfKeyCode.h
+-index 9fca7b4f01..4ed4a788d8 100644
+---- a/src/lib/OpenEXR/ImfKeyCode.h
+-+++ b/src/lib/OpenEXR/ImfKeyCode.h
+-@@ -93,6 +93,7 @@ class IMF_EXPORT_TYPE KeyCode
+-     IMF_EXPORT
+-     KeyCode& operator= (const KeyCode& other);
+- 
+-+    IMF_EXPORT
+-     bool operator== (const KeyCode& other) const;
+- 
+-     //----------------------------
+-diff --git a/src/test/OpenEXRTest/testStandardAttributes.cpp b/src/test/OpenEXRTest/testStandardAttributes.cpp
+-index a0b894e19f..247f6f3a4a 100644
+---- a/src/test/OpenEXRTest/testStandardAttributes.cpp
+-+++ b/src/test/OpenEXRTest/testStandardAttributes.cpp
+-@@ -388,6 +388,10 @@ writeReadKeyCode (const char fileName[])
+-         3,      // perfsPerFrame
+-         80);    // perfsPerCount
+- 
+-+    KeyCode k2 = k1;
+-+
+-+    assert (k2 == k1);
+-+    
+-     assert (k1.filmMfcCode () == 12);
+-     assert (k1.filmType () == 34);
+-     assert (k1.prefix () == 123456);
+-- 
+2.54.0
+
+
+From 14a8a30c604c14dfbeffb6fdd5a736e869861e00 Mon Sep 17 00:00:00 2001
+From: Ray Molenkamp <github@lazydodo.com>
+Date: Thu, 1 Oct 2026 12:51:03 -0700
+Subject: [PATCH 04/11] deps: OCIO 2.6.0 yaml-cpp 0.9.0
+
+Uneventful, version bump, wanted a newer yaml-cpp, updated some dll names
+---
+ build_files/build_environment/cmake/opencolorio.cmake |  8 ++++----
+ build_files/build_environment/cmake/versions.cmake    | 10 +++++-----
+ 2 files changed, 9 insertions(+), 9 deletions(-)
+
+diff --git a/build_files/build_environment/cmake/opencolorio.cmake b/build_files/build_environment/cmake/opencolorio.cmake
+index addd67e887cd..40a8390fe951 100644
+--- a/build_files/build_environment/cmake/opencolorio.cmake
++++ b/build_files/build_environment/cmake/opencolorio.cmake
+@@ -107,8 +107,8 @@ if(WIN32)
+         ${LIBDIR}/opencolorio/include
+         ${HARVEST_TARGET}/opencolorio/include
+       COMMAND ${CMAKE_COMMAND} -E copy
+-        ${LIBDIR}/opencolorio/bin/OpenColorIO_2_5.dll
+-        ${HARVEST_TARGET}/opencolorio/bin/OpenColorIO_2_5.dll
++        ${LIBDIR}/opencolorio/bin/OpenColorIO_2_6.dll
++        ${HARVEST_TARGET}/opencolorio/bin/OpenColorIO_2_6.dll
+       COMMAND ${CMAKE_COMMAND} -E copy_directory
+         ${LIBDIR}/opencolorio/lib
+         ${HARVEST_TARGET}/opencolorio/lib
+@@ -119,8 +119,8 @@ if(WIN32)
+   if(BUILD_MODE STREQUAL Debug)
+     ExternalProject_Add_Step(external_opencolorio after_install
+       COMMAND ${CMAKE_COMMAND} -E copy
+-        ${LIBDIR}/opencolorio/bin/OpenColorIO_d_2_5.dll
+-        ${HARVEST_TARGET}/opencolorio/bin/OpenColorIO_d_2_5.dll
++        ${LIBDIR}/opencolorio/bin/OpenColorIO_d_2_6.dll
++        ${HARVEST_TARGET}/opencolorio/bin/OpenColorIO_d_2_6.dll
+       COMMAND ${CMAKE_COMMAND} -E copy
+         ${LIBDIR}/opencolorio/lib/OpenColorIO_d.lib
+         ${HARVEST_TARGET}/opencolorio/lib/OpenColorIO_d.lib
+diff --git a/build_files/build_environment/cmake/versions.cmake b/build_files/build_environment/cmake/versions.cmake
+index ec88726f4a74..516aab1c34ed 100644
+--- a/build_files/build_environment/cmake/versions.cmake
++++ b/build_files/build_environment/cmake/versions.cmake
+@@ -260,9 +260,9 @@ set(SDL_HOMEPAGE https://www.libsdl.org)
+ set(SDL_LICENSE SPDX:Zlib)
+ set(SDL_COPYRIGHT "Copyright (C) 1997-2020 Sam Lantinga <slouken@libsdl.org>")
+ 
+-set(OPENCOLORIO_VERSION 2.5.0)
++set(OPENCOLORIO_VERSION 2.6.0)
+ set(OPENCOLORIO_URI https://github.com/AcademySoftwareFoundation/OpenColorIO/archive/v${OPENCOLORIO_VERSION}.tar.gz)
+-set(OPENCOLORIO_HASH 41d6b62ac672ed333ebfdcc1108407e0)
++set(OPENCOLORIO_HASH 0f965eec8d6f344033849f60b9f9be0c)
+ set(OPENCOLORIO_HASH_TYPE MD5)
+ set(OPENCOLORIO_FILE OpenColorIO-${OPENCOLORIO_VERSION}.tar.gz)
+ set(OPENCOLORIO_NAME OpenColorIO)
+@@ -730,9 +730,9 @@ set(XML2_HOMEPAGE https://gitlab.gnome.org/GNOME/libxml2)
+ set(XML2_LICENSE SPDX:MIT)
+ set(XML2_COPYRIGHT "Copyright (C) 1998-2012 Daniel Veillard. All Rights Reserved.")
+ 
+-set(YAMLCPP_VERSION 0.8.0)
+-set(YAMLCPP_URI https://github.com/jbeder/yaml-cpp/archive/refs/tags/${YAMLCPP_VERSION}.tar.gz)
+-set(YAMLCPP_HASH 1d2c7975edba60e995abe3c4af6480e5)
++set(YAMLCPP_VERSION 0.9.0)
++set(YAMLCPP_URI https://github.com/jbeder/yaml-cpp/archive/refs/tags/yaml-cpp-${YAMLCPP_VERSION}.tar.gz)
++set(YAMLCPP_HASH 7d17de1b2a4b1d2776181f67c940bcdf)
+ set(YAMLCPP_HASH_TYPE MD5)
+ set(YAMLCPP_FILE yaml-cpp-${YAMLCPP_VERSION}.tar.gz)
+ set(YAMLCPP "cpe:2.3:a:yaml-cpp_project:yaml-cpp:${YAMLCPP_VERSION}:*:*:*:*:*:*:*")
+-- 
+2.54.0
+
+
+From 63c77e728fce1e6d9b36cfa2ab20bb7e4c1c86c1 Mon Sep 17 00:00:00 2001
+From: Ray Molenkamp <github@lazydodo.com>
+Date: Thu, 1 Oct 2026 14:34:01 -0600
+Subject: [PATCH 05/11] CMake: win64 changes for 5.4 lib update
+
+ocio's dll name changed, openexr python bindings changed a little
+---
+ source/creator/CMakeLists.txt | 36 ++++++++++++-----------------------
+ 1 file changed, 12 insertions(+), 24 deletions(-)
+
+diff --git a/source/creator/CMakeLists.txt b/source/creator/CMakeLists.txt
+index cf38f491b5b3..06d13ce7da3c 100644
+--- a/source/creator/CMakeLists.txt
++++ b/source/creator/CMakeLists.txt
+@@ -672,26 +672,14 @@ if(WIN32)
+       DEBUG
+     )
+   endif()
+-  if(EXISTS ${LIBDIR}/opencolorio/bin/opencolorio_2_4.dll) # 4.4
+-    windows_install_shared_manifest(
+-      FILES ${LIBDIR}/opencolorio/bin/opencolorio_2_4.dll
+-      RELEASE
+-    )
+-    windows_install_shared_manifest(
+-      FILES ${LIBDIR}/opencolorio/bin/opencolorio_d_2_4.dll
+-      DEBUG
+-    )
+-  endif()
+-  if(EXISTS ${LIBDIR}/opencolorio/bin/opencolorio_2_5.dll) # 5.1
+-    windows_install_shared_manifest(
+-      FILES ${LIBDIR}/opencolorio/bin/opencolorio_2_5.dll
+-      RELEASE
+-    )
+-    windows_install_shared_manifest(
+-      FILES ${LIBDIR}/opencolorio/bin/opencolorio_d_2_5.dll
+-      DEBUG
+-    )
+-  endif()
++  windows_install_shared_manifest(
++    FILES ${LIBDIR}/opencolorio/bin/opencolorio_2_6.dll
++    RELEASE
++  )
++  windows_install_shared_manifest(
++    FILES ${LIBDIR}/opencolorio/bin/opencolorio_d_2_6.dll
++    DEBUG
++  )
+   if(EXISTS ${LIBDIR}/openjph/bin/openjph.0.25.dll) # 5.1
+     windows_install_shared_manifest(
+       FILES ${LIBDIR}/openjph/bin/openjph.0.25.dll
+@@ -1429,15 +1417,15 @@ elseif(WIN32)
+       endif()
+       install(
+         FILES
+-          ${LIBDIR}/openexr/python/openEXR/OpenEXR.cp${_PYTHON_VERSION_NO_DOTS}-win_${_openexr_arch}.pyd
+-          ${LIBDIR}/openexr/python/openEXR/Imath.py
++          ${LIBDIR}/openexr/lib/site-packages/OpenEXR.cp${_PYTHON_VERSION_NO_DOTS}-win_${_openexr_arch}.pyd
++          ${LIBDIR}/openexr/lib/site-packages/Imath.py
+         DESTINATION ${TARGETDIR_SITE_PACKAGES}
+         CONFIGURATIONS Release;RelWithDebInfo;MinSizeRel
+       )
+       install(
+         FILES
+-          ${LIBDIR}/openexr/python/openEXR/OpenEXR_d.cp${_PYTHON_VERSION_NO_DOTS}-win_${_openexr_arch}.pyd
+-          ${LIBDIR}/openexr/python/openEXR/Imath.py
++          ${LIBDIR}/openexr/lib/site-packages/OpenEXR_d.cp${_PYTHON_VERSION_NO_DOTS}-win_${_openexr_arch}.pyd
++          ${LIBDIR}/openexr/lib/site-packages/Imath.py
+         DESTINATION ${TARGETDIR_SITE_PACKAGES}
+         CONFIGURATIONS Debug
+       )
+-- 
+2.54.0
+
+
+From 5dbee0b2cd5b6572510834529b4cdbcd79dda146 Mon Sep 17 00:00:00 2001
+From: Ray Molenkamp <github@lazydodo.com>
+Date: Tue, 6 Oct 2026 11:53:16 -0700
+Subject: [PATCH 06/11] Deps: CMake: MaterialX don't install resources
+
+We don't distribute them in our libs, and the MaterialX config
+files have a check this folder exists unless you turn this
+option off.
+---
+ build_files/build_environment/cmake/materialx.cmake | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/build_files/build_environment/cmake/materialx.cmake b/build_files/build_environment/cmake/materialx.cmake
+index 290e6928e651..69663f6e90ef 100644
+--- a/build_files/build_environment/cmake/materialx.cmake
++++ b/build_files/build_environment/cmake/materialx.cmake
+@@ -11,6 +11,7 @@ set(MATERIALX_EXTRA_ARGS
+   -DMATERIALX_BUILD_SHARED_LIBS=ON
+   -DMATERIALX_BUILD_TESTS=OFF
+   -DCMAKE_DEBUG_POSTFIX=_d
++  -DMATERIALX_INSTALL_RESOURCES=OFF
+   # This policy makes pybind11_ROOT work.
+   -DCMAKE_POLICY_DEFAULT_CMP0074=NEW
+   -Dpybind11_ROOT=${LIBDIR}/pybind11
+-- 
+2.54.0
+
+
+From 36d7575062f38c3912c90d91edfe64ebc6cb26d0 Mon Sep 17 00:00:00 2001
+From: Ray Molenkamp <github@lazydodo.com>
+Date: Tue, 6 Oct 2026 11:55:00 -0700
+Subject: [PATCH 07/11] Deps: CMake: add debug postfix for Opensubdiv
+
+These filenames are used in the cmake config files
+and manually fiddling with them broke that.
+---
+ build_files/build_environment/cmake/opensubdiv.cmake | 11 ++++-------
+ 1 file changed, 4 insertions(+), 7 deletions(-)
+
+diff --git a/build_files/build_environment/cmake/opensubdiv.cmake b/build_files/build_environment/cmake/opensubdiv.cmake
+index 9d206b3a6513..a61c7f5cbe89 100644
+--- a/build_files/build_environment/cmake/opensubdiv.cmake
++++ b/build_files/build_environment/cmake/opensubdiv.cmake
+@@ -23,6 +23,7 @@ set(OPENSUBDIV_EXTRA_ARGS
+   -DNO_GLFW=ON
+   -DNO_GLFW_X11=ON
+   -DTBB_DIR=${LIBDIR}/tbb/lib/cmake/tbb
++  -DCMAKE_DEBUG_POSTFIX=_d
+ )
+ 
+ ExternalProject_Add(external_opensubdiv
+@@ -56,13 +57,9 @@ if(WIN32)
+   endif()
+   if(BUILD_MODE STREQUAL Debug)
+     ExternalProject_Add_Step(external_opensubdiv after_install
+-      COMMAND ${CMAKE_COMMAND} -E copy
+-        ${LIBDIR}/opensubdiv/lib/osdCPU.lib
+-        ${HARVEST_TARGET}/opensubdiv/lib/osdCPU_d.lib
+-      COMMAND ${CMAKE_COMMAND} -E copy
+-        ${LIBDIR}/opensubdiv/lib/osdGPU.lib
+-        ${HARVEST_TARGET}/opensubdiv/lib/osdGPU_d.lib
+-
++      COMMAND ${CMAKE_COMMAND} -E copy_directory
++        ${LIBDIR}/opensubdiv/lib
++        ${HARVEST_TARGET}/opensubdiv/lib
+       DEPENDEES install
+     )
+   endif()
+-- 
+2.54.0
+
+
+From 7616c629d204443772c323cd844bc05cfb5398ab Mon Sep 17 00:00:00 2001
+From: Ray Molenkamp <github@lazydodo.com>
+Date: Tue, 6 Oct 2026 13:18:00 -0600
+Subject: [PATCH 08/11] CMake: Windows: Use config files for USD
+
+This needs some further cleanup, but for now this passes tests
+and is "good enough" for the other platforms to test with.
+---
+ build_files/cmake/macros.cmake                | 107 +++++++++++++++++-
+ .../cmake/platform/dependency_targets.cmake   |  16 ++-
+ .../cmake/platform/platform_win32.cmake       |  59 +++-------
+ source/creator/CMakeLists.txt                 |  43 ++-----
+ 4 files changed, 143 insertions(+), 82 deletions(-)
+
+diff --git a/build_files/cmake/macros.cmake b/build_files/cmake/macros.cmake
+index fe2899ac0869..8e90f371180e 100644
+--- a/build_files/cmake/macros.cmake
++++ b/build_files/cmake/macros.cmake
+@@ -1497,13 +1497,25 @@ function(add_bundled_libraries library_dir)
+   endif()
+ endfunction()
+ 
++# `DIRECTORY` globs all shared libraries in the given folder, this avoids having to
++# list every single library for dependencies that ship a large number of them
++# (USD ships one shared library per module for example).
++#
++# `PATTERN` filters the resulting file list, each entry is a globbing pattern
++# optionally followed by `INCLUDE` (the default, only keep matching files) or
++# `EXCLUDE` (drop matching files). This mirrors `install(DIRECTORY ... FILES_MATCHING)`
++# and is used to keep debug libraries out of release installs and vice versa:
++#
++#   windows_install_shared_manifest(DIRECTORY ${LIBDIR}/usd/lib PATTERN "*_d.dll" EXCLUDE RELEASE)
++#   windows_install_shared_manifest(DIRECTORY ${LIBDIR}/usd/lib PATTERN "*_d.dll" INCLUDE DEBUG)
++#
+ # Modifies in parent scope:
+ # - `WINDOWS_SHARED_MANIFEST_DEBUG`: appended with files (when debug).
+ # - `WINDOWS_SHARED_MANIFEST_RELEASE`: appended with files (when release).
+ function(windows_install_shared_manifest)
+   set(options OPTIONAL DEBUG RELEASE ALL)
+-  set(oneValueArgs "")
+-  set(multiValueArgs FILES)
++  set(oneValueArgs DIRECTORY)
++  set(multiValueArgs FILES PATTERN)
+   cmake_parse_arguments(
+     WINDOWS_INSTALL
+     "${options}"
+@@ -1529,29 +1541,112 @@ function(windows_install_shared_manifest)
+   if(WINDOWS_INSTALL_RELEASE)
+     set(WINDOWS_CONFIGURATIONS "${WINDOWS_CONFIGURATIONS};Release;RelWithDebInfo;MinSizeRel")
+   endif()
++
++  set(_files ${WINDOWS_INSTALL_FILES})
++  if(WINDOWS_INSTALL_DIRECTORY)
++    file(GLOB _directory_files ${WINDOWS_INSTALL_DIRECTORY}/*\.dll)
++    list(APPEND _files ${_directory_files})
++    unset(_directory_files)
++  endif()
++
++  # Sort the patterns into include/exclude lists. `EXCLUDE`/`INCLUDE` apply to the
++  # pattern that precedes them, matching the argument order of
++  # `install(DIRECTORY ... PATTERN <pattern> EXCLUDE)`, patterns default to `INCLUDE`.
++  set(_include_patterns "")
++  set(_exclude_patterns "")
++  foreach(_arg ${WINDOWS_INSTALL_PATTERN})
++    if(_arg STREQUAL "EXCLUDE" OR _arg STREQUAL "INCLUDE")
++      list(LENGTH _include_patterns _pattern_count)
++      if(_pattern_count EQUAL 0)
++        message(FATAL_ERROR "windows_install_shared_manifest: `${_arg}` without a preceding PATTERN")
++      endif()
++      math(EXPR _last_pattern "${_pattern_count} - 1")
++      list(GET _include_patterns ${_last_pattern} _pattern)
++      list(REMOVE_AT _include_patterns ${_last_pattern})
++      if(_arg STREQUAL "EXCLUDE")
++        list(APPEND _exclude_patterns "${_pattern}")
++      else()
++        list(APPEND _include_patterns "${_pattern}")
++      endif()
++    else()
++      list(APPEND _include_patterns "${_arg}")
++    endif()
++  endforeach()
++
++  # Translate the globbing patterns into regular expressions, they are matched
++  # against the full path of each file.
++  set(_translated_patterns "")
++  foreach(_pattern ${_include_patterns})
++    string(REPLACE "." "[.]" _pattern_regex "${_pattern}")
++    string(REPLACE "*" ".*" _pattern_regex "${_pattern_regex}")
++    string(REPLACE "?" "." _pattern_regex "${_pattern_regex}")
++    list(APPEND _translated_patterns "${_pattern_regex}$")
++  endforeach()
++  set(_include_patterns ${_translated_patterns})
++
++  set(_translated_patterns "")
++  foreach(_pattern ${_exclude_patterns})
++    string(REPLACE "." "[.]" _pattern_regex "${_pattern}")
++    string(REPLACE "*" ".*" _pattern_regex "${_pattern_regex}")
++    string(REPLACE "?" "." _pattern_regex "${_pattern_regex}")
++    list(APPEND _translated_patterns "${_pattern_regex}$")
++  endforeach()
++  set(_exclude_patterns ${_translated_patterns})
++
++  unset(_translated_patterns)
++  unset(_pattern)
++  unset(_pattern_regex)
++
++  if(_include_patterns)
++    set(_included_files "")
++    foreach(_file ${_files})
++      foreach(_pattern ${_include_patterns})
++        if(_file MATCHES "${_pattern}")
++          list(APPEND _included_files ${_file})
++          break()
++        endif()
++      endforeach()
++    endforeach()
++    set(_files ${_included_files})
++    unset(_included_files)
++  endif()
++
++  foreach(_pattern ${_exclude_patterns})
++    list(FILTER _files EXCLUDE REGEX "${_pattern}")
++  endforeach()
++  unset(_include_patterns)
++  unset(_exclude_patterns)
++
++  # Nothing to install, this happens when a dependency is built statically.
++  if(NOT _files)
++    unset(_files)
++    return()
++  endif()
++
+   if(NOT WITH_PYTHON_MODULE)
+     # Blender executable with manifest.
+     if(WINDOWS_INSTALL_DEBUG)
+-      list(APPEND WINDOWS_SHARED_MANIFEST_DEBUG ${WINDOWS_INSTALL_FILES})
++      list(APPEND WINDOWS_SHARED_MANIFEST_DEBUG ${_files})
+     endif()
+     if(WINDOWS_INSTALL_RELEASE)
+-      list(APPEND WINDOWS_SHARED_MANIFEST_RELEASE ${WINDOWS_INSTALL_FILES})
++      list(APPEND WINDOWS_SHARED_MANIFEST_RELEASE ${_files})
+     endif()
+     set(WINDOWS_SHARED_MANIFEST_DEBUG "${WINDOWS_SHARED_MANIFEST_DEBUG}" PARENT_SCOPE)
+     set(WINDOWS_SHARED_MANIFEST_RELEASE "${WINDOWS_SHARED_MANIFEST_RELEASE}" PARENT_SCOPE)
+     install(
+-      FILES ${WINDOWS_INSTALL_FILES}
++      FILES ${_files}
+       DESTINATION "blender.shared"
+       CONFIGURATIONS ${WINDOWS_CONFIGURATIONS}
+     )
+   else()
+     # Python module without manifest.
+     install(
+-      FILES ${WINDOWS_INSTALL_FILES}
++      FILES ${_files}
+       DESTINATION "bpy"
+       CONFIGURATIONS ${WINDOWS_CONFIGURATIONS}
+     )
+   endif()
++  unset(_files)
+ endfunction()
+ 
+ function(windows_generate_manifest)
+diff --git a/build_files/cmake/platform/dependency_targets.cmake b/build_files/cmake/platform/dependency_targets.cmake
+index 39d201210d31..a09cc607b898 100644
+--- a/build_files/cmake/platform/dependency_targets.cmake
++++ b/build_files/cmake/platform/dependency_targets.cmake
+@@ -151,8 +151,13 @@ add_library(bf::dependencies::optional::usd ALIAS bf_deps_optional_usd)
+ 
+ if(WITH_USD)
+   target_compile_definitions(bf_deps_optional_usd INTERFACE WITH_USD)
+-  target_include_directories(bf_deps_optional_usd SYSTEM INTERFACE ${USD_INCLUDE_DIRS})
+-  target_link_libraries(bf_deps_optional_usd INTERFACE ${USD_LIBRARIES})
++  if(TARGET usd_m)
++    target_link_libraries(bf_deps_optional_usd INTERFACE usd_m)
++  else()
++    # TODO: We should probably do a better job at figuring out what libs we use but for now
++    # these two do the job on windows. 
++    target_link_libraries(bf_deps_optional_usd INTERFACE usdImagingGL usdVolImaging)
++  endif()
+ endif()
+ 
+ # -----------------------------------------------------------------------------
+@@ -175,8 +180,11 @@ add_library(bf::dependencies::optional::opensubdiv ALIAS bf_deps_optional_opensu
+ 
+ if(WITH_OPENSUBDIV)
+   target_compile_definitions(bf_deps_optional_opensubdiv INTERFACE WITH_OPENSUBDIV)
+-  target_include_directories(bf_deps_optional_opensubdiv SYSTEM INTERFACE ${OPENSUBDIV_INCLUDE_DIRS})
+-  target_link_libraries(bf_deps_optional_opensubdiv INTERFACE ${OPENSUBDIV_LIBRARIES})
++  if(TARGET OpenSubdiv::osdGPU_static)
++    target_link_libraries(bf_deps_optional_opensubdiv INTERFACE OpenSubdiv::osdGPU_static OpenSubdiv::osdCPU_static)
++  else()
++    target_link_libraries(bf_deps_optional_opensubdiv INTERFACE OpenSubdiv::osdGPU OpenSubdiv::osdCPU)
++  endif()
+ endif()
+ 
+ # -----------------------------------------------------------------------------
+diff --git a/build_files/cmake/platform/platform_win32.cmake b/build_files/cmake/platform/platform_win32.cmake
+index aabf4b5b4712..162f8c489d60 100644
+--- a/build_files/cmake/platform/platform_win32.cmake
++++ b/build_files/cmake/platform/platform_win32.cmake
+@@ -14,9 +14,8 @@ endif()
+ # or MINSIZEREL location, to the debug libs, which is not good as this will cause
+ # all sorts of linking issues with MSVC. Map them explicitly to Release libs.
+ # for further reading: https://gitlab.kitware.com/cmake/cmake/-/issues/20319
+-set(CMAKE_MAP_IMPORTED_CONFIG_MINSIZEREL MinSizeRel RelWithDebInfo Release)
+-set(CMAKE_MAP_IMPORTED_CONFIG_RELWITHDEBINFO RelWithDebInfo Release MinSizeRel)
+-set(CMAKE_MAP_IMPORTED_CONFIG_RELEASE Release RelWithDebInfo MinSizeRel)
++set(CMAKE_MAP_IMPORTED_CONFIG_MINSIZEREL MinSizeRel "" Release)
++set(CMAKE_MAP_IMPORTED_CONFIG_RELWITHDEBINFO RelWithDebInfo "" Release)
+ 
+ if(CMAKE_C_COMPILER_ID MATCHES "Clang")
+   set(MSVC_CLANG ON)
+@@ -576,6 +575,12 @@ endif()
+ set(PYTHON_EXECUTABLE ${LIBDIR}/python/${_PYTHON_VERSION_NO_DOTS}/bin/python$<$<CONFIG:Debug>:_d>.exe)
+ 
+ if(WITH_PYTHON)
++  set(Python3_FIND_REGISTRY NEVER)
++  set(Python3_FIND_VIRTUALENV NEVER)
++  set(Python3_FIND_STRATEGY LOCATION)
++  set(Python3_ROOT_DIR ${LIBDIR}/python/${_PYTHON_VERSION_NO_DOTS})
++  find_package(Python3 ${_PYTHON_VERSION} EXACT COMPONENTS Development)
++
+   # Cache version for make_bpy_wheel.py to detect.
+   unset(PYTHON_VERSION CACHE)
+   set(PYTHON_VERSION "${_PYTHON_VERSION}" CACHE STRING "Python version")
+@@ -738,21 +743,6 @@ if(WITH_IMAGE_OPENJPEG)
+   set(OPENJPEG_LIBRARIES ${OPENJPEG}/lib/openjp2.lib)
+ endif()
+ 
+-if(WITH_OPENSUBDIV)
+-  windows_find_package(OpenSubdiv)
+-  if(NOT OpenSubdiv_FOUND)
+-    set(OPENSUBDIV ${LIBDIR}/opensubdiv)
+-    set(OPENSUBDIV_INCLUDE_DIRS ${OPENSUBDIV}/include)
+-    set(OPENSUBDIV_LIBPATH ${OPENSUBDIV}/lib)
+-    set(OPENSUBDIV_LIBRARIES
+-      optimized ${OPENSUBDIV_LIBPATH}/osdCPU.lib
+-      optimized ${OPENSUBDIV_LIBPATH}/osdGPU.lib
+-      debug ${OPENSUBDIV_LIBPATH}/osdCPU_d.lib
+-      debug ${OPENSUBDIV_LIBPATH}/osdGPU_d.lib
+-    )
+-  endif()
+-endif()
+-
+ if(WITH_RUBBERBAND)
+   set(RUBBERBAND_FOUND TRUE)
+   set(RUBBERBAND_INCLUDE_DIRS ${LIBDIR}/rubberband/include)
+@@ -946,30 +936,17 @@ if(WITH_EMBREE)
+   endif()
+ endif()
+ 
++if(WITH_OPENSUBDIV)
++  set(OpenSubdiv_DIR ${LIBDIR}/opensubdiv/lib/cmake/OpenSubdiv)
++  find_package(OpenSubdiv REQUIRED CONFIG)
++  message("OpenSubdiv_FOUND = ${OpenSubdiv_FOUND}")
++endif()
++
+ if(WITH_USD)
+-  windows_find_package(USD)
+-  if(NOT USD_FOUND)
+-    # 3.5 22.03 libs
+-    set(USD_INCLUDE_DIRS ${LIBDIR}/usd/include)
+-    set(USD_RELEASE_LIB ${LIBDIR}/usd/lib/usd_usd_ms.lib)
+-    set(USD_DEBUG_LIB ${LIBDIR}/usd/lib/usd_usd_ms_d.lib)
+-    set(USD_LIBRARY_DIR ${LIBDIR}/usd/lib)
+-    if(NOT EXISTS "${USD_RELEASE_LIB}") # 3.5 22.11 libs
+-      set(USD_RELEASE_LIB ${LIBDIR}/usd/lib/usd_ms.lib)
+-      set(USD_DEBUG_LIB ${LIBDIR}/usd/lib/usd_ms_d.lib)
+-    endif()
+-    # Older USD had different filenames, if the new ones are
+-    # not found see if the older ones exist, to ease the
+-    # transition period while landing libs.
+-    if(NOT EXISTS "${USD_RELEASE_LIB}") # 3.3 static libs
+-      set(USD_RELEASE_LIB ${LIBDIR}/usd/lib/usd_usd_m.lib)
+-      set(USD_DEBUG_LIB ${LIBDIR}/usd/lib/usd_usd_m_d.lib)
+-    endif()
+-    set(USD_LIBRARIES
+-      debug ${USD_DEBUG_LIB}
+-      optimized ${USD_RELEASE_LIB}
+-    )
+-  endif()
++  set(USD_LIBRARY_DIR ${LIBDIR}/usd)
++  set(USD_DIR ${USD_LIBRARY_DIR}/lib/cmake)
++  find_package(pxr REQUIRED CONFIG)
++  set(USD_LIBRARIES usdImagingGL usdVolImaging)
+ endif()
+ 
+ if(WITH_MATERIALX)
+diff --git a/source/creator/CMakeLists.txt b/source/creator/CMakeLists.txt
+index ee8f6b2e3cea..bb59789368b0 100644
+--- a/source/creator/CMakeLists.txt
++++ b/source/creator/CMakeLists.txt
+@@ -2085,14 +2085,9 @@ if((DEFINED LIBDIR) AND TARGETDIR_LIB)
+   # relative to the location of the USD DLL, if the DLL does not exist
+   # assume we are linking against the static 3.5 lib.
+   if(WITH_USD)
+-    if(WIN32 AND
+-        (
+-          EXISTS ${LIBDIR}/usd/lib/usd_usd_ms.dll OR  # USD 22.03
+-          EXISTS ${LIBDIR}/usd/lib/usd_ms.dll         # USD 22.11
+-        )
+-      )
++    if(WIN32)
+       install(DIRECTORY
+-        ${USD_LIBRARY_DIR}/usd
++        ${USD_LIBRARY_DIR}/lib/usd
+         DESTINATION ${TARGETDIR_LIB}
+       )
+       install(DIRECTORY ${LIBDIR}/usd/plugin/usd/ DESTINATION "blender.shared/usd")
+@@ -2111,30 +2106,16 @@ if((DEFINED LIBDIR) AND TARGETDIR_LIB)
+     endif()
+   endif()
+   if(WIN32)
+-    # If this file exists we are building against a 3.5 22.03 library directory
+-    # that needs these DLL's installed.
+-    if(EXISTS ${LIBDIR}/usd/lib/usd_usd_ms.dll)
+-      windows_install_shared_manifest(FILES
+-        ${LIBDIR}/usd/lib/usd_usd_ms.dll
+-        RELEASE
+-      )
+-      windows_install_shared_manifest(FILES
+-        ${LIBDIR}/usd/lib/usd_usd_ms_d.dll
+-        DEBUG
+-      )
+-    endif()
+-    # If this file exists we are building against a 3.5 22.11 library directory
+-    # that needs these DLL's installed.
+-    if(EXISTS ${LIBDIR}/usd/lib/usd_ms.dll)
+-      windows_install_shared_manifest(FILES
+-        ${LIBDIR}/usd/lib/usd_ms.dll
+-        RELEASE
+-      )
+-      windows_install_shared_manifest(FILES
+-        ${LIBDIR}/usd/lib/usd_ms_d.dll
+-        DEBUG
+-      )
+-    endif()
++    windows_install_shared_manifest(
++      DIRECTORY ${LIBDIR}/usd/lib
++      PATTERN "*_d.dll" EXCLUDE
++      RELEASE
++    )
++    windows_install_shared_manifest(
++      DIRECTORY ${LIBDIR}/usd/lib
++      PATTERN "*_d.dll" INCLUDE
++      DEBUG
++    )
+   endif()
+ endif()
+ 
+-- 
+2.54.0
+
+
+From 78803de66ae8eb3adfac1582530c707871e37a38 Mon Sep 17 00:00:00 2001
+From: Ray Molenkamp <github@lazydodo.com>
+Date: Tue, 6 Oct 2026 12:13:40 -0700
+Subject: [PATCH 09/11] Deps: USD support non monolithic build and cleanup
+ config files.
+
+The config files had a fair number of hardcoded paths in them
+
+assisted-by: hy4-preview
+---
+ build_files/build_environment/cmake/usd.cmake |  32 +-
+ .../cmake/win_clean_pdb.cmake                 |  12 +
+ .../patches/usd_no_vulkan_sdk.diff            |  20 +-
+ .../patches/usd_portable_2608.diff            | 574 ++++++++++++++++++
+ 4 files changed, 609 insertions(+), 29 deletions(-)
+ create mode 100644 build_files/build_environment/cmake/win_clean_pdb.cmake
+ create mode 100644 build_files/build_environment/patches/usd_portable_2608.diff
+
+diff --git a/build_files/build_environment/cmake/usd.cmake b/build_files/build_environment/cmake/usd.cmake
+index eb4229004659..c81c0914f431 100644
+--- a/build_files/build_environment/cmake/usd.cmake
++++ b/build_files/build_environment/cmake/usd.cmake
+@@ -79,7 +79,7 @@ set(USD_EXTRA_ARGS
+   -DPXR_ENABLE_OPENVDB_SUPPORT=ON
+   -DPYTHON_EXECUTABLE=${PYTHON_BINARY}
+   -DPython3_EXECUTABLE=${PYTHON_BINARY}
+-  -DPXR_BUILD_MONOLITHIC=ON
++  -DPXR_BUILD_MONOLITHIC=OFF
+   # OSL is an optional dependency of the Imaging module. However, since that
+   # module was included for its support for converting primitive shapes (sphere,
+   # cube, etc.) to geometry, it's not necessary. Disabling it will make it
+@@ -110,6 +110,8 @@ set(USD_EXTRA_ARGS
+   -DVulkanMemoryAllocator_ROOT=${LIBDIR}/vulkan_memory_allocator
+   -DShaderC_ROOT=${LIBDIR}/shaderc
+   -DSpirvReflect_ROOT=${LIBDIR}/spirv_reflect
++  -DPXR_FIND_OPENSUBDIV_IN_CONFIG=ON
++  -DPXR_FIND_TBB_IN_CONFIG=ON
+ )
+ 
+ # Ray: I'm not sure if the other platforms relied on this or not but this is no longer
+@@ -134,15 +136,18 @@ ExternalProject_Add(external_usd
+     ${PATCH_CMD} -p 1 -d
+       ${BUILD_DIR}/usd/src/external_usd <
+       ${PATCH_DIR}/usd.diff &&
++    ${PATCH_CMD} -p 1 -d
++      ${BUILD_DIR}/usd/src/external_usd <
++      ${PATCH_DIR}/usd_portable_2608.diff &&
+     ${PATCH_CMD} -p 1 -d
+       ${BUILD_DIR}/usd/src/external_usd <
+       ${PATCH_DIR}/usd_core_profile.diff &&
+     ${PATCH_CMD} -p 1 -d
+       ${BUILD_DIR}/usd/src/external_usd <
+       ${PATCH_DIR}/usd_ctor.diff &&
+-    ${PATCH_CMD} -p 1 -d
+-      ${BUILD_DIR}/usd/src/external_usd <
+-      ${PATCH_DIR}/usd_noboost.diff &&
++#    ${PATCH_CMD} -p 1 -d
++#      ${BUILD_DIR}/usd/src/external_usd <
++#      ${PATCH_DIR}/usd_noboost.diff &&
+     ${PATCH_CMD} -p 1 -d
+       ${BUILD_DIR}/usd/src/external_usd <
+       ${PATCH_DIR}/usd_no_vulkan_sdk.diff &&
+@@ -193,29 +198,16 @@ if(NOT WIN32)
+ endif()
+ 
+ if(WIN32)
+-  if(BUILD_MODE STREQUAL Release)
+     ExternalProject_Add_Step(external_usd after_install
+       COMMAND ${CMAKE_COMMAND} -E copy_directory
+         ${LIBDIR}/usd
+         ${HARVEST_TARGET}/usd
+ 
++      COMMAND ${CMAKE_COMMAND}
++        -DCLEAN_DIR=${HARVEST_TARGET}/usd
++        -P ${CMAKE_CURRENT_LIST_DIR}/win_clean_pdb.cmake
+       DEPENDEES install
+     )
+-  endif()
+-  if(BUILD_MODE STREQUAL Debug)
+-    ExternalProject_Add_Step(external_usd after_install
+-      COMMAND ${CMAKE_COMMAND} -E copy_directory
+-        ${LIBDIR}/usd/lib/site-packages
+-        ${HARVEST_TARGET}/usd/lib/debug/site-packages
+-      COMMAND ${CMAKE_COMMAND} -E copy
+-        ${LIBDIR}/usd/lib/usd_ms_d.dll
+-        ${HARVEST_TARGET}/usd/lib/usd_ms_d.dll
+-      COMMAND ${CMAKE_COMMAND} -E copy
+-        ${LIBDIR}/usd/lib/usd_ms_d.lib
+-        ${HARVEST_TARGET}/usd/lib/usd_ms_d.lib
+-      DEPENDEES install
+-    )
+-  endif()
+ else()
+   harvest(external_usd usd/include usd/include "*.h")
+   harvest(external_usd usd/include usd/include "*.hpp")
+diff --git a/build_files/build_environment/cmake/win_clean_pdb.cmake b/build_files/build_environment/cmake/win_clean_pdb.cmake
+new file mode 100644
+index 000000000000..d67e9f5ee3c3
+--- /dev/null
++++ b/build_files/build_environment/cmake/win_clean_pdb.cmake
+@@ -0,0 +1,12 @@
++# SPDX-FileCopyrightText: 2026 Blender Authors
++#
++# SPDX-License-Identifier: GPL-2.0-or-later
++
++# This will run in a post install action to clean up any pdb files
++# we do not wish to ship
++
++file(GLOB_RECURSE PDB_FILES "${CLEAN_DIR}/*.pdb")
++
++if(PDB_FILES)
++  file(REMOVE ${PDB_FILES})
++endif()
+diff --git a/build_files/build_environment/patches/usd_no_vulkan_sdk.diff b/build_files/build_environment/patches/usd_no_vulkan_sdk.diff
+index e490cf5e0829..ad676627c2f4 100644
+--- a/build_files/build_environment/patches/usd_no_vulkan_sdk.diff
++++ b/build_files/build_environment/patches/usd_no_vulkan_sdk.diff
+@@ -508,7 +508,7 @@ diff --git a/pxr/pxrConfig.cmake.in b/pxr/pxrConfig.cmake.in
+ index bc94973b9..5374b5447 100644
+ --- a/pxr/pxrConfig.cmake.in
+ +++ b/pxr/pxrConfig.cmake.in
+-@@ -112,6 +112,32 @@ if(NOT "@PXR_WORK_IMPL_PACKAGE@" STREQUAL "")
++@@ -112,6 +112,34 @@ if(NOT "@PXR_WORK_IMPL_PACKAGE@" STREQUAL "")
+      find_dependency(@PXR_WORK_IMPL_PACKAGE@)
+  endif()
+  
+@@ -523,14 +523,16 @@ index bc94973b9..5374b5447 100644
+ +                "${Vulkan_INCLUDE_DIR}/vma")
+ +        endif()
+ +    else()
+-+        if (NOT DEFINED VulkanHeaders_DIR AND NOT [[@VulkanHeaders_DIR@]] STREQUAL "")
+-+            set(VulkanHeaders_DIR [[@VulkanHeaders_DIR@]])
+-+        endif()
+-+        if (NOT DEFINED VulkanUtilityLibraries_DIR AND NOT [[@VulkanUtilityLibraries_DIR@]] STREQUAL "")
+-+            set(VulkanUtilityLibraries_DIR [[@VulkanUtilityLibraries_DIR@]])
+-+        endif()
+-+        if (NOT DEFINED VulkanMemoryAllocator_DIR AND NOT [[@VulkanMemoryAllocator_DIR@]] STREQUAL "")
+-+            set(VulkanMemoryAllocator_DIR [[@VulkanMemoryAllocator_DIR@]])
+++        if(@PXR_EMBED_DEPENDENCY_PATHS_IN_CONFIG@)
+++            if (NOT DEFINED VulkanHeaders_DIR AND NOT [[@PXR_CONFIG_VulkanHeaders_DIR@]] STREQUAL "")
+++                set(VulkanHeaders_DIR [[@PXR_CONFIG_VulkanHeaders_DIR@]])
+++            endif()
+++            if (NOT DEFINED VulkanUtilityLibraries_DIR AND NOT [[@PXR_CONFIG_VulkanUtilityLibraries_DIR@]] STREQUAL "")
+++                set(VulkanUtilityLibraries_DIR [[@PXR_CONFIG_VulkanUtilityLibraries_DIR@]])
+++            endif()
+++            if (NOT DEFINED VulkanMemoryAllocator_DIR AND NOT [[@PXR_CONFIG_VulkanMemoryAllocator_DIR@]] STREQUAL "")
+++                set(VulkanMemoryAllocator_DIR [[@PXR_CONFIG_VulkanMemoryAllocator_DIR@]])
+++            endif()
+ +        endif()
+ +        find_dependency(VulkanHeaders CONFIG)
+ +        find_dependency(VulkanUtilityLibraries CONFIG)
+diff --git a/build_files/build_environment/patches/usd_portable_2608.diff b/build_files/build_environment/patches/usd_portable_2608.diff
+new file mode 100644
+index 000000000000..aea8becb6f7e
+--- /dev/null
++++ b/build_files/build_environment/patches/usd_portable_2608.diff
+@@ -0,0 +1,574 @@
++diff --git a/cmake/defaults/Options.cmake b/cmake/defaults/Options.cmake
++index 4afac0537..68d5a1b3d 100644
++--- a/cmake/defaults/Options.cmake
+++++ b/cmake/defaults/Options.cmake
++@@ -31,6 +31,12 @@ option(PXR_BUILD_PYTHON_DOCUMENTATION "Generate Python documentation" OFF)
++ option(PXR_BUILD_HTML_DOCUMENTATION "Generate HTML documentation if PXR_BUILD_DOCUMENTATION is ON" ON)
++ option(PXR_ENABLE_PYTHON_SUPPORT "Enable Python based components for USD" ON)
++ option(PXR_USE_DEBUG_PYTHON "Build with debug python" OFF)
+++option(PXR_EMBED_DEPENDENCY_PATHS_IN_CONFIG
+++       "Write the absolute paths of the third-party dependencies used for \
+++this build (Python, MaterialX, Imath) into the installed pxrConfig.cmake. \
+++This pins consumers to those exact installations and makes the installed \
+++package non-relocatable, so it is off by default."
+++       OFF)
++ option(PXR_ENABLE_HDF5_SUPPORT "Enable HDF5 backend in the Alembic plugin for USD" OFF)
++ option(PXR_ENABLE_OSL_SUPPORT "Enable OSL (OpenShadingLanguage) based components" OFF)
++ option(PXR_ENABLE_PTEX_SUPPORT "Enable Ptex support" OFF)
++diff --git a/cmake/defaults/Packages.cmake b/cmake/defaults/Packages.cmake
++index 7f3d1a2ae..027e900b1 100644
++--- a/cmake/defaults/Packages.cmake
+++++ b/cmake/defaults/Packages.cmake
++@@ -20,18 +20,6 @@ set(CMAKE_THREAD_PREFER_PTHREAD TRUE)
++ find_package(Threads REQUIRED)
++ set(PXR_THREAD_LIBS "${CMAKE_THREAD_LIBS_INIT}")
++ 
++-if(PXR_ENABLE_OPENVDB_SUPPORT)
++-    # Find Boost package before getting any boost specific components as we need to
++-    # disable boost-provided cmake config, based on the boost version found.
++-    find_package(Boost REQUIRED)
++-    # If a user explicitly sets Boost_NO_BOOST_CMAKE to On, following will
++-    # disable the use of boost provided cmake config.
++-    option(Boost_NO_BOOST_CMAKE "Disable boost-provided cmake config" OFF)
++-    if (Boost_NO_BOOST_CMAKE)
++-      message(STATUS "Disabling boost-provided cmake config")
++-    endif()
++-endif()
++-
++ if(PXR_ENABLE_PYTHON_SUPPORT)
++     # 1--Python.
++     macro(setup_python_package package)
++diff --git a/cmake/macros/Private.cmake b/cmake/macros/Private.cmake
++index cddb4e095..d03df3279 100644
++--- a/cmake/macros/Private.cmake
+++++ b/cmake/macros/Private.cmake
++@@ -1101,11 +1101,7 @@ function(_pxr_python_module NAME)
++     # as system include directories so that compiler warnings from these
++     # headers are ignored, since we have no control over the contents
++     # of those headers.
++-    target_include_directories(${LIBRARY_NAME}
++-        SYSTEM
++-        PUBLIC
++-            ${args_INCLUDE_DIRS}
++-    )
+++    _pxr_target_include_directories(${LIBRARY_NAME} ${args_INCLUDE_DIRS})
++ 
++     # Ensure the Python header directory is included as a system include
++     # directory. This is a workaround for an issue in which Python headers 
++@@ -1113,11 +1109,7 @@ function(_pxr_python_module NAME)
++     # This behavior prevents users from running strict builds with
++     # PXR_STRICT_BUILD_MODE as the redefinition warnings would cause build
++     # failures.
++-    target_include_directories(${LIBRARY_NAME}
++-        SYSTEM
++-        PUBLIC
++-            ${PYTHON_INCLUDE_DIRS}
++-    )
+++    _pxr_target_include_directories(${LIBRARY_NAME} ${PYTHON_INCLUDE_DIRS})
++ 
++     install(
++         TARGETS ${LIBRARY_NAME}
++@@ -1135,6 +1127,47 @@ function(_pxr_python_module NAME)
++     endif()
++ endfunction() # pxr_python_module
++ 
+++# Add third-party include directories to TARGET as SYSTEM PUBLIC includes.
+++#
+++# Directories that are not part of the USD install prefix must not be baked
+++# into the exported interface, otherwise the installed package is not
+++# relocatable: consumers on other machines would pick up absolute paths
+++# pointing into the build machine's filesystem.
+++#
+++# The Python headers are the only such case today. They are added to the
+++# build interface only. Consumers still get them transitively, because the
+++# Python3::Python imported target is part of the link interface of the
+++# exported targets and pxrConfig.cmake re-creates it via
+++# find_dependency(Python3 ... COMPONENTS Development).
+++function(_pxr_target_include_directories TARGET)
+++    set(_publicDirs "")
+++    set(_buildOnlyDirs "")
+++
+++    foreach(_dir IN LISTS ARGN)
+++        if(PYTHON_INCLUDE_DIRS AND _dir IN_LIST PYTHON_INCLUDE_DIRS)
+++            list(APPEND _buildOnlyDirs "${_dir}")
+++        else()
+++            list(APPEND _publicDirs "${_dir}")
+++        endif()
+++    endforeach()
+++
+++    if(_publicDirs)
+++        target_include_directories(${TARGET}
+++            SYSTEM
+++            PUBLIC
+++                ${_publicDirs}
+++        )
+++    endif()
+++
+++    foreach(_dir IN LISTS _buildOnlyDirs)
+++        target_include_directories(${TARGET}
+++            SYSTEM
+++            PUBLIC
+++                "$<BUILD_INTERFACE:${_dir}>"
+++        )
+++    endforeach()
+++endfunction()
+++
++ # Add a library target named NAME.
++ function(_pxr_library NAME)
++     # Argument parsing.
++@@ -1395,11 +1428,7 @@ function(_pxr_library NAME)
++     # as system include directories so that compiler warnings from these
++     # headers are ignored, since we have no control over the contents
++     # of those headers.
++-    target_include_directories(${NAME}
++-        SYSTEM
++-        PUBLIC
++-            ${args_INCLUDE_DIRS}
++-    )
+++    _pxr_target_include_directories(${NAME} ${args_INCLUDE_DIRS})
++ 
++     # If we're building documentation, we need to copy the files we want
++     # doxygen to process to a parallel structure in the build directory.
++diff --git a/cmake/modules/FindOpenImageIO.cmake b/cmake/modules/FindOpenImageIO.cmake
++index 4d2ff1ec4..f49a0e003 100644
++--- a/cmake/modules/FindOpenImageIO.cmake
+++++ b/cmake/modules/FindOpenImageIO.cmake
++@@ -146,3 +146,17 @@ find_package_handle_standard_args(OpenImageIO
++     VERSION_VAR
++         OIIO_VERSION
++ )
+++
+++# Expose OpenImageIO as an imported target rather than bare filesystem paths.
+++# USD's exported targets reference this by name, so the absolute paths are
+++# resolved by whichever find module is in play. That keeps the installed
+++# package relocatable: a consumer re-runs the find module against their own
+++# OpenImageIO instead of inheriting a path that only exists on the build
+++# machine.
+++if(OpenImageIO_FOUND AND NOT TARGET OpenImageIO::OpenImageIO)
+++    add_library(OpenImageIO::OpenImageIO INTERFACE IMPORTED)
+++    set_target_properties(OpenImageIO::OpenImageIO PROPERTIES
+++        INTERFACE_INCLUDE_DIRECTORIES "${OIIO_INCLUDE_DIRS}"
+++        INTERFACE_LINK_LIBRARIES "${OIIO_LIBRARIES}"
+++    )
+++endif()
++diff --git a/cmake/modules/FindOpenSubdiv.cmake b/cmake/modules/FindOpenSubdiv.cmake
++index 6fd1b9dcb..7bcc50dd9 100644
++--- a/cmake/modules/FindOpenSubdiv.cmake
+++++ b/cmake/modules/FindOpenSubdiv.cmake
++@@ -117,6 +117,25 @@ IF(OPENSUBDIV_FOUND)
++   SET(OPENSUBDIV_LIBRARIES ${_opensubdiv_LIBRARIES})
++   SET(OPENSUBDIV_INCLUDE_DIRS ${OPENSUBDIV_INCLUDE_DIR})
++ 
+++  # Expose OpenSubdiv as imported targets rather than bare filesystem paths.
+++  # USD's exported targets reference these by name, so the absolute paths are
+++  # resolved by whichever find module is in play. That keeps the installed
+++  # package relocatable: a consumer re-runs the find module against their own
+++  # OpenSubdiv instead of inheriting a path that only exists on the build
+++  # machine.
+++  FOREACH(COMPONENT ${_opensubdiv_FIND_COMPONENTS})
+++    STRING(TOUPPER ${COMPONENT} UPPERCOMPONENT)
+++    if(OPENSUBDIV_${UPPERCOMPONENT}_LIBRARY AND
+++       NOT TARGET OpenSubdiv::${COMPONENT})
+++      add_library(OpenSubdiv::${COMPONENT} UNKNOWN IMPORTED)
+++      set_target_properties(OpenSubdiv::${COMPONENT} PROPERTIES
+++          IMPORTED_LOCATION "${OPENSUBDIV_${UPPERCOMPONENT}_LIBRARY}"
+++          INTERFACE_INCLUDE_DIRECTORIES "${OPENSUBDIV_INCLUDE_DIR}"
+++      )
+++    endif()
+++  ENDFOREACH()
+++
+++
++   # Find available compute controllers that USD may want to use.
++   OPENSUBDIV_CHECK_CONTROLLER("glXFBEvaluator.h" OPENSUBDIV_HAS_GLSL_TRANSFORM_FEEDBACK)
++   OPENSUBDIV_CHECK_CONTROLLER("glComputeEvaluator.h" OPENSUBDIV_HAS_GLSL_COMPUTE)
++diff --git a/cmake/modules/FindOpenVDB.cmake b/cmake/modules/FindOpenVDB.cmake
++index 791982729..c46e456b0 100644
++--- a/cmake/modules/FindOpenVDB.cmake
+++++ b/cmake/modules/FindOpenVDB.cmake
++@@ -37,3 +37,17 @@ find_package_handle_standard_args(OpenVDB
++     OPENVDB_INCLUDE_DIR
++     OPENVDB_LIBRARY
++ )
+++
+++# Expose OpenVDB as an imported target rather than a bare filesystem path.
+++# USD's exported targets reference this target in their link interface, so the
+++# absolute path to the library is resolved by whichever FindOpenVDB module is
+++# in play. That keeps the installed package relocatable: a consumer re-runs
+++# the find module against their own OpenVDB instead of inheriting a path that
+++# only exists on the build machine.
+++if(OpenVDB_FOUND AND NOT TARGET OpenVDB::OpenVDB)
+++    add_library(OpenVDB::OpenVDB UNKNOWN IMPORTED)
+++    set_target_properties(OpenVDB::OpenVDB PROPERTIES
+++        IMPORTED_LOCATION "${OPENVDB_LIBRARY}"
+++        INTERFACE_INCLUDE_DIRECTORIES "${OPENVDB_INCLUDE_DIR}"
+++    )
+++endif()
++diff --git a/pxr/CMakeLists.txt b/pxr/CMakeLists.txt
++index a02287dda..96bf0ebf6 100644
++--- a/pxr/CMakeLists.txt
+++++ b/pxr/CMakeLists.txt
++@@ -63,6 +63,92 @@ foreach(property IN ITEMS
++     endif()
++ endforeach()
++ 
+++# The TBB properties captured above are only written into the installed config
+++# file when explicitly requested via PXR_EMBED_DEPENDENCY_PATHS_IN_CONFIG. They
+++# are consumed by the fallback branch that synthesises TBB::tbb when TBB was not
+++# found in CONFIG mode, but emitting them unconditionally still bakes
+++# build-machine paths into the installed package. The compile definitions carry
+++# no paths, so they are always preserved.
+++foreach(property
+++    INTERFACE_INCLUDE_DIRECTORIES
+++    INTERFACE_LINK_DIRECTORIES
+++    IMPORTED_IMPLIB
+++    IMPORTED_LOCATION)
+++    if(PXR_EMBED_DEPENDENCY_PATHS_IN_CONFIG)
+++        set(PXR_CONFIG_tbb_${property} "${tbb_${property}}")
+++    else()
+++        set(PXR_CONFIG_tbb_${property} "")
+++    endif()
+++endforeach()
+++
+++# FindOpenSubdiv.cmake only searches for osdGPU when OPENSUBDIV_USE_GPU is set.
+++# Packages.cmake assigns it from PXR_BUILD_GPU_SUPPORT as a plain (non-cache)
+++# variable, so it is not visible when a consumer re-runs the module from the
+++# installed config file. Record it as an explicit ON/OFF so the consumer
+++# reproduces the same component set and OpenSubdiv::osdGPU gets created.
+++if(PXR_BUILD_GPU_SUPPORT)
+++    set(PXR_CONFIG_OPENSUBDIV_USE_GPU ON)
+++else()
+++    set(PXR_CONFIG_OPENSUBDIV_USE_GPU OFF)
+++endif()
+++
+++# The find modules also branch on these user-supplied inputs, which are plain
+++# variables. Record them so a consumer re-running the modules sees the same
+++# behaviour this build did.
+++if(OPENSUBDIV_USE_STATIC_LIBS)
+++    set(PXR_CONFIG_OPENSUBDIV_USE_STATIC_LIBS ON)
+++else()
+++    set(PXR_CONFIG_OPENSUBDIV_USE_STATIC_LIBS OFF)
+++endif()
+++if(PXR_USE_DEBUG_BUILD)
+++    set(PXR_CONFIG_PXR_USE_DEBUG_BUILD ON)
+++else()
+++    set(PXR_CONFIG_PXR_USE_DEBUG_BUILD OFF)
+++endif()
+++
+++# OpenGL is only searched for when GL support is enabled and we are not
+++# targeting an Apple embedded platform, which is exactly when the exported
+++# targets end up referencing OpenGL::GL. Record that as an explicit ON/OFF so
+++# the installed config file can re-run the find module under the same
+++# conditions. PXR_APPLE_EMBEDDED is only defined on APPLE, so it cannot be
+++# substituted directly into the template.
+++if(PXR_ENABLE_GL_SUPPORT AND NOT PXR_APPLE_EMBEDDED)
+++    set(PXR_CONFIG_FIND_OPENGL ON)
+++else()
+++    set(PXR_CONFIG_FIND_OPENGL OFF)
+++endif()
+++
+++# Vulkan is located through package config files, so the directories recorded
+++# during this build are absolute paths into the build machine. They are only
+++# written into the installed config file when explicitly requested via
+++# PXR_EMBED_DEPENDENCY_PATHS_IN_CONFIG.
+++foreach(vulkan_pkg VulkanHeaders VulkanUtilityLibraries VulkanMemoryAllocator)
+++    if(PXR_EMBED_DEPENDENCY_PATHS_IN_CONFIG)
+++        set(PXR_CONFIG_${vulkan_pkg}_DIR "${${vulkan_pkg}_DIR}")
+++    else()
+++        set(PXR_CONFIG_${vulkan_pkg}_DIR "")
+++    endif()
+++endforeach()
+++
+++# The absolute paths of the Python interpreter, library and headers used for
+++# this build are only written into the installed config file when explicitly
+++# requested via PXR_EMBED_PYTHON_PATHS_IN_CONFIG. Baking them in pins
+++# consumers to that exact Python installation and makes the installed package
+++# non-relocatable, so they are left empty by default.
+++if(PXR_EMBED_DEPENDENCY_PATHS_IN_CONFIG)
+++    set(PXR_CONFIG_Python3_EXECUTABLE "${Python3_EXECUTABLE}")
+++    set(PXR_CONFIG_Python3_LIBRARY "${Python3_LIBRARY}")
+++    set(PXR_CONFIG_Python3_INCLUDE_DIR "${Python3_INCLUDE_DIR}")
+++    set(PXR_CONFIG_MaterialX_DIR "${MaterialX_DIR}")
+++    set(PXR_CONFIG_Imath_DIR "${Imath_DIR}")
+++else()
+++    set(PXR_CONFIG_Python3_EXECUTABLE "")
+++    set(PXR_CONFIG_Python3_LIBRARY "")
+++    set(PXR_CONFIG_Python3_INCLUDE_DIR "")
+++    set(PXR_CONFIG_MaterialX_DIR "")
+++    set(PXR_CONFIG_Imath_DIR "")
+++endif()
+++
++ configure_file(pxrConfig.cmake.in
++   "${PROJECT_BINARY_DIR}/pxrConfig.cmake" @ONLY)
++ install(FILES
++@@ -70,4 +156,14 @@ install(FILES
++   DESTINATION "${CMAKE_INSTALL_PREFIX}"
++ )
++ 
+++# Install the find modules that the config file above re-runs, so that
+++# consumers resolve the same third-party dependencies without having to
+++# supply their own copies.
+++install(FILES
+++  "${PROJECT_SOURCE_DIR}/cmake/modules/FindOpenVDB.cmake"
+++  "${PROJECT_SOURCE_DIR}/cmake/modules/FindOpenSubdiv.cmake"
+++  "${PROJECT_SOURCE_DIR}/cmake/modules/FindOpenImageIO.cmake"
+++  DESTINATION "${CMAKE_INSTALL_PREFIX}/cmake/modules"
+++)
+++
++ install(EXPORT pxrTargets DESTINATION "cmake")
++diff --git a/pxr/imaging/hdSt/CMakeLists.txt b/pxr/imaging/hdSt/CMakeLists.txt
++index f43e95f9c..56882893b 100644
++--- a/pxr/imaging/hdSt/CMakeLists.txt
+++++ b/pxr/imaging/hdSt/CMakeLists.txt
++@@ -50,11 +50,11 @@ pxr_library(hdSt
++         tf
++         trace
++         TBB::tbb
++-        ${OPENSUBDIV_LIBRARIES}
+++        OpenSubdiv::osdCPU
+++        OpenSubdiv::osdGPU
++         ${optionalLibs}
++ 
++     INCLUDE_DIRS
++-        ${OPENSUBDIV_INCLUDE_DIR}
++         ${optionalIncludeDirs}
++ 
++     PUBLIC_CLASSES
++diff --git a/pxr/imaging/hioOpenVDB/CMakeLists.txt b/pxr/imaging/hioOpenVDB/CMakeLists.txt
++index c94b63c5a..c20c90065 100644
++--- a/pxr/imaging/hioOpenVDB/CMakeLists.txt
+++++ b/pxr/imaging/hioOpenVDB/CMakeLists.txt
++@@ -28,10 +28,9 @@ pxr_library(hioOpenVDB
++         tf
++         usd
++         ${__VDB_IMATH_LIBS}
++-        ${OPENVDB_LIBRARY}
+++        OpenVDB::OpenVDB
++ 
++     INCLUDE_DIRS
++-        ${OPENVDB_INCLUDE_DIR}
++         ${Boost_INCLUDE_DIRS}
++ 
++     PUBLIC_CLASSES
++diff --git a/pxr/imaging/plugin/hdStorm/CMakeLists.txt b/pxr/imaging/plugin/hdStorm/CMakeLists.txt
++index dcca26658..ea1ebec2d 100644
++--- a/pxr/imaging/plugin/hdStorm/CMakeLists.txt
+++++ b/pxr/imaging/plugin/hdStorm/CMakeLists.txt
++@@ -16,10 +16,10 @@ pxr_plugin(hdStorm
++         work
++         hd
++         hdSt
++-        ${OPENSUBDIV_LIBRARIES}
+++        OpenSubdiv::osdCPU
+++        OpenSubdiv::osdGPU
++ 
++     INCLUDE_DIRS
++-        ${OPENSUBDIV_INCLUDE_DIR}
++ 
++     PUBLIC_CLASSES
++         rendererPlugin
++diff --git a/pxr/imaging/plugin/hioOiio/CMakeLists.txt b/pxr/imaging/plugin/hioOiio/CMakeLists.txt
++index 0a055b711..bc6a630b0 100644
++--- a/pxr/imaging/plugin/hioOiio/CMakeLists.txt
+++++ b/pxr/imaging/plugin/hioOiio/CMakeLists.txt
++@@ -22,11 +22,10 @@ pxr_plugin(hioOiio
++         gf
++         hio
++         tf
++-        ${OIIO_LIBRARIES}
+++        OpenImageIO::OpenImageIO
++         ${__OIIO_IMATH_LIBS}
++ 
++     INCLUDE_DIRS
++-        ${OIIO_INCLUDE_DIRS}
++         ${__OIIO_IMATH_INCLUDE}
++ 
++     CPPFILES
++diff --git a/pxr/imaging/pxOsd/CMakeLists.txt b/pxr/imaging/pxOsd/CMakeLists.txt
++index 923686004..cd6785ab1 100644
++--- a/pxr/imaging/pxOsd/CMakeLists.txt
+++++ b/pxr/imaging/pxOsd/CMakeLists.txt
++@@ -6,11 +6,10 @@ pxr_library(pxOsd
++         tf
++         gf
++         vt
++-        ${OPENSUBDIV_OSDCPU_LIBRARY}
+++        OpenSubdiv::osdCPU
++ 
++     INCLUDE_DIRS
++-        ${OPENSUBDIV_INCLUDE_DIR}
++-        
+++
++     PUBLIC_HEADERS
++         api.h
++ 
++diff --git a/pxr/pxrConfig.cmake.in b/pxr/pxrConfig.cmake.in
++index 1a28e14d6..9da8363a4 100644
++--- a/pxr/pxrConfig.cmake.in
+++++ b/pxr/pxrConfig.cmake.in
++@@ -11,6 +11,12 @@
++ 
++ get_filename_component(PXR_CMAKE_DIR "${CMAKE_CURRENT_LIST_FILE}" PATH)
++ 
+++# USD's own find modules are installed next to this file. Put them on the
+++# module path so the find_dependency() calls below resolve the same way they
+++# did when USD itself was built, without requiring consumers to ship their own
+++# copies.
+++list(INSERT CMAKE_MODULE_PATH 0 "${PXR_CMAKE_DIR}/cmake/modules")
+++
++ set(PXR_MAJOR_VERSION "@PXR_MAJOR_VERSION@")
++ set(PXR_MINOR_VERSION "@PXR_MINOR_VERSION@")
++ set(PXR_PATCH_VERSION "@PXR_PATCH_VERSION@")
++@@ -24,21 +30,30 @@ include(CMakeFindDependencyMacro)
++ # were set. This can be overridden by specifying different values when
++ # running cmake.
++ if(@PXR_ENABLE_PYTHON_SUPPORT@)
++-    if (NOT DEFINED Python3_EXECUTABLE)
++-        if (NOT [[@Python3_EXECUTABLE@]] STREQUAL "")
++-            set(Python3_EXECUTABLE [[@Python3_EXECUTABLE@]])
+++    # The absolute paths of the Python interpreter, library and headers
+++    # used for this build are only written into this file when
+++    # PXR_EMBED_DEPENDENCY_PATHS_IN_CONFIG was enabled. Baking them in
+++    # pins consumers to that exact Python installation and makes the
+++    # installed package non-relocatable. When they are omitted,
+++    # find_dependency below locates a compatible Python on the consumer
+++    # machine, and consumers may still supply their own hints.
+++    if(@PXR_EMBED_DEPENDENCY_PATHS_IN_CONFIG@)
+++        if (NOT DEFINED Python3_EXECUTABLE)
+++            if (NOT [[@PXR_CONFIG_Python3_EXECUTABLE@]] STREQUAL "")
+++                set(Python3_EXECUTABLE [[@PXR_CONFIG_Python3_EXECUTABLE@]])
+++            endif()
++         endif()
++-    endif()
++ 
++-    if (NOT DEFINED Python3_LIBRARY)
++-        if (NOT [[@Python3_LIBRARY@]] STREQUAL "")
++-            set(Python3_LIBRARY [[@Python3_LIBRARY@]])
+++        if (NOT DEFINED Python3_LIBRARY)
+++            if (NOT [[@PXR_CONFIG_Python3_LIBRARY@]] STREQUAL "")
+++                set(Python3_LIBRARY [[@PXR_CONFIG_Python3_LIBRARY@]])
+++            endif()
++         endif()
++-    endif()
++ 
++-    if (NOT DEFINED Python3_INCLUDE_DIR)
++-        if (NOT [[@Python3_INCLUDE_DIR@]] STREQUAL "")
++-            set(Python3_INCLUDE_DIR [[@Python3_INCLUDE_DIR@]])
+++        if (NOT DEFINED Python3_INCLUDE_DIR)
+++            if (NOT [[@PXR_CONFIG_Python3_INCLUDE_DIR@]] STREQUAL "")
+++                set(Python3_INCLUDE_DIR [[@PXR_CONFIG_Python3_INCLUDE_DIR@]])
+++            endif()
++         endif()
++     endif()
++ 
++@@ -63,11 +78,11 @@ else()
++         endif()
++     endmacro()
++ 
++-    _add_property(INTERFACE_INCLUDE_DIRECTORIES "@tbb_INTERFACE_INCLUDE_DIRECTORIES@")
+++    _add_property(INTERFACE_INCLUDE_DIRECTORIES "@PXR_CONFIG_tbb_INTERFACE_INCLUDE_DIRECTORIES@")
++     _add_property(INTERFACE_COMPILE_DEFINITIONS "@tbb_INTERFACE_COMPILE_DEFINITIONS@")
++-    _add_property(INTERFACE_LINK_DIRECTORIES "@tbb_INTERFACE_LINK_DIRECTORIES@")
++-    _add_property(IMPORTED_IMPLIB "@tbb_IMPORTED_IMPLIB@")
++-    _add_property(IMPORTED_LOCATION "@tbb_IMPORTED_LOCATION@")
+++    _add_property(INTERFACE_LINK_DIRECTORIES "@PXR_CONFIG_tbb_INTERFACE_LINK_DIRECTORIES@")
+++    _add_property(IMPORTED_IMPLIB "@PXR_CONFIG_tbb_IMPORTED_IMPLIB@")
+++    _add_property(IMPORTED_LOCATION "@PXR_CONFIG_tbb_IMPORTED_LOCATION@")
++ endif()
++ 
++ if (NOT DEFINED PXR_FIND_OPENSUBDIV_IN_CONFIG)
++@@ -75,6 +90,39 @@ if (NOT DEFINED PXR_FIND_OPENSUBDIV_IN_CONFIG)
++ endif()
++ if (PXR_FIND_OPENSUBDIV_IN_CONFIG)
++     find_dependency(OpenSubdiv @OpenSubdiv_VERSION@ CONFIG)
+++else()
+++    # OpenSubdiv was located with USD's find module rather than a package
+++    # config file. Re-run that module so the OpenSubdiv::osdCPU and
+++    # OpenSubdiv::osdGPU imported targets exist before pxrTargets.cmake is
+++    # included. The module is installed alongside this file.
+++    #
+++    # FindOpenSubdiv.cmake only searches for osdGPU when OPENSUBDIV_USE_GPU is
+++    # set. That is a plain (non-cache) variable assigned in Packages.cmake, so
+++    # it does not survive into this file. Without restoring it the consumer
+++    # would only get osdCPU and pxrTargets.cmake would fail to resolve
+++    # OpenSubdiv::osdGPU.
+++    if (NOT DEFINED OPENSUBDIV_USE_GPU)
+++        set(OPENSUBDIV_USE_GPU @PXR_CONFIG_OPENSUBDIV_USE_GPU@)
+++    endif()
+++    if (NOT DEFINED OPENSUBDIV_USE_STATIC_LIBS)
+++        set(OPENSUBDIV_USE_STATIC_LIBS @PXR_CONFIG_OPENSUBDIV_USE_STATIC_LIBS@)
+++    endif()
+++    find_dependency(OpenSubdiv)
+++endif()
+++
+++# If OpenImageIO support was enabled for this USD build, re-run the find module
+++# that was used for that build so the OpenImageIO::OpenImageIO imported target
+++# exists before pxrTargets.cmake is included. The module is installed alongside
+++# this file, so it is picked up from here rather than from the consumer's own
+++# module path.
+++if(@PXR_BUILD_OPENIMAGEIO_PLUGIN@)
+++    # FindOpenImageIO.cmake picks a debug library postfix when
+++    # PXR_USE_DEBUG_BUILD is set. That is a plain variable, so restore it or
+++    # the consumer would look for a different library name than this build did.
+++    if (NOT DEFINED PXR_USE_DEBUG_BUILD)
+++        set(PXR_USE_DEBUG_BUILD @PXR_CONFIG_PXR_USE_DEBUG_BUILD@)
+++    endif()
+++    find_dependency(OpenImageIO)
++ endif()
++ 
++ # If MaterialX support was enabled for this USD build, try to find the
++@@ -82,9 +130,11 @@ endif()
++ # module that was used for that build. This can be overridden by
++ # specifying a different MaterialX_DIR when running cmake.
++ if(@PXR_ENABLE_MATERIALX_SUPPORT@)
++-    if (NOT DEFINED MaterialX_DIR)
++-        if (NOT [[@MaterialX_DIR@]] STREQUAL "")
++-            set(MaterialX_DIR [[@MaterialX_DIR@]])
+++    if(@PXR_EMBED_DEPENDENCY_PATHS_IN_CONFIG@)
+++        if (NOT DEFINED MaterialX_DIR)
+++            if (NOT [[@PXR_CONFIG_MaterialX_DIR@]] STREQUAL "")
+++                set(MaterialX_DIR [[@PXR_CONFIG_MaterialX_DIR@]])
+++            endif()
++         endif()
++     endif()
++     find_dependency(MaterialX)
++@@ -92,18 +142,36 @@ endif()
++ 
++ # Similar to MaterialX above, we are using Imath's cmake package config, so set
++ # the Imath_DIR accordingly to find the associated import targets which were
++-# used for this USD build. 
+++# used for this USD build.
++ # Note that we only need to do this, when it is determined by Imath is being
++ # used instead of OpenExr (refer Packages.cmake)
++ if(@Imath_FOUND@)
++-    if (NOT DEFINED Imath_DIR)
++-        if (NOT [[@Imath_DIR@]] STREQUAL "")
++-            set(Imath_DIR [[@Imath_DIR@]])
+++    if(@PXR_EMBED_DEPENDENCY_PATHS_IN_CONFIG@)
+++        if (NOT DEFINED Imath_DIR)
+++            if (NOT [[@PXR_CONFIG_Imath_DIR@]] STREQUAL "")
+++                set(Imath_DIR [[@PXR_CONFIG_Imath_DIR@]])
+++            endif()
++         endif()
++     endif()
++     find_dependency(Imath)
++ endif()
++ 
+++# If OpenVDB support was enabled for this USD build, re-run the find module
+++# that was used for that build so the OpenVDB::OpenVDB imported target exists
+++# before pxrTargets.cmake is included. The module is installed alongside this
+++# file, so it is picked up from here rather than from the consumer's own module
+++# path. Consumers may pre-set OPENVDB_LOCATION to point at their own OpenVDB.
+++if(@PXR_ENABLE_OPENVDB_SUPPORT@)
+++    find_dependency(OpenVDB)
+++endif()
+++
+++# If OpenGL support was enabled for this USD build, re-run the find module so
+++# the OpenGL::GL imported target exists before pxrTargets.cmake is included.
+++# garch references it in its link interface.
+++if(@PXR_CONFIG_FIND_OPENGL@)
+++    find_dependency(OpenGL)
+++endif()
+++
++ # If this build is using a custom work implementation, find the package
++ # providing that implementation.
++ if(NOT "@PXR_WORK_IMPL_PACKAGE@" STREQUAL "")
+-- 
+2.54.0
+
+
+From f1c4c61fd18fbdca6e75355c3d19c8451186ffa9 Mon Sep 17 00:00:00 2001
+From: Ray Molenkamp <github@lazydodo.com>
+Date: Wed, 7 Oct 2026 12:06:09 -0700
+Subject: [PATCH 10/11] Deps: Vulkan updates
+
+glslang - vulkan-sdk-1.4.363 + copy to libdir
+SpirV-Tools - vulkan-sdk-1.4.363 + copy to libdir
+VulkanHeaders - vulkan-sdk-1.4.363 + copy to libdir
+VulkanLoader - vulkan-sdk-1.4.363
+VulkanUtilities - vulkan-sdk-1.4.363  + copy to libdir
+SpirV-Headers - vulkan-sdk-1.4.363
+SpirV-Reflect - vulkan-sdk-1.4.363
+
+spirv-tools and glslang have been moved to their own files
+as they are no deps we actually ship, (rather than letting
+shaderc do its thing... which is still does btw, since you
+can't stop it)
+---
+ build_files/build_environment/CMakeLists.txt  |  2 +
+ .../build_environment/cmake/download.cmake    |  2 +-
+ .../build_environment/cmake/glslang.cmake     | 50 ++++++++++++++++++
+ .../cmake/shaderc_deps.cmake                  |  4 +-
+ .../build_environment/cmake/spirv-tools.cmake | 50 ++++++++++++++++++
+ .../build_environment/cmake/versions.cmake    | 38 +++++++-------
+ .../build_environment/cmake/vulkan.cmake      | 51 +++++++------------
+ 7 files changed, 144 insertions(+), 53 deletions(-)
+ create mode 100644 build_files/build_environment/cmake/glslang.cmake
+ create mode 100644 build_files/build_environment/cmake/spirv-tools.cmake
+
+diff --git a/build_files/build_environment/CMakeLists.txt b/build_files/build_environment/CMakeLists.txt
+index d8dd305a8b5d..106bb09c1f36 100644
+--- a/build_files/build_environment/CMakeLists.txt
++++ b/build_files/build_environment/CMakeLists.txt
+@@ -190,6 +190,7 @@ include(cmake/shaderc.cmake)
+ include(cmake/vulkan.cmake)
+ include(cmake/vulkan-memory-allocator.cmake)
+ include(cmake/spirv-reflect.cmake)
++include(cmake/spirv-tools.cmake)
+ include(cmake/pybind11.cmake)
+ include(cmake/nanobind.cmake)
+ include(cmake/manifold.cmake)
+@@ -203,6 +204,7 @@ include(cmake/tracy.cmake)
+ include(cmake/jolt.cmake)
+ include(cmake/rapidjson.cmake)
+ include(cmake/opentimelineio.cmake)
++include(cmake/glslang.cmake)
+ # Keep these last.
+ include(cmake/deps_md.cmake)
+ include(cmake/cve_check.cmake)
+diff --git a/build_files/build_environment/cmake/download.cmake b/build_files/build_environment/cmake/download.cmake
+index 8b19a2a21100..17c27825dbcb 100644
+--- a/build_files/build_environment/cmake/download.cmake
++++ b/build_files/build_environment/cmake/download.cmake
+@@ -173,7 +173,7 @@ download_source(AOM)
+ download_source(FRIBIDI)
+ download_source(HARFBUZZ)
+ download_source(SHADERC)
+-download_source(SHADERC_GLSLANG)
++download_source(GLSLANG)
+ download_source(VULKAN_HEADERS)
+ download_source(VULKAN_LOADER)
+ download_source(VULKAN_UTILITY_LIBRARIES)
+diff --git a/build_files/build_environment/cmake/glslang.cmake b/build_files/build_environment/cmake/glslang.cmake
+new file mode 100644
+index 000000000000..ed06c6822513
+--- /dev/null
++++ b/build_files/build_environment/cmake/glslang.cmake
+@@ -0,0 +1,50 @@
++# SPDX-FileCopyrightText: 2022 Blender Authors
++#
++# SPDX-License-Identifier: GPL-2.0-or-later
++
++# These are build time requirements for shaderc. We only have to unpack these
++# shaderc will build them.
++
++set(GLSLANG_EXTRA_ARGS
++  -DALLOW_EXTERNAL_SPIRV_TOOLS=ON
++  -DSPIRV-Tools-opt_DIR=${LIBDIR}/spirv_tools/SPIRV-Tools-opt/cmake
++  -DSPIRV-Tools_DIR=${LIBDIR}/spirv_tools/SPIRV-Tools/cmake
++  -DPython3_FIND_REGISTRY=NEVER
++  -DPython3_EXECUTABLE=${PYTHON_BINARY}
++  -DBUILD_SHARED_LIBS=ON
++)
++
++ExternalProject_Add(external_glslang
++  URL file://${PACKAGE_DIR}/${GLSLANG_FILE}
++  URL_HASH ${GLSLANG_HASH_TYPE}=${GLSLANG_HASH}
++  DOWNLOAD_DIR ${DOWNLOAD_DIR}
++  PREFIX ${BUILD_DIR}/glslang
++  CMAKE_GENERATOR ${PLATFORM_ALT_GENERATOR}
++  CMAKE_ARGS
++    -DCMAKE_INSTALL_PREFIX=${LIBDIR}/glslang
++    ${DEFAULT_CMAKE_FLAGS}
++    ${GLSLANG_EXTRA_ARGS}
++
++  INSTALL_DIR ${LIBDIR}/glslang
++)
++
++add_dependencies(
++  external_glslang
++  external_spirv_tools
++  external_python
++)
++
++if(WIN32)
++    ExternalProject_Add_Step(external_glslang after_install
++      COMMAND ${CMAKE_COMMAND} -E copy_directory
++        ${LIBDIR}/glslang
++        ${HARVEST_TARGET}/glslang
++
++      COMMAND ${CMAKE_COMMAND}
++        -DCLEAN_DIR=${HARVEST_TARGET}/glslang
++        -P ${CMAKE_CURRENT_LIST_DIR}/win_clean_pdb.cmake
++      DEPENDEES install
++    )
++else()
++# TODO
++endif()
+diff --git a/build_files/build_environment/cmake/shaderc_deps.cmake b/build_files/build_environment/cmake/shaderc_deps.cmake
+index 5d491de6f008..345e1808bd6d 100644
+--- a/build_files/build_environment/cmake/shaderc_deps.cmake
++++ b/build_files/build_environment/cmake/shaderc_deps.cmake
+@@ -6,8 +6,8 @@
+ # shaderc will build them.
+ 
+ ExternalProject_Add(external_shaderc_glslang
+-  URL file://${PACKAGE_DIR}/${SHADERC_GLSLANG_FILE}
+-  URL_HASH ${SHADERC_GLSLANG_HASH_TYPE}=${SHADERC_GLSLANG_HASH}
++  URL file://${PACKAGE_DIR}/${GLSLANG_FILE}
++  URL_HASH ${GLSLANG_HASH_TYPE}=${GLSLANG_HASH}
+   DOWNLOAD_DIR ${DOWNLOAD_DIR}
+   PREFIX ${BUILD_DIR}/shaderc_glslang
+   CONFIGURE_COMMAND echo .
+diff --git a/build_files/build_environment/cmake/spirv-tools.cmake b/build_files/build_environment/cmake/spirv-tools.cmake
+new file mode 100644
+index 000000000000..c2b879c83ec7
+--- /dev/null
++++ b/build_files/build_environment/cmake/spirv-tools.cmake
+@@ -0,0 +1,50 @@
++# SPDX-FileCopyrightText: 2026 Blender Authors
++#
++# SPDX-License-Identifier: GPL-2.0-or-later
++ 
++ set(SPIRV_TOOLS_EXTRA_ARGS
++  -DSPIRV-Headers_SOURCE_DIR=${LIBDIR}/vulkan_headers
++  -DPython3_EXECUTABLE=${PYTHON_BINARY}
++  # both static and shared are on because the spirv-tools
++  # binary are determined to link the static library and
++  # will give a build error if you disable them. 
++  -DBUILD_SHARED_LIBS=ON
++  -DSPIRV_TOOLS_BUILD_STATIC=ON
++  -DCMAKE_DEBUG_POSTFIX=_d
++  -DSPIRV_SKIP_EXECUTABLES=OFF
++)
++
++ExternalProject_Add(external_spirv_tools
++  URL file://${PACKAGE_DIR}/${SPIRV_TOOLS_FILE}
++  URL_HASH ${SPIRV_TOOLS_HASH_TYPE}=${SPIRV_TOOLS_HASH}
++  PREFIX ${BUILD_DIR}/spirv_tools
++  CMAKE_GENERATOR ${PLATFORM_ALT_GENERATOR}
++  CMAKE_ARGS
++    -DCMAKE_INSTALL_PREFIX=${LIBDIR}/spirv_tools
++    -Wno-dev
++    ${DEFAULT_CMAKE_FLAGS}
++    ${SPIRV_TOOLS_EXTRA_ARGS}
++
++  INSTALL_DIR ${LIBDIR}/spirv_tools
++)
++
++add_dependencies(
++  external_spirv_tools
++  external_spirv_headers
++  external_python
++)
++
++if(WIN32)
++    ExternalProject_Add_Step(external_spirv_tools after_install
++      COMMAND ${CMAKE_COMMAND} -E copy_directory
++        ${LIBDIR}/spirv_tools
++        ${HARVEST_TARGET}/spirv_tools
++
++      COMMAND ${CMAKE_COMMAND}
++        -DCLEAN_DIR=${HARVEST_TARGET}/spirv_tools
++        -P ${CMAKE_CURRENT_LIST_DIR}/win_clean_pdb.cmake
++      DEPENDEES install
++    )
++else()
++# TODO
++endif()
+diff --git a/build_files/build_environment/cmake/versions.cmake b/build_files/build_environment/cmake/versions.cmake
+index 516aab1c34ed..6ccb29773bce 100644
+--- a/build_files/build_environment/cmake/versions.cmake
++++ b/build_files/build_environment/cmake/versions.cmake
+@@ -1349,26 +1349,30 @@ set(SHADERC_COPYRIGHT "Copyright 2015 The Shaderc Authors. All rights reserved."
+ # The versions of shaderc's dependencies can be found in the root of shaderc's
+ # source in a file called DEPS.
+ 
+-set(SHADERC_GLSLANG_VERSION d213562e35573012b6348b2d584457c3704ac09b)
+-set(SHADERC_GLSLANG_URI https://github.com/KhronosGroup/glslang/archive/${SHADERC_GLSLANG_VERSION}.tar.gz)
+-set(SHADERC_GLSLANG_HASH ac98b61f77ffade6bf819e342dc40c4c)
+-set(SHADERC_GLSLANG_HASH_TYPE MD5)
+-set(SHADERC_GLSLANG_FILE glslang-${SHADERC_GLSLANG_VERSION}.tar.gz)
+-set(SHADERC_GLSLANG_HOMEPAGE https://github.com/KhronosGroup/glslang)
+-set(SHADERC_GLSLANG_LICENSE SPDX:Apache-2.0)
+-set(SHADERC_GLSLANG_COPYRIGHT [=[
++# we build glslang for our selves shared however shaderc is hellbend on building
++# it from source as well and there is seemingly no convincing it not to do that
++# and just use the version we already have, so currently this source is shared
++# between shaderc and our copy of glslang, but shaderc is picky on its versions
++# this may need to diverge in the future. 
++set(GLSLANG_VERSION vulkan-sdk-1.4.363.0)
++set(GLSLANG_URI https://github.com/KhronosGroup/glslang/archive/refs/tags/${GLSLANG_VERSION}.tar.gz)
++set(GLSLANG_HASH cff49e2030f82248be94adc1b03e6ca2)
++set(GLSLANG_HASH_TYPE MD5)
++set(GLSLANG_FILE glslang-${GLSLANG_VERSION}.tar.gz)
++set(GLSLANG_HOMEPAGE https://github.com/KhronosGroup/glslang)
++set(GLSLANG_LICENSE SPDX:Apache-2.0)
++set(GLSLANG_COPYRIGHT [=[
+ Copyright 2020 The Khronos Group Inc.
+ Copyright (C) 2015-2018 Google, Inc.
+ ]=])
+ 
+-
+-set(VULKAN_VERSION 1.4.341)
++set(VULKAN_VERSION 1.4.363)
+ set(VULKAN_CPE "cpe:2.3:a:khronos:vulkan:${VULKAN_VERSION}:*:*:*:*:*:*:*")
+ 
+ set(VULKAN_HEADERS_VERSION ${VULKAN_VERSION})
+ set(VULKAN_HEADERS_NAME Vulkan-Headers)
+ set(VULKAN_HEADERS_URI https://github.com/KhronosGroup/Vulkan-Headers/archive/refs/tags/v${VULKAN_HEADERS_VERSION}.tar.gz)
+-set(VULKAN_HEADERS_HASH 57f17871ef2c43fc9ac01708a4bd3c82)
++set(VULKAN_HEADERS_HASH 5d64c2359246cd3e0958c6eb04e38aa6)
+ set(VULKAN_HEADERS_HASH_TYPE MD5)
+ set(VULKAN_HEADERS_FILE Vulkan-Headers-${VULKAN_HEADERS_VERSION}.tar.gz)
+ set(VULKAN_HEADERS_HOMEPAGE https://github.com/KhronosGroup/Vulkan-Headers)
+@@ -1378,7 +1382,7 @@ set(VULKAN_HEADERS_COPYRIGHT "Copyright 2015-2023 The Khronos Group Inc.")
+ set(VULKAN_LOADER_VERSION ${VULKAN_VERSION})
+ set(VULKAN_LOADER_NAME Vulkan-Loader)
+ set(VULKAN_LOADER_URI https://github.com/KhronosGroup/Vulkan-Loader/archive/refs/tags/v${VULKAN_LOADER_VERSION}.tar.gz)
+-set(VULKAN_LOADER_HASH 30c6850af7ed0e4af5c57002253c0138)
++set(VULKAN_LOADER_HASH 6cc4e21c9c7a24a663e5f58ba332da6a)
+ set(VULKAN_LOADER_HASH_TYPE MD5)
+ set(VULKAN_LOADER_FILE Vulkan-Loader-${VULKAN_LOADER_VERSION}.tar.gz)
+ set(VULKAN_LOADER_HOMEPAGE https://github.com/KhronosGroup/Vulkan-Loader)
+@@ -1392,7 +1396,7 @@ Copyright (c) 2019 Google Inc.
+ 
+ set(VULKAN_UTILITY_LIBRARIES_VERSION ${VULKAN_VERSION})
+ set(VULKAN_UTILITY_LIBRARIES_URI https://github.com/KhronosGroup/Vulkan-Utility-Libraries/archive/refs/tags/v${VULKAN_UTILITY_LIBRARIES_VERSION}.tar.gz)
+-set(VULKAN_UTILITY_LIBRARIES_HASH 7b0980463b271b6e78269b3828841bb6)
++set(VULKAN_UTILITY_LIBRARIES_HASH 10dff705b19635199162a433f68ac2c6)
+ set(VULKAN_UTILITY_LIBRARIES_HASH_TYPE MD5)
+ set(VULKAN_UTILITY_LIBRARIES_FILE Vulkan-Utility-Libraries-${VULKAN_UTILITY_LIBRARIES_VERSION}.tar.gz)
+ set(VULKAN_UTILITY_LIBRARIES_HOMEPAGE https://github.com/KhronosGroup/Vulkan-Utility-Libraries)
+@@ -1412,7 +1416,7 @@ set(VULKAN_MEMORY_ALLOCATOR_COPYRIGHT "Copyright (c) 2017-2025 Advanced Micro De
+ 
+ set(SPIRV_HEADERS_VERSION ${VULKAN_VERSION})
+ set(SPIRV_HEADERS_URI https://github.com/KhronosGroup/SPIRV-Headers/archive/refs/tags/vulkan-sdk-${SPIRV_HEADERS_VERSION}.0.tar.gz)
+-set(SPIRV_HEADERS_HASH 38bcd69036ec1443ac19b417bef8685e)
++set(SPIRV_HEADERS_HASH 67fec63779cccdc562338d316da46678)
+ set(SPIRV_HEADERS_HASH_TYPE MD5)
+ set(SPIRV_HEADERS_FILE SPIRV-Headers-${SPIRV_HEADERS_VERSION}.tar.gz)
+ set(SPIRV_HEADERS_NAME SPIR-V Headers)
+@@ -1424,16 +1428,16 @@ set(SPIRV_REFLECT_VERSION ${VULKAN_VERSION})
+ set(SPIRV_REFLECT_NAME SPIRV-Reflect)
+ set(SPIRV_REFLECT_URI
+ https://github.com/KhronosGroup/SPIRV-Reflect/archive/refs/tags/vulkan-sdk-${SPIRV_REFLECT_VERSION}.0.tar.gz)
+-set(SPIRV_REFLECT_HASH a604577ed56b6687a3bbfa88ab3a6712)
++set(SPIRV_REFLECT_HASH 51901b4c50019334b262fa0046a0a21f)
+ set(SPIRV_REFLECT_HASH_TYPE MD5)
+ set(SPIRV_REFLECT_FILE SPIRV-Reflect-${SPIRV_REFLECT_VERSION}.tar.gz)
+ set(SPIRV_REFLECT_HOMEPAGE https://github.com/KhronosGroup/SPIRV-Reflect)
+ set(SPIRV_REFLECT_LICENSE SPDX:Apache-2.0)
+ set(SPIRV_REFLECT_COPYRIGHT "Copyright 2017-2018 Google Inc.")
+ 
+-set(SPIRV_TOOLS_VERSION v2026.1)
++set(SPIRV_TOOLS_VERSION vulkan-sdk-1.4.363.0)
+ set(SPIRV_TOOLS_URI https://github.com/KhronosGroup/SPIRV-Tools/archive/refs/tags/${SPIRV_TOOLS_VERSION}.tar.gz)
+-set(SPIRV_TOOLS_HASH 35dc16cf2dc64be5b6bbbe86d210e6f4a82b070cffd751605a3365cd8bce2d7e)
++set(SPIRV_TOOLS_HASH e6c83a215538fbfd265ccf398d3877985055df1273dbed73912bd05307664688)
+ set(SPIRV_TOOLS_HASH_TYPE SHA256)
+ set(SPIRV_TOOLS_FILE SPIR-V-Tools-${SPIRV_TOOLS_VERSION}.tar.gz)
+ set(SPIRV_TOOLS_NAME "SPIR-V Tools")
+diff --git a/build_files/build_environment/cmake/vulkan.cmake b/build_files/build_environment/cmake/vulkan.cmake
+index e7109168e25c..06b6051f338c 100644
+--- a/build_files/build_environment/cmake/vulkan.cmake
++++ b/build_files/build_environment/cmake/vulkan.cmake
+@@ -14,7 +14,7 @@ ExternalProject_Add(external_vulkan_headers
+     -Wno-dev
+     ${DEFAULT_CMAKE_FLAGS}
+     ${VULKAN_HEADERS_EXTRA_ARGS}
+-
++  CMAKE_GENERATOR ${PLATFORM_ALT_GENERATOR}
+   INSTALL_DIR ${LIBDIR}/vulkan_headers
+ )
+ 
+@@ -31,12 +31,12 @@ ExternalProject_Add(external_vulkan_utility_libraries
+   PREFIX ${BUILD_DIR}/vulkan_utility_libraries
+ 
+   CMAKE_ARGS
+-    -DCMAKE_INSTALL_PREFIX=${LIBDIR}/vulkan_headers
++    -DCMAKE_INSTALL_PREFIX=${LIBDIR}/vulkan_utility_libraries
+     -Wno-dev
+     ${DEFAULT_CMAKE_FLAGS}
+     ${VULKAN_UTILITY_LIBRARIES_EXTRA_ARGS}
+-
+-  INSTALL_DIR ${LIBDIR}/vulkan_headers
++  CMAKE_GENERATOR ${PLATFORM_ALT_GENERATOR}
++  INSTALL_DIR ${LIBDIR}/vulkan_utility_libraries
+ )
+ 
+ add_dependencies(
+@@ -56,34 +56,10 @@ ExternalProject_Add(external_spirv_headers
+     -Wno-dev
+     ${DEFAULT_CMAKE_FLAGS}
+     ${SPIRV_HEADERS_EXTRA_ARGS}
+-
++  CMAKE_GENERATOR ${PLATFORM_ALT_GENERATOR}
+   INSTALL_DIR ${LIBDIR}/vulkan_headers
+ )
+ 
+-set(SPIRV_TOOLS_EXTRA_ARGS
+-  -DSPIRV-Headers_SOURCE_DIR=${LIBDIR}/vulkan_headers
+-  -DPython3_EXECUTABLE=${PYTHON_BINARY}
+-)
+-
+-ExternalProject_Add(external_spirv_tools
+-  URL file://${PACKAGE_DIR}/${SPIRV_TOOLS_FILE}
+-  URL_HASH ${SPIRV_TOOLS_HASH_TYPE}=${SPIRV_TOOLS_HASH}
+-  PREFIX ${BUILD_DIR}/spirv_tools
+-
+-  CMAKE_ARGS
+-    -DCMAKE_INSTALL_PREFIX=${LIBDIR}/spirv_tools
+-    -Wno-dev
+-    ${DEFAULT_CMAKE_FLAGS}
+-    ${SPIRV_TOOLS_EXTRA_ARGS}
+-
+-  INSTALL_DIR ${LIBDIR}/spirv_tools
+-)
+-
+-add_dependencies(
+-  external_spirv_tools
+-  external_spirv_headers
+-  external_python
+-)
+ 
+ if(UNIX AND NOT APPLE)
+   # These are used in `cmake/FindWayland.cmake` from `external_vulkan_loader`.
+@@ -111,7 +87,7 @@ ExternalProject_Add(external_vulkan_loader
+     -Wno-dev
+     ${DEFAULT_CMAKE_FLAGS}
+     ${VULKAN_LOADER_EXTRA_ARGS}
+-
++  CMAKE_GENERATOR ${PLATFORM_ALT_GENERATOR}
+   INSTALL_DIR ${LIBDIR}/vulkan_loader
+ )
+ 
+@@ -129,13 +105,22 @@ endif()
+ 
+ if(WIN32)
+   if(BUILD_MODE STREQUAL Release)
++    ExternalProject_Add_Step(external_vulkan_headers after_install
++      COMMAND ${CMAKE_COMMAND} -E copy_directory
++        ${LIBDIR}/vulkan_headers/
++        ${HARVEST_TARGET}/vulkan_headers
++      DEPENDEES install
++    )
+     ExternalProject_Add_Step(external_vulkan_loader after_install
+       COMMAND ${CMAKE_COMMAND} -E copy_directory
+         ${LIBDIR}/vulkan_loader/
+-        ${HARVEST_TARGET}/vulkan
++        ${HARVEST_TARGET}/vulkan_loader
++      DEPENDEES install
++    )
++    ExternalProject_Add_Step(external_vulkan_utility_libraries after_install
+       COMMAND ${CMAKE_COMMAND} -E copy_directory
+-        ${LIBDIR}/vulkan_headers/
+-        ${HARVEST_TARGET}/vulkan
++        ${LIBDIR}/vulkan_utility_libraries/
++        ${HARVEST_TARGET}/vulkan_utility_libraries
+       DEPENDEES install
+     )
+   endif()
+-- 
+2.54.0
+
+
+From a0f39c12f846fbc7bdfe85d9ac53703bd4ffbc94 Mon Sep 17 00:00:00 2001
+From: Ray Molenkamp <github@lazydodo.com>
+Date: Mon, 19 Oct 2026 08:18:21 -0700
+Subject: [PATCH 11/11] Deps: USD: Fix various issues on windows
+
+- Static opensubdiv
+- Libraries having a _d postfix
+
+Still has harvest issues.
+---
+ build_files/build_environment/cmake/usd.cmake |  49 +++++--
+ .../patches/usd_portable_2608.diff            |  77 +++++++++--
+ .../patches/usd_postfix.diff                  | 126 ++++++++++++++++++
+ 3 files changed, 232 insertions(+), 20 deletions(-)
+ create mode 100644 build_files/build_environment/patches/usd_postfix.diff
+
+diff --git a/build_files/build_environment/cmake/usd.cmake b/build_files/build_environment/cmake/usd.cmake
+index c81c0914f431..64c76bca7e9a 100644
+--- a/build_files/build_environment/cmake/usd.cmake
++++ b/build_files/build_environment/cmake/usd.cmake
+@@ -59,7 +59,7 @@ string(REPLACE "." "_" USD_NAMESPACE "pxrBlender_v${USD_VERSION}")
+ 
+ set(USD_EXTRA_ARGS
+   ${USD_PLATFORM_FLAGS}
+-  -DOPENSUBDIV_ROOT_DIR=${LIBDIR}/opensubdiv
++  -DOpenSubdiv_DIR=${LIBDIR}/opensubdiv/lib/cmake/OpenSubdiv
+   -DOpenImageIO_ROOT=${LIBDIR}/openimageio
+   -DMaterialX_ROOT=${LIBDIR}/materialx
+   -DOPENEXR_LIBRARIES=${LIBDIR}/imath/lib/${LIBPREFIX}Imath${OPENEXR_VERSION_POSTFIX}${SHAREDLIBEXT}
+@@ -106,7 +106,7 @@ set(USD_EXTRA_ARGS
+   -DTBB_LIBRARIES_RELEASE=${LIBDIR}/tbb/lib/${LIBPREFIX}${TBB_LIBRARY}${SHAREDLIBEXT}
+   -DVulkanHeaders_ROOT=${LIBDIR}/vulkan_headers
+   -DVulkanLoader_ROOT=${LIBDIR}/vulkan_loader
+-  -DVulkanUtilityLibraries_ROOT=${LIBDIR}/vulkan_headers
++  -DVulkanUtilityLibraries_ROOT=${LIBDIR}/vulkan_utility_libraries
+   -DVulkanMemoryAllocator_ROOT=${LIBDIR}/vulkan_memory_allocator
+   -DShaderC_ROOT=${LIBDIR}/shaderc
+   -DSpirvReflect_ROOT=${LIBDIR}/spirv_reflect
+@@ -139,6 +139,9 @@ ExternalProject_Add(external_usd
+     ${PATCH_CMD} -p 1 -d
+       ${BUILD_DIR}/usd/src/external_usd <
+       ${PATCH_DIR}/usd_portable_2608.diff &&
++    ${PATCH_CMD} -p 1 -d
++      ${BUILD_DIR}/usd/src/external_usd <
++      ${PATCH_DIR}/usd_postfix.diff &&
+     ${PATCH_CMD} -p 1 -d
+       ${BUILD_DIR}/usd/src/external_usd <
+       ${PATCH_DIR}/usd_core_profile.diff &&
+@@ -159,7 +162,7 @@ ExternalProject_Add(external_usd
+       ${PATCH_DIR}/usd_storm_vulkan.diff &&
+     ${PATCH_CMD} -p 1 -d
+       ${BUILD_DIR}/usd/src/external_usd <
+-      ${PATCH_DIR}/usd_vulkan_headless_3931.diff
++      ${PATCH_DIR}/usd_vulkan_headless_3931.diff 
+ 
+   CMAKE_ARGS
+     -DCMAKE_INSTALL_PREFIX=${LIBDIR}/usd
+@@ -198,16 +201,38 @@ if(NOT WIN32)
+ endif()
+ 
+ if(WIN32)
+-    ExternalProject_Add_Step(external_usd after_install
+-      COMMAND ${CMAKE_COMMAND} -E copy_directory
+-        ${LIBDIR}/usd
+-        ${HARVEST_TARGET}/usd
++    if(BUILD_MODE STREQUAL Release)
++      ExternalProject_Add_Step(external_usd after_install
++        COMMAND ${CMAKE_COMMAND} -E copy_directory
++          ${LIBDIR}/usd
++          ${HARVEST_TARGET}/usd
+ 
+-      COMMAND ${CMAKE_COMMAND}
+-        -DCLEAN_DIR=${HARVEST_TARGET}/usd
+-        -P ${CMAKE_CURRENT_LIST_DIR}/win_clean_pdb.cmake
+-      DEPENDEES install
+-    )
++        COMMAND ${CMAKE_COMMAND}
++          -DCLEAN_DIR=${HARVEST_TARGET}/usd
++          -P ${CMAKE_CURRENT_LIST_DIR}/win_clean_pdb.cmake
++        DEPENDEES install
++      )
++    else()
++      ExternalProject_Add_Step(external_usd after_install
++        COMMAND ${CMAKE_COMMAND} -E rename
++          ${LIBDIR}/usd/lib/usd
++          ${LIBDIR}/usd/lib/debug/usd
++        COMMAND ${CMAKE_COMMAND} -E rename
++          ${LIBDIR}/usd/lib/site-packages
++          ${LIBDIR}/usd/lib/debug/site-packages
++        COMMAND ${CMAKE_COMMAND} -E rename
++          ${LIBDIR}/usd/plugin
++          ${LIBDIR}/usd/debug/plugin
++        COMMAND ${CMAKE_COMMAND} -E copy_directory
++          ${LIBDIR}/usd
++          ${HARVEST_TARGET}/usd
++        COMMAND ${CMAKE_COMMAND}
++          -DCLEAN_DIR=${HARVEST_TARGET}/usd
++          -P ${CMAKE_CURRENT_LIST_DIR}/win_clean_pdb.cmake
++        DEPENDEES install
++      )
++    
++    endif()
+ else()
+   harvest(external_usd usd/include usd/include "*.h")
+   harvest(external_usd usd/include usd/include "*.hpp")
+diff --git a/build_files/build_environment/patches/usd_portable_2608.diff b/build_files/build_environment/patches/usd_portable_2608.diff
+index aea8becb6f7e..f12b299a42dc 100644
+--- a/build_files/build_environment/patches/usd_portable_2608.diff
++++ b/build_files/build_environment/patches/usd_portable_2608.diff
+@@ -16,7 +16,7 @@ index 4afac0537..68d5a1b3d 100644
+  option(PXR_ENABLE_OSL_SUPPORT "Enable OSL (OpenShadingLanguage) based components" OFF)
+  option(PXR_ENABLE_PTEX_SUPPORT "Enable Ptex support" OFF)
+ diff --git a/cmake/defaults/Packages.cmake b/cmake/defaults/Packages.cmake
+-index 7f3d1a2ae..027e900b1 100644
++index 7f3d1a2ae..53911cab7 100644
+ --- a/cmake/defaults/Packages.cmake
+ +++ b/cmake/defaults/Packages.cmake
+ @@ -20,18 +20,6 @@ set(CMAKE_THREAD_PREFER_PTHREAD TRUE)
+@@ -38,6 +38,21 @@ index 7f3d1a2ae..027e900b1 100644
+  if(PXR_ENABLE_PYTHON_SUPPORT)
+      # 1--Python.
+      macro(setup_python_package package)
++@@ -263,6 +251,14 @@ if (PXR_BUILD_IMAGING)
++         find_package(OpenSubdiv 3 REQUIRED)
++         set(PXR_FIND_OPENSUBDIV_IN_CONFIG OFF)
++     endif()
+++
+++    # OpenSubdiv's package config file exports either the plain or the
+++    # "_static" flavoured imported target names depending on how it was built.
+++    # Normalise onto the plain names, which is what USD's exported targets
+++    # reference, so that the choice of shared vs. static OpenSubdiv does not
+++    # leak into pxrTargets.cmake.
+++    include(PxrOpenSubdivTargets)
+++
++     # --Ptex
++     if (PXR_ENABLE_PTEX_SUPPORT)
++         find_package(PTex REQUIRED)
+ diff --git a/cmake/macros/Private.cmake b/cmake/macros/Private.cmake
+ index cddb4e095..d03df3279 100644
+ --- a/cmake/macros/Private.cmake
+@@ -203,8 +218,45 @@ index 791982729..c46e456b0 100644
+ +        INTERFACE_INCLUDE_DIRECTORIES "${OPENVDB_INCLUDE_DIR}"
+ +    )
+ +endif()
++diff --git a/cmake/modules/PxrOpenSubdivTargets.cmake b/cmake/modules/PxrOpenSubdivTargets.cmake
++new file mode 100644
++index 000000000..f0f7df72f
++--- /dev/null
+++++ b/cmake/modules/PxrOpenSubdivTargets.cmake
++@@ -0,0 +1,31 @@
+++# Normalise the OpenSubdiv imported target names.
+++#
+++# OpenSubdiv's package config file exports OpenSubdiv::osdCPU / osdGPU when it
+++# was built as a shared library, but OpenSubdiv::osdCPU_static / osdGPU_static
+++# when it was built statically. Which one is available is a property of the
+++# OpenSubdiv installation, not of the USD build, so a Debug tree and a Release
+++# tree can easily disagree here.
+++#
+++# USD's exported targets always refer to the plain names, so alias them onto
+++# whichever variant is present. This keeps the names baked into
+++# pxrTargets.cmake independent of how OpenSubdiv happened to be built, and it
+++# keeps the installed package relocatable: the alias carries no absolute path,
+++# it just forwards to the imported target that the find step created.
+++#
+++# OpenSubdiv must already have been found before including this module. It is
+++# included from cmake/defaults/Packages.cmake when USD itself is configured and
+++# from pxrConfig.cmake.in when a consumer loads the installed package, in both
+++# cases before pxrTargets.cmake is included.
+++#
+++# Note that add_library(ALIAS) over a non-GLOBAL imported target requires
+++# CMake 3.11 or newer; USD requires 3.27.
+++
+++foreach(_osd_component osdCPU osdGPU)
+++    if (NOT TARGET OpenSubdiv::${_osd_component} AND
+++        TARGET OpenSubdiv::${_osd_component}_static)
+++        add_library(OpenSubdiv::${_osd_component}
+++            ALIAS OpenSubdiv::${_osd_component}_static)
+++    endif()
+++endforeach()
+++
+++unset(_osd_component)
+ diff --git a/pxr/CMakeLists.txt b/pxr/CMakeLists.txt
+-index a02287dda..96bf0ebf6 100644
++index a02287dda..dc1f85cba 100644
+ --- a/pxr/CMakeLists.txt
+ +++ b/pxr/CMakeLists.txt
+ @@ -63,6 +63,92 @@ foreach(property IN ITEMS
+@@ -300,17 +352,19 @@ index a02287dda..96bf0ebf6 100644
+  configure_file(pxrConfig.cmake.in
+    "${PROJECT_BINARY_DIR}/pxrConfig.cmake" @ONLY)
+  install(FILES
+-@@ -70,4 +156,14 @@ install(FILES
++@@ -70,4 +156,16 @@ install(FILES
+    DESTINATION "${CMAKE_INSTALL_PREFIX}"
+  )
+  
+ +# Install the find modules that the config file above re-runs, so that
+ +# consumers resolve the same third-party dependencies without having to
+-+# supply their own copies.
+++# supply their own copies. PxrOpenSubdivTargets.cmake is included by the
+++# config file itself, so it has to travel with it.
+ +install(FILES
+ +  "${PROJECT_SOURCE_DIR}/cmake/modules/FindOpenVDB.cmake"
+ +  "${PROJECT_SOURCE_DIR}/cmake/modules/FindOpenSubdiv.cmake"
+ +  "${PROJECT_SOURCE_DIR}/cmake/modules/FindOpenImageIO.cmake"
+++  "${PROJECT_SOURCE_DIR}/cmake/modules/PxrOpenSubdivTargets.cmake"
+ +  DESTINATION "${CMAKE_INSTALL_PREFIX}/cmake/modules"
+ +)
+ +
+@@ -402,7 +456,7 @@ index 923686004..cd6785ab1 100644
+          api.h
+  
+ diff --git a/pxr/pxrConfig.cmake.in b/pxr/pxrConfig.cmake.in
+-index 1a28e14d6..9da8363a4 100644
++index 1a28e14d6..d00a0090d 100644
+ --- a/pxr/pxrConfig.cmake.in
+ +++ b/pxr/pxrConfig.cmake.in
+ @@ -11,6 +11,12 @@
+@@ -476,7 +530,7 @@ index 1a28e14d6..9da8363a4 100644
+  endif()
+  
+  if (NOT DEFINED PXR_FIND_OPENSUBDIV_IN_CONFIG)
+-@@ -75,6 +90,39 @@ if (NOT DEFINED PXR_FIND_OPENSUBDIV_IN_CONFIG)
++@@ -75,6 +90,46 @@ if (NOT DEFINED PXR_FIND_OPENSUBDIV_IN_CONFIG)
+  endif()
+  if (PXR_FIND_OPENSUBDIV_IN_CONFIG)
+      find_dependency(OpenSubdiv @OpenSubdiv_VERSION@ CONFIG)
+@@ -500,6 +554,13 @@ index 1a28e14d6..9da8363a4 100644
+ +    find_dependency(OpenSubdiv)
+ +endif()
+ +
+++# Whichever way OpenSubdiv was found above, normalise the imported target names
+++# onto the plain OpenSubdiv::osdCPU / osdGPU spelling that pxrTargets.cmake
+++# references. A statically built OpenSubdiv only exports the "_static"
+++# flavoured names, and which flavour is present is a property of the
+++# OpenSubdiv installation rather than of this USD build.
+++include(PxrOpenSubdivTargets)
+++
+ +# If OpenImageIO support was enabled for this USD build, re-run the find module
+ +# that was used for that build so the OpenImageIO::OpenImageIO imported target
+ +# exists before pxrTargets.cmake is included. The module is installed alongside
+@@ -516,7 +577,7 @@ index 1a28e14d6..9da8363a4 100644
+  endif()
+  
+  # If MaterialX support was enabled for this USD build, try to find the
+-@@ -82,9 +130,11 @@ endif()
++@@ -82,9 +137,11 @@ endif()
+  # module that was used for that build. This can be overridden by
+  # specifying a different MaterialX_DIR when running cmake.
+  if(@PXR_ENABLE_MATERIALX_SUPPORT@)
+@@ -531,7 +592,7 @@ index 1a28e14d6..9da8363a4 100644
+          endif()
+      endif()
+      find_dependency(MaterialX)
+-@@ -92,18 +142,36 @@ endif()
++@@ -92,18 +149,36 @@ endif()
+  
+  # Similar to MaterialX above, we are using Imath's cmake package config, so set
+  # the Imath_DIR accordingly to find the associated import targets which were
+diff --git a/build_files/build_environment/patches/usd_postfix.diff b/build_files/build_environment/patches/usd_postfix.diff
+new file mode 100644
+index 000000000000..2443fcfc508a
+--- /dev/null
++++ b/build_files/build_environment/patches/usd_postfix.diff
+@@ -0,0 +1,126 @@
++diff --git a/cmake/macros/Private.cmake b/cmake/macros/Private.cmake
++index cddb4e095..320555cad 100644
++--- a/cmake/macros/Private.cmake
+++++ b/cmake/macros/Private.cmake
++@@ -446,6 +446,72 @@ function(_get_library_prefix output)
++     endif()
++ endfunction() # _get_library_prefix
++ 
+++# Returns the postfix CMake will insert between a library's base name and its
+++# file suffix for the configuration we are generating resource files for.
+++#
+++# CMake initializes the per-target <CONFIG>_POSTFIX property from the
+++# CMAKE_<CONFIG>_POSTFIX variable, so a Debug build configured with
+++# -DCMAKE_DEBUG_POSTFIX=_d writes usd_sdf_d.dll to disk rather than
+++# usd_sdf.dll.  Anything that needs the real on-disk name of a library, such
+++# as the LibraryPath recorded in plugInfo.json, must include this postfix or
+++# Plug will fail to load the library at runtime.
+++function(_get_library_config_postfix target output)
+++    set(postfix "")
+++
+++    # Single-config generators build the configuration named by
+++    # CMAKE_BUILD_TYPE.  Multi-config generators build every configuration in
+++    # CMAKE_CONFIGURATION_TYPES out of the same build tree, so there is no
+++    # single correct answer at generate time; fall back to the first
+++    # configuration and warn, since generated resource files can only be
+++    # correct for one of them.
+++    if(CMAKE_BUILD_TYPE)
+++        set(config "${CMAKE_BUILD_TYPE}")
+++    elseif(CMAKE_CONFIGURATION_TYPES)
+++        list(GET CMAKE_CONFIGURATION_TYPES 0 config)
+++        message(WARNING
+++            "Building with a multi-config generator while "
+++            "CMAKE_<CONFIG>_POSTFIX is set: generated resource files such as "
+++            "plugInfo.json will only reference the '${config}' library names.")
+++    else()
+++        set(config "")
+++    endif()
+++
+++    if(config)
+++        string(TOUPPER "${config}" configUpper)
+++        get_target_property(targetPostfix ${target} ${configUpper}_POSTFIX)
+++        if(NOT DEFINED targetPostfix OR
+++           targetPostfix STREQUAL "targetPostfix-NOTFOUND")
+++            # The property carries no value of its own; fall back to the
+++            # variable CMake initializes it from.
+++            if(DEFINED CMAKE_${configUpper}_POSTFIX)
+++                set(targetPostfix "${CMAKE_${configUpper}_POSTFIX}")
+++            else()
+++                set(targetPostfix "")
+++            endif()
+++        endif()
+++        set(postfix "${targetPostfix}")
+++    endif()
+++
+++    set(${output} "${postfix}" PARENT_SCOPE)
+++endfunction() # _get_library_config_postfix
+++
+++# Sets the <CONFIG>_POSTFIX property of TARGET to POSTFIX for every
+++# configuration that can be built from this build tree.  Used to override the
+++# global CMAKE_<CONFIG>_POSTFIX for targets whose filename is fully determined
+++# by something other than the build configuration, e.g. Python extension
+++# modules, which must be named _<module>.pyd or _<module>_d.pyd.
+++function(_pxr_set_config_postfix target postfix)
+++    foreach(config ${CMAKE_CONFIGURATION_TYPES} ${CMAKE_BUILD_TYPE})
+++        if(config)
+++            string(TOUPPER "${config}" configUpper)
+++            set_target_properties(${target}
+++                PROPERTIES
+++                    ${configUpper}_POSTFIX "${postfix}"
+++            )
+++        endif()
+++    endforeach()
+++endfunction() # _pxr_set_config_postfix
+++
++ function(_get_install_dir path out)
++     if (PXR_INSTALL_SUBDIR)
++         set(${out} ${PXR_INSTALL_SUBDIR}/${path} PARENT_SCOPE)
++@@ -1046,6 +1112,13 @@ function(_pxr_python_module NAME)
++             PREFIX ""
++             FOLDER "${folder}"
++     )
+++
+++    # The module filename is dictated by Python's import machinery and is
+++    # already complete above, including the _d suffix required when building
+++    # against a debug Python.  Suppress any per-configuration postfix CMake
+++    # would otherwise insert before the suffix, which would produce names
+++    # like _tf_d_d.pyd.
+++    _pxr_set_config_postfix(${LIBRARY_NAME} "")
++     if(WIN32)
++         # Python modules must be suffixed with .pyd on Windows.
++         set_target_properties(${LIBRARY_NAME}
++@@ -1315,7 +1388,15 @@ function(_pxr_library NAME)
++     endif()
++ 
++     # Final name.
++-    set(libraryFilename "${args_PREFIX}${NAME}${args_SUFFIX}")
+++    #
+++    # CMake inserts the per-configuration postfix (see CMAKE_<CONFIG>_POSTFIX)
+++    # between the base name and the suffix, so it has to be part of the
+++    # filename we record in resource files such as plugInfo.json.  Otherwise a
+++    # Debug build configured with -DCMAKE_DEBUG_POSTFIX=_d would produce
+++    # usd_sdf_d.dll while plugInfo.json asks Plug to load usd_sdf.dll.
+++    _get_library_config_postfix(${NAME} libraryConfigPostfix)
+++    set(libraryFilename
+++        "${args_PREFIX}${NAME}${libraryConfigPostfix}${args_SUFFIX}")
++     set(pluginToLibraryPath "")
++ 
++     # Figure out the relative path from this library's plugin location
++diff --git a/cmake/macros/Public.cmake b/cmake/macros/Public.cmake
++index 5f6a5456b..a409b3993 100644
++--- a/cmake/macros/Public.cmake
+++++ b/cmake/macros/Public.cmake
++@@ -589,7 +589,12 @@ function(pxr_build_test_shared_lib LIBRARY_NAME)
++     if (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/${testPlugInfoSrcPath}")
++         set(TEST_PLUG_INFO_RESOURCE_PATH "Resources")
++         set(TEST_PLUG_INFO_ROOT "..")
++-        set(LIBRARY_FILE "${CMAKE_SHARED_LIBRARY_PREFIX}${LIBRARY_NAME}${CMAKE_SHARED_LIBRARY_SUFFIX}")
+++        # CMake inserts the per-configuration postfix (see
+++        # CMAKE_<CONFIG>_POSTFIX) between the base name and the suffix, so it
+++        # has to be part of the library name recorded in plugInfo.json.
+++        _get_library_config_postfix(${LIBRARY_NAME} testLibraryConfigPostfix)
+++        set(LIBRARY_FILE
+++            "${CMAKE_SHARED_LIBRARY_PREFIX}${LIBRARY_NAME}${testLibraryConfigPostfix}${CMAKE_SHARED_LIBRARY_SUFFIX}")
++ 
++         set(testPlugInfoLibDir "tests/${bt_INSTALL_PREFIX}/lib/${LIBRARY_NAME}")
++         set(testPlugInfoResourceDir "${testPlugInfoLibDir}/${TEST_PLUG_INFO_RESOURCE_PATH}")
+-- 
+2.54.0
+
