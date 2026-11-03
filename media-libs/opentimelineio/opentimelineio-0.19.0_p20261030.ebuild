@@ -7,19 +7,24 @@ PYTHON_COMPAT=( python3_{11..15} )
 
 inherit cmake dot-a flag-o-matic python-single-r1 virtualx
 
+MY_PN="OpenTimelineIO"
+
 DESCRIPTION="Open Source API and interchange format for editorial timeline information"
-HOMEPAGE="https://opentimeline.io"
+HOMEPAGE="https://opentimeline.io https://github.com/AcademySoftwareFoundation/OpenTimelineIO"
 if [[ "${PV}" == "9999" ]]; then
 	EGIT_REPO_URI="https://github.com/AcademySoftwareFoundation/OpenTimelineIO.git"
-	EGIT_SUBMODULES=( '*' )
+	EGIT_SUBMODULES=(
+		'src/deps/rapidjson'
+	)
 	inherit git-r3
 else
-	MY_PN="OpenTimelineIO"
 	MY_PV="${PV/_pre/.dev}"
-	COMMIT="fc5c58e16f6832972cdb5c656dd8a6d87a4e5b02"
+	COMMIT="80c5ff30938e4adffe9c94f419b1055856cee9f5"
 	SRC_URI="https://github.com/AcademySoftwareFoundation/OpenTimelineIO/archive/${COMMIT}.tar.gz -> ${P}-${COMMIT:0:7}.gh.tar.gz"
 	S="${WORKDIR}/${MY_PN}-${COMMIT}"
 	KEYWORDS="~amd64"
+	RESTRICT="mirror
+	"
 fi
 
 IUSE="doc python static-libs test"
@@ -29,7 +34,12 @@ REQUIRED_USE="
 "
 
 LICENSE="Apache-2.0"
-SLOT="0"
+SLOT="0/$(ver_cut 1-2)"
+RESTRICT+="!test? ( test )"
+
+DOCS=(
+	README.md
+)
 
 DEPEND="
 	dev-libs/rapidjson:=
@@ -61,6 +71,11 @@ BDEPEND="
 	)
 "
 
+QA_PRESTRIPPED="
+	usr/lib/python.*/site-packages/opentimelineio/_otio.*
+	usr/lib/python.*/site-packages/opentimelineio/_opentime.*
+"
+
 PATCHES=(
 	"${FILESDIR}/${PN}-0.18.1-fix-deprecated-pybind11.patch"
 )
@@ -76,8 +91,13 @@ src_prepare() {
 
 	eapply_user
 
-	sed -i "s|\(set(OTIO_RESOLVED_CXX_DYLIB_INSTALL_DIR \"\${CMAKE_INSTALL_PREFIX}/\)lib\")|\1$(get_libdir)\")|" \
-		CMakeLists.txt || die
+	sed \
+		-e "s|\(set(OTIO_RESOLVED_CXX_DYLIB_INSTALL_DIR \"\${CMAKE_INSTALL_PREFIX}/\)lib\")|\1$(get_libdir)\")|" \
+		-i CMakeLists.txt || die
+
+	sed \
+		"s|share/opentime|$(get_libdir)/cmake/opentime|g" \
+		-i src/opentime{,lineio}/CMakeLists.txt || die
 
 	cmake_src_prepare
 }
@@ -93,10 +113,8 @@ src_configure() {
 		-DOTIO_CXX_COVERAGE=OFF
 		-DOTIO_CXX_EXAMPLES=OFF
 		-DOTIO_CXX_INSTALL=ON
-		-DOTIO_DEPENDENCIES_INSTALL=ON
+		-DOTIO_DEPENDENCIES_INSTALL=OFF
 		-DOTIO_INSTALL_COMMANDLINE_TOOLS=ON
-		-DOTIO_INSTALL_CONTRIB=OFF
-		-DOTIO_PYTHON_INSTALL=OFF
 		-DOTIO_SHARED_LIBS=ON
 		-DBUILD_TESTING=$(usex test)
 		-DOTIO_PYTHON_INSTALL=$(usex python)
@@ -131,5 +149,8 @@ src_install() {
 
 	if use python; then
 		python_optimize
+		# move C libs to libdir
+		mv "${ED}$(python_get_sitedir)"/opentimelineio/libopentime*.so{,.${PV//_*/},.$(ver_cut 2)} \
+		"${ED}/usr/$(get_libdir)" || die
 	fi
 }

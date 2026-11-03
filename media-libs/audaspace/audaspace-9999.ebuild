@@ -22,7 +22,7 @@ if [[ ${PV} == 9999 ]]; then
 	KEYWORDS=""
 else
 	if [[ "${PV}" =~ "1.10.0" ]]; then
-		COMMIT="8841635656806e388b51d3f4e3696bfc247a3f5a";
+		COMMIT="0b2df92271b6c8287eccb803c659a9487f6482dc";
 		FFMPEG_PV="10"
 	elif [[ "${PV}" =~ "1.9.0" ]]; then
 		COMMIT="546b749617ce754104e0d3bc973ecb845fa88e6b";
@@ -71,6 +71,10 @@ BDEPEND="
 REQUIRED_USE="python? ( ${PYTHON_REQUIRED_USE} )"
 
 RESTRICT="mirror"
+
+PATCHES=(
+	"${FILESDIR}/audaspace-fix-missing-include-algorithm.patch"
+)
 
 wrap_python() {
 	local phase=$1
