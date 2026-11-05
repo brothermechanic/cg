@@ -149,8 +149,8 @@ src_install() {
 
 	if use python; then
 		python_optimize
-		# move C libs to libdir
-		mv "${ED}$(python_get_sitedir)"/opentimelineio/libopentime*.so{,.${PV//_*/},.$(ver_cut 2)} \
-		"${ED}/usr/$(get_libdir)" || die
+		# copy C libs to libdir
+		cp -P -t "${ED}/usr/$(get_libdir)" \
+		"${ED}$(python_get_sitedir)"/opentimelineio/libopentime*.so{,.${PV//_*/},.$(ver_cut 2)} || die
 	fi
 }

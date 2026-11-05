@@ -26,7 +26,6 @@ if [[ ${PV} == 9999 ]]; then
 	EGIT_BRANCH="main"
 	#EGIT_COMMIT="0f3fdd25bcabac1d68d02fb246d961ea56fe49a1"
 	MY_PV="5.4"
-	KEYWORDS=""
 else
 	MY_PV="$(ver_cut 1-2)"
 	EGIT_BRANCH="blender-v${MY_PV}-release"
@@ -290,8 +289,8 @@ RDEPEND="
 		<media-libs/embree-5
 	)
 	ffmpeg? (
-		<media-video/ffmpeg-10:=[jpeg2k?,opus?,lame?,sdl,theora?,vorbis?,vpx?,x264?,xvid?,zlib]
-		>media-video/ffmpeg-5:=[jpeg2k?,opus?,lame?,sdl,theora?,vorbis?,vpx?,x264?,xvid?,zlib]
+		<media-video/ffmpeg-10-r0:=[jpeg2k?,opus?,lame?,sdl,theora?,vorbis?,vpx?,x264?,xvid?,zlib]
+		>media-video/ffmpeg-7-r0:=[jpeg2k?,opus?,lame?,sdl,theora?,vorbis?,vpx?,x264?,xvid?,zlib]
 	)
 	fftw? ( sci-libs/fftw:3.0=[threads] )
 	flac? ( >=media-libs/flac-1.4.2 )
@@ -326,7 +325,7 @@ RDEPEND="
 	openal? ( >=media-libs/openal-1.23.1 )
 	<media-libs/audaspace-1.$((${AUD_PV}+1)).0:=[python,openal?,sdl?,pulseaudio?,rubberband]
 	>=media-libs/audaspace-1.${AUD_PV}.0:=[python,openal?,sdl?,pulseaudio?,rubberband]
-	oneapi? ( dev-libs/intel-compute-runtime[l0] )
+	oneapi? ( dev-libs/intel-compute-runtime[level-zero] )
 	media-libs/glew:*
 	oidn? ( >=media-libs/oidn-2.1.0[cuda?] )
 	>=media-libs/opentimelineio-0.18.1:=[${PYTHON_SINGLE_USEDEP},python]
@@ -1188,7 +1187,7 @@ src_install() {
 		ln -s "${PN,}-${SLOT}" "${PN,}"
 	popd
 
-	elog "${PN^}-$( grep -Po 'CPACK_PACKAGE_VERSION "\K[^"]..' ${BUILD_DIR}/CPackConfig.cmake ) has been installed."
+	elog "${PN^}-$( grep -Po 'CPACK_PACKAGE_VERSION "\K[^"]..' "${BUILD_DIR}"/CPackConfig.cmake ) has been installed."
 }
 
 pkg_postinst() {
