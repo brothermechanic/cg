@@ -34,7 +34,7 @@ REQUIRED_USE="
 "
 
 LICENSE="Apache-2.0"
-SLOT="0/$(ver_cut 1-2)"
+SLOT="0/$(ver_cut 2)"
 RESTRICT+="!test? ( test )"
 
 DOCS=(
@@ -150,7 +150,7 @@ src_install() {
 	if use python; then
 		python_optimize
 		# copy C libs to libdir
-		cp -P -t "${ED}/usr/$(get_libdir)" \
+		cp -P -p -t "${ED}/usr/$(get_libdir)" \
 		"${ED}$(python_get_sitedir)"/opentimelineio/libopentime*.so{,.${PV//_*/},.$(ver_cut 2)} || die
 	fi
 }
