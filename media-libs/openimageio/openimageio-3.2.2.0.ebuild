@@ -3,7 +3,7 @@
 
 EAPI=8
 
-PYTHON_COMPAT=( python3_{11..14} )
+PYTHON_COMPAT=( python3_{12..15} )
 OPENVDB_COMPAT=( {7..13} )
 CUDA_TARGETS_COMPAT=(
 	sm_30
@@ -122,7 +122,7 @@ RDEPEND="
 	pnm? ( media-libs/netpbm )
 	webp? ( >=media-libs/libwebp-1.6.0:= )
 	>=dev-libs/imath-3.1.2-r4:=
-	color-management? ( >=media-libs/opencolorio-2.1.1-r4:= )
+	color-management? ( >=media-libs/opencolorio-2.3:= )
 	>=media-libs/openexr-3:0=
 	virtual/zlib:=
 	dicom? ( sci-libs/dcmtk )
@@ -181,6 +181,7 @@ src_prepare() {
 	use dicom || ( rm "src/dicom.imageio" -r || die )
 	use gif || ( rm "src/gif.imageio" -r || die )
 	use jpeg2k || ( rm "src/jpeg2000.imageio" -r || die )
+	use jpegxl || ( rm "src/jpegxl.imageio" -r || die )
 	use raw || ( rm "src/raw.imageio" -r || die )
 	use heif || ( rm "src/heif.imageio" -r || die )
 	use webp || ( rm "src/webp.imageio" -r || die )
@@ -432,6 +433,7 @@ src_install() {
 
 	# remove Windows loader file
 	if use python; then
+		rm "${D}$(python_get_sitedir)/py.typed" || die
 		rm "${D}$(python_get_sitedir)/__init__.py" || die
 	fi
 }

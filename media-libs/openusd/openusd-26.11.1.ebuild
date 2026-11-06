@@ -3,7 +3,7 @@
 
 EAPI=8
 
-PYTHON_COMPAT=( python3_{12..14} )
+PYTHON_COMPAT=( python3_{12..15} )
 OPENVDB_COMPAT=( {10..13} )
 LLVM_COMPAT=( {21..23} )
 inherit cmake desktop python-single-r1 flag-o-matic toolchain-funcs openvdb xdg-utils llvm-r2
@@ -85,30 +85,30 @@ RDEPEND+="
 	)
 	>=virtual/zlib-1.2.11
 	alembic? (
-		>=media-gfx/alembic-1.8.5:=[hdf5?]
+		>=media-gfx/alembic-1.8.10:=[hdf5?]
 	)
 	draco? (
 		>=media-libs/draco-1.5.6:=
 	)
 	embree? (
-		>=media-libs/embree-4.1.0:=
+		>=media-libs/embree-4.3.3:=
 	)
 	>=dev-cpp/tbb-2021.9:=
 	hdf5? (
 		>=sci-libs/hdf5-1.10[cxx,hl]
 	)
 	imaging? (
-		>=media-libs/opensubdiv-3.6.0
+		>=media-libs/opensubdiv-3.6.1
 		x11-libs/libX11
 	)
 	jemalloc? (
 		dev-libs/jemalloc-usd
 	)
 	materialx? (
-		>=media-libs/materialx-1.38.8:=[X,renderer]
+		>=media-libs/materialx-1.39.5:=[X,renderer]
 	)
 	color-management? (
-		>=media-libs/opencolorio-2.1.3
+		>=media-libs/opencolorio-2.4.2
 	)
 	openexr? (
 		>=media-libs/openexr-3.1.5-r1:=
@@ -127,7 +127,7 @@ RDEPEND+="
 		media-gfx/openvdb:=[${OPENVDB_SINGLE_USEDEP}]
 	)
 	osl? (
-		>=media-libs/osl-1.15.0-r1:=
+		>=media-libs/osl-1.13.11-r1:=
 	)
 	ptex? (
 		>=media-libs/ptex-2.4.2:=
@@ -183,7 +183,7 @@ PATCHES=(
 	"${FILESDIR}/packageUtils.cpp.patch"
 	"${FILESDIR}/openusd-24.08-PVS-bugfix-base-trace-2313.patch"
 	"${FILESDIR}/openusd-24.08-PVS-bugfix-envvar-2157.patch"
-	"${FILESDIR}/openusd-24.08-PVS-bugfix-base-tf-2161.patch"
+	#"${FILESDIR}/openusd-24.08-PVS-bugfix-base-tf-2161.patch"
 	"${FILESDIR}/openusd-25.05-cmake-FindBoost-fix.patch"
  	"${FILESDIR}/openusd-26.08-fix-cpp23-aligned_storage.patch"
 	"${FILESDIR}/openusd-26.08-embree-fix-include-cstdlib.patch"
