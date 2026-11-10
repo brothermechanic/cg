@@ -77,7 +77,7 @@ _GENTOO_BLENDER_ADDONS_HOME=()
 # @INTERNAL
 # @DESCRIPTION:
 # All possible implementations of blender
-_BLENDER_ALL_IMPLS=( 4_{2..5} 5_{0..3} )
+_BLENDER_ALL_IMPLS=( 4_{2..5} 5_{0..4} )
 readonly _BLENDER_ALL_IMPLS
 
 # @ECLASS_VARIABLE: _BLENDER_SEL_IMPLS
@@ -92,7 +92,7 @@ _BLENDER_SEL_IMPLS=()
 # This variable contains a list of Blender implementations the package
 # supports. It must be set before the `inherit' call. It has to be
 # an array.
-declare -p BLENDER_COMPAT >/dev/null 2>&1 || BLENDER_COMPAT=( 4_{2..5} 5_{0..3} )
+declare -p BLENDER_COMPAT >/dev/null 2>&1 || BLENDER_COMPAT=( 4_{2..5} 5_{0..4} )
 
 # << Boilerplate ebuild variables >>
 : ${DESCRIPTION:="Addon ${PN} for blender"}
