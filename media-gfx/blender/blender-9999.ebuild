@@ -121,7 +121,7 @@ REQUIRED_USE="${PYTHON_REQUIRED_USE}
 "
 # opensubdiv? ( X )
 
-LANGS="en en_GB ab ar be bg ca cs da de el eo es es_ES eu fa fi fr ha he hi hr hu id it ja ka km ko ky lt ml nb ne nl pl pt_BR pt ro ru sl sk sr@latin sr sv sw ta th tr zh_TW uk ur vi zh_CN zh_HANS zh_HANT"
+LANGS="en en_GB ab ar az be bg ca cs da de el eo es es_ES eu fa fi fr ha he hi hr hu id it ja ka km ko ky lt ml nb ne nl pl pt_BR pt ro ru sl sk sr@latin sr sv sw ta th tr zh_TW uk ur vi zh_CN zh_HANS zh_HANT"
 
 for X in ${LANGS} ; do
 	IUSE+=" l10n_${X}"
@@ -486,9 +486,9 @@ QA_PRESTRIPPED="${QA_EXECSTACK}"
 
 PATCHES=(
 	"${FILESDIR}/${PN}-3.0.0-boost_python.patch"
-	"${FILESDIR}/${PN}-3.5.1-tbb-rpath.patch"
+	#"${FILESDIR}/${PN}-3.5.1-tbb-rpath.patch"
 	"${FILESDIR}/x112.patch"
-	"${FILESDIR}/${PN}-4.1.1-FindLLVM.patch"
+	#"${FILESDIR}/${PN}-4.1.1-FindLLVM.patch"
 )
 
 blender_check_requirements() {
@@ -594,6 +594,7 @@ src_prepare() {
 
 	blender_get_version
 
+	eapply "${FILESDIR}/blender-4.0.2-FindClang.patch"
 	use portable || eapply "${FILESDIR}/${SLOT}"
 	use optix && eapply "${FILESDIR}/blender-fix-optix-build.patch"
 
