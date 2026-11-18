@@ -3,11 +3,11 @@
 
 EAPI=8
 
-PYTHON_COMPAT=( python3_{11..14} )
+PYTHON_COMPAT=( python3_{13..15} )
 
 inherit cmake dot-a flag-o-matic python-single-r1 virtualx
 
-DESCRIPTION="A color management framework for visual effects and animation"
+DESCRIPTION="Color management framework for visual effects and animation"
 HOMEPAGE="https://opencolorio.org https://github.com/AcademySoftwareFoundation/OpenColorIO"
 SRC_URI="https://github.com/AcademySoftwareFoundation/OpenColorIO/archive/refs/tags/v${PV}.tar.gz -> ${P}.tar.gz"
 S="${WORKDIR}/OpenColorIO-${PV}"
@@ -28,16 +28,16 @@ REQUIRED_USE="
 "
 
 RDEPEND="
-	>=dev-cpp/pystring-1.1.3:=
+	dev-cpp/pystring:=
 	>=dev-cpp/yaml-cpp-0.7.0:=
-	>=dev-libs/expat-2.4.1
+	dev-libs/expat
 	>=dev-libs/imath-3.1.4-r2:=
-	>=sys-libs/minizip-ng-3.0.7
+	>=sys-libs/minizip-ng-3.0.7:=
 	virtual/zlib
 	dev-libs/tinyxml
 	dev-python/pybind11
 	apps? (
-		>=media-libs/openimageio-2.3.12.0-r3:=
+		>=media-libs/openimageio-3.2.2.0-r1:=
 		media-libs/lcms:2
 		>=media-libs/openexr-3.1.5:=
 		media-libs/freeglut
@@ -70,8 +70,8 @@ BDEPEND="
 		$(python_gen_cond_dep '>=dev-python/setuptools-42[${PYTHON_USEDEP}]')
 	)
 	test? (
-		>=media-libs/osl-1.11
-		>=media-libs/openimageio-2.2.14
+		>=media-libs/osl-1.15
+		>=media-libs/openimageio-3.2.2
 		media-libs/freeglut
 		media-libs/glew:=
 		media-libs/libglvnd
@@ -114,19 +114,18 @@ src_configure() {
 	# - OpenGL, GLUT and GLEW is required for building ociodisplay (USE opengl)
 	CMAKE_BUILD_TYPE=Release
 	local mycmakeargs=(
-		-DBUILD_SHARED_LIBS=ON
-		-DOCIO_BUILD_APPS="$(usex apps)"
-		-DOCIO_BUILD_DOCS="$(usex doc)"
-		#-DOCIO_BUILD_FROZEN_DOCS="$(usex doc)"
-		-DOCIO_BUILD_GPU_TESTS="$(usex test)"
-		-DOCIO_BUILD_JAVA=OFF
-		-DOCIO_BUILD_OPENFX=OFF # Not packaged yet
-		-DOCIO_BUILD_PYTHON="$(usex python)"
-		-DOCIO_BUILD_STATIC="$(usex static-libs)"
-		-DOCIO_BUILD_TESTS="$(usex test)"
-		-DOCIO_INSTALL_EXT_PACKAGES=NONE
-		-DOCIO_USE_SIMD=ON
-
+		"-DBUILD_SHARED_LIBS=ON"
+		"-DOCIO_BUILD_APPS=$(usex apps)"
+		"-DOCIO_BUILD_DOCS=$(usex doc)"
+		"-DOCIO_BUILD_FROZEN_DOCS=$(usex doc)"
+		"-DOCIO_BUILD_GPU_TESTS=$(usex test)"
+		"-DOCIO_BUILD_JAVA=OFF"
+		"-DOCIO_BUILD_OPENFX=OFF"
+		"-DOCIO_BUILD_PYTHON=$(usex python)"
+		"-DOCIO_BUILD_STATIC=$(usex static-libs)"
+		"-DOCIO_BUILD_TESTS=$(usex test)"
+		"-DOCIO_INSTALL_EXT_PACKAGES=NONE"
+		"-DOCIO_USE_SIMD=ON"
 	)
 
 	if use amd64 || use x86 ; then
